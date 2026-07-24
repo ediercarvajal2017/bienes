@@ -1,0 +1,8 @@
+# Todo el tráfico se sirve desde /public; el resto del proyecto no es accesible directamente.
+Options -Indexes -MultiViews
+
+# Si el subdominio apunta directo a /public (recomendado en Hostinger) esta regla no aplica;
+# solo entra en juego cuando el docroot es la raíz del proyecto (p. ej. hosting compartido cPanel).
+RewriteEngine On
+RewriteRule ^public/ - [L]
+RewriteRule ^(.*)$ public/$1 [L]

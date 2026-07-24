@@ -1,0 +1,21 @@
+# Dependencias (se restauran con `composer install` a partir de composer.lock)
+/vendor/
+
+# Configuración local / credenciales de entorno
+.env
+
+# Archivos subidos por los usuarios (fotos, PDFs, Excel de cargas masivas) y logs
+/storage/uploads/*
+!/storage/uploads/.gitkeep
+/storage/logs/*
+!/storage/logs/.gitkeep
+
+# Herramientas locales
+/.claude/
+
+# Sistema operativo / editores
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp

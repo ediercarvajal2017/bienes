@@ -1,0 +1,356 @@
+:root {
+  --sigebi-primary: #1F6F54;
+  --sigebi-secondary: #145C43;
+  --sigebi-accent: #F2B134;
+  --sigebi-success: #2E9E5B;
+  --sigebi-danger: #D64545;
+  --sigebi-bg: #F5F7FA;
+  --sigebi-text: #1F2937;
+
+  --bs-primary: var(--sigebi-primary);
+  --bs-primary-rgb: 31, 111, 84;
+  --bs-success: var(--sigebi-success);
+  --bs-success-rgb: 46, 158, 91;
+  --bs-danger: var(--sigebi-danger);
+  --bs-danger-rgb: 214, 69, 69;
+  --bs-link-color: var(--sigebi-primary);
+  --bs-link-color-rgb: 31, 111, 84;
+  --bs-link-hover-color: var(--sigebi-secondary);
+  --bs-link-hover-color-rgb: 20, 92, 67;
+}
+
+body {
+  background-color: var(--sigebi-bg);
+  color: var(--sigebi-text);
+  overflow-x: hidden;
+}
+
+/* En el layout de dos columnas (sidebar + contenido), el contenido debe poder
+   encogerse para que las tablas anchas hagan scroll interno en lugar de empujar
+   toda la página y provocar scroll horizontal. */
+main.flex-fill {
+  min-width: 0;
+}
+
+img {
+  max-width: 100%;
+}
+
+.navbar-sigebi {
+  background-color: var(--sigebi-primary);
+}
+
+.navbar-sigebi .navbar-brand,
+.navbar-sigebi .nav-link {
+  color: #fff;
+}
+
+.navbar-sigebi .navbar-brand {
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.sidebar {
+  width: 230px;
+  flex: 0 0 230px;
+  min-height: calc(100vh - 56px);
+  background-color: #ffffff;
+  border-right: 1px solid #e2e8f0;
+  padding: 1rem 0.75rem;
+}
+
+/* Paneles de acción (Asignar, Trasladar, Reintegrar, Dar de baja): fila con
+   varias tarjetas de 300px en escritorio, apiladas a ancho completo en móvil. */
+.panel-accion {
+  width: 300px;
+  max-width: 100%;
+}
+
+.sidebar .nav-link {
+  color: var(--sigebi-text);
+  border-radius: 6px;
+  padding: 0.55rem 0.9rem;
+  font-size: 0.92rem;
+}
+
+.sidebar .nav-link.active,
+.sidebar .nav-link:hover {
+  background-color: rgba(31, 111, 84, 0.1);
+  color: var(--sigebi-primary);
+}
+
+.btn-accent {
+  background-color: var(--sigebi-accent);
+  border-color: var(--sigebi-accent);
+  color: #1F2937;
+}
+
+.badge-estado-activo { background-color: var(--sigebi-success); }
+.badge-estado-reintegrado { background-color: #6c757d; }
+.badge-estado-en_reparacion { background-color: var(--sigebi-accent); color: #1F2937; }
+.badge-estado-dado_de_baja { background-color: var(--sigebi-danger); }
+
+.auth-shell {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(160deg, var(--sigebi-primary), var(--sigebi-secondary));
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 380px;
+  background: #fff;
+  border-radius: 10px;
+  padding: 2.25rem 2rem;
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.18);
+}
+
+.auth-card .brand {
+  font-weight: 700;
+  font-size: 1.4rem;
+  color: var(--sigebi-primary);
+  margin-bottom: 0.25rem;
+}
+
+.auth-card .brand-sub {
+  font-size: 0.8rem;
+  color: #6b7280;
+  margin-bottom: 1.75rem;
+}
+
+.mono {
+  font-family: ui-monospace, "Cascadia Code", "SF Mono", Consolas, monospace;
+  font-size: 0.85em;
+}
+
+/* ---------- Modo oscuro ---------- */
+/* Se redefinen tanto las variables propias como las de Bootstrap para que TODA la
+   interfaz (fondo, tarjetas, tablas, dropdowns, bordes, texto) herede el tema oscuro
+   de forma coherente, sin necesidad de parchear elemento por elemento. */
+[data-bs-theme="dark"] {
+  color-scheme: dark;
+
+  --sigebi-bg: #0f141a;
+  --sigebi-text: #e6eaef;
+  --sigebi-primary: #2f9c72;
+  --sigebi-secondary: #23855f;
+
+  --sigebi-surface: #171f28;
+  --sigebi-surface-2: #1e2831;
+  --sigebi-border: #2b3742;
+
+  --bs-body-bg: #0f141a;
+  --bs-body-bg-rgb: 15, 20, 26;
+  --bs-body-color: #e6eaef;
+  --bs-body-color-rgb: 230, 234, 239;
+  --bs-emphasis-color: #ffffff;
+  --bs-secondary-color: rgba(230, 234, 239, 0.65);
+  --bs-secondary-bg: var(--sigebi-surface-2);
+  --bs-tertiary-bg: var(--sigebi-surface);
+  --bs-tertiary-color: rgba(230, 234, 239, 0.5);
+  --bs-border-color: var(--sigebi-border);
+  --bs-border-color-translucent: rgba(255, 255, 255, 0.1);
+
+  --bs-card-bg: var(--sigebi-surface);
+  --bs-card-cap-bg: var(--sigebi-surface);
+  --bs-card-border-color: var(--sigebi-border);
+
+  --bs-link-color: #6fe3a8;
+  --bs-link-color-rgb: 111, 227, 168;
+  --bs-link-hover-color: #8ff0bf;
+  --bs-link-hover-color-rgb: 143, 240, 191;
+}
+
+/* Navbar y sidebar como superficies oscuras (en claro el navbar es verde de marca). */
+[data-bs-theme="dark"] .navbar-sigebi {
+  background-color: #12181f;
+  border-bottom: 1px solid var(--sigebi-border);
+}
+
+[data-bs-theme="dark"] .sidebar {
+  background-color: #12181f;
+  border-right-color: var(--sigebi-border);
+}
+
+[data-bs-theme="dark"] .sidebar .nav-link {
+  color: #c2ccd6;
+}
+
+[data-bs-theme="dark"] .sidebar .nav-link.active,
+[data-bs-theme="dark"] .sidebar .nav-link:hover {
+  background-color: rgba(47, 156, 114, 0.2);
+  color: #7fe6b0;
+}
+
+[data-bs-theme="dark"] .auth-shell {
+  background: linear-gradient(160deg, #0f141a, #12201a);
+}
+
+[data-bs-theme="dark"] .auth-card {
+  background: var(--sigebi-surface);
+  color: var(--sigebi-text);
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.45);
+}
+
+[data-bs-theme="dark"] .auth-card .brand,
+[data-bs-theme="dark"] .navbar-sigebi .navbar-brand {
+  color: #7fe6b0;
+}
+
+[data-bs-theme="dark"] .auth-card .brand-sub {
+  color: #94a3b8;
+}
+
+/* Utilidades de fondo claro que quedarían fuera del tema si no se remapean. */
+[data-bs-theme="dark"] .bg-white,
+[data-bs-theme="dark"] .bg-light {
+  background-color: var(--sigebi-surface) !important;
+}
+
+[data-bs-theme="dark"] .btn-light {
+  --bs-btn-bg: #273039;
+  --bs-btn-border-color: #313c46;
+  --bs-btn-color: #e6eaef;
+  --bs-btn-hover-bg: #313c46;
+  --bs-btn-hover-border-color: #3b4753;
+  --bs-btn-hover-color: #ffffff;
+}
+
+.theme-toggle {
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  background: transparent;
+  color: #fff;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+}
+
+.theme-toggle:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.auth-card .theme-toggle {
+  border-color: rgba(31, 111, 84, 0.35);
+  color: var(--sigebi-primary);
+  position: absolute;
+  top: 1.1rem;
+  right: 1.1rem;
+}
+
+[data-bs-theme="dark"] .auth-card .theme-toggle {
+  color: #6fe3a8;
+  border-color: rgba(111, 227, 168, 0.35);
+}
+
+/* ---------- Responsive: sidebar como panel deslizante en móvil ---------- */
+.navbar-toggle {
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  background: transparent;
+  color: #fff;
+  width: 34px;
+  height: 34px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+}
+
+.navbar-toggle:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.sidebar-overlay {
+  display: none;
+}
+
+@media (max-width: 991.98px) {
+  .sidebar {
+    position: fixed;
+    top: 56px;
+    left: 0;
+    bottom: 0;
+    width: 250px;
+    max-width: 82vw;
+    z-index: 1045;
+    overflow-y: auto;
+    transform: translateX(-100%);
+    transition: transform 0.22s ease;
+    box-shadow: 3px 0 16px rgba(0, 0, 0, 0.2);
+  }
+
+  .sidebar.abierto {
+    transform: translateX(0);
+  }
+
+  .sidebar-overlay.visible {
+    display: block;
+    position: fixed;
+    inset: 56px 0 0 0;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 1040;
+  }
+
+  main.flex-fill {
+    padding: 1.25rem !important;
+    min-width: 0;
+  }
+}
+
+@media (min-width: 992px) {
+  .navbar-toggle {
+    display: none;
+  }
+}
+
+/* ---------- Tabla que se convierte en tarjetas apiladas en teléfonos ----------
+   En pantallas < 576px, cada fila pasa a ser una tarjeta y cada celda muestra su
+   etiqueta (data-label) a la izquierda y el valor a la derecha, de modo que TODAS
+   las columnas (incluido el Valor) quedan visibles sin desplazamiento horizontal. */
+@media (max-width: 575.98px) {
+  .tabla-cards thead {
+    display: none;
+  }
+
+  .tabla-cards tbody,
+  .tabla-cards tr,
+  .tabla-cards td {
+    display: block;
+    width: 100%;
+  }
+
+  .tabla-cards tr {
+    margin-bottom: 0.75rem;
+    border: 1px solid var(--bs-border-color, #e2e8f0);
+    border-radius: 8px;
+    padding: 0.5rem 0.85rem;
+    background: var(--bs-card-bg, #fff);
+  }
+
+  /* Etiqueta encima del valor: así una celda con varios datos (p. ej. espacio +
+     responsables) se apila de forma legible en lugar de amontonarse en una línea. */
+  .tabla-cards td,
+  .tabla-cards td.text-end {
+    border: none;
+    padding: 0.3rem 0;
+    text-align: left !important;
+  }
+
+  .tabla-cards td[data-label]::before {
+    content: attr(data-label);
+    display: block;
+    text-align: left;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    color: var(--bs-secondary-color, #6b7280);
+    margin-bottom: 0.1rem;
+  }
+}

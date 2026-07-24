@@ -1,0 +1,172 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Controllers;
+
+use App\Core\Auth;
+use App\Core\Csrf;
+use App\Core\Request;
+use App\Core\Session;
+use App\Core\Url;
+use App\Core\View;
+use App\Helpers\Uploader;
+use App\Models\Asignacion;
+use App\Models\Baja;
+use App\Models\Bien;
+
+final class BajaController
+{
+    public function formulario(string $token): void
+    {
+        $bien = $this->bienAccesible($token);
+
+        View::layout('partials/layout', 'bajas/form', [
+            'title' => 'Reportar baja',
+            'bien' => $bien,
+            'token' => $token,
+            'asignacion' => Asignacion::activaDe((int) $bien['id']),
+            'error' => Session::pullFlash('error'),
+        ]);
+    }
+
+    public function guardar(string $token): void
+    {
+        $bien = $this->bienAccesible($token);
+
+        $request = new Request();
+
+        if (!Csrf::verify((string) $request->input('_csrf'))) {
+            Session::flash('error', 'Tu sesión expiró, intenta de nuevo.');
+            header('Location: ' . Url::to("/qr/{$token}/baja"));
+            exit;
+        }
+
+        $estadoReportado = trim((string) $request->input('estado_reportado'));
+        $ubicacion = trim((string) $request->input('ubicacion')) ?: null;
+        $descripcion = trim((string) $request->input('descripcion'));
+
+        if ($estadoReportado === '' || $descripcion === '') {
+            Session::flash('error', 'Describe el estado del bien y el motivo de la baja.');
+            header('Location: ' . Url::to("/qr/{$token}/baja"));
+            exit;
+        }
+
+        $fotoPath = null;
+        try {
+            if ($archivo = $request->file('foto')) {
+                $fotoPath = Uploader::storeImage($archivo, 'bajas');
+            }
+        } catch (\RuntimeException $e) {
+            Session::flash('error', $e->getMessage());
+            header('Location: ' . Url::to("/qr/{$token}/baja"));
+            exit;
+        }
+
+        Baja::crear([
+            'bien_id' => $bien['id'],
+            'estado_reportado' => $estadoReportado,
+            'ubicacion' => $ubicacion,
+            'responsable_id' => Auth::id(),
+            'descripcion' => $descripcion,
+            'foto_path' => $fotoPath,
+        ]);
+
+        Session::flash('ok', 'Reporte de baja enviado. Queda pendiente de aprobación.');
+        header('Location: ' . Url::to("/qr/{$token}"));
+        exit;
+    }
+
+    private const POR_PAGINA = 50;
+
+    public function index(): void
+    {
+        $institucionId = Auth::esSuperusuario() ? null : Auth::institucionId();
+        $pagina = max(1, (int) ($_GET['pagina'] ?? 1));
+        $total = Baja::contarListado($institucionId);
+
+        View::layout('partials/layout', 'bajas/index', [
+            'title' => 'Bajas de bienes',
+            'bajas' => Baja::listar($institucionId, $pagina, self::POR_PAGINA),
+            'pagina' => $pagina,
+            'porPagina' => self::POR_PAGINA,
+            'total' => $total,
+            'totalPaginas' => (int) max(1, ceil($total / self::POR_PAGINA)),
+            'mensaje' => Session::pullFlash('ok'),
+        ]);
+    }
+
+    public function aprobar(string $id): void
+    {
+        $baja = $this->bajaAccesible((int) $id);
+        $this->verificarCsrf();
+
+        Baja::aprobar((int) $id);
+        Bien::marcarDadoDeBaja((int) $baja['bien_id']);
+
+        Session::flash('ok', 'Baja aprobada. El bien quedó marcado como dado de baja.');
+        header('Location: ' . Url::to('/bajas'));
+        exit;
+    }
+
+    public function rechazar(string $id): void
+    {
+        $this->bajaAccesible((int) $id);
+        $this->verificarCsrf();
+
+        Baja::eliminar((int) $id);
+
+        Session::flash('ok', 'Reporte de baja descartado.');
+        header('Location: ' . Url::to('/bajas'));
+        exit;
+    }
+
+    private function verificarCsrf(): void
+    {
+        $request = new Request();
+
+        if (!Csrf::verify((string) $request->input('_csrf'))) {
+            Session::flash('error', 'Tu sesión expiró, intenta de nuevo.');
+            header('Location: ' . Url::to('/bajas'));
+            exit;
+        }
+    }
+
+    private function bienAccesible(string $token): array
+    {
+        $bien = Bien::findPorToken($token);
+
+        if (!$bien) {
+            http_response_code(404);
+            View::render('errors/404');
+            exit;
+        }
+
+        if (!Auth::esSuperusuario() && (int) $bien['institucion_id'] !== Auth::institucionId()) {
+            http_response_code(403);
+            View::render('errors/403');
+            exit;
+        }
+
+        return $bien;
+    }
+
+    private function bajaAccesible(int $id): array
+    {
+        $baja = Baja::find($id);
+
+        if (!$baja) {
+            http_response_code(404);
+            View::render('errors/404');
+            exit;
+        }
+
+        if (!Auth::esSuperusuario() && (int) $baja['institucion_id'] !== Auth::institucionId()) {
+            http_response_code(403);
+            View::render('errors/403');
+            exit;
+        }
+
+        return $baja;
+    }
+}

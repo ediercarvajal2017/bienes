@@ -1,0 +1,52 @@
+<?php use App\Core\Url; ?>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <script>
+    (function () {
+        try {
+            var guardado = localStorage.getItem('sigebi-theme');
+            var tema = guardado || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            document.documentElement.setAttribute('data-bs-theme', tema);
+        } catch (e) {}
+    })();
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Iniciar sesión · SIGEBI</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="<?= Url::asset('/assets/css/app.css') ?>" rel="stylesheet">
+</head>
+<body>
+
+<div class="auth-shell">
+    <div class="auth-card position-relative">
+        <button type="button" id="btnTema" class="theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <i class="bi bi-moon-stars"></i>
+        </button>
+        <div class="brand"><i class="bi bi-tag-fill me-1"></i>SIGEBI</div>
+        <div class="brand-sub">Sistema de Gestión de Bienes Institucionales</div>
+
+        <?php if (!empty($error)): ?>
+            <div class="alert alert-danger py-2 small"><?= htmlspecialchars($error, ENT_QUOTES) ?></div>
+        <?php endif; ?>
+
+        <form method="post" action="<?= Url::to('/login') ?>">
+            <?= \App\Core\Csrf::field() ?>
+            <div class="mb-3">
+                <label class="form-label small">Correo institucional</label>
+                <input type="email" name="email" class="form-control" required autofocus>
+            </div>
+            <div class="mb-3">
+                <label class="form-label small">Contraseña</label>
+                <input type="password" name="password" class="form-control" required>
+            </div>
+            <button type="submit" class="btn btn-primary w-100">Ingresar</button>
+        </form>
+    </div>
+</div>
+
+<script src="<?= Url::asset('/assets/js/tema.js') ?>"></script>
+</body>
+</html>
