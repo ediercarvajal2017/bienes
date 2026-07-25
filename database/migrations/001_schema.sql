@@ -1,6 +1,3 @@
-CREATE DATABASE IF NOT EXISTS sigebi CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE sigebi;
-
 CREATE TABLE instituciones (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     codigo_dane VARCHAR(20) NOT NULL UNIQUE,
