@@ -4,6 +4,8 @@
 
 require __DIR__ . '/../../vendor/autoload.php';
 
+App\Core\Env::cargar();
+
 $dbConfig = require __DIR__ . '/../../config/database.php';
 
 $pdo = new PDO(
