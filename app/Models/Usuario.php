@@ -268,7 +268,7 @@ final class Usuario
         if (!$incluirSuperusuario) {
             $sql .= " WHERE nombre != 'superusuario'";
         }
-        $sql .= ' ORDER BY id';
+        $sql .= ' ORDER BY nombre';
 
         return Database::connection()->query($sql)->fetchAll();
     }

@@ -72,7 +72,7 @@ final class Espacio
     public static function listadoParaSelect(int $institucionId): array
     {
         $stmt = Database::connection()->prepare(
-            'SELECT id, nombre, codigo FROM espacios WHERE institucion_id = ? AND activo = 1 ORDER BY nombre'
+            'SELECT id, nombre, codigo FROM espacios WHERE institucion_id = ? AND activo = 1 ORDER BY codigo'
         );
         $stmt->execute([$institucionId]);
 
