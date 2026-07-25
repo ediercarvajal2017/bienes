@@ -54,7 +54,7 @@ final class CarteraController
         }
 
         try {
-            $archivoPath = Uploader::storeDocumento($_FILES['archivo'] ?? [], 'cartera');
+            $archivoPath = Uploader::storeExcel($_FILES['archivo'] ?? [], 'cartera');
             if ($archivoPath === null) {
                 Session::flash('error', 'Adjunta el archivo de la cartera enviada.');
                 header('Location: ' . Url::to('/cartera/enviar'));
@@ -128,7 +128,7 @@ final class CarteraController
 
         try {
             $archivoPath = $registro['archivo_path'];
-            $nuevoArchivo = Uploader::storeDocumento($_FILES['archivo'] ?? [], 'cartera');
+            $nuevoArchivo = Uploader::storeExcel($_FILES['archivo'] ?? [], 'cartera');
             if ($nuevoArchivo !== null) {
                 Evidencia::eliminarArchivoFisico($archivoPath);
                 $archivoPath = $nuevoArchivo;

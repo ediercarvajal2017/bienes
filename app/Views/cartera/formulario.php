@@ -56,8 +56,8 @@ use App\Core\Url;
             <input type="date" name="fecha_envio" class="form-control form-control-sm" required value="<?= date('Y-m-d') ?>">
         </div>
         <div class="col-md-6">
-            <label class="form-label small">Archivo adjunto (cartera)</label>
-            <input type="file" name="archivo" accept=".pdf,image/jpeg,image/png" class="form-control form-control-sm" required>
+            <label class="form-label small">Archivo adjunto (cartera, Excel)</label>
+            <input type="file" name="archivo" accept=".xlsx,.xls" class="form-control form-control-sm" required>
         </div>
 
         <div class="col-12">

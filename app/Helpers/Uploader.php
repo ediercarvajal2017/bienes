@@ -17,9 +17,22 @@ final class Uploader
         'image/png' => 'png',
     ];
 
+    /**
+     * Un .xlsx es, por dentro, un contenedor ZIP: según el servidor, mime_content_type()
+     * puede reportarlo como el tipo "oficial" de Excel o simplemente como application/zip.
+     * Por eso se exige también que la extensión del archivo sea .xlsx/.xls, para no aceptar
+     * cualquier .zip disfrazado.
+     */
+    private const EXCEL_PERMITIDOS = [
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' => 'xlsx',
+        'application/vnd.ms-excel' => 'xls',
+        'application/zip' => 'xlsx',
+    ];
+
     private const TAMANO_MAXIMO_IMAGEN = 4 * 1024 * 1024;
     private const TAMANO_MAXIMO_PDF = 8 * 1024 * 1024;
     private const TAMANO_MAXIMO_DOCUMENTO = 8 * 1024 * 1024;
+    private const TAMANO_MAXIMO_EXCEL = 8 * 1024 * 1024;
 
     /**
      * Valida y guarda una imagen (JPG/PNG). Devuelve la ruta relativa
@@ -72,6 +85,26 @@ final class Uploader
         }
 
         return self::mover($file, $subdir, self::DOCUMENTOS_PERMITIDOS[$mime]);
+    }
+
+    /**
+     * Valida y guarda un Excel (.xlsx o .xls) — usado por la cartera de bienes,
+     * que siempre se maneja en ese formato.
+     */
+    public static function storeExcel(array $file, string $subdir): ?string
+    {
+        $mime = self::validar($file, self::TAMANO_MAXIMO_EXCEL);
+        if ($mime === null) {
+            return null;
+        }
+
+        $extension = strtolower(pathinfo((string) ($file['name'] ?? ''), PATHINFO_EXTENSION));
+
+        if (!isset(self::EXCEL_PERMITIDOS[$mime]) || !in_array($extension, ['xlsx', 'xls'], true)) {
+            throw new \RuntimeException('El archivo debe ser un Excel (.xlsx o .xls).');
+        }
+
+        return self::mover($file, $subdir, $extension);
     }
 
     private static function validar(array $file, int $tamanoMaximo): ?string

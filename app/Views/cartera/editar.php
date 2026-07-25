@@ -36,8 +36,8 @@ use App\Core\Url;
         </a>
     </div>
     <div class="col-12">
-        <label class="form-label small">Reemplazar archivo (opcional)</label>
-        <input type="file" name="archivo" accept=".pdf,image/jpeg,image/png" class="form-control form-control-sm">
+        <label class="form-label small">Reemplazar archivo (opcional, Excel)</label>
+        <input type="file" name="archivo" accept=".xlsx,.xls" class="form-control form-control-sm">
     </div>
 
     <div class="col-12">
