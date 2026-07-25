@@ -106,6 +106,9 @@ $esActiva = static fn (string $prefijo): string => str_starts_with($rutaActual, 
 
             <?php if (Auth::esSuperusuario()): ?>
                 <a class="nav-link<?= $esActiva('/cargos') ?>" href="<?= Url::to('/cargos') ?>"><i class="bi bi-person-badge me-2"></i>Cargos</a>
+            <?php endif; ?>
+
+            <?php if (Auth::esSuperusuario() || Auth::tienePermiso('categorias.gestionar')): ?>
                 <a class="nav-link<?= $esActiva('/categorias') ?>" href="<?= Url::to('/categorias') ?>"><i class="bi bi-tags me-2"></i>Categorías</a>
             <?php endif; ?>
         </nav>

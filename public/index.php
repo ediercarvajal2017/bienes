@@ -205,11 +205,11 @@ $router->get('/reintegros/lotes/{id}/formato.xlsx', [ReintegroController::class,
     AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':asignaciones.crear',
 ]);
 
-$router->get('/categorias', [CategoriaController::class, 'index'], [AuthMiddleware::class, SuperusuarioMiddleware::class]);
-$router->post('/categorias', [CategoriaController::class, 'guardar'], [AuthMiddleware::class, SuperusuarioMiddleware::class]);
-$router->post('/categorias/{id}', [CategoriaController::class, 'actualizar'], [AuthMiddleware::class, SuperusuarioMiddleware::class]);
-$router->post('/categorias/{id}/estado', [CategoriaController::class, 'cambiarEstado'], [AuthMiddleware::class, SuperusuarioMiddleware::class]);
-$router->post('/categorias/{id}/eliminar', [CategoriaController::class, 'eliminar'], [AuthMiddleware::class, SuperusuarioMiddleware::class]);
+$router->get('/categorias', [CategoriaController::class, 'index'], [AuthMiddleware::class, PermissionMiddleware::class . ':categorias.gestionar']);
+$router->post('/categorias', [CategoriaController::class, 'guardar'], [AuthMiddleware::class, PermissionMiddleware::class . ':categorias.gestionar']);
+$router->post('/categorias/{id}', [CategoriaController::class, 'actualizar'], [AuthMiddleware::class, PermissionMiddleware::class . ':categorias.gestionar']);
+$router->post('/categorias/{id}/estado', [CategoriaController::class, 'cambiarEstado'], [AuthMiddleware::class, PermissionMiddleware::class . ':categorias.gestionar']);
+$router->post('/categorias/{id}/eliminar', [CategoriaController::class, 'eliminar'], [AuthMiddleware::class, PermissionMiddleware::class . ':categorias.gestionar']);
 
 // Códigos QR: vista e imagen públicas (sin sesión), pensadas para escanear una etiqueta física
 $router->get('/qr/{token}', [QrController::class, 'mostrar']);

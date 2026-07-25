@@ -59,6 +59,7 @@ $permisos = [
     'bajas.crear', 'bajas.aprobar',
     'reportes.generar', 'cargas.masivas', 'cartera.gestionar',
     'formatos_reintegro.gestionar', 'formatos_plaqueteo.gestionar', 'facturas_admin.gestionar',
+    'categorias.gestionar',
     'auditoria.ver',
 ];
 $permisoIds = [];
