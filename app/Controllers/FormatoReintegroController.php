@@ -37,6 +37,7 @@ final class FormatoReintegroController
 
         $institucionId = $this->institucionSeleccionada();
         $fechaReintegro = trim((string) $request->input('fecha_reintegro'));
+        $descripcion = trim((string) $request->input('descripcion')) ?: null;
 
         if ($institucionId === 0) {
             Session::flash('error', 'Selecciona una institución.');
@@ -61,6 +62,7 @@ final class FormatoReintegroController
             FormatoReintegro::create([
                 'institucion_id' => $institucionId,
                 'fecha_reintegro' => $fechaReintegro,
+                'descripcion' => $descripcion,
                 'archivo_path' => $archivoPath,
                 'registrado_por' => Auth::id(),
             ]);
@@ -112,6 +114,7 @@ final class FormatoReintegroController
         Evidencia::verificarAcceso($registro);
 
         $fechaReintegro = trim((string) $request->input('fecha_reintegro'));
+        $descripcion = trim((string) $request->input('descripcion')) ?: null;
 
         if ($fechaReintegro === '') {
             Session::flash('error', 'Indica la fecha del reintegro.');
@@ -129,6 +132,7 @@ final class FormatoReintegroController
 
             FormatoReintegro::actualizar($id, [
                 'fecha_reintegro' => $fechaReintegro,
+                'descripcion' => $descripcion,
                 'archivo_path' => $archivoPath,
             ]);
 

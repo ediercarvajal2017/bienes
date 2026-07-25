@@ -54,6 +54,10 @@ use App\Core\Url;
             <label class="form-label small">Archivo adjunto (PDF)</label>
             <input type="file" name="archivo" accept="application/pdf" class="form-control form-control-sm" required>
         </div>
+        <div class="col-12">
+            <label class="form-label small">Descripción (opcional)</label>
+            <input type="text" name="descripcion" class="form-control form-control-sm" placeholder="Ej. Plaqueteo de equipos nuevos del aula 101">
+        </div>
 
         <div class="col-12">
             <button type="submit" class="btn btn-primary">

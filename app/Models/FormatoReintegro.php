@@ -15,8 +15,8 @@ final class FormatoReintegro
     public static function create(array $datos): int
     {
         $stmt = Database::connection()->prepare(
-            'INSERT INTO formatos_reintegro (institucion_id, fecha_reintegro, archivo_path, registrado_por)
-             VALUES (:institucion_id, :fecha_reintegro, :archivo_path, :registrado_por)'
+            'INSERT INTO formatos_reintegro (institucion_id, fecha_reintegro, descripcion, archivo_path, registrado_por)
+             VALUES (:institucion_id, :fecha_reintegro, :descripcion, :archivo_path, :registrado_por)'
         );
         $stmt->execute($datos);
 
@@ -35,7 +35,7 @@ final class FormatoReintegro
     public static function actualizar(int $id, array $datos): void
     {
         $stmt = Database::connection()->prepare(
-            'UPDATE formatos_reintegro SET fecha_reintegro = :fecha_reintegro, archivo_path = :archivo_path WHERE id = :id'
+            'UPDATE formatos_reintegro SET fecha_reintegro = :fecha_reintegro, descripcion = :descripcion, archivo_path = :archivo_path WHERE id = :id'
         );
         $stmt->execute($datos + ['id' => $id]);
     }

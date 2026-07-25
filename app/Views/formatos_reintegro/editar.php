@@ -29,6 +29,11 @@ use App\Core\Url;
         <label class="form-label small">Reemplazar archivo (opcional, PDF)</label>
         <input type="file" name="archivo" accept="application/pdf" class="form-control form-control-sm">
     </div>
+    <div class="col-12">
+        <label class="form-label small">Descripción (opcional)</label>
+        <input type="text" name="descripcion" class="form-control form-control-sm"
+               value="<?= htmlspecialchars($registro['descripcion'] ?? '', ENT_QUOTES) ?>">
+    </div>
 
     <div class="col-12">
         <button type="submit" class="btn btn-primary">

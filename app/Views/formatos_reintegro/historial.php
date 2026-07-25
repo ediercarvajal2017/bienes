@@ -20,6 +20,7 @@ use App\Core\View;
             <thead>
             <tr>
                 <th>Fecha del reintegro</th>
+                <th>Descripción</th>
                 <?php if (Auth::esSuperusuario()): ?><th>Institución</th><?php endif; ?>
                 <th>Registrado por</th>
                 <th>Registrado el</th>
@@ -30,6 +31,7 @@ use App\Core\View;
             <?php foreach ($formatos as $f): ?>
                 <tr>
                     <td class="mono" data-label="Fecha del reintegro"><?= htmlspecialchars($f['fecha_reintegro'], ENT_QUOTES) ?></td>
+                    <td class="text-muted small" data-label="Descripción"><?= !empty($f['descripcion']) ? htmlspecialchars($f['descripcion'], ENT_QUOTES) : '—' ?></td>
                     <?php if (Auth::esSuperusuario()): ?><td class="text-muted small" data-label="Institución"><?= htmlspecialchars($f['institucion_nombre'], ENT_QUOTES) ?></td><?php endif; ?>
                     <td class="text-muted small" data-label="Registrado por">
                         <?= !empty($f['registrado_por_nombres']) ? htmlspecialchars($f['registrado_por_nombres'] . ' ' . $f['registrado_por_apellidos'], ENT_QUOTES) : '—' ?>

@@ -15,8 +15,8 @@ final class FormatoPlaqueteo
     public static function create(array $datos): int
     {
         $stmt = Database::connection()->prepare(
-            'INSERT INTO formatos_plaqueteo (institucion_id, fecha_plaqueteo, funcionario_asistio, archivo_path, registrado_por)
-             VALUES (:institucion_id, :fecha_plaqueteo, :funcionario_asistio, :archivo_path, :registrado_por)'
+            'INSERT INTO formatos_plaqueteo (institucion_id, fecha_plaqueteo, funcionario_asistio, descripcion, archivo_path, registrado_por)
+             VALUES (:institucion_id, :fecha_plaqueteo, :funcionario_asistio, :descripcion, :archivo_path, :registrado_por)'
         );
         $stmt->execute($datos);
 
@@ -36,7 +36,8 @@ final class FormatoPlaqueteo
     {
         $stmt = Database::connection()->prepare(
             'UPDATE formatos_plaqueteo
-                SET fecha_plaqueteo = :fecha_plaqueteo, funcionario_asistio = :funcionario_asistio, archivo_path = :archivo_path
+                SET fecha_plaqueteo = :fecha_plaqueteo, funcionario_asistio = :funcionario_asistio,
+                    descripcion = :descripcion, archivo_path = :archivo_path
               WHERE id = :id'
         );
         $stmt->execute($datos + ['id' => $id]);

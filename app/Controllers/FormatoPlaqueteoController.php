@@ -38,6 +38,7 @@ final class FormatoPlaqueteoController
         $institucionId = $this->institucionSeleccionada();
         $fechaPlaqueteo = trim((string) $request->input('fecha_plaqueteo'));
         $funcionario = trim((string) $request->input('funcionario_asistio'));
+        $descripcion = trim((string) $request->input('descripcion')) ?: null;
 
         if ($institucionId === 0) {
             Session::flash('error', 'Selecciona una institución.');
@@ -63,6 +64,7 @@ final class FormatoPlaqueteoController
                 'institucion_id' => $institucionId,
                 'fecha_plaqueteo' => $fechaPlaqueteo,
                 'funcionario_asistio' => $funcionario,
+                'descripcion' => $descripcion,
                 'archivo_path' => $archivoPath,
                 'registrado_por' => Auth::id(),
             ]);
@@ -115,6 +117,7 @@ final class FormatoPlaqueteoController
 
         $fechaPlaqueteo = trim((string) $request->input('fecha_plaqueteo'));
         $funcionario = trim((string) $request->input('funcionario_asistio'));
+        $descripcion = trim((string) $request->input('descripcion')) ?: null;
 
         if ($fechaPlaqueteo === '' || $funcionario === '') {
             Session::flash('error', 'Indica la fecha del plaqueteo y el funcionario que asistió.');
@@ -133,6 +136,7 @@ final class FormatoPlaqueteoController
             FormatoPlaqueteo::actualizar($id, [
                 'fecha_plaqueteo' => $fechaPlaqueteo,
                 'funcionario_asistio' => $funcionario,
+                'descripcion' => $descripcion,
                 'archivo_path' => $archivoPath,
             ]);
 
