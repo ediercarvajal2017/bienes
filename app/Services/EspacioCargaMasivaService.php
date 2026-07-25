@@ -23,6 +23,7 @@ final class EspacioCargaMasivaService
     {
         $sheet = IOFactory::load($rutaArchivo)->getActiveSheet();
         $filas = [];
+        $codigosVistos = [];
 
         $ultimaFila = $sheet->getHighestDataRow();
 
@@ -42,6 +43,16 @@ final class EspacioCargaMasivaService
                 ];
                 continue;
             }
+
+            if (isset($codigosVistos[$codigo])) {
+                $filas[] = [
+                    'fila' => $numeroFila, 'tipo' => 'invalido',
+                    'motivo' => "Número de espacio repetido dentro del mismo archivo (ya aparece en la fila {$codigosVistos[$codigo]})",
+                    'codigo' => $codigo, 'nombre' => $nombre,
+                ];
+                continue;
+            }
+            $codigosVistos[$codigo] = $numeroFila;
 
             $documentos = array_filter(array_map('trim', explode(',', $documentosTexto)), fn ($d) => $d !== '');
             if (empty($documentos)) {
@@ -95,27 +106,44 @@ final class EspacioCargaMasivaService
         return $filas;
     }
 
-    public static function aplicar(array $filas, int $institucionId): void
+    /**
+     * Aplica los cambios a la BD. Devuelve cuántas filas se omitieron por un choque de
+     * código detectado justo al escribir (p. ej. si alguien creó ese mismo número de
+     * espacio por otra vía entre que se analizó el archivo y se confirmó la carga) — para
+     * que ninguna fila conflictiva tumbe el resto de la operación con un error fatal.
+     */
+    public static function aplicar(array $filas, int $institucionId): int
     {
-        foreach ($filas as $fila) {
-            if ($fila['tipo'] === 'nuevo') {
-                $id = Espacio::create([
-                    'institucion_id' => $institucionId,
-                    'nombre' => $fila['datos']['nombre'],
-                    'codigo' => $fila['datos']['codigo'],
-                ]);
-                Espacio::sincronizarResponsables($id, array_column($fila['datos']['responsables'], 'id'));
-                continue;
-            }
+        $omitidas = 0;
 
-            if ($fila['tipo'] === 'modificado') {
-                Espacio::update($fila['espacio_id'], [
-                    'nombre' => $fila['datos']['nombre'],
-                    'codigo' => $fila['datos']['codigo'],
-                ]);
-                Espacio::sincronizarResponsables($fila['espacio_id'], array_column($fila['datos']['responsables'], 'id'));
+        foreach ($filas as $fila) {
+            try {
+                if ($fila['tipo'] === 'nuevo') {
+                    $id = Espacio::create([
+                        'institucion_id' => $institucionId,
+                        'nombre' => $fila['datos']['nombre'],
+                        'codigo' => $fila['datos']['codigo'],
+                    ]);
+                    Espacio::sincronizarResponsables($id, array_column($fila['datos']['responsables'], 'id'));
+                    continue;
+                }
+
+                if ($fila['tipo'] === 'modificado') {
+                    Espacio::update($fila['espacio_id'], [
+                        'nombre' => $fila['datos']['nombre'],
+                        'codigo' => $fila['datos']['codigo'],
+                    ]);
+                    Espacio::sincronizarResponsables($fila['espacio_id'], array_column($fila['datos']['responsables'], 'id'));
+                }
+            } catch (\PDOException $e) {
+                if ($e->getCode() !== '23000') {
+                    throw $e;
+                }
+                $omitidas++;
             }
         }
+
+        return $omitidas;
     }
 
     public static function enviarPlantilla(): void

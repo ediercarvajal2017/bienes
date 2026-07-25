@@ -121,10 +121,12 @@ final class CargaMasivaController
         }
 
         $filas = json_decode($carga['resultado_diff_json'], true) ?? [];
-        CargaMasivaService::aplicar($filas, (int) $carga['institucion_id'], Auth::id());
+        $omitidas = CargaMasivaService::aplicar($filas, (int) $carga['institucion_id'], Auth::id());
         CargaMasiva::marcarAplicada($id);
 
-        Session::flash('ok', 'Carga masiva aplicada correctamente.');
+        Session::flash('ok', $omitidas > 0
+            ? "Carga masiva aplicada. {$omitidas} fila(s) se omitieron por un choque de código detectado al guardar."
+            : 'Carga masiva aplicada correctamente.');
         header('Location: ' . Url::to("/cargas-masivas/{$id}"));
         exit;
     }

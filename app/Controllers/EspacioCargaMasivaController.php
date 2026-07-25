@@ -122,10 +122,12 @@ final class EspacioCargaMasivaController
         }
 
         $filas = json_decode($carga['resultado_diff_json'], true) ?? [];
-        EspacioCargaMasivaService::aplicar($filas, (int) $carga['institucion_id']);
+        $omitidas = EspacioCargaMasivaService::aplicar($filas, (int) $carga['institucion_id']);
         CargaMasiva::marcarAplicada($id);
 
-        Session::flash('ok', 'Carga masiva aplicada correctamente.');
+        Session::flash('ok', $omitidas > 0
+            ? "Carga masiva aplicada. {$omitidas} fila(s) se omitieron por un choque de número de espacio detectado al guardar."
+            : 'Carga masiva aplicada correctamente.');
         header('Location: ' . Url::to("/espacios/carga-masiva/{$id}"));
         exit;
     }

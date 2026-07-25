@@ -22,6 +22,7 @@ final class CargaMasivaService
     {
         $sheet = IOFactory::load($rutaArchivo)->getActiveSheet();
         $filas = [];
+        $codigosVistos = [];
 
         $ultimaFila = $sheet->getHighestDataRow();
 
@@ -41,6 +42,16 @@ final class CargaMasivaService
                 ];
                 continue;
             }
+
+            if (isset($codigosVistos[$codigo])) {
+                $filas[] = [
+                    'fila' => $numeroFila, 'tipo' => 'invalido',
+                    'motivo' => "Código repetido dentro del mismo archivo (ya aparece en la fila {$codigosVistos[$codigo]})",
+                    'codigo' => $codigo, 'descripcion' => $descripcion,
+                ];
+                continue;
+            }
+            $codigosVistos[$codigo] = $numeroFila;
 
             $fecha = self::leerFecha($sheet->getCell("D{$numeroFila}"));
             if ($fecha === null) {
@@ -78,39 +89,56 @@ final class CargaMasivaService
         return $filas;
     }
 
-    public static function aplicar(array $filas, int $institucionId, int $usuarioId): void
+    /**
+     * Aplica los cambios a la BD. Devuelve cuántas filas se omitieron por un choque de
+     * código detectado justo al escribir (p. ej. si alguien creó ese mismo código por otra
+     * vía entre que se analizó el archivo y se confirmó la carga) — para que ninguna fila
+     * conflictiva tumbe el resto de la operación con un error fatal.
+     */
+    public static function aplicar(array $filas, int $institucionId, int $usuarioId): int
     {
-        foreach ($filas as $fila) {
-            if ($fila['tipo'] === 'nuevo') {
-                Bien::create([
-                    'institucion_id' => $institucionId,
-                    'codigo_identificacion' => $fila['datos']['codigo_identificacion'],
-                    'descripcion' => $fila['datos']['descripcion'],
-                    'marca' => $fila['datos']['marca'],
-                    'categoria_id' => null,
-                    'fecha_ingreso' => $fila['datos']['fecha_ingreso'],
-                    'valor' => $fila['datos']['valor'],
-                    'tiene_factura' => 0,
-                    'estado' => 'activo',
-                    'created_by' => $usuarioId,
-                ]);
-                continue;
-            }
+        $omitidas = 0;
 
-            if ($fila['tipo'] === 'modificado') {
-                $bien = Bien::find($fila['bien_id']);
-                Bien::update($fila['bien_id'], [
-                    'codigo_identificacion' => $fila['datos']['codigo_identificacion'],
-                    'descripcion' => $fila['datos']['descripcion'],
-                    'marca' => $fila['datos']['marca'],
-                    'categoria_id' => $bien['categoria_id'],
-                    'fecha_ingreso' => $fila['datos']['fecha_ingreso'],
-                    'valor' => $fila['datos']['valor'],
-                    'tiene_factura' => $bien['tiene_factura'],
-                    'estado' => $bien['estado'],
-                ]);
+        foreach ($filas as $fila) {
+            try {
+                if ($fila['tipo'] === 'nuevo') {
+                    Bien::create([
+                        'institucion_id' => $institucionId,
+                        'codigo_identificacion' => $fila['datos']['codigo_identificacion'],
+                        'descripcion' => $fila['datos']['descripcion'],
+                        'marca' => $fila['datos']['marca'],
+                        'categoria_id' => null,
+                        'fecha_ingreso' => $fila['datos']['fecha_ingreso'],
+                        'valor' => $fila['datos']['valor'],
+                        'tiene_factura' => 0,
+                        'estado' => 'activo',
+                        'created_by' => $usuarioId,
+                    ]);
+                    continue;
+                }
+
+                if ($fila['tipo'] === 'modificado') {
+                    $bien = Bien::find($fila['bien_id']);
+                    Bien::update($fila['bien_id'], [
+                        'codigo_identificacion' => $fila['datos']['codigo_identificacion'],
+                        'descripcion' => $fila['datos']['descripcion'],
+                        'marca' => $fila['datos']['marca'],
+                        'categoria_id' => $bien['categoria_id'],
+                        'fecha_ingreso' => $fila['datos']['fecha_ingreso'],
+                        'valor' => $fila['datos']['valor'],
+                        'tiene_factura' => $bien['tiene_factura'],
+                        'estado' => $bien['estado'],
+                    ]);
+                }
+            } catch (\PDOException $e) {
+                if ($e->getCode() !== '23000') {
+                    throw $e;
+                }
+                $omitidas++;
             }
         }
+
+        return $omitidas;
     }
 
     public static function enviarPlantilla(): void
