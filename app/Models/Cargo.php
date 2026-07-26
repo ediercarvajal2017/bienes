@@ -26,6 +26,14 @@ final class Cargo
         return $stmt->fetch() ?: null;
     }
 
+    public static function findByNombre(string $nombre): ?array
+    {
+        $stmt = Database::connection()->prepare('SELECT * FROM cargos WHERE nombre = ? AND activo = 1');
+        $stmt->execute([$nombre]);
+
+        return $stmt->fetch() ?: null;
+    }
+
     public static function create(string $nombre): int
     {
         $stmt = Database::connection()->prepare('INSERT INTO cargos (nombre) VALUES (?)');

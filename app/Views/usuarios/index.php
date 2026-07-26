@@ -9,9 +9,14 @@ use App\Core\View;
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
     <h1 class="h4 mb-0">Usuarios</h1>
     <?php if (Auth::esSuperusuario() || Auth::tienePermiso('usuarios.crear')): ?>
-        <a href="<?= Url::to('/usuarios/crear') ?>" class="btn btn-primary btn-sm">
-            <i class="bi bi-plus-lg me-1"></i>Nuevo usuario
-        </a>
+        <div class="d-flex gap-2">
+            <a href="<?= Url::to('/usuarios/carga-masiva') ?>" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-file-earmark-excel me-1"></i>Carga masiva
+            </a>
+            <a href="<?= Url::to('/usuarios/crear') ?>" class="btn btn-primary btn-sm">
+                <i class="bi bi-plus-lg me-1"></i>Nuevo usuario
+            </a>
+        </div>
     <?php endif; ?>
 </div>
 

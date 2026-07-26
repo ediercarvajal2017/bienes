@@ -44,6 +44,7 @@ use App\Controllers\QrController;
 use App\Controllers\QrMasivoController;
 use App\Controllers\ReintegroController;
 use App\Controllers\ReporteController;
+use App\Controllers\UsuarioCargaMasivaController;
 use App\Controllers\UsuarioController;
 use App\Core\Request;
 use App\Core\Router;
@@ -104,6 +105,23 @@ $router->get('/usuarios/crear', [UsuarioController::class, 'crear'], [
 $router->post('/usuarios', [UsuarioController::class, 'guardar'], [
     AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':usuarios.crear',
 ]);
+
+$router->get('/usuarios/carga-masiva', [UsuarioCargaMasivaController::class, 'index'], [
+    AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':usuarios.crear',
+]);
+$router->get('/usuarios/carga-masiva/plantilla.xlsx', [UsuarioCargaMasivaController::class, 'plantilla'], [
+    AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':usuarios.crear',
+]);
+$router->post('/usuarios/carga-masiva/subir', [UsuarioCargaMasivaController::class, 'subir'], [
+    AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':usuarios.crear',
+]);
+$router->get('/usuarios/carga-masiva/{id}', [UsuarioCargaMasivaController::class, 'mostrar'], [
+    AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':usuarios.crear',
+]);
+$router->post('/usuarios/carga-masiva/{id}/confirmar', [UsuarioCargaMasivaController::class, 'confirmar'], [
+    AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':usuarios.crear',
+]);
+
 $router->get('/usuarios/{id}/editar', [UsuarioController::class, 'editar'], [
     AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':usuarios.editar',
 ]);
