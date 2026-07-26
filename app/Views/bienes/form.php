@@ -3,6 +3,7 @@
 use App\Core\Auth;
 use App\Core\Csrf;
 use App\Core\Url;
+use App\Core\View;
 
 $esEdicion = $bien !== null;
 $puedeEditar = Auth::esSuperusuario() || Auth::tienePermiso('bienes.editar') || (!$esEdicion && Auth::tienePermiso('bienes.crear'));
@@ -114,26 +115,15 @@ $puedeEditar = Auth::esSuperusuario() || Auth::tienePermiso('bienes.editar') || 
     </div>
 
     <div class="col-md-6">
-        <label class="form-label small d-block">Fotografía del bien</label>
-        <?php if (!empty($bien['foto_path'])): ?>
-            <img src="<?= Url::to('/archivos/' . $bien['foto_path']) ?>" class="mb-2 d-block" style="height:72px;border-radius:4px;">
-        <?php endif; ?>
         <?php if ($puedeEditar): ?>
-            <div class="d-flex gap-2 flex-wrap">
-                <input type="file" name="foto" id="inputFoto" accept="image/jpeg,image/png" class="form-control" style="max-width: 220px;">
-                <button type="button" id="btnTomarFoto" class="btn btn-sm btn-outline-secondary text-nowrap">
-                    <i class="bi bi-camera me-1"></i>Tomar foto
-                </button>
-            </div>
-            <div id="camaraContenedor" class="mt-2 d-none" style="max-width: 320px;">
-                <video id="videoCamara" autoplay playsinline muted class="w-100 rounded border bg-dark"></video>
-                <div class="d-flex gap-2 mt-2">
-                    <button type="button" id="btnCapturar" class="btn btn-sm btn-primary">Capturar</button>
-                    <button type="button" id="btnCancelarCamara" class="btn btn-sm btn-outline-secondary">Cancelar</button>
-                </div>
-            </div>
-            <canvas id="canvasCamara" class="d-none"></canvas>
-            <img id="previewCaptura" class="mt-2 d-none" style="height:72px;border-radius:4px;" alt="Foto capturada">
+            <?php View::render('partials/campo_foto', [
+                'nombreCampo' => 'foto',
+                'etiqueta' => 'Fotografía del bien',
+                'fotoActualUrl' => !empty($bien['foto_path']) ? Url::to('/archivos/' . $bien['foto_path']) : null,
+            ]); ?>
+        <?php elseif (!empty($bien['foto_path'])): ?>
+            <label class="form-label small d-block">Fotografía del bien</label>
+            <img src="<?= Url::to('/archivos/' . $bien['foto_path']) ?>" class="mb-2 d-block" style="height:72px;border-radius:4px;">
         <?php endif; ?>
     </div>
     <div class="col-md-6<?= !empty($bien['tiene_factura']) ? '' : ' d-none' ?>" id="contenedorFactura">
@@ -164,65 +154,6 @@ $puedeEditar = Auth::esSuperusuario() || Auth::tienePermiso('bienes.editar') || 
         checkFactura.addEventListener('change', function () {
             contenedorFactura.classList.toggle('d-none', !checkFactura.checked);
         });
-    }
-})();
-
-(function () {
-    const btnTomar = document.getElementById('btnTomarFoto');
-    if (!btnTomar) { return; }
-
-    const inputFoto = document.getElementById('inputFoto');
-    const contenedor = document.getElementById('camaraContenedor');
-    const video = document.getElementById('videoCamara');
-    const canvas = document.getElementById('canvasCamara');
-    const btnCapturar = document.getElementById('btnCapturar');
-    const btnCancelar = document.getElementById('btnCancelarCamara');
-    const preview = document.getElementById('previewCaptura');
-    let stream = null;
-
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        btnTomar.remove();
-        return;
-    }
-
-    btnTomar.addEventListener('click', async function () {
-        try {
-            stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-            video.srcObject = stream;
-            contenedor.classList.remove('d-none');
-        } catch (e) {
-            alert('No se pudo acceder a la cámara: ' + e.message);
-        }
-    });
-
-    btnCancelar.addEventListener('click', detenerCamara);
-
-    btnCapturar.addEventListener('click', function () {
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        canvas.getContext('2d').drawImage(video, 0, 0);
-
-        canvas.toBlob(function (blob) {
-            if (!blob) { return; }
-
-            const archivo = new File([blob], 'foto-' + Date.now() + '.jpg', { type: 'image/jpeg' });
-            const lista = new DataTransfer();
-            lista.items.add(archivo);
-            inputFoto.files = lista.files;
-
-            preview.src = URL.createObjectURL(blob);
-            preview.classList.remove('d-none');
-
-            detenerCamara();
-        }, 'image/jpeg', 0.9);
-    });
-
-    function detenerCamara() {
-        if (stream) {
-            stream.getTracks().forEach(function (t) { t.stop(); });
-            stream = null;
-        }
-        contenedor.classList.add('d-none');
     }
 })();
 </script>

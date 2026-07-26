@@ -3,6 +3,7 @@
 use App\Core\Auth;
 use App\Core\Csrf;
 use App\Core\Url;
+use App\Core\View;
 
 $esEdicion = $usuario !== null;
 ?>
@@ -83,11 +84,11 @@ $esEdicion = $usuario !== null;
     </div>
 
     <div class="col-12">
-        <label class="form-label small d-block">Fotografía</label>
-        <?php if (!empty($usuario['foto_path'])): ?>
-            <img src="<?= Url::to('/archivos/' . $usuario['foto_path']) ?>" class="rounded-circle mb-2 d-block" style="width:64px;height:64px;object-fit:cover;">
-        <?php endif; ?>
-        <input type="file" name="foto" accept="image/jpeg,image/png" class="form-control">
+        <?php View::render('partials/campo_foto', [
+            'nombreCampo' => 'foto',
+            'etiqueta' => 'Fotografía',
+            'fotoActualUrl' => !empty($usuario['foto_path']) ? Url::to('/archivos/' . $usuario['foto_path']) : null,
+        ]); ?>
     </div>
 
     <div class="col-12">

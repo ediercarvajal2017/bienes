@@ -120,6 +120,7 @@ $esActiva = static fn (string $prefijo): string => str_starts_with($rutaActual, 
 </div>
 
 <script src="<?= Url::asset('/assets/js/tema.js') ?>"></script>
+<script src="<?= Url::asset('/assets/js/camara.js') ?>"></script>
 <script>
 (function () {
     var boton = document.getElementById('btnMenu');

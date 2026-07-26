@@ -3,6 +3,7 @@
 use App\Core\Auth;
 use App\Core\Csrf;
 use App\Core\Url;
+use App\Core\View;
 
 ?>
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
@@ -46,9 +47,14 @@ use App\Core\Url;
             <label class="form-label small">Fecha de la factura</label>
             <input type="date" name="fecha_factura" class="form-control form-control-sm" required value="<?= date('Y-m-d') ?>">
         </div>
-        <div class="col-md-6">
-            <label class="form-label small">Archivo adjunto</label>
-            <input type="file" name="archivo" accept=".pdf,image/jpeg,image/png" class="form-control form-control-sm" required>
+        <div class="col-12">
+            <?php View::render('partials/campo_foto', [
+                'nombreCampo' => 'archivo',
+                'etiqueta' => 'Archivo adjunto (PDF o foto)',
+                'fotoActualUrl' => null,
+                'accept' => '.pdf,image/jpeg,image/png',
+                'required' => true,
+            ]); ?>
         </div>
         <div class="col-12">
             <label class="form-label small">Descripción breve</label>

@@ -2,6 +2,7 @@
 
 use App\Core\Csrf;
 use App\Core\Url;
+use App\Core\View;
 
 ?>
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
@@ -31,8 +32,12 @@ use App\Core\Url;
                value="<?= htmlspecialchars($registro['descripcion'], ENT_QUOTES) ?>">
     </div>
     <div class="col-12">
-        <label class="form-label small">Reemplazar archivo (opcional)</label>
-        <input type="file" name="archivo" accept=".pdf,image/jpeg,image/png" class="form-control form-control-sm">
+        <?php View::render('partials/campo_foto', [
+            'nombreCampo' => 'archivo',
+            'etiqueta' => 'Reemplazar archivo (opcional, PDF o foto)',
+            'fotoActualUrl' => null,
+            'accept' => '.pdf,image/jpeg,image/png',
+        ]); ?>
     </div>
 
     <div class="col-12">
