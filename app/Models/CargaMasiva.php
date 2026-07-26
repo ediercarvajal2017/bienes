@@ -9,9 +9,9 @@ use App\Helpers\Paginador;
 
 final class CargaMasiva
 {
-    public static function listar(?int $institucionId = null, string $tipo = 'bienes', int $pagina = 1, int $porPagina = 50): array
+    public static function listar(?int $institucionId = null, string $tipo = 'bienes', ?string $busqueda = null, int $pagina = 1, int $porPagina = 50): array
     {
-        [$whereSql, $params] = self::condiciones($institucionId, $tipo);
+        [$whereSql, $params] = self::condiciones($institucionId, $tipo, $busqueda);
 
         $sql = 'SELECT cm.*, u.nombres, u.apellidos
                 FROM cargas_masivas cm
@@ -26,11 +26,14 @@ final class CargaMasiva
         return $stmt->fetchAll();
     }
 
-    public static function contarListado(?int $institucionId = null, string $tipo = 'bienes'): int
+    public static function contarListado(?int $institucionId = null, string $tipo = 'bienes', ?string $busqueda = null): int
     {
-        [$whereSql, $params] = self::condiciones($institucionId, $tipo);
+        [$whereSql, $params] = self::condiciones($institucionId, $tipo, $busqueda);
 
-        $sql = 'SELECT COUNT(*) FROM cargas_masivas cm' . $whereSql;
+        $sql = 'SELECT COUNT(*)
+                FROM cargas_masivas cm
+                JOIN usuarios u ON u.id = cm.usuario_id'
+               . $whereSql;
 
         $stmt = Database::connection()->prepare($sql);
         $stmt->execute($params);
@@ -38,7 +41,10 @@ final class CargaMasiva
         return (int) $stmt->fetchColumn();
     }
 
-    private static function condiciones(?int $institucionId, string $tipo): array
+    /**
+     * Busca por quién la subió, la fecha o el estado (aplicada/pendiente).
+     */
+    private static function condiciones(?int $institucionId, string $tipo, ?string $busqueda): array
     {
         $condiciones = ['cm.tipo = ?'];
         $params = [$tipo];
@@ -46,6 +52,14 @@ final class CargaMasiva
         if ($institucionId !== null) {
             $condiciones[] = 'cm.institucion_id = ?';
             $params[] = $institucionId;
+        }
+
+        if ($busqueda !== null && $busqueda !== '') {
+            $termino = '%' . $busqueda . '%';
+            $condiciones[] = "(u.nombres LIKE ? OR u.apellidos LIKE ?
+                OR DATE_FORMAT(cm.created_at, '%Y-%m-%d %H:%i') LIKE ?
+                OR (cm.aplicada = 1 AND 'aplicada' LIKE ?) OR (cm.aplicada = 0 AND 'pendiente' LIKE ?))";
+            array_push($params, $termino, $termino, $termino, $termino, $termino);
         }
 
         return [' WHERE ' . implode(' AND ', $condiciones), $params];

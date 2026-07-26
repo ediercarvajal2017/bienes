@@ -25,7 +25,7 @@ final class EspacioCargaMasivaController
 
         View::layout('partials/layout', 'espacios/carga_index', [
             'title' => 'Carga masiva de espacios',
-            'cargas' => CargaMasiva::listar($institucionId, 'espacios', $pagina, self::POR_PAGINA),
+            'cargas' => CargaMasiva::listar($institucionId, 'espacios', null, $pagina, self::POR_PAGINA),
             'pagina' => $pagina,
             'porPagina' => self::POR_PAGINA,
             'total' => $total,

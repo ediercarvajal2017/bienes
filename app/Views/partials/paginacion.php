@@ -1,19 +1,26 @@
 <?php
 /**
- * Partial reutilizable para el pie de tabla paginada. El llamador debe pasar:
+ * Partial reutilizable para el pie (o cabecera) de una tabla paginada. El llamador debe pasar:
  * - $pagina, $porPagina, $total, $totalPaginas
  * - $urlBase: URL ya resuelta con Url::to() e incluyendo cualquier query string
- *   propio de la pantalla (búsqueda, institución, etc.) EXCEPTO 'pagina'.
- * - $opcionesPorPagina (opcional): array de enteros (ej. [10,25,50,100]). Si se pasa,
+ *   propio de la pantalla (búsqueda, institución, etc.) EXCEPTO 'pagina'/'porPagina'.
+ * - $opcionesPorPagina (opcional): array de enteros (ej. [10,25,50,100,0]). Si se pasa,
  *   se muestra un selector "Mostrar N por página" que recarga con ?porPagina=N&pagina=1.
+ *   El valor 0 se muestra como "Todos" y desactiva el límite (una sola "página" con todo).
+ *
+ * Se puede incluir varias veces en la misma vista (arriba y abajo de la tabla): el
+ * selector usa una clase (no id) y el script queda protegido contra registrarse más
+ * de una vez, así que no importa cuántas copias del partial haya en la página.
  */
 $separador = str_contains($urlBase, '?') ? '&' : '?';
 $opcionesPorPagina = $opcionesPorPagina ?? [];
 ?>
-<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mt-3">
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 my-3">
     <span class="text-muted small">
-        <?php if ($total > 0): ?>
+        <?php if ($total > 0 && $porPagina > 0): ?>
             Mostrando <?= (($pagina - 1) * $porPagina) + 1 ?>–<?= min($pagina * $porPagina, $total) ?> de <?= $total ?>
+        <?php elseif ($total > 0): ?>
+            Mostrando los <?= $total ?> registros
         <?php else: ?>
             Sin resultados
         <?php endif; ?>
@@ -22,10 +29,13 @@ $opcionesPorPagina = $opcionesPorPagina ?? [];
     <div class="d-flex flex-wrap align-items-center gap-3">
         <?php if (!empty($opcionesPorPagina)): ?>
             <div class="d-flex align-items-center gap-2">
-                <label for="selectorPorPagina" class="small text-muted mb-0 text-nowrap">Mostrar</label>
-                <select id="selectorPorPagina" class="form-select form-select-sm" style="width: auto;">
+                <label class="small text-muted mb-0 text-nowrap">Mostrar</label>
+                <select class="form-select form-select-sm selectorPorPagina" style="width: auto;"
+                        data-url-base="<?= htmlspecialchars($urlBase, ENT_QUOTES) ?>">
                     <?php foreach ($opcionesPorPagina as $opcion): ?>
-                        <option value="<?= $opcion ?>" <?= $porPagina === $opcion ? 'selected' : '' ?>><?= $opcion ?></option>
+                        <option value="<?= $opcion ?>" <?= $porPagina === $opcion ? 'selected' : '' ?>>
+                            <?= $opcion === 0 ? 'Todos' : $opcion ?>
+                        </option>
                     <?php endforeach; ?>
                 </select>
                 <span class="small text-muted text-nowrap">por página</span>
@@ -44,13 +54,17 @@ $opcionesPorPagina = $opcionesPorPagina ?? [];
     </div>
 </div>
 
-<?php if (!empty($opcionesPorPagina)): ?>
-<script>
-document.getElementById('selectorPorPagina').addEventListener('change', function () {
-    const url = new URL(<?= json_encode($urlBase) ?>, window.location.origin);
-    url.searchParams.set('porPagina', this.value);
-    url.searchParams.set('pagina', '1');
-    window.location = url.toString();
-});
-</script>
+<?php if (!empty($opcionesPorPagina) && !($GLOBALS['__paginacionScriptImpreso'] ?? false)): ?>
+    <?php $GLOBALS['__paginacionScriptImpreso'] = true; ?>
+    <script>
+    document.addEventListener('change', function (evento) {
+        if (!evento.target.classList.contains('selectorPorPagina')) {
+            return;
+        }
+        const url = new URL(evento.target.getAttribute('data-url-base'), window.location.origin);
+        url.searchParams.set('porPagina', evento.target.value);
+        url.searchParams.set('pagina', '1');
+        window.location = url.toString();
+    });
+    </script>
 <?php endif; ?>

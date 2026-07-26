@@ -4,6 +4,7 @@ use App\Core\Csrf;
 use App\Core\Url;
 use App\Core\View;
 
+$urlBasePaginacion = Url::to('/cargas-masivas') . ($busqueda !== '' ? '?' . http_build_query(['q' => $busqueda]) : '');
 ?>
 <h1 class="h4 mb-3">Carga masiva de bienes</h1>
 
@@ -25,6 +26,19 @@ use App\Core\View;
 </div>
 
 <h2 class="h6">Cargas anteriores</h2>
+
+<div class="mb-2" style="max-width: 420px;">
+    <input type="search" id="buscador" class="form-control form-control-sm"
+           placeholder="Buscar por quién la subió, fecha o estado..."
+           value="<?= htmlspecialchars($busqueda, ENT_QUOTES) ?>">
+</div>
+
+<?php View::render('partials/paginacion', [
+    'pagina' => $pagina, 'porPagina' => $porPagina, 'total' => $total, 'totalPaginas' => $totalPaginas,
+    'opcionesPorPagina' => $opcionesPorPagina,
+    'urlBase' => $urlBasePaginacion,
+]); ?>
+
 <div class="table-responsive" style="max-width: 800px;">
     <table class="table table-sm bg-white tabla-cards">
         <thead>
@@ -55,5 +69,28 @@ use App\Core\View;
 
 <?php View::render('partials/paginacion', [
     'pagina' => $pagina, 'porPagina' => $porPagina, 'total' => $total, 'totalPaginas' => $totalPaginas,
-    'urlBase' => Url::to('/cargas-masivas'),
+    'opcionesPorPagina' => $opcionesPorPagina,
+    'urlBase' => $urlBasePaginacion,
 ]); ?>
+
+<script>
+(function () {
+    const input = document.getElementById('buscador');
+    let temporizador = null;
+
+    input.addEventListener('input', function () {
+        clearTimeout(temporizador);
+        temporizador = setTimeout(function () {
+            const url = new URL(window.location.href);
+            const valor = input.value.trim();
+            if (valor !== '') {
+                url.searchParams.set('q', valor);
+            } else {
+                url.searchParams.delete('q');
+            }
+            url.searchParams.set('pagina', '1');
+            window.location = url.toString();
+        }, 450);
+    });
+})();
+</script>
