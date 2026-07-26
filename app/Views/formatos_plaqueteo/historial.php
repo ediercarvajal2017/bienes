@@ -15,6 +15,12 @@ use App\Core\View;
 <?php if (empty($formatos)): ?>
     <p class="text-muted">Todavía no hay formatos de plaqueteo registrados.</p>
 <?php else: ?>
+    <?php View::render('partials/paginacion', [
+        'pagina' => $pagina, 'porPagina' => $porPagina, 'total' => $total, 'totalPaginas' => $totalPaginas,
+        'opcionesPorPagina' => $opcionesPorPagina,
+        'urlBase' => Url::to('/formatos-plaqueteo/historial'),
+    ]); ?>
+
     <div class="table-responsive">
         <table class="table table-sm table-hover align-middle bg-white tabla-cards">
             <thead>
@@ -55,6 +61,7 @@ use App\Core\View;
 
     <?php View::render('partials/paginacion', [
         'pagina' => $pagina, 'porPagina' => $porPagina, 'total' => $total, 'totalPaginas' => $totalPaginas,
+        'opcionesPorPagina' => $opcionesPorPagina,
         'urlBase' => Url::to('/formatos-plaqueteo/historial'),
     ]); ?>
 <?php endif; ?>

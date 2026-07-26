@@ -31,6 +31,12 @@ use App\Core\View;
 <?php if (empty($lotes)): ?>
     <p class="text-muted">Todavía no se ha generado ningún lote.</p>
 <?php else: ?>
+    <?php View::render('partials/paginacion', [
+        'pagina' => $pagina, 'porPagina' => $porPagina, 'total' => $total, 'totalPaginas' => $totalPaginas,
+        'opcionesPorPagina' => $opcionesPorPagina,
+        'urlBase' => Url::to('/reintegros/lotes'),
+    ]); ?>
+
     <div class="table-responsive">
         <table class="table table-sm table-hover align-middle bg-white tabla-cards">
             <thead>
@@ -65,6 +71,7 @@ use App\Core\View;
 
     <?php View::render('partials/paginacion', [
         'pagina' => $pagina, 'porPagina' => $porPagina, 'total' => $total, 'totalPaginas' => $totalPaginas,
+        'opcionesPorPagina' => $opcionesPorPagina,
         'urlBase' => Url::to('/reintegros/lotes'),
     ]); ?>
 <?php endif; ?>

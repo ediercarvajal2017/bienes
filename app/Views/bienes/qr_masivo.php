@@ -44,6 +44,8 @@ use App\Core\View;
                value="<?= htmlspecialchars($busqueda, ENT_QUOTES) ?>">
     </div>
 
+    <?php $urlBasePaginacion = Url::to('/bienes/qr-masivo') . '?' . http_build_query(['institucion' => $institucionId, 'q' => $busqueda]); ?>
+
     <form method="post" action="<?= Url::to('/bienes/qr-masivo') ?>" id="formQrMasivo" target="_blank">
         <?= Csrf::field() ?>
         <input type="hidden" name="institucion_id" value="<?= $institucionId ?>">
@@ -53,6 +55,12 @@ use App\Core\View;
         <?php if (empty($bienes)): ?>
             <p class="text-muted">No hay bienes que coincidan con la búsqueda.</p>
         <?php else: ?>
+            <?php View::render('partials/paginacion', [
+                'pagina' => $pagina, 'porPagina' => $porPagina, 'total' => $total, 'totalPaginas' => $totalPaginas,
+                'opcionesPorPagina' => $opcionesPorPagina,
+                'urlBase' => $urlBasePaginacion,
+            ]); ?>
+
             <div class="table-responsive">
                 <table class="table table-sm table-hover align-middle bg-white tabla-cards">
                     <thead>
@@ -78,7 +86,8 @@ use App\Core\View;
 
             <?php View::render('partials/paginacion', [
                 'pagina' => $pagina, 'porPagina' => $porPagina, 'total' => $total, 'totalPaginas' => $totalPaginas,
-                'urlBase' => Url::to('/bienes/qr-masivo') . '?' . http_build_query(['institucion' => $institucionId, 'q' => $busqueda]),
+                'opcionesPorPagina' => $opcionesPorPagina,
+                'urlBase' => $urlBasePaginacion,
             ]); ?>
 
             <div class="d-flex flex-wrap gap-2 align-items-center mt-3">

@@ -10,6 +10,7 @@ use App\Core\Request;
 use App\Core\Session;
 use App\Core\Url;
 use App\Core\View;
+use App\Helpers\Paginador;
 use App\Helpers\Uploader;
 use App\Models\Cargo;
 use App\Models\Institucion;
@@ -18,7 +19,7 @@ use App\Models\Usuario;
 final class UsuarioController
 {
     private const POR_PAGINA_DEFECTO = 25;
-    private const OPCIONES_POR_PAGINA = [10, 25, 50, 100];
+    private const OPCIONES_POR_PAGINA = [10, 25, 50, 100, 0];
 
     public function index(): void
     {
@@ -41,7 +42,7 @@ final class UsuarioController
             'porPagina' => $porPagina,
             'opcionesPorPagina' => self::OPCIONES_POR_PAGINA,
             'total' => $total,
-            'totalPaginas' => (int) max(1, ceil($total / $porPagina)),
+            'totalPaginas' => Paginador::totalPaginas($total, $porPagina),
             'mensaje' => Session::pullFlash('ok'),
         ]);
     }

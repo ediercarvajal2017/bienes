@@ -15,6 +15,12 @@ use App\Core\View;
 <?php if (empty($envios)): ?>
     <p class="text-muted">Todavía no hay registros de cartera enviada.</p>
 <?php else: ?>
+    <?php View::render('partials/paginacion', [
+        'pagina' => $pagina, 'porPagina' => $porPagina, 'total' => $total, 'totalPaginas' => $totalPaginas,
+        'opcionesPorPagina' => $opcionesPorPagina,
+        'urlBase' => Url::to('/cartera/enviados'),
+    ]); ?>
+
     <div class="table-responsive">
         <table class="table table-sm table-hover align-middle bg-white tabla-cards">
             <thead>
@@ -55,6 +61,7 @@ use App\Core\View;
 
     <?php View::render('partials/paginacion', [
         'pagina' => $pagina, 'porPagina' => $porPagina, 'total' => $total, 'totalPaginas' => $totalPaginas,
+        'opcionesPorPagina' => $opcionesPorPagina,
         'urlBase' => Url::to('/cartera/enviados'),
     ]); ?>
 <?php endif; ?>

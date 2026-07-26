@@ -11,13 +11,15 @@ use App\Core\Session;
 use App\Core\Url;
 use App\Core\View;
 use App\Helpers\Evidencia;
+use App\Helpers\Paginador;
 use App\Helpers\Uploader;
 use App\Models\CarteraEnvio;
 use App\Models\Institucion;
 
 final class CarteraController
 {
-    private const POR_PAGINA = 50;
+    private const POR_PAGINA_DEFECTO = 50;
+    private const OPCIONES_POR_PAGINA = [10, 25, 50, 100, 0];
 
     public function formulario(): void
     {
@@ -83,15 +85,20 @@ final class CarteraController
     {
         $institucionId = Auth::esSuperusuario() ? null : Auth::institucionId();
         $pagina = max(1, (int) ($_GET['pagina'] ?? 1));
+        $porPagina = (int) ($_GET['porPagina'] ?? self::POR_PAGINA_DEFECTO);
+        if (!in_array($porPagina, self::OPCIONES_POR_PAGINA, true)) {
+            $porPagina = self::POR_PAGINA_DEFECTO;
+        }
         $total = CarteraEnvio::contarListado($institucionId);
 
         View::layout('partials/layout', 'cartera/historial', [
             'title' => 'Histórico de cartera enviada',
-            'envios' => CarteraEnvio::listar($institucionId, $pagina, self::POR_PAGINA),
+            'envios' => CarteraEnvio::listar($institucionId, $pagina, $porPagina),
             'pagina' => $pagina,
-            'porPagina' => self::POR_PAGINA,
+            'porPagina' => $porPagina,
+            'opcionesPorPagina' => self::OPCIONES_POR_PAGINA,
             'total' => $total,
-            'totalPaginas' => (int) max(1, ceil($total / self::POR_PAGINA)),
+            'totalPaginas' => Paginador::totalPaginas($total, $porPagina),
         ]);
     }
 

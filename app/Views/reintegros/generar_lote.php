@@ -37,6 +37,12 @@ use App\Core\View;
             </div>
         </div>
 
+        <?php View::render('partials/paginacion', [
+            'pagina' => $pagina, 'porPagina' => $porPagina, 'total' => $total, 'totalPaginas' => $totalPaginas,
+            'opcionesPorPagina' => $opcionesPorPagina,
+            'urlBase' => Url::to('/reintegros/lotes/generar'),
+        ]); ?>
+
         <div class="table-responsive">
             <table class="table table-sm table-hover align-middle bg-white tabla-cards">
                 <thead>
@@ -70,6 +76,7 @@ use App\Core\View;
 
         <?php View::render('partials/paginacion', [
             'pagina' => $pagina, 'porPagina' => $porPagina, 'total' => $total, 'totalPaginas' => $totalPaginas,
+            'opcionesPorPagina' => $opcionesPorPagina,
             'urlBase' => Url::to('/reintegros/lotes/generar'),
         ]); ?>
         <?php if ($totalPaginas > 1): ?>

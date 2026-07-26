@@ -10,6 +10,7 @@ use App\Core\Request;
 use App\Core\Session;
 use App\Core\Url;
 use App\Core\View;
+use App\Helpers\Paginador;
 use App\Helpers\Uploader;
 use App\Models\Asignacion;
 use App\Models\Baja;
@@ -77,21 +78,27 @@ final class BajaController
         exit;
     }
 
-    private const POR_PAGINA = 50;
+    private const POR_PAGINA_DEFECTO = 50;
+    private const OPCIONES_POR_PAGINA = [10, 25, 50, 100, 0];
 
     public function index(): void
     {
         $institucionId = Auth::esSuperusuario() ? null : Auth::institucionId();
         $pagina = max(1, (int) ($_GET['pagina'] ?? 1));
+        $porPagina = (int) ($_GET['porPagina'] ?? self::POR_PAGINA_DEFECTO);
+        if (!in_array($porPagina, self::OPCIONES_POR_PAGINA, true)) {
+            $porPagina = self::POR_PAGINA_DEFECTO;
+        }
         $total = Baja::contarListado($institucionId);
 
         View::layout('partials/layout', 'bajas/index', [
             'title' => 'Bajas de bienes',
-            'bajas' => Baja::listar($institucionId, $pagina, self::POR_PAGINA),
+            'bajas' => Baja::listar($institucionId, $pagina, $porPagina),
             'pagina' => $pagina,
-            'porPagina' => self::POR_PAGINA,
+            'porPagina' => $porPagina,
+            'opcionesPorPagina' => self::OPCIONES_POR_PAGINA,
             'total' => $total,
-            'totalPaginas' => (int) max(1, ceil($total / self::POR_PAGINA)),
+            'totalPaginas' => Paginador::totalPaginas($total, $porPagina),
             'mensaje' => Session::pullFlash('ok'),
         ]);
     }

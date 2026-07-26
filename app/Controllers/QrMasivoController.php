@@ -10,12 +10,14 @@ use App\Core\Request;
 use App\Core\Session;
 use App\Core\Url;
 use App\Core\View;
+use App\Helpers\Paginador;
 use App\Models\Bien;
 use App\Models\Institucion;
 
 final class QrMasivoController
 {
-    private const POR_PAGINA = 50;
+    private const POR_PAGINA_DEFECTO = 50;
+    private const OPCIONES_POR_PAGINA = [10, 25, 50, 100, 0];
 
     public function formulario(): void
     {
@@ -23,6 +25,10 @@ final class QrMasivoController
         $busqueda = trim((string) ($_GET['q'] ?? ''));
         $terminoBusqueda = $busqueda !== '' ? $busqueda : null;
         $pagina = max(1, (int) ($_GET['pagina'] ?? 1));
+        $porPagina = (int) ($_GET['porPagina'] ?? self::POR_PAGINA_DEFECTO);
+        if (!in_array($porPagina, self::OPCIONES_POR_PAGINA, true)) {
+            $porPagina = self::POR_PAGINA_DEFECTO;
+        }
 
         $total = $institucionId !== null ? Bien::contarListado($institucionId, $terminoBusqueda) : 0;
 
@@ -30,12 +36,13 @@ final class QrMasivoController
             'title' => 'Generar QR masivo',
             'instituciones' => Auth::esSuperusuario() ? Institucion::listadoParaSelect(true) : [],
             'institucionId' => $institucionId,
-            'bienes' => $institucionId !== null ? Bien::listar($institucionId, $terminoBusqueda, $pagina, self::POR_PAGINA) : [],
+            'bienes' => $institucionId !== null ? Bien::listar($institucionId, $terminoBusqueda, $pagina, $porPagina) : [],
             'busqueda' => $busqueda,
             'pagina' => $pagina,
-            'porPagina' => self::POR_PAGINA,
+            'porPagina' => $porPagina,
+            'opcionesPorPagina' => self::OPCIONES_POR_PAGINA,
             'total' => $total,
-            'totalPaginas' => (int) max(1, ceil($total / self::POR_PAGINA)),
+            'totalPaginas' => Paginador::totalPaginas($total, $porPagina),
             'error' => Session::pullFlash('error'),
         ]);
     }

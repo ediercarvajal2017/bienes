@@ -3,6 +3,7 @@
 use App\Core\Auth;
 use App\Core\Csrf;
 use App\Core\Url;
+use App\Core\View;
 
 ?>
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
@@ -93,7 +94,10 @@ use App\Core\Url;
             </div>
         </div>
 
-        <?php $queryBase = ['institucion' => $institucionId, 'q' => $q]; ?>
+        <?php
+        $queryBase = ['institucion' => $institucionId, 'q' => $q];
+        $urlBasePaginacion = Url::to('/asignaciones') . '?' . http_build_query($queryBase);
+        ?>
 
         <h2 class="h6 mb-2">Bienes (<?= $total ?>)</h2>
         <p class="text-muted small mb-2">
@@ -105,6 +109,13 @@ use App\Core\Url;
                    placeholder="Buscar por código, descripción, responsable, ubicación, estado o valor..."
                    value="<?= htmlspecialchars($q, ENT_QUOTES) ?>">
         </div>
+
+        <?php View::render('partials/paginacion', [
+            'pagina' => $pagina, 'porPagina' => $porPagina, 'total' => $total, 'totalPaginas' => $totalPaginas,
+            'opcionesPorPagina' => $opcionesPorPagina,
+            'urlBase' => $urlBasePaginacion,
+        ]); ?>
+
         <div class="table-responsive">
             <table class="table table-sm table-hover align-middle bg-white tabla-cards">
                 <thead>
@@ -142,26 +153,13 @@ use App\Core\Url;
                 </tbody>
             </table>
         </div>
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <span class="text-muted small">
-                <?php if ($total > 0): ?>
-                    Mostrando <?= (($pagina - 1) * $porPagina) + 1 ?>–<?= min($pagina * $porPagina, $total) ?> de <?= $total ?>
-                <?php else: ?>
-                    Sin resultados<?= $q !== '' ? ' para "' . htmlspecialchars($q, ENT_QUOTES) . '"' : '' ?>
-                <?php endif; ?>
-            </span>
-            <?php if ($totalPaginas > 1): ?>
-                <div class="btn-group btn-group-sm">
-                    <a class="btn btn-outline-secondary<?= $pagina <= 1 ? ' disabled' : '' ?>"
-                       href="<?= Url::to('/asignaciones') . '?' . http_build_query(array_merge($queryBase, ['pagina' => max(1, $pagina - 1)])) ?>">Anterior</a>
-                    <span class="btn btn-outline-secondary disabled">Página <?= $pagina ?> de <?= $totalPaginas ?></span>
-                    <a class="btn btn-outline-secondary<?= $pagina >= $totalPaginas ? ' disabled' : '' ?>"
-                       href="<?= Url::to('/asignaciones') . '?' . http_build_query(array_merge($queryBase, ['pagina' => min($totalPaginas, $pagina + 1)])) ?>">Siguiente</a>
-                </div>
-            <?php endif; ?>
-        </div>
+        <?php View::render('partials/paginacion', [
+            'pagina' => $pagina, 'porPagina' => $porPagina, 'total' => $total, 'totalPaginas' => $totalPaginas,
+            'opcionesPorPagina' => $opcionesPorPagina,
+            'urlBase' => $urlBasePaginacion,
+        ]); ?>
 
-        <button type="submit" class="btn btn-primary" id="botonOperacion" disabled>
+        <button type="submit" class="btn btn-primary mt-2" id="botonOperacion" disabled>
             <i class="bi bi-check2-circle me-1"></i><span id="etiquetaBoton">Asignar</span> seleccionados (<span id="contadorSeleccionados">0</span>)
         </button>
     </form>

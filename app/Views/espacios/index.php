@@ -24,6 +24,12 @@ use App\Core\View;
     <div class="alert alert-success py-2 small"><?= htmlspecialchars($mensaje, ENT_QUOTES) ?></div>
 <?php endif; ?>
 
+<?php View::render('partials/paginacion', [
+    'pagina' => $pagina, 'porPagina' => $porPagina, 'total' => $total, 'totalPaginas' => $totalPaginas,
+    'opcionesPorPagina' => $opcionesPorPagina,
+    'urlBase' => Url::to('/espacios'),
+]); ?>
+
 <div class="table-responsive">
     <table class="table table-sm table-hover align-middle bg-white tabla-cards">
         <thead>
@@ -74,5 +80,6 @@ use App\Core\View;
 
 <?php View::render('partials/paginacion', [
     'pagina' => $pagina, 'porPagina' => $porPagina, 'total' => $total, 'totalPaginas' => $totalPaginas,
+    'opcionesPorPagina' => $opcionesPorPagina,
     'urlBase' => Url::to('/espacios'),
 ]); ?>

@@ -2,6 +2,9 @@
 
 use App\Core\Auth;
 use App\Core\Url;
+use App\Core\View;
+
+$urlBasePaginacion = Url::to('/bienes') . ($busqueda !== '' ? '?' . http_build_query(['q' => $busqueda]) : '');
 
 $etiquetasEstado = [
     'activo' => 'Activo',
@@ -35,6 +38,12 @@ $etiquetasEstado = [
            placeholder="Buscar por código, descripción, responsable, ubicación, estado o valor..."
            value="<?= htmlspecialchars($busqueda, ENT_QUOTES) ?>">
 </div>
+
+<?php View::render('partials/paginacion', [
+    'pagina' => $pagina, 'porPagina' => $porPagina, 'total' => $total, 'totalPaginas' => $totalPaginas,
+    'opcionesPorPagina' => $opcionesPorPagina,
+    'urlBase' => $urlBasePaginacion,
+]); ?>
 
 <div class="table-responsive">
     <table class="table table-sm table-hover align-middle bg-white tabla-cards">
@@ -94,24 +103,11 @@ $etiquetasEstado = [
     </table>
 </div>
 
-<div class="d-flex justify-content-between align-items-center mt-3">
-    <span class="text-muted small">
-        <?php if ($total > 0): ?>
-            Mostrando <?= (($pagina - 1) * $porPagina) + 1 ?>–<?= min($pagina * $porPagina, $total) ?> de <?= $total ?>
-        <?php else: ?>
-            Sin resultados<?= $busqueda !== '' ? ' para "' . htmlspecialchars($busqueda, ENT_QUOTES) . '"' : '' ?>
-        <?php endif; ?>
-    </span>
-    <?php if ($totalPaginas > 1): ?>
-        <div class="btn-group btn-group-sm">
-            <a class="btn btn-outline-secondary<?= $pagina <= 1 ? ' disabled' : '' ?>"
-               href="<?= Url::to('/bienes') . '?' . http_build_query(['q' => $busqueda, 'pagina' => max(1, $pagina - 1)]) ?>">Anterior</a>
-            <span class="btn btn-outline-secondary disabled">Página <?= $pagina ?> de <?= $totalPaginas ?></span>
-            <a class="btn btn-outline-secondary<?= $pagina >= $totalPaginas ? ' disabled' : '' ?>"
-               href="<?= Url::to('/bienes') . '?' . http_build_query(['q' => $busqueda, 'pagina' => min($totalPaginas, $pagina + 1)]) ?>">Siguiente</a>
-        </div>
-    <?php endif; ?>
-</div>
+<?php View::render('partials/paginacion', [
+    'pagina' => $pagina, 'porPagina' => $porPagina, 'total' => $total, 'totalPaginas' => $totalPaginas,
+    'opcionesPorPagina' => $opcionesPorPagina,
+    'urlBase' => $urlBasePaginacion,
+]); ?>
 
 <script>
 (function () {

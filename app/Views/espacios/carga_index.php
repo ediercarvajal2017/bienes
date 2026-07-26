@@ -32,6 +32,12 @@ use App\Core\View;
 <?php if (empty($cargas)): ?>
     <p class="text-muted small">Todavía no se ha subido ningún archivo.</p>
 <?php else: ?>
+    <?php View::render('partials/paginacion', [
+        'pagina' => $pagina, 'porPagina' => $porPagina, 'total' => $total, 'totalPaginas' => $totalPaginas,
+        'opcionesPorPagina' => $opcionesPorPagina,
+        'urlBase' => Url::to('/espacios/carga-masiva'),
+    ]); ?>
+
     <div class="table-responsive" style="max-width: 800px;">
         <table class="table table-sm bg-white tabla-cards">
             <thead>
@@ -62,6 +68,7 @@ use App\Core\View;
 
     <?php View::render('partials/paginacion', [
         'pagina' => $pagina, 'porPagina' => $porPagina, 'total' => $total, 'totalPaginas' => $totalPaginas,
+        'opcionesPorPagina' => $opcionesPorPagina,
         'urlBase' => Url::to('/espacios/carga-masiva'),
     ]); ?>
 <?php endif; ?>

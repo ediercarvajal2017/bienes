@@ -11,6 +11,7 @@ use App\Core\Request;
 use App\Core\Session;
 use App\Core\Url;
 use App\Core\View;
+use App\Helpers\Paginador;
 use App\Models\Asignacion;
 use App\Models\Bien;
 use App\Models\Espacio;
@@ -18,7 +19,8 @@ use App\Models\Institucion;
 
 final class AsignacionController
 {
-    private const POR_PAGINA = 30;
+    private const POR_PAGINA_DEFECTO = 30;
+    private const OPCIONES_POR_PAGINA = [10, 25, 50, 100, 0];
 
     public function index(): void
     {
@@ -27,6 +29,10 @@ final class AsignacionController
         $q = trim((string) ($_GET['q'] ?? ''));
         $termino = $q !== '' ? $q : null;
         $pagina = max(1, (int) ($_GET['pagina'] ?? 1));
+        $porPagina = (int) ($_GET['porPagina'] ?? self::POR_PAGINA_DEFECTO);
+        if (!in_array($porPagina, self::OPCIONES_POR_PAGINA, true)) {
+            $porPagina = self::POR_PAGINA_DEFECTO;
+        }
 
         $total = $institucionId !== null ? Bien::contarOperables($institucionId, $termino) : 0;
 
@@ -36,12 +42,13 @@ final class AsignacionController
             'institucionId' => $institucionId,
             'espacios' => $institucionId !== null ? Espacio::listadoParaSelect($institucionId) : [],
 
-            'bienes' => $institucionId !== null ? Bien::operables($institucionId, $termino, $pagina, self::POR_PAGINA) : [],
+            'bienes' => $institucionId !== null ? Bien::operables($institucionId, $termino, $pagina, $porPagina) : [],
             'q' => $q,
             'pagina' => $pagina,
             'total' => $total,
-            'totalPaginas' => (int) max(1, ceil($total / self::POR_PAGINA)),
-            'porPagina' => self::POR_PAGINA,
+            'totalPaginas' => Paginador::totalPaginas($total, $porPagina),
+            'porPagina' => $porPagina,
+            'opcionesPorPagina' => self::OPCIONES_POR_PAGINA,
 
             'mensaje' => Session::pullFlash('ok'),
             'error' => Session::pullFlash('error'),

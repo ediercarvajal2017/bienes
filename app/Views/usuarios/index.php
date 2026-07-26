@@ -25,6 +25,12 @@ use App\Core\View;
            value="<?= htmlspecialchars($busqueda, ENT_QUOTES) ?>">
 </div>
 
+<?php View::render('partials/paginacion', [
+    'pagina' => $pagina, 'porPagina' => $porPagina, 'total' => $total, 'totalPaginas' => $totalPaginas,
+    'opcionesPorPagina' => $opcionesPorPagina,
+    'urlBase' => Url::to('/usuarios') . ($busqueda !== '' ? '?' . http_build_query(['q' => $busqueda]) : ''),
+]); ?>
+
 <div class="table-responsive">
     <table class="table table-sm table-hover align-middle bg-white tabla-cards">
         <thead>

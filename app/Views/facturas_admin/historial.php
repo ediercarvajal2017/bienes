@@ -15,6 +15,12 @@ use App\Core\View;
 <?php if (empty($facturas)): ?>
     <p class="text-muted">Todavía no hay facturas registradas.</p>
 <?php else: ?>
+    <?php View::render('partials/paginacion', [
+        'pagina' => $pagina, 'porPagina' => $porPagina, 'total' => $total, 'totalPaginas' => $totalPaginas,
+        'opcionesPorPagina' => $opcionesPorPagina,
+        'urlBase' => Url::to('/facturas/historial'),
+    ]); ?>
+
     <div class="table-responsive">
         <table class="table table-sm table-hover align-middle bg-white tabla-cards">
             <thead>
@@ -53,6 +59,7 @@ use App\Core\View;
 
     <?php View::render('partials/paginacion', [
         'pagina' => $pagina, 'porPagina' => $porPagina, 'total' => $total, 'totalPaginas' => $totalPaginas,
+        'opcionesPorPagina' => $opcionesPorPagina,
         'urlBase' => Url::to('/facturas/historial'),
     ]); ?>
 <?php endif; ?>
