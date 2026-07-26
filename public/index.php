@@ -41,6 +41,7 @@ use App\Controllers\InstitucionController;
 use App\Controllers\MovimientoController;
 use App\Controllers\PasswordController;
 use App\Controllers\QrController;
+use App\Controllers\QrMasivoController;
 use App\Controllers\ReintegroController;
 use App\Controllers\ReporteController;
 use App\Controllers\UsuarioController;
@@ -170,6 +171,14 @@ $router->get('/bienes/crear', [BienController::class, 'crear'], [
 $router->post('/bienes', [BienController::class, 'guardar'], [
     AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':bienes.crear',
 ]);
+
+$router->get('/bienes/qr-masivo', [QrMasivoController::class, 'formulario'], [
+    AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':bienes.ver',
+]);
+$router->post('/bienes/qr-masivo', [QrMasivoController::class, 'generar'], [
+    AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':bienes.ver',
+]);
+
 $router->get('/bienes/{id}/editar', [BienController::class, 'editar'], [
     AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':bienes.ver',
 ]);

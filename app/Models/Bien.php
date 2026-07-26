@@ -103,6 +103,30 @@ final class Bien
         return " LIMIT {$porPagina} OFFSET {$offset}";
     }
 
+    /**
+     * Trae bienes puntuales por id, siempre acotado a una institución (defensa en
+     * profundidad: aunque alguien manipule los ids enviados, nunca trae bienes de
+     * otra institución). Usado para generar QR masivo de una selección puntual.
+     */
+    public static function listarPorIds(int $institucionId, array $ids): array
+    {
+        $ids = array_values(array_unique(array_map('intval', $ids)));
+        if (empty($ids)) {
+            return [];
+        }
+
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $stmt = Database::connection()->prepare(
+            "SELECT id, codigo_identificacion, descripcion, qr_token
+             FROM bienes
+             WHERE institucion_id = ? AND id IN ({$placeholders})
+             ORDER BY codigo_identificacion"
+        );
+        $stmt->execute([$institucionId, ...$ids]);
+
+        return $stmt->fetchAll();
+    }
+
     public static function find(int $id): ?array
     {
         $stmt = Database::connection()->prepare(

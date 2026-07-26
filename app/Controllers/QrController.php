@@ -51,7 +51,7 @@ final class QrController
             data: Url::absoluta("/qr/{$token}"),
             size: 400,
             margin: 12,
-            foregroundColor: new Color(0x1F, 0x6F, 0x54),
+            foregroundColor: new Color(0, 0, 0),
             backgroundColor: new Color(255, 255, 255),
         );
         $resultado = $builder->build();

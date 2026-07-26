@@ -12,11 +12,18 @@ $etiquetasEstado = [
 ?>
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
     <h1 class="h4 mb-0">Bienes</h1>
-    <?php if (Auth::esSuperusuario() || Auth::tienePermiso('bienes.crear')): ?>
-        <a href="<?= Url::to('/bienes/crear') ?>" class="btn btn-primary btn-sm">
-            <i class="bi bi-plus-lg me-1"></i>Registrar bien
-        </a>
-    <?php endif; ?>
+    <div class="d-flex gap-2">
+        <?php if (Auth::esSuperusuario() || Auth::tienePermiso('bienes.ver')): ?>
+            <a href="<?= Url::to('/bienes/qr-masivo') ?>" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-qr-code me-1"></i>Generar QR masivo
+            </a>
+        <?php endif; ?>
+        <?php if (Auth::esSuperusuario() || Auth::tienePermiso('bienes.crear')): ?>
+            <a href="<?= Url::to('/bienes/crear') ?>" class="btn btn-primary btn-sm">
+                <i class="bi bi-plus-lg me-1"></i>Registrar bien
+            </a>
+        <?php endif; ?>
+    </div>
 </div>
 
 <?php if (!empty($mensaje)): ?>

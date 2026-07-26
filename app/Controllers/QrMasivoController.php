@@ -1,0 +1,89 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Controllers;
+
+use App\Core\Auth;
+use App\Core\Csrf;
+use App\Core\Request;
+use App\Core\Session;
+use App\Core\Url;
+use App\Core\View;
+use App\Models\Bien;
+use App\Models\Institucion;
+
+final class QrMasivoController
+{
+    private const POR_PAGINA = 50;
+
+    public function formulario(): void
+    {
+        $institucionId = $this->institucionSeleccionada();
+        $busqueda = trim((string) ($_GET['q'] ?? ''));
+        $terminoBusqueda = $busqueda !== '' ? $busqueda : null;
+        $pagina = max(1, (int) ($_GET['pagina'] ?? 1));
+
+        $total = $institucionId !== null ? Bien::contarListado($institucionId, $terminoBusqueda) : 0;
+
+        View::layout('partials/layout', 'bienes/qr_masivo', [
+            'title' => 'Generar QR masivo',
+            'instituciones' => Auth::esSuperusuario() ? Institucion::listadoParaSelect(true) : [],
+            'institucionId' => $institucionId,
+            'bienes' => $institucionId !== null ? Bien::listar($institucionId, $terminoBusqueda, $pagina, self::POR_PAGINA) : [],
+            'busqueda' => $busqueda,
+            'pagina' => $pagina,
+            'porPagina' => self::POR_PAGINA,
+            'total' => $total,
+            'totalPaginas' => (int) max(1, ceil($total / self::POR_PAGINA)),
+            'error' => Session::pullFlash('error'),
+        ]);
+    }
+
+    public function generar(): void
+    {
+        $request = new Request();
+
+        if (!Csrf::verify((string) $request->input('_csrf'))) {
+            Session::flash('error', 'Tu sesión expiró, intenta de nuevo.');
+            header('Location: ' . Url::to('/bienes/qr-masivo'));
+            exit;
+        }
+
+        $institucionId = $this->institucionSeleccionada();
+        if ($institucionId === null) {
+            Session::flash('error', 'Selecciona una institución.');
+            header('Location: ' . Url::to('/bienes/qr-masivo'));
+            exit;
+        }
+
+        if ((string) $request->input('todos_filtrados') === '1') {
+            $busqueda = trim((string) $request->input('busqueda'));
+            $bienes = Bien::listar($institucionId, $busqueda !== '' ? $busqueda : null, 1, 0);
+        } else {
+            $idsSeleccionados = array_map('intval', (array) $request->input('bienes', []));
+            $bienes = Bien::listarPorIds($institucionId, $idsSeleccionados);
+        }
+
+        if (empty($bienes)) {
+            Session::flash('error', 'Selecciona al menos un bien para generar sus códigos QR.');
+            header('Location: ' . Url::to('/bienes/qr-masivo'));
+            exit;
+        }
+
+        View::render('bienes/qr_masivo_imprimir', [
+            'bienes' => $bienes,
+        ]);
+    }
+
+    private function institucionSeleccionada(): ?int
+    {
+        if (!Auth::esSuperusuario()) {
+            return Auth::institucionId();
+        }
+
+        $valor = (int) ($_GET['institucion'] ?? $_POST['institucion_id'] ?? 0);
+
+        return $valor > 0 ? $valor : null;
+    }
+}
