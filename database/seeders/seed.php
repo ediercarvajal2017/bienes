@@ -61,6 +61,7 @@ $permisos = [
     'formatos_reintegro.gestionar', 'formatos_plaqueteo.gestionar', 'facturas_admin.gestionar',
     'categorias.gestionar',
     'auditoria.ver',
+    'verificaciones.gestionar',
 ];
 $permisoIds = [];
 foreach ($permisos as $codigo) {
@@ -78,6 +79,7 @@ $matriz = [
         'movimientos.crear', 'bajas.crear', 'bajas.aprobar',
         'reportes.generar', 'cargas.masivas', 'cartera.gestionar',
         'formatos_reintegro.gestionar', 'formatos_plaqueteo.gestionar', 'facturas_admin.gestionar',
+        'verificaciones.gestionar',
     ],
     'docente' => [
         'instituciones.ver', 'bienes.ver', 'espacios.ver', 'movimientos.crear',

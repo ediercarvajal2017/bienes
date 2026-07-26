@@ -225,6 +225,26 @@ final class Bien
         Database::connection()->prepare("UPDATE bienes SET estado = 'dado_de_baja' WHERE id = ?")->execute([$id]);
     }
 
+    /**
+     * Si el bien tiene una asignación activa, ¿$usuarioId es uno de los responsables de
+     * ese espacio? Usado para que un docente solo pueda verificar (jornada de
+     * verificación física) los bienes a su cargo, igual que el filtro de "solo mis
+     * bienes" en /bienes.
+     */
+    public static function esResponsableDe(int $bienId, int $usuarioId): bool
+    {
+        $stmt = Database::connection()->prepare(
+            'SELECT 1
+             FROM asignaciones a
+             JOIN espacio_responsables er ON er.espacio_id = a.espacio_id
+             WHERE a.bien_id = ? AND a.activa = 1 AND er.usuario_id = ?
+             LIMIT 1'
+        );
+        $stmt->execute([$bienId, $usuarioId]);
+
+        return (bool) $stmt->fetchColumn();
+    }
+
     public static function create(array $datos): int
     {
         $datos['qr_token'] = self::generarUuid();

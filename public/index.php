@@ -46,6 +46,7 @@ use App\Controllers\ReintegroController;
 use App\Controllers\ReporteController;
 use App\Controllers\UsuarioCargaMasivaController;
 use App\Controllers\UsuarioController;
+use App\Controllers\VerificacionController;
 use App\Core\Request;
 use App\Core\Router;
 use App\Core\Session;
@@ -255,6 +256,26 @@ $router->get('/qr/{token}/baja', [BajaController::class, 'formulario'], [
 ]);
 $router->post('/qr/{token}/baja', [BajaController::class, 'guardar'], [
     AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':bajas.crear',
+]);
+
+$router->post('/qr/{token}/verificar', [VerificacionController::class, 'verificar'], [
+    AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':bienes.ver',
+]);
+
+$router->get('/verificaciones', [VerificacionController::class, 'index'], [
+    AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':verificaciones.gestionar',
+]);
+$router->get('/verificaciones/crear', [VerificacionController::class, 'crear'], [
+    AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':verificaciones.gestionar',
+]);
+$router->post('/verificaciones', [VerificacionController::class, 'guardar'], [
+    AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':verificaciones.gestionar',
+]);
+$router->get('/verificaciones/{id}', [VerificacionController::class, 'mostrar'], [
+    AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':verificaciones.gestionar',
+]);
+$router->post('/verificaciones/{id}/cerrar', [VerificacionController::class, 'cerrar'], [
+    AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':verificaciones.gestionar',
 ]);
 
 $router->get('/bajas', [BajaController::class, 'index'], [

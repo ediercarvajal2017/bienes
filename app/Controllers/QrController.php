@@ -9,6 +9,8 @@ use App\Core\Url;
 use App\Core\View;
 use App\Models\Asignacion;
 use App\Models\Bien;
+use App\Models\JornadaVerificacion;
+use App\Models\Verificacion;
 use Endroid\QrCode\Builder\Builder;
 use Endroid\QrCode\Color\Color;
 use Endroid\QrCode\Writer\PngWriter;
@@ -28,12 +30,22 @@ final class QrController
         $puedeGestionar = Auth::check()
             && (Auth::esSuperusuario() || (int) $bien['institucion_id'] === Auth::institucionId());
 
+        $jornadaActiva = $puedeGestionar ? JornadaVerificacion::activaPara((int) $bien['institucion_id']) : null;
+        $puedeVerificar = $jornadaActiva !== null
+            && (Auth::rol() !== 'docente' || Bien::esResponsableDe((int) $bien['id'], (int) Auth::id()));
+        $verificacionActual = $jornadaActiva !== null
+            ? Verificacion::deBienEnJornada((int) $jornadaActiva['id'], (int) $bien['id'])
+            : null;
+
         View::render('qr/mostrar', [
             'bien' => $bien,
             'token' => $token,
             'asignacion' => Asignacion::activaDe((int) $bien['id']),
             'puedeGestionar' => $puedeGestionar,
             'puedeReportarBaja' => Auth::check() && (Auth::esSuperusuario() || Auth::tienePermiso('bajas.crear')),
+            'jornadaActiva' => $jornadaActiva,
+            'puedeVerificar' => $puedeVerificar,
+            'verificacionActual' => $verificacionActual,
         ]);
     }
 

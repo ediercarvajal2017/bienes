@@ -72,6 +72,10 @@ $esActiva = static fn (string $prefijo): string => str_starts_with($rutaActual, 
                 <a class="nav-link<?= $esActiva('/bajas') ?>" href="<?= Url::to('/bajas') ?>"><i class="bi bi-exclamation-triangle me-2"></i>Bajas</a>
             <?php endif; ?>
 
+            <?php if (Auth::esSuperusuario() || Auth::tienePermiso('verificaciones.gestionar')): ?>
+                <a class="nav-link<?= $esActiva('/verificaciones') ?>" href="<?= Url::to('/verificaciones') ?>"><i class="bi bi-clipboard2-check me-2"></i>Verificación física</a>
+            <?php endif; ?>
+
             <?php if (Auth::esSuperusuario() || Auth::tienePermiso('reportes.generar')): ?>
                 <a class="nav-link<?= $esActiva('/reportes') ?>" href="<?= Url::to('/reportes') ?>"><i class="bi bi-file-earmark-spreadsheet me-2"></i>Reportes</a>
             <?php endif; ?>

@@ -86,6 +86,49 @@ $etiquetasEstado = [
                     </a>
                 <?php endif; ?>
             </div>
+
+            <?php if (!empty($puedeVerificar)): ?>
+                <hr>
+                <div class="small fw-semibold mb-2"><i class="bi bi-clipboard2-check me-1"></i>Verificación física en curso</div>
+
+                <?php if (!empty($verificacionActual)): ?>
+                    <?php if ($verificacionActual['resultado'] === 'ok'): ?>
+                        <div class="alert alert-success py-2 small mb-2">
+                            <i class="bi bi-check2-circle me-1"></i>Ya verificado por <?= htmlspecialchars($verificacionActual['nombres'] . ' ' . $verificacionActual['apellidos'], ENT_QUOTES) ?>.
+                        </div>
+                    <?php else: ?>
+                        <div class="alert alert-warning py-2 small mb-2">
+                            <i class="bi bi-exclamation-triangle me-1"></i>Discrepancia reportada por <?= htmlspecialchars($verificacionActual['nombres'] . ' ' . $verificacionActual['apellidos'], ENT_QUOTES) ?>: <?= htmlspecialchars($verificacionActual['observaciones'] ?? '', ENT_QUOTES) ?>
+                        </div>
+                    <?php endif; ?>
+                    <p class="text-muted small mb-2">Si vuelves a verificar, se reemplaza el registro anterior.</p>
+                <?php endif; ?>
+
+                <form method="post" action="<?= Url::to('/qr/' . $token . '/verificar') ?>" class="d-inline">
+                    <?= \App\Core\Csrf::field() ?>
+                    <input type="hidden" name="resultado" value="ok">
+                    <button type="submit" class="btn btn-outline-success btn-sm w-100 mb-2">
+                        <i class="bi bi-check2-circle me-1"></i>Confirmar: el bien está aquí
+                    </button>
+                </form>
+
+                <button type="button" id="btnMostrarDiscrepancia" class="btn btn-outline-warning btn-sm w-100">
+                    <i class="bi bi-exclamation-triangle me-1"></i>Reportar discrepancia
+                </button>
+                <form method="post" action="<?= Url::to('/qr/' . $token . '/verificar') ?>" id="formDiscrepancia" style="display:none;" class="mt-2">
+                    <?= \App\Core\Csrf::field() ?>
+                    <input type="hidden" name="resultado" value="discrepancia">
+                    <textarea name="observaciones" class="form-control form-control-sm mb-2" rows="2"
+                              placeholder="¿Qué no coincide? (ubicación, estado, etc.)" required></textarea>
+                    <button type="submit" class="btn btn-warning btn-sm w-100">Enviar discrepancia</button>
+                </form>
+                <script>
+                document.getElementById('btnMostrarDiscrepancia').addEventListener('click', function () {
+                    this.style.display = 'none';
+                    document.getElementById('formDiscrepancia').style.display = 'block';
+                });
+                </script>
+            <?php endif; ?>
         <?php elseif (Auth::check()): ?>
             <p class="small text-muted mb-0">Este bien pertenece a otra institución; no puedes gestionarlo desde tu cuenta.</p>
         <?php else: ?>
