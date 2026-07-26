@@ -13,7 +13,7 @@
     </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Iniciar sesión · SIGEBI</title>
+    <title>Olvidé mi contraseña · SIGEBI</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
     <link href="<?= Url::asset('/assets/css/app.css') ?>" rel="stylesheet">
@@ -26,28 +26,28 @@
             <i class="bi bi-moon-stars"></i>
         </button>
         <div class="brand"><i class="bi bi-tag-fill me-1"></i>SIGEBI</div>
-        <div class="brand-sub">Sistema de Gestión de Bienes Institucionales</div>
+        <div class="brand-sub">Recuperar contraseña</div>
 
+        <?php if (!empty($mensaje)): ?>
+            <div class="alert alert-success py-2 small"><?= htmlspecialchars($mensaje, ENT_QUOTES) ?></div>
+        <?php endif; ?>
         <?php if (!empty($error)): ?>
             <div class="alert alert-danger py-2 small"><?= htmlspecialchars($error, ENT_QUOTES) ?></div>
         <?php endif; ?>
 
-        <form method="post" action="<?= Url::to('/login') ?>">
+        <p class="small text-muted">Escribe el correo con el que inicias sesión y te enviaremos un enlace para crear una nueva contraseña.</p>
+
+        <form method="post" action="<?= Url::to('/olvide-contrasena') ?>">
             <?= \App\Core\Csrf::field() ?>
             <div class="mb-3">
                 <label class="form-label small">Correo institucional</label>
                 <input type="email" name="email" class="form-control" required autofocus>
             </div>
-            <div class="mb-3">
-                <label class="form-label small">Contraseña</label>
-                <input type="password" name="password" class="form-control" required>
-            </div>
-            <button type="submit" class="btn btn-primary w-100">Ingresar</button>
+            <button type="submit" class="btn btn-primary w-100">Enviar enlace</button>
         </form>
 
-        <div class="d-flex justify-content-between mt-3">
-            <a href="<?= Url::to('/olvide-contrasena') ?>" class="small">¿Olvidaste tu contraseña?</a>
-            <a href="<?= Url::to('/olvide-correo') ?>" class="small">¿Olvidaste tu correo?</a>
+        <div class="text-center mt-3">
+            <a href="<?= Url::to('/login') ?>" class="small">Volver a iniciar sesión</a>
         </div>
     </div>
 </div>

@@ -39,6 +39,7 @@ use App\Controllers\FormatoPlaqueteoController;
 use App\Controllers\FormatoReintegroController;
 use App\Controllers\InstitucionController;
 use App\Controllers\MovimientoController;
+use App\Controllers\PasswordController;
 use App\Controllers\QrController;
 use App\Controllers\ReintegroController;
 use App\Controllers\ReporteController;
@@ -59,6 +60,13 @@ $router->get('/', [AuthController::class, 'redirectRoot']);
 $router->get('/login', [AuthController::class, 'showLogin']);
 $router->post('/login', [AuthController::class, 'login']);
 $router->post('/logout', [AuthController::class, 'logout'], [AuthMiddleware::class]);
+
+$router->get('/olvide-contrasena', [PasswordController::class, 'formularioOlvideContrasena']);
+$router->post('/olvide-contrasena', [PasswordController::class, 'enviarEnlaceReset']);
+$router->get('/restablecer-contrasena/{token}', [PasswordController::class, 'formularioReset']);
+$router->post('/restablecer-contrasena/{token}', [PasswordController::class, 'restablecerPassword']);
+$router->get('/olvide-correo', [PasswordController::class, 'formularioOlvideCorreo']);
+$router->post('/olvide-correo', [PasswordController::class, 'buscarCorreo']);
 
 $router->get('/dashboard', [DashboardController::class, 'index'], [
     AuthMiddleware::class,

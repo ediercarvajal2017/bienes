@@ -28,7 +28,7 @@ final class Usuario
     public static function findByDocumento(string $documento, int $institucionId): ?array
     {
         $stmt = Database::connection()->prepare(
-            'SELECT id, documento, nombres, apellidos FROM usuarios WHERE documento = ? AND institucion_id = ?'
+            'SELECT id, documento, nombres, apellidos, email, activo FROM usuarios WHERE documento = ? AND institucion_id = ?'
         );
         $stmt->execute([$documento, $institucionId]);
 
