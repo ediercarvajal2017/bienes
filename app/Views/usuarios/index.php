@@ -19,6 +19,12 @@ use App\Core\View;
     <div class="alert alert-success py-2 small"><?= htmlspecialchars($mensaje, ENT_QUOTES) ?></div>
 <?php endif; ?>
 
+<div class="mb-3" style="max-width: 420px;">
+    <input type="search" id="buscador" class="form-control form-control-sm"
+           placeholder="Buscar por nombre, documento, correo o cargo..."
+           value="<?= htmlspecialchars($busqueda, ENT_QUOTES) ?>">
+</div>
+
 <div class="table-responsive">
     <table class="table table-sm table-hover align-middle bg-white tabla-cards">
         <thead>
@@ -86,5 +92,28 @@ use App\Core\View;
 
 <?php View::render('partials/paginacion', [
     'pagina' => $pagina, 'porPagina' => $porPagina, 'total' => $total, 'totalPaginas' => $totalPaginas,
-    'urlBase' => Url::to('/usuarios'),
+    'opcionesPorPagina' => $opcionesPorPagina,
+    'urlBase' => Url::to('/usuarios') . ($busqueda !== '' ? '?' . http_build_query(['q' => $busqueda]) : ''),
 ]); ?>
+
+<script>
+(function () {
+    const input = document.getElementById('buscador');
+    let temporizador = null;
+
+    input.addEventListener('input', function () {
+        clearTimeout(temporizador);
+        temporizador = setTimeout(function () {
+            const url = new URL(window.location.href);
+            const valor = input.value.trim();
+            if (valor !== '') {
+                url.searchParams.set('q', valor);
+            } else {
+                url.searchParams.delete('q');
+            }
+            url.searchParams.set('pagina', '1');
+            window.location = url.toString();
+        }, 450);
+    });
+})();
+</script>

@@ -89,21 +89,17 @@ final class Usuario
         return $stmt->fetch() ?: null;
     }
 
-    public static function listar(?int $institucionId = null, int $pagina = 1, int $porPagina = 50): array
+    public static function listar(?int $institucionId = null, ?string $busqueda = null, int $pagina = 1, int $porPagina = 50): array
     {
+        [$whereSql, $params] = self::condicionesListado($institucionId, $busqueda);
+
         $sql = 'SELECT u.*, r.nombre AS rol_nombre, c.nombre AS cargo_nombre, i.nombre AS institucion_nombre
                 FROM usuarios u
                 JOIN roles r ON r.id = u.rol_id
                 JOIN cargos c ON c.id = u.cargo_id
-                JOIN instituciones i ON i.id = u.institucion_id';
-        $params = [];
-
-        if ($institucionId !== null) {
-            $sql .= ' WHERE u.institucion_id = ?';
-            $params[] = $institucionId;
-        }
-
-        $sql .= ' ORDER BY u.created_at DESC, u.id DESC' . Paginador::limitSql($pagina, $porPagina);
+                JOIN instituciones i ON i.id = u.institucion_id'
+               . $whereSql
+               . ' ORDER BY u.created_at DESC, u.id DESC' . Paginador::limitSql($pagina, $porPagina);
 
         $stmt = Database::connection()->prepare($sql);
         $stmt->execute($params);
@@ -111,20 +107,44 @@ final class Usuario
         return $stmt->fetchAll();
     }
 
-    public static function contarListado(?int $institucionId = null): int
+    public static function contarListado(?int $institucionId = null, ?string $busqueda = null): int
     {
-        $sql = 'SELECT COUNT(*) FROM usuarios u';
-        $params = [];
+        [$whereSql, $params] = self::condicionesListado($institucionId, $busqueda);
 
-        if ($institucionId !== null) {
-            $sql .= ' WHERE u.institucion_id = ?';
-            $params[] = $institucionId;
-        }
+        $sql = 'SELECT COUNT(*)
+                FROM usuarios u
+                JOIN cargos c ON c.id = u.cargo_id'
+               . $whereSql;
 
         $stmt = Database::connection()->prepare($sql);
         $stmt->execute($params);
 
         return (int) $stmt->fetchColumn();
+    }
+
+    /**
+     * Busca por nombre, apellido, documento, correo o cargo — las columnas visibles
+     * en /usuarios.
+     */
+    private static function condicionesListado(?int $institucionId, ?string $busqueda): array
+    {
+        $condiciones = [];
+        $params = [];
+
+        if ($institucionId !== null) {
+            $condiciones[] = 'u.institucion_id = ?';
+            $params[] = $institucionId;
+        }
+
+        if ($busqueda !== null && $busqueda !== '') {
+            $termino = '%' . $busqueda . '%';
+            $condiciones[] = '(u.nombres LIKE ? OR u.apellidos LIKE ? OR u.documento LIKE ? OR u.email LIKE ? OR c.nombre LIKE ?)';
+            array_push($params, $termino, $termino, $termino, $termino, $termino);
+        }
+
+        $sql = $condiciones ? ' WHERE ' . implode(' AND ', $condiciones) : '';
+
+        return [$sql, $params];
     }
 
     /**

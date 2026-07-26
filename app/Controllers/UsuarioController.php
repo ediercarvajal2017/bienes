@@ -17,21 +17,31 @@ use App\Models\Usuario;
 
 final class UsuarioController
 {
-    private const POR_PAGINA = 50;
+    private const POR_PAGINA_DEFECTO = 25;
+    private const OPCIONES_POR_PAGINA = [10, 25, 50, 100];
 
     public function index(): void
     {
         $institucionId = Auth::esSuperusuario() ? null : Auth::institucionId();
+        $busqueda = trim((string) ($_GET['q'] ?? ''));
+        $terminoBusqueda = $busqueda !== '' ? $busqueda : null;
         $pagina = max(1, (int) ($_GET['pagina'] ?? 1));
-        $total = Usuario::contarListado($institucionId);
+        $porPagina = (int) ($_GET['porPagina'] ?? self::POR_PAGINA_DEFECTO);
+        if (!in_array($porPagina, self::OPCIONES_POR_PAGINA, true)) {
+            $porPagina = self::POR_PAGINA_DEFECTO;
+        }
+
+        $total = Usuario::contarListado($institucionId, $terminoBusqueda);
 
         View::layout('partials/layout', 'usuarios/index', [
             'title' => 'Usuarios',
-            'usuarios' => Usuario::listar($institucionId, $pagina, self::POR_PAGINA),
+            'usuarios' => Usuario::listar($institucionId, $terminoBusqueda, $pagina, $porPagina),
+            'busqueda' => $busqueda,
             'pagina' => $pagina,
-            'porPagina' => self::POR_PAGINA,
+            'porPagina' => $porPagina,
+            'opcionesPorPagina' => self::OPCIONES_POR_PAGINA,
             'total' => $total,
-            'totalPaginas' => (int) max(1, ceil($total / self::POR_PAGINA)),
+            'totalPaginas' => (int) max(1, ceil($total / $porPagina)),
             'mensaje' => Session::pullFlash('ok'),
         ]);
     }
