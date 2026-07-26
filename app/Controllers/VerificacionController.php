@@ -108,6 +108,16 @@ final class VerificacionController
         $jornada = $this->jornadaAccesible((int) $id);
         $institucionId = (int) $jornada['institucion_id'];
 
+        $busquedaPendientes = trim((string) ($_GET['q'] ?? ''));
+        $terminoBusqueda = $busquedaPendientes !== '' ? $busquedaPendientes : null;
+        $pagina = max(1, (int) ($_GET['pagina'] ?? 1));
+        $porPagina = (int) ($_GET['porPagina'] ?? self::POR_PAGINA_DEFECTO);
+        if (!in_array($porPagina, self::OPCIONES_POR_PAGINA, true)) {
+            $porPagina = self::POR_PAGINA_DEFECTO;
+        }
+
+        $totalPendientes = Verificacion::contarPendientes((int) $jornada['id'], $institucionId, $terminoBusqueda);
+
         View::layout('partials/layout', 'verificaciones/mostrar', [
             'title' => 'Jornada de verificación',
             'jornada' => $jornada,
@@ -116,7 +126,13 @@ final class VerificacionController
             'verificadosDiscrepancia' => Verificacion::contarPorResultado((int) $jornada['id'], 'discrepancia'),
             'verificadosOkDetalle' => Verificacion::listarPorResultado((int) $jornada['id'], 'ok'),
             'discrepancias' => Verificacion::listarPorResultado((int) $jornada['id'], 'discrepancia'),
-            'pendientes' => Verificacion::listarPendientes((int) $jornada['id'], $institucionId),
+            'pendientes' => Verificacion::listarPendientes((int) $jornada['id'], $institucionId, $terminoBusqueda, $pagina, $porPagina),
+            'busquedaPendientes' => $busquedaPendientes,
+            'pagina' => $pagina,
+            'porPagina' => $porPagina,
+            'opcionesPorPagina' => self::OPCIONES_POR_PAGINA,
+            'totalPendientes' => $totalPendientes,
+            'totalPaginasPendientes' => Paginador::totalPaginas($totalPendientes, $porPagina),
             'mensaje' => Session::pullFlash('ok'),
             'error' => Session::pullFlash('error'),
         ]);

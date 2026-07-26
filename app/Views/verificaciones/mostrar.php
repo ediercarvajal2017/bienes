@@ -2,8 +2,9 @@
 
 use App\Core\Csrf;
 use App\Core\Url;
+use App\Core\View;
 
-$pendientesCount = count($pendientes);
+$urlBasePendientes = Url::to('/verificaciones/' . $jornada['id']) . ($busquedaPendientes !== '' ? '?' . http_build_query(['q' => $busquedaPendientes]) : '');
 ?>
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-1">
     <h1 class="h4 mb-0"><?= htmlspecialchars($jornada['nombre'], ENT_QUOTES) ?></h1>
@@ -47,7 +48,7 @@ $pendientesCount = count($pendientes);
     <div class="col-6 col-md-3">
         <a href="#seccion-pendientes" class="card h-100 text-decoration-none text-body">
             <div class="card-body text-center py-3">
-                <div class="fs-4 fw-semibold text-muted"><i class="bi bi-hourglass-split me-1"></i><?= $pendientesCount ?></div>
+                <div class="fs-4 fw-semibold text-muted"><i class="bi bi-hourglass-split me-1"></i><?= (int) $totalPendientes ?></div>
                 <div class="small text-muted">Pendientes</div>
             </div>
         </a>
@@ -56,7 +57,7 @@ $pendientesCount = count($pendientes);
 
 <?php if ($jornada['estado'] === 'en_progreso'): ?>
     <form method="post" action="<?= Url::to('/verificaciones/' . $jornada['id'] . '/cerrar') ?>" class="card mb-4" style="max-width: 480px;"
-          onsubmit="return confirm('¿Cerrar la jornada de verificación? Quedan <?= $pendientesCount ?> bien(es) pendiente(s) por verificar.');">
+          onsubmit="return confirm('¿Cerrar la jornada de verificación? Quedan <?= (int) $totalPendientes ?> bien(es) pendiente(s) por verificar.');">
         <div class="card-body">
             <?= Csrf::field() ?>
             <label class="form-label small">Observaciones de cierre (opcional)</label>
@@ -124,23 +125,61 @@ $pendientesCount = count($pendientes);
 <?php endif; ?>
 
 <h2 class="h6" id="seccion-pendientes">Bienes pendientes de verificar</h2>
-<?php if (empty($pendientes)): ?>
-    <p class="text-muted small">No hay bienes pendientes.</p>
-<?php else: ?>
-    <div class="table-responsive">
-        <table class="table table-sm bg-white tabla-cards">
-            <thead>
-            <tr><th>Código</th><th>Descripción</th><th>Ubicación</th></tr>
-            </thead>
-            <tbody>
-            <?php foreach ($pendientes as $p): ?>
-                <tr>
-                    <td class="mono small" data-label="Código"><?= htmlspecialchars($p['codigo_identificacion'], ENT_QUOTES) ?></td>
-                    <td data-label="Descripción"><?= htmlspecialchars($p['descripcion'], ENT_QUOTES) ?></td>
-                    <td class="text-muted small" data-label="Ubicación"><?= !empty($p['espacio_nombre']) ? htmlspecialchars($p['espacio_nombre'], ENT_QUOTES) : 'Sin asignar' ?></td>
-                </tr>
-            <?php endforeach; ?>
-            </tbody>
-        </table>
-    </div>
-<?php endif; ?>
+
+<div class="mb-2" style="max-width: 420px;">
+    <input type="search" id="buscadorPendientes" class="form-control form-control-sm"
+           placeholder="Buscar por código, descripción o ubicación..."
+           value="<?= htmlspecialchars($busquedaPendientes, ENT_QUOTES) ?>">
+</div>
+
+<?php View::render('partials/paginacion', [
+    'pagina' => $pagina, 'porPagina' => $porPagina, 'total' => $totalPendientes, 'totalPaginas' => $totalPaginasPendientes,
+    'opcionesPorPagina' => $opcionesPorPagina,
+    'urlBase' => $urlBasePendientes,
+]); ?>
+
+<div class="table-responsive">
+    <table class="table table-sm bg-white tabla-cards">
+        <thead>
+        <tr><th>Código</th><th>Descripción</th><th>Ubicación</th></tr>
+        </thead>
+        <tbody>
+        <?php foreach ($pendientes as $p): ?>
+            <tr>
+                <td class="mono small" data-label="Código"><?= htmlspecialchars($p['codigo_identificacion'], ENT_QUOTES) ?></td>
+                <td data-label="Descripción"><?= htmlspecialchars($p['descripcion'], ENT_QUOTES) ?></td>
+                <td class="text-muted small" data-label="Ubicación"><?= !empty($p['espacio_nombre']) ? htmlspecialchars($p['espacio_nombre'], ENT_QUOTES) : 'Sin asignar' ?></td>
+            </tr>
+        <?php endforeach; ?>
+        </tbody>
+    </table>
+</div>
+
+<?php View::render('partials/paginacion', [
+    'pagina' => $pagina, 'porPagina' => $porPagina, 'total' => $totalPendientes, 'totalPaginas' => $totalPaginasPendientes,
+    'opcionesPorPagina' => $opcionesPorPagina,
+    'urlBase' => $urlBasePendientes,
+]); ?>
+
+<script>
+(function () {
+    const input = document.getElementById('buscadorPendientes');
+    let temporizador = null;
+
+    input.addEventListener('input', function () {
+        clearTimeout(temporizador);
+        temporizador = setTimeout(function () {
+            const url = new URL(window.location.href);
+            const valor = input.value.trim();
+            if (valor !== '') {
+                url.searchParams.set('q', valor);
+            } else {
+                url.searchParams.delete('q');
+            }
+            url.searchParams.set('pagina', '1');
+            url.hash = 'seccion-pendientes';
+            window.location = url.toString();
+        }, 450);
+    });
+})();
+</script>

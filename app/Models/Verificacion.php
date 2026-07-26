@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Core\Database;
+use App\Helpers\Paginador;
 
 final class Verificacion
 {
@@ -96,22 +97,57 @@ final class Verificacion
 
     /**
      * Bienes del universo de la institución que todavía no tienen ningún registro de
-     * verificación en esta jornada.
+     * verificación en esta jornada. Admite búsqueda y paginación (mismo patrón usado en
+     * Usuario::listar()/Bien::listar(): porPagina <= 0 significa "ver todos").
      */
-    public static function listarPendientes(int $jornadaId, int $institucionId): array
+    public static function listarPendientes(int $jornadaId, int $institucionId, ?string $busqueda = null, int $pagina = 1, int $porPagina = 50): array
     {
-        $stmt = Database::connection()->prepare(
-            "SELECT b.id, b.codigo_identificacion, b.descripcion, b.estado,
-                    CONCAT(e.codigo, ' - ', e.nombre) AS espacio_nombre
-             FROM bienes b
-             LEFT JOIN asignaciones a ON a.bien_id = b.id AND a.activa = 1
-             LEFT JOIN espacios e ON e.id = a.espacio_id
-             LEFT JOIN verificaciones_bienes v ON v.bien_id = b.id AND v.jornada_id = ?
-             WHERE b.institucion_id = ? AND b.estado != 'dado_de_baja' AND v.id IS NULL
-             ORDER BY b.codigo_identificacion"
-        );
-        $stmt->execute([$jornadaId, $institucionId]);
+        [$whereSql, $params] = self::condicionesPendientes($institucionId, $busqueda);
+
+        $sql = "SELECT b.id, b.codigo_identificacion, b.descripcion, b.estado,
+                       CONCAT(e.codigo, ' - ', e.nombre) AS espacio_nombre
+                FROM bienes b
+                LEFT JOIN asignaciones a ON a.bien_id = b.id AND a.activa = 1
+                LEFT JOIN espacios e ON e.id = a.espacio_id
+                LEFT JOIN verificaciones_bienes v ON v.bien_id = b.id AND v.jornada_id = ?"
+               . $whereSql
+               . ' ORDER BY b.codigo_identificacion'
+               . Paginador::limitSql($pagina, $porPagina);
+
+        $stmt = Database::connection()->prepare($sql);
+        $stmt->execute(array_merge([$jornadaId], $params));
 
         return $stmt->fetchAll();
+    }
+
+    public static function contarPendientes(int $jornadaId, int $institucionId, ?string $busqueda = null): int
+    {
+        [$whereSql, $params] = self::condicionesPendientes($institucionId, $busqueda);
+
+        $sql = 'SELECT COUNT(*)
+                FROM bienes b
+                LEFT JOIN asignaciones a ON a.bien_id = b.id AND a.activa = 1
+                LEFT JOIN espacios e ON e.id = a.espacio_id
+                LEFT JOIN verificaciones_bienes v ON v.bien_id = b.id AND v.jornada_id = ?'
+               . $whereSql;
+
+        $stmt = Database::connection()->prepare($sql);
+        $stmt->execute(array_merge([$jornadaId], $params));
+
+        return (int) $stmt->fetchColumn();
+    }
+
+    private static function condicionesPendientes(int $institucionId, ?string $busqueda): array
+    {
+        $condiciones = ['b.institucion_id = ?', "b.estado != 'dado_de_baja'", 'v.id IS NULL'];
+        $params = [$institucionId];
+
+        if ($busqueda !== null && $busqueda !== '') {
+            $termino = '%' . $busqueda . '%';
+            $condiciones[] = '(b.codigo_identificacion LIKE ? OR b.descripcion LIKE ? OR e.nombre LIKE ?)';
+            array_push($params, $termino, $termino, $termino);
+        }
+
+        return [' WHERE ' . implode(' AND ', $condiciones), $params];
     }
 }
