@@ -117,7 +117,7 @@ final class Bien
 
         $placeholders = implode(',', array_fill(0, count($ids), '?'));
         $stmt = Database::connection()->prepare(
-            "SELECT id, codigo_identificacion, descripcion, qr_token
+            "SELECT id, codigo_identificacion, qr_token
              FROM bienes
              WHERE institucion_id = ? AND id IN ({$placeholders})
              ORDER BY codigo_identificacion"

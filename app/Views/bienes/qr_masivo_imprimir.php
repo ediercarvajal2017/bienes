@@ -30,10 +30,6 @@ use App\Core\Url;
         }
         .etiqueta img { width: 120px; height: 120px; }
         .etiqueta .codigo { font-family: ui-monospace, "Cascadia Code", "SF Mono", Consolas, monospace; font-weight: 700; font-size: 13px; margin-top: 4px; color: #000; }
-        .etiqueta .descripcion {
-            font-size: 10px; color: #555; max-width: 130px;
-            overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-        }
         @media print {
             .no-imprimir { display: none !important; }
             body { padding: 0; }
@@ -58,7 +54,6 @@ use App\Core\Url;
         <div class="etiqueta">
             <img src="<?= Url::to('/qr/' . $b['qr_token'] . '/imagen') ?>" alt="QR <?= htmlspecialchars($b['codigo_identificacion'], ENT_QUOTES) ?>">
             <div class="codigo"><?= htmlspecialchars($b['codigo_identificacion'], ENT_QUOTES) ?></div>
-            <div class="descripcion" title="<?= htmlspecialchars($b['descripcion'], ENT_QUOTES) ?>"><?= htmlspecialchars($b['descripcion'], ENT_QUOTES) ?></div>
         </div>
     <?php endforeach; ?>
 </div>
