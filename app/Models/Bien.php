@@ -74,6 +74,72 @@ final class Bien
     }
 
     /**
+     * Igual que listar(), pero solo los bienes cuya asignación activa está en un espacio
+     * donde $usuarioId figura como responsable (usado para el rol docente: solo ve "sus"
+     * bienes, no todo el inventario de la institución). Un bien sin asignación activa, o
+     * asignado a un espacio donde el usuario no es responsable, queda fuera.
+     */
+    public static function listarPropios(int $usuarioId, ?int $institucionId = null, ?string $busqueda = null, int $pagina = 1, int $porPagina = 50): array
+    {
+        [$whereSql, $params] = self::condicionesPropios($institucionId, $busqueda);
+
+        $sql = 'SELECT b.*, c.nombre AS categoria_nombre, CONCAT(e.codigo, " - ", e.nombre) AS espacio_nombre,
+                       ' . self::sqlResponsablesEspacio('e.id') . ' AS responsables_nombres
+                FROM bienes b
+                LEFT JOIN categorias_bienes c ON c.id = b.categoria_id
+                JOIN asignaciones a ON a.bien_id = b.id AND a.activa = 1
+                JOIN espacios e ON e.id = a.espacio_id
+                JOIN espacio_responsables er ON er.espacio_id = e.id AND er.usuario_id = ?'
+               . $whereSql
+               . ' ORDER BY b.created_at DESC, b.id DESC'
+               . self::limitSql($pagina, $porPagina);
+
+        $stmt = Database::connection()->prepare($sql);
+        $stmt->execute(array_merge([$usuarioId], $params));
+
+        return $stmt->fetchAll();
+    }
+
+    public static function contarPropios(int $usuarioId, ?int $institucionId = null, ?string $busqueda = null): int
+    {
+        [$whereSql, $params] = self::condicionesPropios($institucionId, $busqueda);
+
+        $sql = 'SELECT COUNT(*)
+                FROM bienes b
+                JOIN asignaciones a ON a.bien_id = b.id AND a.activa = 1
+                JOIN espacios e ON e.id = a.espacio_id
+                JOIN espacio_responsables er ON er.espacio_id = e.id AND er.usuario_id = ?'
+               . $whereSql;
+
+        $stmt = Database::connection()->prepare($sql);
+        $stmt->execute(array_merge([$usuarioId], $params));
+
+        return (int) $stmt->fetchColumn();
+    }
+
+    private static function condicionesPropios(?int $institucionId, ?string $busqueda): array
+    {
+        $condiciones = [];
+        $params = [];
+
+        if ($institucionId !== null) {
+            $condiciones[] = 'b.institucion_id = ?';
+            $params[] = $institucionId;
+        }
+
+        if ($busqueda !== null && $busqueda !== '') {
+            $termino = '%' . $busqueda . '%';
+            $condiciones[] = '(b.codigo_identificacion LIKE ? OR b.descripcion LIKE ? OR e.nombre LIKE ?
+                OR REPLACE(b.estado, "_", " ") LIKE ? OR CAST(b.valor AS CHAR) LIKE ?)';
+            array_push($params, $termino, $termino, $termino, $termino, $termino);
+        }
+
+        $sql = $condiciones ? ' WHERE ' . implode(' AND ', $condiciones) : '';
+
+        return [$sql, $params];
+    }
+
+    /**
      * Subconsulta correlacionada con los nombres de los responsables de un espacio (puede
      * haber varios). $columnaEspacioId es la columna del espacio en la consulta externa.
      */

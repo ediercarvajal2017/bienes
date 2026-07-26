@@ -37,11 +37,20 @@ final class BienController
             $porPagina = self::POR_PAGINA_DEFECTO;
         }
 
-        $total = Bien::contarListado($institucionId, $terminoBusqueda);
+        $soloPropios = Auth::rol() === 'docente';
+
+        if ($soloPropios) {
+            $total = Bien::contarPropios((int) Auth::id(), $institucionId, $terminoBusqueda);
+            $bienes = Bien::listarPropios((int) Auth::id(), $institucionId, $terminoBusqueda, $pagina, $porPagina);
+        } else {
+            $total = Bien::contarListado($institucionId, $terminoBusqueda);
+            $bienes = Bien::listar($institucionId, $terminoBusqueda, $pagina, $porPagina);
+        }
 
         View::layout('partials/layout', 'bienes/index', [
             'title' => 'Bienes',
-            'bienes' => Bien::listar($institucionId, $terminoBusqueda, $pagina, $porPagina),
+            'bienes' => $bienes,
+            'soloPropios' => $soloPropios,
             'busqueda' => $busqueda,
             'pagina' => $pagina,
             'porPagina' => $porPagina,
