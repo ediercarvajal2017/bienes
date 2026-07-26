@@ -67,17 +67,29 @@ final class Verificacion
         return (int) $stmt->fetchColumn();
     }
 
-    public static function listarDiscrepancias(int $jornadaId): array
+    /**
+     * Detalle de las verificaciones de una jornada con un resultado dado ('ok' o
+     * 'discrepancia'): código, descripción, ubicación actual, responsable(s) del espacio
+     * y quién hizo la verificación — para el reporte detallado de la jornada.
+     */
+    public static function listarPorResultado(int $jornadaId, string $resultado): array
     {
         $stmt = Database::connection()->prepare(
-            "SELECT v.*, b.codigo_identificacion, b.descripcion, u.nombres, u.apellidos
+            "SELECT v.*, b.codigo_identificacion, b.descripcion,
+                    CONCAT(e.codigo, ' - ', e.nombre) AS espacio_nombre,
+                    (SELECT GROUP_CONCAT(CONCAT(u2.nombres, ' ', u2.apellidos) SEPARATOR ', ')
+                     FROM espacio_responsables er JOIN usuarios u2 ON u2.id = er.usuario_id
+                     WHERE er.espacio_id = e.id) AS responsables_nombres,
+                    u.nombres, u.apellidos
              FROM verificaciones_bienes v
              JOIN bienes b ON b.id = v.bien_id
+             LEFT JOIN asignaciones a ON a.bien_id = b.id AND a.activa = 1
+             LEFT JOIN espacios e ON e.id = a.espacio_id
              JOIN usuarios u ON u.id = v.usuario_id
-             WHERE v.jornada_id = ? AND v.resultado = 'discrepancia'
+             WHERE v.jornada_id = ? AND v.resultado = ?
              ORDER BY v.updated_at DESC"
         );
-        $stmt->execute([$jornadaId]);
+        $stmt->execute([$jornadaId, $resultado]);
 
         return $stmt->fetchAll();
     }

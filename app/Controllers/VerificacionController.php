@@ -11,6 +11,7 @@ use App\Core\Session;
 use App\Core\Url;
 use App\Core\View;
 use App\Helpers\Paginador;
+use App\Helpers\Uploader;
 use App\Models\Bien;
 use App\Models\JornadaVerificacion;
 use App\Models\Verificacion;
@@ -113,7 +114,8 @@ final class VerificacionController
             'universo' => Verificacion::contarUniverso($institucionId),
             'verificadosOk' => Verificacion::contarPorResultado((int) $jornada['id'], 'ok'),
             'verificadosDiscrepancia' => Verificacion::contarPorResultado((int) $jornada['id'], 'discrepancia'),
-            'discrepancias' => Verificacion::listarDiscrepancias((int) $jornada['id']),
+            'verificadosOkDetalle' => Verificacion::listarPorResultado((int) $jornada['id'], 'ok'),
+            'discrepancias' => Verificacion::listarPorResultado((int) $jornada['id'], 'discrepancia'),
             'pendientes' => Verificacion::listarPendientes((int) $jornada['id'], $institucionId),
             'mensaje' => Session::pullFlash('ok'),
             'error' => Session::pullFlash('error'),
@@ -203,6 +205,23 @@ final class VerificacionController
             Session::flash('error', 'Describe brevemente la discrepancia encontrada.');
             header('Location: ' . Url::to("/qr/{$token}"));
             exit;
+        }
+
+        // Si el bien todavía no tiene foto, la verificación en terreno es la oportunidad
+        // de tomarle una — solo aplica al resultado "ok" (bien confirmado físicamente).
+        if ($resultado === 'ok' && empty($bien['foto_path'])) {
+            try {
+                if ($archivo = $request->file('foto')) {
+                    $path = Uploader::storeImage($archivo, 'fotos_bienes');
+                    if ($path) {
+                        Bien::updateFoto((int) $bien['id'], $path);
+                    }
+                }
+            } catch (\RuntimeException $e) {
+                Session::flash('error', $e->getMessage());
+                header('Location: ' . Url::to("/qr/{$token}"));
+                exit;
+            }
         }
 
         Verificacion::registrar((int) $jornada['id'], (int) $bien['id'], (int) Auth::id(), $resultado, $observaciones);

@@ -104,9 +104,13 @@ $etiquetasEstado = [
                     <p class="text-muted small mb-2">Si vuelves a verificar, se reemplaza el registro anterior.</p>
                 <?php endif; ?>
 
-                <form method="post" action="<?= Url::to('/qr/' . $token . '/verificar') ?>" class="d-inline">
+                <form method="post" action="<?= Url::to('/qr/' . $token . '/verificar') ?>" enctype="multipart/form-data">
                     <?= \App\Core\Csrf::field() ?>
                     <input type="hidden" name="resultado" value="ok">
+                    <?php if (empty($bien['foto_path'])): ?>
+                        <label class="form-label small text-muted mb-1">Este bien no tiene foto — puedes tomarle una (opcional)</label>
+                        <input type="file" name="foto" accept="image/*" capture="environment" class="form-control form-control-sm mb-2">
+                    <?php endif; ?>
                     <button type="submit" class="btn btn-outline-success btn-sm w-100 mb-2">
                         <i class="bi bi-check2-circle me-1"></i>Confirmar: el bien está aquí
                     </button>

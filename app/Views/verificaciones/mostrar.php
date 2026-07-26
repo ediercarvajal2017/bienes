@@ -29,28 +29,28 @@ $pendientesCount = count($pendientes);
         </div>
     </div>
     <div class="col-6 col-md-3">
-        <div class="card h-100">
+        <a href="#seccion-ok" class="card h-100 text-decoration-none text-body">
             <div class="card-body text-center py-3">
                 <div class="fs-4 fw-semibold text-success"><i class="bi bi-check2-circle me-1"></i><?= (int) $verificadosOk ?></div>
                 <div class="small text-muted">Verificados sin novedad</div>
             </div>
-        </div>
+        </a>
     </div>
     <div class="col-6 col-md-3">
-        <div class="card h-100">
+        <a href="#seccion-discrepancia" class="card h-100 text-decoration-none text-body">
             <div class="card-body text-center py-3">
                 <div class="fs-4 fw-semibold text-warning"><i class="bi bi-exclamation-triangle me-1"></i><?= (int) $verificadosDiscrepancia ?></div>
                 <div class="small text-muted">Con discrepancia</div>
             </div>
-        </div>
+        </a>
     </div>
     <div class="col-6 col-md-3">
-        <div class="card h-100">
+        <a href="#seccion-pendientes" class="card h-100 text-decoration-none text-body">
             <div class="card-body text-center py-3">
                 <div class="fs-4 fw-semibold text-muted"><i class="bi bi-hourglass-split me-1"></i><?= $pendientesCount ?></div>
                 <div class="small text-muted">Pendientes</div>
             </div>
-        </div>
+        </a>
     </div>
 </div>
 
@@ -72,20 +72,47 @@ $pendientesCount = count($pendientes);
     </div>
 <?php endif; ?>
 
-<h2 class="h6">Bienes con discrepancia</h2>
+<h2 class="h6" id="seccion-ok">Bienes verificados sin novedad</h2>
+<?php if (empty($verificadosOkDetalle)): ?>
+    <p class="text-muted small">Ninguno hasta ahora.</p>
+<?php else: ?>
+    <div class="table-responsive mb-4">
+        <table class="table table-sm bg-white tabla-cards">
+            <thead>
+            <tr><th>Código</th><th>Descripción</th><th>Ubicación</th><th>Responsable(s)</th><th>Verificado por</th><th>Fecha</th></tr>
+            </thead>
+            <tbody>
+            <?php foreach ($verificadosOkDetalle as $v): ?>
+                <tr>
+                    <td class="mono small" data-label="Código"><?= htmlspecialchars($v['codigo_identificacion'], ENT_QUOTES) ?></td>
+                    <td data-label="Descripción"><?= htmlspecialchars($v['descripcion'], ENT_QUOTES) ?></td>
+                    <td class="text-muted small" data-label="Ubicación"><?= !empty($v['espacio_nombre']) ? htmlspecialchars($v['espacio_nombre'], ENT_QUOTES) : 'Sin asignar' ?></td>
+                    <td class="text-muted small" data-label="Responsable(s)"><?= !empty($v['responsables_nombres']) ? htmlspecialchars($v['responsables_nombres'], ENT_QUOTES) : '—' ?></td>
+                    <td class="small" data-label="Verificado por"><?= htmlspecialchars($v['nombres'] . ' ' . $v['apellidos'], ENT_QUOTES) ?></td>
+                    <td class="mono small text-muted" data-label="Fecha"><?= htmlspecialchars(substr($v['updated_at'], 0, 16), ENT_QUOTES) ?></td>
+                </tr>
+            <?php endforeach; ?>
+            </tbody>
+        </table>
+    </div>
+<?php endif; ?>
+
+<h2 class="h6" id="seccion-discrepancia">Bienes con discrepancia</h2>
 <?php if (empty($discrepancias)): ?>
     <p class="text-muted small">Ninguna hasta ahora.</p>
 <?php else: ?>
     <div class="table-responsive mb-4">
         <table class="table table-sm bg-white tabla-cards">
             <thead>
-            <tr><th>Código</th><th>Descripción</th><th>Observación</th><th>Reportado por</th><th>Fecha</th></tr>
+            <tr><th>Código</th><th>Descripción</th><th>Ubicación</th><th>Responsable(s)</th><th>Observación</th><th>Reportado por</th><th>Fecha</th></tr>
             </thead>
             <tbody>
             <?php foreach ($discrepancias as $d): ?>
                 <tr>
                     <td class="mono small" data-label="Código"><?= htmlspecialchars($d['codigo_identificacion'], ENT_QUOTES) ?></td>
                     <td data-label="Descripción"><?= htmlspecialchars($d['descripcion'], ENT_QUOTES) ?></td>
+                    <td class="text-muted small" data-label="Ubicación"><?= !empty($d['espacio_nombre']) ? htmlspecialchars($d['espacio_nombre'], ENT_QUOTES) : 'Sin asignar' ?></td>
+                    <td class="text-muted small" data-label="Responsable(s)"><?= !empty($d['responsables_nombres']) ? htmlspecialchars($d['responsables_nombres'], ENT_QUOTES) : '—' ?></td>
                     <td class="small" data-label="Observación"><?= htmlspecialchars($d['observaciones'] ?? '', ENT_QUOTES) ?></td>
                     <td class="text-muted small" data-label="Reportado por"><?= htmlspecialchars($d['nombres'] . ' ' . $d['apellidos'], ENT_QUOTES) ?></td>
                     <td class="mono small text-muted" data-label="Fecha"><?= htmlspecialchars(substr($d['updated_at'], 0, 16), ENT_QUOTES) ?></td>
@@ -96,7 +123,7 @@ $pendientesCount = count($pendientes);
     </div>
 <?php endif; ?>
 
-<h2 class="h6">Bienes pendientes de verificar</h2>
+<h2 class="h6" id="seccion-pendientes">Bienes pendientes de verificar</h2>
 <?php if (empty($pendientes)): ?>
     <p class="text-muted small">No hay bienes pendientes.</p>
 <?php else: ?>
