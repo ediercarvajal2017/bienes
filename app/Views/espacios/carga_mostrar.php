@@ -38,18 +38,18 @@ $clases = [
 <?php endif; ?>
 
 <div class="table-responsive">
-    <table class="table table-sm bg-white">
+    <table class="table table-sm bg-white tabla-cards">
         <thead>
         <tr><th>Fila</th><th>Estado</th><th>Número</th><th>Nombre</th><th>Cambios</th></tr>
         </thead>
         <tbody>
         <?php foreach ($filas as $f): ?>
             <tr>
-                <td class="mono small"><?= (int) $f['fila'] ?></td>
-                <td><span class="badge <?= $clases[$f['tipo']] ?>"><?= $etiquetas[$f['tipo']] ?></span></td>
-                <td class="mono small"><?= htmlspecialchars($f['datos']['codigo'] ?? $f['codigo'] ?? '', ENT_QUOTES) ?></td>
-                <td><?= htmlspecialchars($f['datos']['nombre'] ?? $f['nombre'] ?? '', ENT_QUOTES) ?></td>
-                <td class="small">
+                <td class="mono small" data-label="Fila"><?= (int) $f['fila'] ?></td>
+                <td data-label="Estado"><span class="badge <?= $clases[$f['tipo']] ?>"><?= $etiquetas[$f['tipo']] ?></span></td>
+                <td class="mono small" data-label="Número"><?= htmlspecialchars($f['datos']['codigo'] ?? $f['codigo'] ?? '', ENT_QUOTES) ?></td>
+                <td data-label="Nombre"><?= htmlspecialchars($f['datos']['nombre'] ?? $f['nombre'] ?? '', ENT_QUOTES) ?></td>
+                <td class="small" data-label="Cambios">
                     <?php if ($f['tipo'] === 'nuevo' && !empty($f['datos']['responsables'])): ?>
                         <div class="text-muted">Responsable(s): <?= htmlspecialchars(implode(', ', array_map(fn ($u) => $u['nombres'] . ' ' . $u['apellidos'], $f['datos']['responsables'])), ENT_QUOTES) ?></div>
                     <?php elseif ($f['tipo'] === 'modificado' && !empty($f['cambios'])): ?>

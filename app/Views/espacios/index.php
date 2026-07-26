@@ -25,7 +25,7 @@ use App\Core\View;
 <?php endif; ?>
 
 <div class="table-responsive">
-    <table class="table table-sm table-hover align-middle bg-white">
+    <table class="table table-sm table-hover align-middle bg-white tabla-cards">
         <thead>
         <tr>
             <th>N.º</th>
@@ -38,12 +38,12 @@ use App\Core\View;
         <tbody>
         <?php foreach ($espacios as $e): ?>
             <tr>
-                <td class="text-muted mono"><?= htmlspecialchars($e['codigo'], ENT_QUOTES) ?></td>
-                <td><?= htmlspecialchars($e['nombre'], ENT_QUOTES) ?></td>
-                <td class="text-muted small">
+                <td class="text-muted mono" data-label="N.º"><?= htmlspecialchars($e['codigo'], ENT_QUOTES) ?></td>
+                <td data-label="Nombre"><?= htmlspecialchars($e['nombre'], ENT_QUOTES) ?></td>
+                <td class="text-muted small" data-label="Responsable(s)">
                     <?= !empty($e['responsables_nombres']) ? htmlspecialchars($e['responsables_nombres'], ENT_QUOTES) : '—' ?>
                 </td>
-                <td>
+                <td data-label="Estado">
                     <?php if ((int) $e['activo'] === 1): ?>
                         <span class="badge badge-estado-activo">Activo</span>
                     <?php else: ?>

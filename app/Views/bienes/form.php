@@ -281,18 +281,18 @@ $puedeEditar = Auth::esSuperusuario() || Auth::tienePermiso('bienes.editar') || 
     <?php if (!empty($historialMovimientos)): ?>
         <h3 class="h6">Historial de movimientos</h3>
         <div class="table-responsive" style="max-width: 680px;">
-            <table class="table table-sm bg-white">
+            <table class="table table-sm bg-white tabla-cards">
                 <thead>
                 <tr><th>Fecha</th><th>Tipo</th><th>Responsable</th><th>Destino</th><th>Observaciones</th></tr>
                 </thead>
                 <tbody>
                 <?php foreach ($historialMovimientos as $m): ?>
                     <tr>
-                        <td class="mono"><?= htmlspecialchars($m['fecha'], ENT_QUOTES) ?></td>
-                        <td><span class="badge text-bg-light border text-capitalize"><?= htmlspecialchars($m['tipo'], ENT_QUOTES) ?></span></td>
-                        <td><?= htmlspecialchars($m['nombres'] . ' ' . $m['apellidos'], ENT_QUOTES) ?></td>
-                        <td class="text-muted"><?= htmlspecialchars($m['espacio_destino_nombre'] ?? $m['destino_texto'] ?? '—', ENT_QUOTES) ?></td>
-                        <td class="text-muted small"><?= htmlspecialchars($m['observaciones'] ?? '', ENT_QUOTES) ?></td>
+                        <td class="mono" data-label="Fecha"><?= htmlspecialchars($m['fecha'], ENT_QUOTES) ?></td>
+                        <td data-label="Tipo"><span class="badge text-bg-light border text-capitalize"><?= htmlspecialchars($m['tipo'], ENT_QUOTES) ?></span></td>
+                        <td data-label="Responsable"><?= htmlspecialchars($m['nombres'] . ' ' . $m['apellidos'], ENT_QUOTES) ?></td>
+                        <td class="text-muted" data-label="Destino"><?= htmlspecialchars($m['espacio_destino_nombre'] ?? $m['destino_texto'] ?? '—', ENT_QUOTES) ?></td>
+                        <td class="text-muted small" data-label="Observaciones"><?= htmlspecialchars($m['observaciones'] ?? '', ENT_QUOTES) ?></td>
                     </tr>
                 <?php endforeach; ?>
                 </tbody>

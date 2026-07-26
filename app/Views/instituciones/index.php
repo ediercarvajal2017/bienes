@@ -16,7 +16,7 @@ use App\Core\Url;
 <?php endif; ?>
 
 <div class="table-responsive">
-    <table class="table table-sm table-hover align-middle bg-white">
+    <table class="table table-sm table-hover align-middle bg-white tabla-cards">
         <thead>
         <tr>
             <th>Institución</th>
@@ -30,16 +30,16 @@ use App\Core\Url;
         <tbody>
         <?php foreach ($instituciones as $inst): ?>
             <tr>
-                <td>
+                <td data-label="Institución">
                     <?= htmlspecialchars($inst['nombre'], ENT_QUOTES) ?>
                     <?php if ($inst['tipo_sede'] === 'seccion' && !empty($inst['institucion_padre_nombre'])): ?>
                         <div class="small text-muted">Sección de <?= htmlspecialchars($inst['institucion_padre_nombre'], ENT_QUOTES) ?></div>
                     <?php endif; ?>
                 </td>
-                <td class="text-muted mono"><?= htmlspecialchars($inst['codigo_dane'], ENT_QUOTES) ?></td>
-                <td><span class="badge text-bg-light border"><?= $inst['tipo_sede'] === 'principal' ? 'Principal' : 'Sección' ?></span></td>
-                <td class="text-muted"><?= htmlspecialchars($inst['email_institucional'] ?? '—', ENT_QUOTES) ?></td>
-                <td>
+                <td class="text-muted mono" data-label="Código DANE"><?= htmlspecialchars($inst['codigo_dane'], ENT_QUOTES) ?></td>
+                <td data-label="Tipo"><span class="badge text-bg-light border"><?= $inst['tipo_sede'] === 'principal' ? 'Principal' : 'Sección' ?></span></td>
+                <td class="text-muted" data-label="Correo"><?= htmlspecialchars($inst['email_institucional'] ?? '—', ENT_QUOTES) ?></td>
+                <td data-label="Estado">
                     <?php if ((int) $inst['activo'] === 1): ?>
                         <span class="badge badge-estado-activo">Activa</span>
                     <?php else: ?>

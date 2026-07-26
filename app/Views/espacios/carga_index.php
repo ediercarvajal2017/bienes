@@ -33,20 +33,20 @@ use App\Core\View;
     <p class="text-muted small">Todavía no se ha subido ningún archivo.</p>
 <?php else: ?>
     <div class="table-responsive" style="max-width: 800px;">
-        <table class="table table-sm bg-white">
+        <table class="table table-sm bg-white tabla-cards">
             <thead>
             <tr><th>Fecha</th><th>Subido por</th><th>Filas</th><th>Nuevos</th><th>Modificados</th><th>Sin cambios</th><th>Estado</th><th></th></tr>
             </thead>
             <tbody>
             <?php foreach ($cargas as $c): ?>
                 <tr>
-                    <td class="mono small"><?= htmlspecialchars(substr($c['created_at'], 0, 16), ENT_QUOTES) ?></td>
-                    <td class="small text-muted"><?= htmlspecialchars($c['nombres'] . ' ' . $c['apellidos'], ENT_QUOTES) ?></td>
-                    <td><?= (int) $c['total_filas'] ?></td>
-                    <td><?= (int) $c['nuevos'] ?></td>
-                    <td><?= (int) $c['modificados'] ?></td>
-                    <td><?= (int) $c['sin_cambios'] ?></td>
-                    <td>
+                    <td class="mono small" data-label="Fecha"><?= htmlspecialchars(substr($c['created_at'], 0, 16), ENT_QUOTES) ?></td>
+                    <td class="small text-muted" data-label="Subido por"><?= htmlspecialchars($c['nombres'] . ' ' . $c['apellidos'], ENT_QUOTES) ?></td>
+                    <td data-label="Filas"><?= (int) $c['total_filas'] ?></td>
+                    <td data-label="Nuevos"><?= (int) $c['nuevos'] ?></td>
+                    <td data-label="Modificados"><?= (int) $c['modificados'] ?></td>
+                    <td data-label="Sin cambios"><?= (int) $c['sin_cambios'] ?></td>
+                    <td data-label="Estado">
                         <?php if ((int) $c['aplicada'] === 1): ?>
                             <span class="badge badge-estado-activo">Aplicada</span>
                         <?php else: ?>

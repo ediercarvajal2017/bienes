@@ -20,7 +20,7 @@ use App\Core\View;
 <?php endif; ?>
 
 <div class="table-responsive">
-    <table class="table table-sm table-hover align-middle bg-white">
+    <table class="table table-sm table-hover align-middle bg-white tabla-cards">
         <thead>
         <tr>
             <th></th>
@@ -45,15 +45,15 @@ use App\Core\View;
                         </span>
                     <?php endif; ?>
                 </td>
-                <td>
+                <td data-label="Nombre">
                     <?= htmlspecialchars($u['nombres'] . ' ' . $u['apellidos'], ENT_QUOTES) ?>
                     <div class="small text-muted"><?= htmlspecialchars($u['email'], ENT_QUOTES) ?></div>
                 </td>
-                <td class="text-muted mono"><?= htmlspecialchars($u['documento'], ENT_QUOTES) ?></td>
-                <td><?= htmlspecialchars($u['cargo_nombre'], ENT_QUOTES) ?></td>
-                <td><span class="badge text-bg-light border text-capitalize"><?= htmlspecialchars($u['rol_nombre'], ENT_QUOTES) ?></span></td>
-                <?php if (Auth::esSuperusuario()): ?><td class="text-muted small"><?= htmlspecialchars($u['institucion_nombre'], ENT_QUOTES) ?></td><?php endif; ?>
-                <td>
+                <td class="text-muted mono" data-label="Documento"><?= htmlspecialchars($u['documento'], ENT_QUOTES) ?></td>
+                <td data-label="Cargo"><?= htmlspecialchars($u['cargo_nombre'], ENT_QUOTES) ?></td>
+                <td data-label="Rol"><span class="badge text-bg-light border text-capitalize"><?= htmlspecialchars($u['rol_nombre'], ENT_QUOTES) ?></span></td>
+                <?php if (Auth::esSuperusuario()): ?><td class="text-muted small" data-label="Institución"><?= htmlspecialchars($u['institucion_nombre'], ENT_QUOTES) ?></td><?php endif; ?>
+                <td data-label="Estado">
                     <?php if ((int) $u['activo'] === 1): ?>
                         <span class="badge badge-estado-activo">Activo</span>
                     <?php else: ?>

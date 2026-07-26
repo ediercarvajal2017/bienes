@@ -38,18 +38,18 @@ $clases = [
 <?php endif; ?>
 
 <div class="table-responsive">
-    <table class="table table-sm bg-white">
+    <table class="table table-sm bg-white tabla-cards">
         <thead>
         <tr><th>Fila</th><th>Estado</th><th>Código</th><th>Descripción</th><th>Cambios</th></tr>
         </thead>
         <tbody>
         <?php foreach ($filas as $f): ?>
             <tr>
-                <td class="mono small"><?= (int) $f['fila'] ?></td>
-                <td><span class="badge <?= $clases[$f['tipo']] ?>"><?= $etiquetas[$f['tipo']] ?></span></td>
-                <td class="mono small"><?= htmlspecialchars($f['datos']['codigo_identificacion'] ?? $f['codigo'] ?? '', ENT_QUOTES) ?></td>
-                <td><?= htmlspecialchars($f['datos']['descripcion'] ?? $f['descripcion'] ?? '', ENT_QUOTES) ?></td>
-                <td class="small">
+                <td class="mono small" data-label="Fila"><?= (int) $f['fila'] ?></td>
+                <td data-label="Estado"><span class="badge <?= $clases[$f['tipo']] ?>"><?= $etiquetas[$f['tipo']] ?></span></td>
+                <td class="mono small" data-label="Código"><?= htmlspecialchars($f['datos']['codigo_identificacion'] ?? $f['codigo'] ?? '', ENT_QUOTES) ?></td>
+                <td data-label="Descripción"><?= htmlspecialchars($f['datos']['descripcion'] ?? $f['descripcion'] ?? '', ENT_QUOTES) ?></td>
+                <td class="small" data-label="Cambios">
                     <?php if ($f['tipo'] === 'modificado' && !empty($f['cambios'])): ?>
                         <?php foreach ($f['cambios'] as $campo => $c): ?>
                             <div><b><?= htmlspecialchars($campo, ENT_QUOTES) ?>:</b>

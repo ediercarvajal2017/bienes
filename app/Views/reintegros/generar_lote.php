@@ -38,7 +38,7 @@ use App\Core\View;
         </div>
 
         <div class="table-responsive">
-            <table class="table table-sm table-hover align-middle bg-white">
+            <table class="table table-sm table-hover align-middle bg-white tabla-cards">
                 <thead>
                 <tr>
                     <th style="width: 32px;"><input type="checkbox" id="seleccionarTodos" class="form-check-input"></th>
@@ -53,15 +53,15 @@ use App\Core\View;
                 <tbody>
                 <?php foreach ($pendientes as $p): ?>
                     <tr>
-                        <td><input type="checkbox" name="movimientos[]" value="<?= $p['id'] ?>" class="form-check-input casilla-bien"></td>
-                        <td class="mono"><?= htmlspecialchars($p['codigo_identificacion'], ENT_QUOTES) ?></td>
-                        <td><?= htmlspecialchars($p['descripcion'], ENT_QUOTES) ?></td>
-                        <td class="text-muted mono"><?= htmlspecialchars($p['fecha_reintegro'], ENT_QUOTES) ?></td>
-                        <td class="text-muted"><?= htmlspecialchars($p['destino_texto'], ENT_QUOTES) ?></td>
-                        <td class="text-muted small">
+                        <td data-label="Seleccionar"><input type="checkbox" name="movimientos[]" value="<?= $p['id'] ?>" class="form-check-input casilla-bien"></td>
+                        <td class="mono" data-label="Código"><?= htmlspecialchars($p['codigo_identificacion'], ENT_QUOTES) ?></td>
+                        <td data-label="Descripción"><?= htmlspecialchars($p['descripcion'], ENT_QUOTES) ?></td>
+                        <td class="text-muted mono" data-label="Fecha de reintegro"><?= htmlspecialchars($p['fecha_reintegro'], ENT_QUOTES) ?></td>
+                        <td class="text-muted" data-label="Destino"><?= htmlspecialchars($p['destino_texto'], ENT_QUOTES) ?></td>
+                        <td class="text-muted small" data-label="Espacio de origen">
                             <?= !empty($p['espacio_origen_nombre']) ? htmlspecialchars($p['espacio_origen_nombre'], ENT_QUOTES) : '—' ?>
                         </td>
-                        <td class="text-end"><?= number_format((float) $p['valor'], 2) ?></td>
+                        <td class="text-end" data-label="Valor"><?= number_format((float) $p['valor'], 2) ?></td>
                     </tr>
                 <?php endforeach; ?>
                 </tbody>

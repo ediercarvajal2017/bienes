@@ -19,11 +19,14 @@ use App\Core\Url;
 </form>
 
 <div class="table-responsive" style="max-width: 640px;">
-    <table class="table table-sm bg-white align-middle">
+    <table class="table table-sm bg-white align-middle tabla-cards">
+        <thead>
+        <tr><th>Nombre</th><th>Estado</th><th></th></tr>
+        </thead>
         <tbody>
         <?php foreach ($categorias as $c): ?>
             <tr>
-                <td style="width: 60%;">
+                <td data-label="Nombre">
                     <form method="post" action="<?= Url::to('/categorias/' . $c['id']) ?>" class="d-flex gap-2">
                         <?= Csrf::field() ?>
                         <input type="text" name="nombre" class="form-control form-control-sm"
@@ -31,12 +34,14 @@ use App\Core\Url;
                         <button type="submit" class="btn btn-sm btn-outline-primary text-nowrap">Guardar</button>
                     </form>
                 </td>
-                <td class="text-end text-nowrap">
+                <td data-label="Estado">
                     <?php if ((int) $c['activo'] === 1): ?>
-                        <span class="badge badge-estado-activo me-2">Activa</span>
+                        <span class="badge badge-estado-activo">Activa</span>
                     <?php else: ?>
-                        <span class="badge text-bg-secondary me-2">Inactiva</span>
+                        <span class="badge text-bg-secondary">Inactiva</span>
                     <?php endif; ?>
+                </td>
+                <td class="text-end text-nowrap">
                     <form method="post" action="<?= Url::to('/categorias/' . $c['id'] . '/estado') ?>" class="d-inline">
                         <?= Csrf::field() ?>
                         <button type="submit" class="btn btn-sm btn-outline-<?= (int) $c['activo'] === 1 ? 'danger' : 'success' ?>">

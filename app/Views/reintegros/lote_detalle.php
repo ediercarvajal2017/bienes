@@ -28,7 +28,7 @@ use App\Core\Url;
 </div>
 
 <div class="table-responsive" style="max-width: 680px;">
-    <table class="table table-sm bg-white">
+    <table class="table table-sm bg-white tabla-cards">
         <thead>
         <tr>
             <th>Código</th>
@@ -42,14 +42,14 @@ use App\Core\Url;
         <tbody>
         <?php foreach ($bienes as $b): ?>
             <tr>
-                <td class="mono"><?= htmlspecialchars($b['codigo_identificacion'], ENT_QUOTES) ?></td>
-                <td><?= htmlspecialchars($b['descripcion'], ENT_QUOTES) ?></td>
-                <td class="text-muted mono"><?= htmlspecialchars($b['fecha_reintegro'], ENT_QUOTES) ?></td>
-                <td class="text-muted"><?= htmlspecialchars($b['destino_texto'], ENT_QUOTES) ?></td>
-                <td class="text-muted">
+                <td class="mono" data-label="Código"><?= htmlspecialchars($b['codigo_identificacion'], ENT_QUOTES) ?></td>
+                <td data-label="Descripción"><?= htmlspecialchars($b['descripcion'], ENT_QUOTES) ?></td>
+                <td class="text-muted mono" data-label="Fecha de reintegro"><?= htmlspecialchars($b['fecha_reintegro'], ENT_QUOTES) ?></td>
+                <td class="text-muted" data-label="Destino"><?= htmlspecialchars($b['destino_texto'], ENT_QUOTES) ?></td>
+                <td class="text-muted" data-label="Espacio de origen">
                     <?= !empty($b['espacio_origen_nombre']) ? htmlspecialchars($b['espacio_origen_nombre'], ENT_QUOTES) : '—' ?>
                 </td>
-                <td class="text-end"><?= number_format((float) $b['valor'], 2) ?></td>
+                <td class="text-end" data-label="Valor"><?= number_format((float) $b['valor'], 2) ?></td>
             </tr>
         <?php endforeach; ?>
         </tbody>

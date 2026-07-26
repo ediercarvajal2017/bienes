@@ -32,7 +32,7 @@ use App\Core\View;
     <p class="text-muted">Todavía no se ha generado ningún lote.</p>
 <?php else: ?>
     <div class="table-responsive">
-        <table class="table table-sm table-hover align-middle bg-white">
+        <table class="table table-sm table-hover align-middle bg-white tabla-cards">
             <thead>
             <tr>
                 <th>Fecha del lote</th>
@@ -46,11 +46,11 @@ use App\Core\View;
             <tbody>
             <?php foreach ($lotes as $l): ?>
                 <tr>
-                    <td class="mono"><?= htmlspecialchars($l['fecha'], ENT_QUOTES) ?></td>
-                    <?php if (Auth::esSuperusuario()): ?><td class="text-muted small"><?= htmlspecialchars($l['institucion_nombre'], ENT_QUOTES) ?></td><?php endif; ?>
-                    <td class="text-muted"><?= htmlspecialchars($l['destino_texto'] ?? '—', ENT_QUOTES) ?></td>
-                    <td class="text-muted small"><?= htmlspecialchars($l['registrado_por_nombres'] . ' ' . $l['registrado_por_apellidos'], ENT_QUOTES) ?></td>
-                    <td class="text-end"><?= (int) $l['total_bienes'] ?></td>
+                    <td class="mono" data-label="Fecha del lote"><?= htmlspecialchars($l['fecha'], ENT_QUOTES) ?></td>
+                    <?php if (Auth::esSuperusuario()): ?><td class="text-muted small" data-label="Institución"><?= htmlspecialchars($l['institucion_nombre'], ENT_QUOTES) ?></td><?php endif; ?>
+                    <td class="text-muted" data-label="Descripción"><?= htmlspecialchars($l['destino_texto'] ?? '—', ENT_QUOTES) ?></td>
+                    <td class="text-muted small" data-label="Registrado por"><?= htmlspecialchars($l['registrado_por_nombres'] . ' ' . $l['registrado_por_apellidos'], ENT_QUOTES) ?></td>
+                    <td class="text-end" data-label="Bienes"><?= (int) $l['total_bienes'] ?></td>
                     <td class="text-end text-nowrap">
                         <a href="<?= Url::to('/reintegros/lotes/' . $l['id']) ?>" class="btn btn-sm btn-outline-secondary">Ver</a>
                         <a href="<?= Url::to('/reintegros/lotes/' . $l['id'] . '/formato.xlsx') ?>" class="btn btn-sm btn-primary">

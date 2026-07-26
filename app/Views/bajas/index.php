@@ -16,7 +16,7 @@ use App\Core\View;
 <?php endif; ?>
 
 <div class="table-responsive">
-    <table class="table table-sm table-hover align-middle bg-white">
+    <table class="table table-sm table-hover align-middle bg-white tabla-cards">
         <thead>
         <tr>
             <th></th>
@@ -37,15 +37,15 @@ use App\Core\View;
                         <img src="<?= Url::to('/archivos/' . $b['foto_path']) ?>" style="width:36px;height:36px;object-fit:cover;border-radius:4px;">
                     <?php endif; ?>
                 </td>
-                <td>
+                <td data-label="Bien">
                     <?= htmlspecialchars($b['bien_descripcion'], ENT_QUOTES) ?>
                     <div class="small text-muted mono"><?= htmlspecialchars($b['codigo_identificacion'], ENT_QUOTES) ?></div>
                 </td>
-                <td><?= htmlspecialchars($b['estado_reportado'], ENT_QUOTES) ?></td>
-                <td class="text-muted"><?= htmlspecialchars($b['ubicacion'] ?? '—', ENT_QUOTES) ?></td>
-                <td class="text-muted"><?= htmlspecialchars($b['nombres'] . ' ' . $b['apellidos'], ENT_QUOTES) ?></td>
-                <td class="mono small"><?= htmlspecialchars(substr($b['fecha_reporte'], 0, 10), ENT_QUOTES) ?></td>
-                <td>
+                <td data-label="Estado reportado"><?= htmlspecialchars($b['estado_reportado'], ENT_QUOTES) ?></td>
+                <td class="text-muted" data-label="Ubicación"><?= htmlspecialchars($b['ubicacion'] ?? '—', ENT_QUOTES) ?></td>
+                <td class="text-muted" data-label="Reportado por"><?= htmlspecialchars($b['nombres'] . ' ' . $b['apellidos'], ENT_QUOTES) ?></td>
+                <td class="mono small" data-label="Fecha"><?= htmlspecialchars(substr($b['fecha_reporte'], 0, 10), ENT_QUOTES) ?></td>
+                <td data-label="Estado">
                     <?php if ((int) $b['aprobada'] === 1): ?>
                         <span class="badge badge-estado-dado_de_baja">Aprobada</span>
                     <?php else: ?>
