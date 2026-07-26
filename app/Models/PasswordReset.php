@@ -33,6 +33,12 @@ final class PasswordReset
     /**
      * Busca un token vigente (no usado, no vencido) y devuelve sus datos junto con
      * los del usuario dueño, o null si no es válido.
+     *
+     * La comparación de vencimiento se hace contra la hora actual calculada por PHP
+     * (misma zona horaria que se usó al crear el token en crear()), en vez de contra
+     * NOW() de MySQL: el servidor de base de datos puede estar en una zona horaria
+     * distinta a la de la app (p. ej. Hostinger en UTC vs. la app en America/Bogota),
+     * lo que hacía que un token recién creado apareciera "vencido" de inmediato.
      */
     public static function validar(string $token): ?array
     {
@@ -42,9 +48,9 @@ final class PasswordReset
             'SELECT pr.id, pr.usuario_id, u.email, u.nombres, u.apellidos
              FROM password_resets pr
              JOIN usuarios u ON u.id = pr.usuario_id
-             WHERE pr.token_hash = ? AND pr.usado = 0 AND pr.expira_en > NOW()'
+             WHERE pr.token_hash = ? AND pr.usado = 0 AND pr.expira_en > ?'
         );
-        $stmt->execute([$hash]);
+        $stmt->execute([$hash, date('Y-m-d H:i:s')]);
 
         return $stmt->fetch() ?: null;
     }
