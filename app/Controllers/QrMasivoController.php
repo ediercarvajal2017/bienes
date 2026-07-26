@@ -21,6 +21,8 @@ final class QrMasivoController
 
     public function formulario(): void
     {
+        $this->verificarAcceso();
+
         $institucionId = $this->institucionSeleccionada();
         $busqueda = trim((string) ($_GET['q'] ?? ''));
         $terminoBusqueda = $busqueda !== '' ? $busqueda : null;
@@ -49,6 +51,8 @@ final class QrMasivoController
 
     public function generar(): void
     {
+        $this->verificarAcceso();
+
         $request = new Request();
 
         if (!Csrf::verify((string) $request->input('_csrf'))) {
@@ -81,6 +85,21 @@ final class QrMasivoController
         View::render('bienes/qr_masivo_imprimir', [
             'bienes' => $bienes,
         ]);
+    }
+
+    /**
+     * La generación masiva de QR queda fuera del alcance del rol docente (aunque tenga
+     * el permiso bienes.ver): igual que el filtro de "solo mis bienes" en /bienes, se
+     * revisa el rol directamente en vez de crear un permiso aparte, para no tener que
+     * tocar la ruta, el menú y el botón por separado.
+     */
+    private function verificarAcceso(): void
+    {
+        if (Auth::rol() === 'docente') {
+            http_response_code(403);
+            View::render('errors/403');
+            exit;
+        }
     }
 
     private function institucionSeleccionada(): ?int
