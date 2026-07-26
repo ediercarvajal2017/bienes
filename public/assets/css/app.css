@@ -354,3 +354,13 @@ img {
     margin-bottom: 0.1rem;
   }
 }
+
+/* Selects múltiples largos (ej. responsables de un espacio): en escritorio se
+   respeta el "size" que traiga cada uno, pero en celular se limitan a una altura
+   compacta con scroll propio, para no obligar a desplazar toda la página solo
+   para llegar al botón de guardar. */
+@media (max-width: 575.98px) {
+  select[multiple] {
+    height: 160px !important;
+  }
+}
