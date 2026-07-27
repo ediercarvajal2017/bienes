@@ -134,13 +134,7 @@ final class Uploader
 
     private static function mover(array $file, string $subdir, string $extension): string
     {
-        $config = require dirname(__DIR__, 2) . '/config/app.php';
-        $targetDir = $config['storage_path'] . '/uploads/' . $subdir;
-
-        if (!is_dir($targetDir) && !mkdir($targetDir, 0755, true) && !is_dir($targetDir)) {
-            throw new \RuntimeException('No se pudo preparar la carpeta de almacenamiento.');
-        }
-
+        $targetDir = self::prepararCarpeta($subdir);
         $filename = bin2hex(random_bytes(16)) . '.' . $extension;
 
         if (!move_uploaded_file($file['tmp_name'], $targetDir . '/' . $filename)) {
@@ -158,6 +152,48 @@ final class Uploader
      */
     private static function moverConNombre(array $file, string $subdir, string $extension, string $nombreBase): string
     {
+        $targetDir = self::prepararCarpeta($subdir);
+        $filename = self::siguienteNombreDisponible($targetDir, self::nombreSeguro($nombreBase), $extension);
+
+        if (!move_uploaded_file($file['tmp_name'], $targetDir . '/' . $filename)) {
+            throw new \RuntimeException('No se pudo guardar el archivo.');
+        }
+
+        return $subdir . '/' . $filename;
+    }
+
+    /**
+     * Igual que storeImage() con nombreBase, pero para una imagen que ya está en disco
+     * (no viene de un $_FILES de una petición HTTP) — usado por la carga masiva de fotos
+     * vía .zip, donde cada imagen se extrae primero a un archivo temporal.
+     */
+    public static function guardarImagenDesdeRuta(string $rutaOrigen, string $subdir, string $nombreBase): string
+    {
+        if (!is_file($rutaOrigen)) {
+            throw new \RuntimeException('El archivo no existe.');
+        }
+
+        if ((int) filesize($rutaOrigen) > self::TAMANO_MAXIMO_IMAGEN) {
+            throw new \RuntimeException('El archivo supera el tamaño máximo permitido.');
+        }
+
+        $mime = mime_content_type($rutaOrigen);
+        if (!isset(self::IMAGENES_PERMITIDAS[$mime])) {
+            throw new \RuntimeException('Formato de imagen no permitido. Usa JPG o PNG.');
+        }
+
+        $targetDir = self::prepararCarpeta($subdir);
+        $filename = self::siguienteNombreDisponible($targetDir, self::nombreSeguro($nombreBase), self::IMAGENES_PERMITIDAS[$mime]);
+
+        if (!copy($rutaOrigen, $targetDir . '/' . $filename)) {
+            throw new \RuntimeException('No se pudo guardar el archivo.');
+        }
+
+        return $subdir . '/' . $filename;
+    }
+
+    private static function prepararCarpeta(string $subdir): string
+    {
         $config = require dirname(__DIR__, 2) . '/config/app.php';
         $targetDir = $config['storage_path'] . '/uploads/' . $subdir;
 
@@ -165,7 +201,16 @@ final class Uploader
             throw new \RuntimeException('No se pudo preparar la carpeta de almacenamiento.');
         }
 
-        $base = self::nombreSeguro($nombreBase);
+        return $targetDir;
+    }
+
+    /**
+     * "{base}_{consecutivo}.ext": el consecutivo arranca después de los archivos ya
+     * existentes con ese mismo prefijo y sigue subiendo hasta encontrar un nombre libre,
+     * así nunca se repite ni sobrescribe un archivo anterior del mismo bien.
+     */
+    private static function siguienteNombreDisponible(string $targetDir, string $base, string $extension): string
+    {
         $consecutivo = count(glob($targetDir . '/' . $base . '_*') ?: []) + 1;
         $filename = $base . '_' . $consecutivo . '.' . $extension;
 
@@ -174,11 +219,7 @@ final class Uploader
             $filename = $base . '_' . $consecutivo . '.' . $extension;
         }
 
-        if (!move_uploaded_file($file['tmp_name'], $targetDir . '/' . $filename)) {
-            throw new \RuntimeException('No se pudo guardar el archivo.');
-        }
-
-        return $subdir . '/' . $filename;
+        return $filename;
     }
 
     /**

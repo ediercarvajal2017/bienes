@@ -26,6 +26,7 @@ use App\Controllers\AsignacionController;
 use App\Controllers\AuthController;
 use App\Controllers\BajaController;
 use App\Controllers\BienController;
+use App\Controllers\BienFotoCargaMasivaController;
 use App\Controllers\CargaMasivaController;
 use App\Controllers\CargoController;
 use App\Controllers\CarteraController;
@@ -196,6 +197,13 @@ $router->get('/bienes/qr-masivo', [QrMasivoController::class, 'formulario'], [
 ]);
 $router->post('/bienes/qr-masivo', [QrMasivoController::class, 'generar'], [
     AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':bienes.ver',
+]);
+
+$router->get('/bienes/carga-masiva-fotos', [BienFotoCargaMasivaController::class, 'index'], [
+    AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':cargas.masivas',
+]);
+$router->post('/bienes/carga-masiva-fotos', [BienFotoCargaMasivaController::class, 'subir'], [
+    AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':cargas.masivas',
 ]);
 
 $router->get('/bienes/{id}/editar', [BienController::class, 'editar'], [

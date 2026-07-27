@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Models\Asignacion;
 use App\Models\Bien;
+use App\Models\Espacio;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Shared\Date as FechaExcel;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
@@ -13,8 +15,13 @@ use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 final class CargaMasivaService
 {
     /**
-     * Lee un .xlsx (columnas A-E: Código, Descripción, Marca, Fecha_Ingreso, Valor) y compara
-     * cada fila contra la base de datos de la institución. No escribe nada todavía.
+     * Lee un .xlsx (columnas A-F: Código, Descripción, Marca, Fecha_Ingreso, Valor, Ubicación)
+     * y compara cada fila contra la base de datos de la institución. No escribe nada todavía.
+     *
+     * Fecha_Ingreso es opcional: si se deja en blanco, se usa la fecha de hoy para un bien
+     * nuevo, o se conserva la que ya tenía el bien si es una actualización. Ubicación (opcional)
+     * es el código de un espacio ya existente en la institución; si se indica y no existe, la
+     * fila se marca inválida en vez de crear un espacio nuevo a ciegas.
      *
      * @return array<int, array<string, mixed>>
      */
@@ -30,6 +37,7 @@ final class CargaMasivaService
             $codigo = trim((string) $sheet->getCell("A{$numeroFila}")->getValue());
             $descripcion = trim((string) $sheet->getCell("B{$numeroFila}")->getValue());
             $marca = trim((string) $sheet->getCell("C{$numeroFila}")->getValue());
+            $ubicacion = trim((string) $sheet->getCell("F{$numeroFila}")->getValue());
 
             if ($codigo === '' && $descripcion === '') {
                 continue;
@@ -53,16 +61,41 @@ final class CargaMasivaService
             }
             $codigosVistos[$codigo] = $numeroFila;
 
-            $fecha = self::leerFecha($sheet->getCell("D{$numeroFila}"));
-            if ($fecha === null) {
-                $filas[] = [
-                    'fila' => $numeroFila, 'tipo' => 'invalido',
-                    'motivo' => 'Fecha de ingreso inválida', 'codigo' => $codigo, 'descripcion' => $descripcion,
-                ];
-                continue;
+            $celdaFecha = $sheet->getCell("D{$numeroFila}");
+            $fechaCruda = trim((string) $celdaFecha->getValue());
+            $fecha = null;
+            if ($fechaCruda !== '') {
+                $fecha = self::leerFecha($celdaFecha);
+                if ($fecha === null) {
+                    $filas[] = [
+                        'fila' => $numeroFila, 'tipo' => 'invalido',
+                        'motivo' => 'Fecha de ingreso inválida', 'codigo' => $codigo, 'descripcion' => $descripcion,
+                    ];
+                    continue;
+                }
             }
 
             $valor = self::leerValor($sheet->getCell("E{$numeroFila}"));
+
+            $espacioId = null;
+            if ($ubicacion !== '') {
+                $espacio = Espacio::buscarPorCodigoInstitucion($institucionId, $ubicacion);
+                if (!$espacio) {
+                    $filas[] = [
+                        'fila' => $numeroFila, 'tipo' => 'invalido',
+                        'motivo' => "Ubicación no encontrada: no existe un espacio con código \"{$ubicacion}\"",
+                        'codigo' => $codigo, 'descripcion' => $descripcion,
+                    ];
+                    continue;
+                }
+                $espacioId = (int) $espacio['id'];
+            }
+
+            $existente = Bien::buscarPorCodigoInstitucion($institucionId, $codigo);
+
+            if ($fecha === null) {
+                $fecha = $existente ? $existente['fecha_ingreso'] : date('Y-m-d');
+            }
 
             $datos = [
                 'codigo_identificacion' => $codigo,
@@ -70,16 +103,17 @@ final class CargaMasivaService
                 'marca' => $marca !== '' ? $marca : null,
                 'fecha_ingreso' => $fecha,
                 'valor' => $valor,
+                'espacio_id' => $espacioId,
+                'ubicacion_texto' => $ubicacion !== '' ? $ubicacion : null,
             ];
-
-            $existente = Bien::buscarPorCodigoInstitucion($institucionId, $codigo);
 
             if (!$existente) {
                 $filas[] = ['fila' => $numeroFila, 'tipo' => 'nuevo', 'datos' => $datos];
                 continue;
             }
 
-            $cambios = self::detectarCambios($existente, $datos);
+            $asignacionActiva = $espacioId !== null ? Asignacion::activaDe((int) $existente['id']) : null;
+            $cambios = self::detectarCambios($existente, $datos, $asignacionActiva);
 
             $filas[] = $cambios === []
                 ? ['fila' => $numeroFila, 'tipo' => 'sin_cambios', 'datos' => $datos, 'bien_id' => $existente['id']]
@@ -102,7 +136,7 @@ final class CargaMasivaService
         foreach ($filas as $fila) {
             try {
                 if ($fila['tipo'] === 'nuevo') {
-                    Bien::create([
+                    $bienId = Bien::create([
                         'institucion_id' => $institucionId,
                         'codigo_identificacion' => $fila['datos']['codigo_identificacion'],
                         'descripcion' => $fila['datos']['descripcion'],
@@ -114,6 +148,16 @@ final class CargaMasivaService
                         'estado' => 'activo',
                         'created_by' => $usuarioId,
                     ]);
+
+                    if ($fila['datos']['espacio_id'] !== null) {
+                        Asignacion::crear([
+                            'bien_id' => $bienId,
+                            'espacio_id' => $fila['datos']['espacio_id'],
+                            'fecha_asignacion' => date('Y-m-d'),
+                            'observaciones' => null,
+                            'asignado_por' => $usuarioId,
+                        ]);
+                    }
                     continue;
                 }
 
@@ -129,6 +173,17 @@ final class CargaMasivaService
                         'tiene_factura' => $bien['tiene_factura'],
                         'estado' => $bien['estado'],
                     ]);
+
+                    if ($fila['datos']['espacio_id'] !== null && isset($fila['cambios']['Ubicación'])) {
+                        Asignacion::cerrarActivasDe($fila['bien_id']);
+                        Asignacion::crear([
+                            'bien_id' => $fila['bien_id'],
+                            'espacio_id' => $fila['datos']['espacio_id'],
+                            'fecha_asignacion' => date('Y-m-d'),
+                            'observaciones' => 'Actualizado por carga masiva',
+                            'asignado_por' => $usuarioId,
+                        ]);
+                    }
                 }
             } catch (\PDOException $e) {
                 if ($e->getCode() !== '23000') {
@@ -145,9 +200,9 @@ final class CargaMasivaService
     {
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
-        $sheet->fromArray(['Codigo', 'Descripcion', 'Marca', 'Fecha_Ingreso', 'Valor'], null, 'A1');
-        $sheet->fromArray(['BIEN-0001', 'Silla plástica azul', 'Rimax', '2026-01-15', 85000], null, 'A2');
-        foreach (range('A', 'E') as $columna) {
+        $sheet->fromArray(['Codigo', 'Descripcion', 'Marca', 'Fecha_Ingreso', 'Valor', 'Ubicacion'], null, 'A1');
+        $sheet->fromArray(['BIEN-0001', 'Silla plástica azul', 'Rimax', '2026-01-15', 85000, 'AULA-101'], null, 'A2');
+        foreach (range('A', 'F') as $columna) {
             $sheet->getColumnDimension($columna)->setAutoSize(true);
         }
 
@@ -158,7 +213,7 @@ final class CargaMasivaService
         exit;
     }
 
-    private static function detectarCambios(array $existente, array $nuevo): array
+    private static function detectarCambios(array $existente, array $nuevo, ?array $asignacionActiva): array
     {
         $cambios = [];
         $comparar = [
@@ -184,6 +239,16 @@ final class CargaMasivaService
 
             if ($actualTexto !== $propuestoTexto) {
                 $cambios[$etiqueta] = ['antes' => $actualTexto, 'despues' => $propuestoTexto];
+            }
+        }
+
+        if ($nuevo['espacio_id'] !== null) {
+            $espacioActualId = $asignacionActiva['espacio_id'] ?? null;
+            if ((int) $nuevo['espacio_id'] !== (int) ($espacioActualId ?? 0)) {
+                $cambios['Ubicación'] = [
+                    'antes' => $asignacionActiva['espacio_nombre'] ?? 'Sin asignar',
+                    'despues' => $nuevo['ubicacion_texto'],
+                ];
             }
         }
 

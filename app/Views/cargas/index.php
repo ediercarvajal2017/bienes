@@ -14,7 +14,8 @@ $urlBasePaginacion = Url::to('/cargas-masivas') . ($busqueda !== '' ? '?' . http
 <div class="card mb-4" style="max-width: 640px;">
     <div class="card-body">
         <p class="small text-muted">
-            Sube un archivo <strong>.xlsx</strong> con las columnas: Código, Descripción, Marca, Fecha de ingreso, Valor.
+            Sube un archivo <strong>.xlsx</strong> con las columnas: Código, Descripción, Marca, Fecha de ingreso
+            (opcional), Valor, Ubicación (opcional, código de un espacio ya existente).
             <a href="<?= Url::to('/cargas-masivas/plantilla.xlsx') ?>">Descargar plantilla</a>.
         </p>
         <form method="post" action="<?= Url::to('/cargas-masivas') ?>" enctype="multipart/form-data" class="d-flex gap-2">
@@ -23,6 +24,12 @@ $urlBasePaginacion = Url::to('/cargas-masivas') . ($busqueda !== '' ? '?' . http
             <button type="submit" class="btn btn-sm btn-primary text-nowrap">Analizar archivo</button>
         </form>
     </div>
+</div>
+
+<div class="mb-4">
+    <a href="<?= Url::to('/bienes/carga-masiva-fotos') ?>" class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-images me-1"></i>Carga masiva de fotos (.zip)
+    </a>
 </div>
 
 <h2 class="h6">Cargas anteriores</h2>
