@@ -37,8 +37,12 @@ final class Uploader
     /**
      * Valida y guarda una imagen (JPG/PNG). Devuelve la ruta relativa
      * ("subdir/nombre.ext") a guardar en la BD, o null si no se envió archivo.
+     *
+     * Si se indica $nombreBase (p.ej. el código del bien), el archivo se guarda como
+     * "{nombreBase}_{consecutivo}.ext" en vez del nombre aleatorio por defecto —
+     * el consecutivo siempre sube y nunca se repite dentro de esa carpeta.
      */
-    public static function storeImage(array $file, string $subdir): ?string
+    public static function storeImage(array $file, string $subdir, ?string $nombreBase = null): ?string
     {
         $mime = self::validar($file, self::TAMANO_MAXIMO_IMAGEN);
         if ($mime === null) {
@@ -49,7 +53,11 @@ final class Uploader
             throw new \RuntimeException('Formato de imagen no permitido. Usa JPG o PNG.');
         }
 
-        return self::mover($file, $subdir, self::IMAGENES_PERMITIDAS[$mime]);
+        $extension = self::IMAGENES_PERMITIDAS[$mime];
+
+        return $nombreBase !== null
+            ? self::moverConNombre($file, $subdir, $extension, $nombreBase)
+            : self::mover($file, $subdir, $extension);
     }
 
     /**
@@ -140,5 +148,48 @@ final class Uploader
         }
 
         return $subdir . '/' . $filename;
+    }
+
+    /**
+     * Igual que mover(), pero con nombre legible "{codigo}_{consecutivo}.ext" en vez de
+     * uno aleatorio. El consecutivo arranca después de los archivos ya existentes para
+     * ese mismo código y sigue subiendo hasta encontrar un nombre libre, así nunca se
+     * repite ni sobrescribe una foto anterior del mismo bien.
+     */
+    private static function moverConNombre(array $file, string $subdir, string $extension, string $nombreBase): string
+    {
+        $config = require dirname(__DIR__, 2) . '/config/app.php';
+        $targetDir = $config['storage_path'] . '/uploads/' . $subdir;
+
+        if (!is_dir($targetDir) && !mkdir($targetDir, 0755, true) && !is_dir($targetDir)) {
+            throw new \RuntimeException('No se pudo preparar la carpeta de almacenamiento.');
+        }
+
+        $base = self::nombreSeguro($nombreBase);
+        $consecutivo = count(glob($targetDir . '/' . $base . '_*') ?: []) + 1;
+        $filename = $base . '_' . $consecutivo . '.' . $extension;
+
+        while (file_exists($targetDir . '/' . $filename)) {
+            $consecutivo++;
+            $filename = $base . '_' . $consecutivo . '.' . $extension;
+        }
+
+        if (!move_uploaded_file($file['tmp_name'], $targetDir . '/' . $filename)) {
+            throw new \RuntimeException('No se pudo guardar el archivo.');
+        }
+
+        return $subdir . '/' . $filename;
+    }
+
+    /**
+     * Convierte un texto libre (código del bien) en un nombre de archivo seguro:
+     * solo letras/números/guiones, sin espacios ni caracteres que puedan romper
+     * la ruta o el sistema de archivos.
+     */
+    private static function nombreSeguro(string $texto): string
+    {
+        $limpio = trim((string) preg_replace('/[^A-Za-z0-9]+/', '-', $texto), '-');
+
+        return $limpio !== '' ? $limpio : 'bien';
     }
 }

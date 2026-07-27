@@ -228,7 +228,7 @@ final class VerificacionController
         if ($resultado === 'ok' && empty($bien['foto_path'])) {
             try {
                 if ($archivo = $request->file('foto')) {
-                    $path = Uploader::storeImage($archivo, 'fotos_bienes');
+                    $path = Uploader::storeImage($archivo, 'fotos_bienes', $bien['codigo_identificacion']);
                     if ($path) {
                         Bien::updateFoto((int) $bien['id'], $path);
                     }

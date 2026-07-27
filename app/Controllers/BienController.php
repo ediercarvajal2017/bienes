@@ -88,7 +88,7 @@ final class BienController
         $datos['created_by'] = Auth::id();
         $id = Bien::create($datos);
 
-        $this->procesarArchivos($id, $request);
+        $this->procesarArchivos($id, $request, $datos['codigo_identificacion']);
 
         Session::flash('ok', 'Bien registrado correctamente.');
         header('Location: ' . Url::to('/bienes'));
@@ -133,18 +133,18 @@ final class BienController
 
         Bien::update($id, $datos);
 
-        $this->procesarArchivos($id, $request);
+        $this->procesarArchivos($id, $request, $datos['codigo_identificacion']);
 
         Session::flash('ok', 'Bien actualizado.');
         header('Location: ' . Url::to('/bienes'));
         exit;
     }
 
-    private function procesarArchivos(int $bienId, Request $request): void
+    private function procesarArchivos(int $bienId, Request $request, string $codigoIdentificacion): void
     {
         try {
             if ($archivo = $request->file('foto')) {
-                $path = Uploader::storeImage($archivo, 'fotos_bienes');
+                $path = Uploader::storeImage($archivo, 'fotos_bienes', $codigoIdentificacion);
                 if ($path) {
                     Bien::updateFoto($bienId, $path);
                 }
