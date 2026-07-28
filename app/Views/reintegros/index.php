@@ -76,6 +76,10 @@ use App\Core\View;
         ?>
 
         <h2 class="h6 mb-2">Bienes asignados (<?= $total ?>)</h2>
+        <p class="text-muted small mb-2">
+            La selección se mantiene al buscar o cambiar de página — puedes ir marcando bienes en varias páginas antes de reintegrar.
+            <button type="button" id="botonVaciarSeleccion" class="btn btn-link btn-sm p-0 align-baseline">Vaciar selección</button>
+        </p>
         <div class="mb-2" style="max-width: 420px;">
             <input type="search" id="buscador" class="form-control form-control-sm"
                    placeholder="Buscar por código, descripción, responsable, ubicación o valor..."
@@ -134,30 +138,111 @@ use App\Core\View;
         const boton = document.getElementById('botonReintegrar');
         const contador = document.getElementById('contadorSeleccionados');
         const casillas = document.querySelectorAll('.casilla-bien');
+        const form = document.getElementById('formReintegro');
 
-        function actualizarContador() {
-            const seleccionadas = Array.from(casillas).filter(function (c) { return c.checked; });
-            contador.textContent = seleccionadas.length;
-            boton.disabled = seleccionadas.length === 0;
-            todos.checked = casillas.length > 0 && seleccionadas.length === casillas.length;
+        // La seleccion se guarda en sessionStorage (por institucion) para que sobreviva
+        // al cambiar de pagina o buscar — solo se pierde si el usuario la desmarca a mano
+        // o vacia la seleccion, nunca por la sola navegacion entre paginas.
+        const claveAlmacenamiento = 'sigebi_reintegro_seleccion_' + <?= json_encode((string) $institucionId) ?>;
+
+        function leerSeleccion() {
+            try {
+                const guardado = sessionStorage.getItem(claveAlmacenamiento);
+                return guardado ? JSON.parse(guardado) : {};
+            } catch (e) {
+                return {};
+            }
         }
 
-        casillas.forEach(function (c) { c.addEventListener('change', actualizarContador); });
+        function guardarSeleccion() {
+            try {
+                sessionStorage.setItem(claveAlmacenamiento, JSON.stringify(seleccion));
+            } catch (e) {}
+        }
+
+        let seleccion = leerSeleccion(); // { [id]: true }
+
+        // Si la operacion se aplico con exito, la seleccion ya cumplio su proposito.
+        <?php if (!empty($mensaje)): ?>
+        seleccion = {};
+        guardarSeleccion();
+        <?php endif; ?>
+
+        casillas.forEach(function (c) {
+            if (seleccion[c.value]) {
+                c.checked = true;
+            }
+        });
+
+        function totalSeleccionado() {
+            return Object.keys(seleccion).length;
+        }
+
+        function actualizarContador() {
+            contador.textContent = totalSeleccionado();
+            boton.disabled = totalSeleccionado() === 0;
+            const marcadasEnPagina = Array.from(casillas).filter(function (c) { return c.checked; });
+            todos.checked = casillas.length > 0 && marcadasEnPagina.length === casillas.length;
+        }
+
+        casillas.forEach(function (c) {
+            c.addEventListener('change', function () {
+                if (c.checked) {
+                    seleccion[c.value] = true;
+                } else {
+                    delete seleccion[c.value];
+                }
+                guardarSeleccion();
+                actualizarContador();
+            });
+        });
 
         todos.addEventListener('change', function () {
-            casillas.forEach(function (c) { c.checked = todos.checked; });
+            casillas.forEach(function (c) {
+                c.checked = todos.checked;
+                if (todos.checked) {
+                    seleccion[c.value] = true;
+                } else {
+                    delete seleccion[c.value];
+                }
+            });
+            guardarSeleccion();
             actualizarContador();
         });
 
-        document.getElementById('formReintegro').addEventListener('submit', function (e) {
-            const seleccionadas = Array.from(casillas).filter(function (c) { return c.checked; }).length;
-            if (seleccionadas === 0) {
+        document.getElementById('botonVaciarSeleccion').addEventListener('click', function () {
+            seleccion = {};
+            guardarSeleccion();
+            casillas.forEach(function (c) { c.checked = false; });
+            actualizarContador();
+        });
+
+        form.addEventListener('submit', function (e) {
+            const total = totalSeleccionado();
+            if (total === 0) {
                 e.preventDefault();
                 return;
             }
-            if (!confirm('¿Reintegrar ' + seleccionadas + ' bien(es)?')) {
+            if (!confirm('¿Reintegrar ' + total + ' bien(es)?')) {
                 e.preventDefault();
+                return;
             }
+
+            // Las casillas visibles ya se envian solas por su name="bienes[]"; se agregan
+            // campos ocultos solo para lo seleccionado en otras paginas que no esta en pantalla.
+            // No se vacia aqui: si el servidor rechaza el envio (ej. falta la fecha) el
+            // usuario vuelve a esta pantalla y la seleccion debe seguir intacta. Solo se
+            // vacia cuando el flash de exito confirma que el reintegro sí se aplicó.
+            const idsEnPagina = new Set(Array.from(casillas).map(function (c) { return c.value; }));
+            Object.keys(seleccion).forEach(function (id) {
+                if (!idsEnPagina.has(id)) {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'bienes[]';
+                    input.value = id;
+                    form.appendChild(input);
+                }
+            });
         });
 
         actualizarContador();
