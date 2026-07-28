@@ -5,6 +5,7 @@ use App\Core\Csrf;
 use App\Core\Url;
 use App\Core\View;
 
+$viejo ??= [];
 ?>
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
     <div>
@@ -55,17 +56,18 @@ use App\Core\View;
                 <div class="row g-3">
                     <div class="col-md-6">
                         <label class="form-label small">Destino</label>
-                        <input type="text" name="destino_texto" class="form-control form-control-sm" placeholder="Ej. Almacén institucional" required>
+                        <input type="text" name="destino_texto" class="form-control form-control-sm" placeholder="Ej. Almacén institucional" required
+                               value="<?= htmlspecialchars($viejo['destino_texto'] ?? '', ENT_QUOTES) ?>">
                     </div>
                     <div class="col-md-6">
                         <label class="form-label small">Fecha del reintegro</label>
-                        <input type="date" name="fecha" class="form-control form-control-sm" value="<?= date('Y-m-d') ?>" required>
+                        <input type="date" name="fecha" class="form-control form-control-sm" value="<?= htmlspecialchars($viejo['fecha'] ?? date('Y-m-d'), ENT_QUOTES) ?>" required>
                     </div>
                 </div>
 
                 <div class="mt-3">
                     <label class="form-label small">Observaciones (opcional, aplica a todos)</label>
-                    <input type="text" name="observaciones" class="form-control form-control-sm">
+                    <input type="text" name="observaciones" class="form-control form-control-sm" value="<?= htmlspecialchars($viejo['observaciones'] ?? '', ENT_QUOTES) ?>">
                 </div>
             </div>
         </div>

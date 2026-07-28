@@ -53,6 +53,7 @@ final class ReintegroController
 
             'mensaje' => Session::pullFlash('ok'),
             'error' => Session::pullFlash('error'),
+            'viejo' => Session::pullOld(),
         ]);
     }
 
@@ -66,15 +67,18 @@ final class ReintegroController
         $fecha = (string) $request->input('fecha');
         $destino = trim((string) $request->input('destino_texto'));
         $observaciones = trim((string) $request->input('observaciones')) ?: null;
+        $viejo = ['fecha' => $fecha, 'destino_texto' => $destino, 'observaciones' => $observaciones];
 
         if (empty($bienIds)) {
             Session::flash('error', 'Selecciona al menos un bien para reintegrar.');
+            Session::flashOld($viejo);
             header('Location: ' . Url::to($volverA));
             exit;
         }
 
         if ($fecha === '' || !strtotime($fecha) || $destino === '') {
             Session::flash('error', 'Indica la fecha y el destino del reintegro.');
+            Session::flashOld($viejo);
             header('Location: ' . Url::to($volverA));
             exit;
         }
@@ -83,8 +87,10 @@ final class ReintegroController
 
         if ($reintegrados === null) {
             Session::flash('error', 'Ocurrió un error al procesar el reintegro masivo. No se aplicó ningún cambio.');
+            Session::flashOld($viejo);
         } elseif ($reintegrados === 0) {
             Session::flash('error', 'Ningún bien seleccionado pudo reintegrarse. Verifica que sigan asignados.');
+            Session::flashOld($viejo);
         } else {
             Session::flash('ok', $reintegrados . ' bien(es) reintegrado(s) correctamente. Cuando quieras, agrúpalos en un lote desde "Lotes de reintegro" para generar el formato.');
         }
@@ -155,6 +161,7 @@ final class ReintegroController
             'total' => $total,
             'totalPaginas' => Paginador::totalPaginas($total, $porPagina),
             'error' => Session::pullFlash('error'),
+            'viejo' => Session::pullOld(),
         ]);
     }
 
@@ -166,9 +173,11 @@ final class ReintegroController
         $movimientoIds = array_unique(array_map('intval', (array) $request->input('movimientos', [])));
         $descripcion = trim((string) $request->input('descripcion')) ?: null;
         $observaciones = trim((string) $request->input('observaciones')) ?: null;
+        $viejo = ['movimientos' => $movimientoIds, 'descripcion' => $descripcion, 'observaciones' => $observaciones];
 
         if (empty($movimientoIds)) {
             Session::flash('error', 'Selecciona al menos un reintegro para agrupar en el lote.');
+            Session::flashOld($viejo);
             header('Location: ' . Url::to('/reintegros/lotes/generar'));
             exit;
         }
@@ -177,12 +186,14 @@ final class ReintegroController
 
         if ($lotesCreados === null) {
             Session::flash('error', 'Ocurrió un error al generar el lote. No se aplicó ningún cambio.');
+            Session::flashOld($viejo);
             header('Location: ' . Url::to('/reintegros/lotes/generar'));
             exit;
         }
 
         if (empty($lotesCreados)) {
             Session::flash('error', 'Ningún reintegro seleccionado pudo agruparse (verifica que sigan sin lote y que tengas acceso).');
+            Session::flashOld($viejo);
             header('Location: ' . Url::to('/reintegros/lotes/generar'));
             exit;
         }

@@ -6,6 +6,8 @@ use App\Core\Url;
 
 $esEdicion = $institucion !== null;
 $puedeEditar = Auth::esSuperusuario() || Auth::tienePermiso('instituciones.editar');
+$viejo ??= [];
+$v = static fn (string $campo, mixed $porDefecto = '') => $viejo[$campo] ?? $institucion[$campo] ?? $porDefecto;
 ?>
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
     <h1 class="h4 mb-0"><?= $esEdicion ? 'Editar institución' : 'Nueva institución' ?></h1>
@@ -24,30 +26,30 @@ $puedeEditar = Auth::esSuperusuario() || Auth::tienePermiso('instituciones.edita
     <div class="col-md-6">
         <label class="form-label small">Código DANE</label>
         <input type="text" name="codigo_dane" class="form-control" required <?= $puedeEditar ? '' : 'disabled' ?>
-               value="<?= htmlspecialchars($institucion['codigo_dane'] ?? '', ENT_QUOTES) ?>">
+               value="<?= htmlspecialchars($v('codigo_dane'), ENT_QUOTES) ?>">
     </div>
 
     <div class="col-md-6">
         <label class="form-label small">Tipo de sede</label>
         <select name="tipo_sede" id="tipoSede" class="form-select" <?= $puedeEditar ? '' : 'disabled' ?>>
-            <option value="principal" <?= ($institucion['tipo_sede'] ?? 'principal') === 'principal' ? 'selected' : '' ?>>Principal</option>
-            <option value="seccion" <?= ($institucion['tipo_sede'] ?? '') === 'seccion' ? 'selected' : '' ?>>Sección</option>
+            <option value="principal" <?= $v('tipo_sede', 'principal') === 'principal' ? 'selected' : '' ?>>Principal</option>
+            <option value="seccion" <?= $v('tipo_sede') === 'seccion' ? 'selected' : '' ?>>Sección</option>
         </select>
     </div>
 
     <div class="col-12">
         <label class="form-label small">Nombre</label>
         <input type="text" name="nombre" class="form-control" required <?= $puedeEditar ? '' : 'disabled' ?>
-               value="<?= htmlspecialchars($institucion['nombre'] ?? '', ENT_QUOTES) ?>">
+               value="<?= htmlspecialchars($v('nombre'), ENT_QUOTES) ?>">
     </div>
 
-    <div class="col-12" id="campoPadre" style="<?= ($institucion['tipo_sede'] ?? '') === 'seccion' ? '' : 'display:none;' ?>">
+    <div class="col-12" id="campoPadre" style="<?= $v('tipo_sede') === 'seccion' ? '' : 'display:none;' ?>">
         <label class="form-label small">Institución principal</label>
         <select name="institucion_padre_id" class="form-select" <?= $puedeEditar ? '' : 'disabled' ?>>
             <option value="">-- Selecciona --</option>
             <?php foreach ($instituciones as $opt): ?>
                 <?php if ($esEdicion && (int) $opt['id'] === (int) $institucion['id']) { continue; } ?>
-                <option value="<?= $opt['id'] ?>" <?= (int) ($institucion['institucion_padre_id'] ?? 0) === (int) $opt['id'] ? 'selected' : '' ?>>
+                <option value="<?= $opt['id'] ?>" <?= (int) $v('institucion_padre_id', 0) === (int) $opt['id'] ? 'selected' : '' ?>>
                     <?= htmlspecialchars($opt['nombre'], ENT_QUOTES) ?>
                 </option>
             <?php endforeach; ?>
@@ -57,13 +59,13 @@ $puedeEditar = Auth::esSuperusuario() || Auth::tienePermiso('instituciones.edita
     <div class="col-12">
         <label class="form-label small">Dirección</label>
         <input type="text" name="direccion" class="form-control" <?= $puedeEditar ? '' : 'disabled' ?>
-               value="<?= htmlspecialchars($institucion['direccion'] ?? '', ENT_QUOTES) ?>">
+               value="<?= htmlspecialchars($v('direccion'), ENT_QUOTES) ?>">
     </div>
 
     <div class="col-12">
         <label class="form-label small">Correo institucional</label>
         <input type="email" name="email_institucional" class="form-control" <?= $puedeEditar ? '' : 'disabled' ?>
-               value="<?= htmlspecialchars($institucion['email_institucional'] ?? '', ENT_QUOTES) ?>">
+               value="<?= htmlspecialchars($v('email_institucional'), ENT_QUOTES) ?>">
     </div>
 
     <div class="col-12">

@@ -7,6 +7,8 @@ use App\Core\View;
 
 $esEdicion = $bien !== null;
 $puedeEditar = Auth::esSuperusuario() || Auth::tienePermiso('bienes.editar') || (!$esEdicion && Auth::tienePermiso('bienes.crear'));
+$viejo ??= [];
+$v = static fn (string $campo, mixed $porDefecto = '') => $viejo[$campo] ?? $bien[$campo] ?? $porDefecto;
 ?>
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
     <h1 class="h4 mb-0"><?= $esEdicion ? 'Editar bien' : 'Registrar bien' ?></h1>
@@ -44,7 +46,7 @@ $puedeEditar = Auth::esSuperusuario() || Auth::tienePermiso('bienes.editar') || 
             <label class="form-label small">Institución</label>
             <select name="institucion_id" class="form-select" required>
                 <?php foreach ($instituciones as $i): ?>
-                    <option value="<?= $i['id'] ?>"><?= htmlspecialchars($i['nombre'], ENT_QUOTES) ?></option>
+                    <option value="<?= $i['id'] ?>" <?= (string) $v('institucion_id') === (string) $i['id'] ? 'selected' : '' ?>><?= htmlspecialchars($i['nombre'], ENT_QUOTES) ?></option>
                 <?php endforeach; ?>
             </select>
         </div>
@@ -53,14 +55,14 @@ $puedeEditar = Auth::esSuperusuario() || Auth::tienePermiso('bienes.editar') || 
     <div class="col-md-4">
         <label class="form-label small">Código de identificación</label>
         <input type="text" name="codigo_identificacion" class="form-control" required <?= $puedeEditar ? '' : 'disabled' ?>
-               value="<?= htmlspecialchars($bien['codigo_identificacion'] ?? '', ENT_QUOTES) ?>">
+               value="<?= htmlspecialchars($v('codigo_identificacion'), ENT_QUOTES) ?>">
     </div>
     <div class="col-md-4">
         <label class="form-label small">Categoría</label>
         <select name="categoria_id" class="form-select" <?= $puedeEditar ? '' : 'disabled' ?>>
             <option value="">-- Selecciona --</option>
             <?php foreach ($categorias as $c): ?>
-                <option value="<?= $c['id'] ?>" <?= (int) ($bien['categoria_id'] ?? 0) === (int) $c['id'] ? 'selected' : '' ?>>
+                <option value="<?= $c['id'] ?>" <?= (int) $v('categoria_id', 0) === (int) $c['id'] ? 'selected' : '' ?>>
                     <?= htmlspecialchars($c['nombre'], ENT_QUOTES) ?>
                 </option>
             <?php endforeach; ?>
@@ -69,25 +71,25 @@ $puedeEditar = Auth::esSuperusuario() || Auth::tienePermiso('bienes.editar') || 
     <div class="col-md-4">
         <label class="form-label small">Marca (si aplica)</label>
         <input type="text" name="marca" class="form-control" <?= $puedeEditar ? '' : 'disabled' ?>
-               value="<?= htmlspecialchars($bien['marca'] ?? '', ENT_QUOTES) ?>">
+               value="<?= htmlspecialchars($v('marca'), ENT_QUOTES) ?>">
     </div>
 
     <div class="col-12">
         <label class="form-label small">Descripción</label>
         <input type="text" name="descripcion" class="form-control" required <?= $puedeEditar ? '' : 'disabled' ?>
                placeholder="Ej. Silla plástica azul, Proyector Epson X200..."
-               value="<?= htmlspecialchars($bien['descripcion'] ?? '', ENT_QUOTES) ?>">
+               value="<?= htmlspecialchars($v('descripcion'), ENT_QUOTES) ?>">
     </div>
 
     <div class="col-md-4">
         <label class="form-label small">Fecha de ingreso</label>
         <input type="date" name="fecha_ingreso" class="form-control" required <?= $puedeEditar ? '' : 'disabled' ?>
-               value="<?= htmlspecialchars($bien['fecha_ingreso'] ?? date('Y-m-d'), ENT_QUOTES) ?>">
+               value="<?= htmlspecialchars((string) $v('fecha_ingreso', date('Y-m-d')), ENT_QUOTES) ?>">
     </div>
     <div class="col-md-4">
         <label class="form-label small">Valor</label>
         <input type="number" step="0.01" min="0" name="valor" class="form-control" <?= $puedeEditar ? '' : 'disabled' ?>
-               value="<?= htmlspecialchars((string) ($bien['valor'] ?? '0'), ENT_QUOTES) ?>">
+               value="<?= htmlspecialchars((string) $v('valor', '0'), ENT_QUOTES) ?>">
     </div>
     <?php $estadosEtiquetas = ['activo' => 'Activo', 'reintegrado' => 'Reintegrado', 'en_reparacion' => 'En reparación', 'dado_de_baja' => 'Dado de baja']; ?>
     <div class="col-md-4">
@@ -100,7 +102,7 @@ $puedeEditar = Auth::esSuperusuario() || Auth::tienePermiso('bienes.editar') || 
         <?php else: ?>
             <select name="estado" class="form-select" <?= $puedeEditar ? '' : 'disabled' ?>>
                 <?php foreach (['activo' => 'Activo', 'en_reparacion' => 'En reparación'] as $valorEstado => $etiqueta): ?>
-                    <option value="<?= $valorEstado ?>" <?= ($bien['estado'] ?? 'activo') === $valorEstado ? 'selected' : '' ?>><?= $etiqueta ?></option>
+                    <option value="<?= $valorEstado ?>" <?= $v('estado', 'activo') === $valorEstado ? 'selected' : '' ?>><?= $etiqueta ?></option>
                 <?php endforeach; ?>
             </select>
         <?php endif; ?>
@@ -109,7 +111,7 @@ $puedeEditar = Auth::esSuperusuario() || Auth::tienePermiso('bienes.editar') || 
     <div class="col-12">
         <div class="form-check">
             <input type="checkbox" name="tiene_factura" value="1" id="tieneFactura" class="form-check-input"
-                   <?= !empty($bien['tiene_factura']) ? 'checked' : '' ?> <?= $puedeEditar ? '' : 'disabled' ?>>
+                   <?= !empty($v('tiene_factura', 0)) ? 'checked' : '' ?> <?= $puedeEditar ? '' : 'disabled' ?>>
             <label class="form-check-label small" for="tieneFactura">Este bien tiene factura de compra</label>
         </div>
     </div>

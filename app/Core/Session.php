@@ -57,6 +57,24 @@ final class Session
         return $message;
     }
 
+    /**
+     * Guarda los datos de un formulario que falló su validación, para que la página a la
+     * que se redirige pueda volver a mostrarlos en vez de un formulario en blanco. Como
+     * pullFlash(), dura solo hasta la siguiente vez que se lea (pullOld()).
+     */
+    public static function flashOld(array $datos): void
+    {
+        $_SESSION['_old'] = $datos;
+    }
+
+    public static function pullOld(): array
+    {
+        $datos = $_SESSION['_old'] ?? [];
+        unset($_SESSION['_old']);
+
+        return $datos;
+    }
+
     public static function destroy(): void
     {
         $_SESSION = [];

@@ -42,6 +42,7 @@ final class InstitucionController
             'institucion' => null,
             'instituciones' => Institucion::listadoParaSelect(true),
             'error' => Session::pullFlash('error'),
+            'viejo' => Session::pullOld(),
         ]);
     }
 
@@ -54,6 +55,7 @@ final class InstitucionController
 
         if ($error = $this->validar($datos, null)) {
             Session::flash('error', $error);
+            Session::flashOld($datos);
             header('Location: ' . Url::to('/instituciones/crear'));
             exit;
         }
@@ -86,6 +88,7 @@ final class InstitucionController
             'institucion' => $institucion,
             'instituciones' => $this->institucionesParaFormulario($institucion),
             'error' => Session::pullFlash('error'),
+            'viejo' => Session::pullOld(),
         ]);
     }
 
@@ -101,6 +104,7 @@ final class InstitucionController
 
         if ($error = $this->validar($datos, $id)) {
             Session::flash('error', $error);
+            Session::flashOld($datos);
             header('Location: ' . Url::to("/instituciones/{$id}/editar"));
             exit;
         }

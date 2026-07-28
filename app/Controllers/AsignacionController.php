@@ -52,6 +52,7 @@ final class AsignacionController
 
             'mensaje' => Session::pullFlash('ok'),
             'error' => Session::pullFlash('error'),
+            'viejo' => Session::pullOld(),
         ]);
     }
 
@@ -67,15 +68,18 @@ final class AsignacionController
         $espacioIdRaw = (string) $request->input('espacio_id');
         $fecha = (string) $request->input('fecha_asignacion');
         $observaciones = trim((string) $request->input('observaciones')) ?: null;
+        $viejo = ['bienes' => $bienIds, 'espacio_id' => $espacioIdRaw, 'fecha_asignacion' => $fecha, 'observaciones' => $observaciones];
 
         if (empty($bienIds)) {
             Session::flash('error', 'Selecciona al menos un bien para asignar.');
+            Session::flashOld($viejo);
             header('Location: ' . Url::to($volverA));
             exit;
         }
 
         if ($espacioIdRaw === '' || $fecha === '' || !strtotime($fecha)) {
             Session::flash('error', 'Selecciona un espacio y una fecha de asignación válida.');
+            Session::flashOld($viejo);
             header('Location: ' . Url::to($volverA));
             exit;
         }
@@ -85,8 +89,10 @@ final class AsignacionController
 
         if ($asignados === null) {
             Session::flash('error', 'Ocurrió un error al procesar la asignación masiva. No se aplicó ningún cambio.');
+            Session::flashOld($viejo);
         } elseif ($asignados === 0) {
             Session::flash('error', 'Ningún bien seleccionado pudo asignarse.');
+            Session::flashOld($viejo);
         } else {
             Session::flash('ok', $asignados . ' bien(es) asignado(s) correctamente.');
         }

@@ -4,6 +4,8 @@ use App\Core\Csrf;
 use App\Core\Url;
 use App\Core\View;
 
+$viejo ??= [];
+$movimientosSeleccionados = $viejo['movimientos'] ?? [];
 ?>
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
     <div>
@@ -27,11 +29,12 @@ use App\Core\View;
                 <div class="row g-3">
                     <div class="col-md-6">
                         <label class="form-label small">Descripción</label>
-                        <input type="text" name="descripcion" class="form-control form-control-sm" placeholder="Ej. Entregas de la semana del 20 de julio">
+                        <input type="text" name="descripcion" class="form-control form-control-sm" placeholder="Ej. Entregas de la semana del 20 de julio"
+                               value="<?= htmlspecialchars($viejo['descripcion'] ?? '', ENT_QUOTES) ?>">
                     </div>
                     <div class="col-md-6">
                         <label class="form-label small">Observaciones</label>
-                        <input type="text" name="observaciones" class="form-control form-control-sm">
+                        <input type="text" name="observaciones" class="form-control form-control-sm" value="<?= htmlspecialchars($viejo['observaciones'] ?? '', ENT_QUOTES) ?>">
                     </div>
                 </div>
             </div>
@@ -59,7 +62,7 @@ use App\Core\View;
                 <tbody>
                 <?php foreach ($pendientes as $p): ?>
                     <tr>
-                        <td data-label="Seleccionar"><input type="checkbox" name="movimientos[]" value="<?= $p['id'] ?>" class="form-check-input casilla-bien"></td>
+                        <td data-label="Seleccionar"><input type="checkbox" name="movimientos[]" value="<?= $p['id'] ?>" class="form-check-input casilla-bien" <?= in_array((int) $p['id'], $movimientosSeleccionados, true) ? 'checked' : '' ?>></td>
                         <td class="mono" data-label="Código"><?= htmlspecialchars($p['codigo_identificacion'], ENT_QUOTES) ?></td>
                         <td data-label="Descripción"><?= htmlspecialchars($p['descripcion'], ENT_QUOTES) ?></td>
                         <td class="text-muted mono" data-label="Fecha de reintegro"><?= htmlspecialchars($p['fecha_reintegro'], ENT_QUOTES) ?></td>

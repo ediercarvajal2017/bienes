@@ -69,6 +69,7 @@ final class BienController
             'categorias' => Categoria::activas(),
             'instituciones' => Auth::esSuperusuario() ? Institucion::listadoParaSelect() : [],
             'error' => Session::pullFlash('error'),
+            'viejo' => Session::pullOld(),
         ]);
     }
 
@@ -81,6 +82,7 @@ final class BienController
 
         if ($error = $this->validar($datos, null)) {
             Session::flash('error', $error);
+            Session::flashOld($datos);
             header('Location: ' . Url::to('/bienes/crear'));
             exit;
         }
@@ -110,6 +112,7 @@ final class BienController
             'espaciosInstitucion' => Espacio::listadoParaSelect((int) $bien['institucion_id']),
             'error' => Session::pullFlash('error'),
             'mensaje' => Session::pullFlash('ok'),
+            'viejo' => Session::pullOld(),
         ]);
     }
 
@@ -127,6 +130,7 @@ final class BienController
 
         if ($error = $this->validar($datos, $id)) {
             Session::flash('error', $error);
+            Session::flashOld($datos);
             header('Location: ' . Url::to("/bienes/{$id}/editar"));
             exit;
         }

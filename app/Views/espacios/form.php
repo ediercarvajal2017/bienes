@@ -6,6 +6,8 @@ use App\Core\Url;
 
 $esEdicion = $espacio !== null;
 $puedeEditar = Auth::esSuperusuario() || Auth::tienePermiso('espacios.editar') || (!$esEdicion && Auth::tienePermiso('espacios.crear'));
+$viejo ??= [];
+$v = static fn (string $campo, mixed $porDefecto = '') => $viejo[$campo] ?? $espacio[$campo] ?? $porDefecto;
 ?>
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
     <h1 class="h4 mb-0"><?= $esEdicion ? 'Editar espacio' : 'Nuevo espacio' ?></h1>
@@ -26,7 +28,7 @@ $puedeEditar = Auth::esSuperusuario() || Auth::tienePermiso('espacios.editar') |
             <label class="form-label small">Institución</label>
             <select name="institucion_id" class="form-select" required>
                 <?php foreach ($instituciones as $i): ?>
-                    <option value="<?= $i['id'] ?>"><?= htmlspecialchars($i['nombre'], ENT_QUOTES) ?></option>
+                    <option value="<?= $i['id'] ?>" <?= (string) $v('institucion_id') === (string) $i['id'] ? 'selected' : '' ?>><?= htmlspecialchars($i['nombre'], ENT_QUOTES) ?></option>
                 <?php endforeach; ?>
             </select>
         </div>
@@ -37,13 +39,13 @@ $puedeEditar = Auth::esSuperusuario() || Auth::tienePermiso('espacios.editar') |
         <input type="text" name="codigo" class="form-control" required
                <?= $puedeEditar ? '' : 'disabled' ?>
                placeholder="Ej. 101 o A-101"
-               value="<?= htmlspecialchars($espacio['codigo'] ?? '', ENT_QUOTES) ?>">
+               value="<?= htmlspecialchars($v('codigo'), ENT_QUOTES) ?>">
     </div>
     <div class="col-md-8">
         <label class="form-label small">Nombre del espacio</label>
         <input type="text" name="nombre" class="form-control" required <?= $puedeEditar ? '' : 'disabled' ?>
                placeholder="Ej. Sala de sistemas 1"
-               value="<?= htmlspecialchars($espacio['nombre'] ?? '', ENT_QUOTES) ?>">
+               value="<?= htmlspecialchars($v('nombre'), ENT_QUOTES) ?>">
     </div>
 
     <div class="col-12">

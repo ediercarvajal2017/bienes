@@ -56,6 +56,7 @@ final class UsuarioController
             'roles' => Usuario::rolesParaSelect(Auth::esSuperusuario()),
             'instituciones' => Auth::esSuperusuario() ? Institucion::listadoParaSelect(true) : [],
             'error' => Session::pullFlash('error'),
+            'viejo' => Session::pullOld(),
         ]);
     }
 
@@ -69,6 +70,7 @@ final class UsuarioController
 
         if ($error = $this->validar($datos, $password, null, false)) {
             Session::flash('error', $error);
+            Session::flashOld($datos);
             header('Location: ' . Url::to('/usuarios/crear'));
             exit;
         }
@@ -97,6 +99,7 @@ final class UsuarioController
             'roles' => Usuario::rolesParaSelect(Auth::esSuperusuario()),
             'instituciones' => Auth::esSuperusuario() ? $this->institucionesParaFormulario($usuario) : [],
             'error' => Session::pullFlash('error'),
+            'viejo' => Session::pullOld(),
         ]);
     }
 
@@ -114,6 +117,7 @@ final class UsuarioController
 
         if ($error = $this->validar($datos, $password, $id, true)) {
             Session::flash('error', $error);
+            Session::flashOld($datos);
             header('Location: ' . Url::to("/usuarios/{$id}/editar"));
             exit;
         }

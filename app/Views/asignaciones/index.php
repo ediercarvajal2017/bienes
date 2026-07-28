@@ -5,6 +5,8 @@ use App\Core\Csrf;
 use App\Core\Url;
 use App\Core\View;
 
+$viejo ??= [];
+$bienesSeleccionados = $viejo['bienes'] ?? [];
 ?>
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
     <div>
@@ -58,7 +60,7 @@ use App\Core\View;
                         <select name="espacio_id" class="form-select form-select-sm" required>
                             <option value="">-- Selecciona --</option>
                             <?php foreach ($espacios as $e): ?>
-                                <option value="<?= $e['id'] ?>"><?= htmlspecialchars($e['codigo'] . ' - ' . $e['nombre'], ENT_QUOTES) ?></option>
+                                <option value="<?= $e['id'] ?>" <?= ($viejo['espacio_id'] ?? '') === (string) $e['id'] ? 'selected' : '' ?>><?= htmlspecialchars($e['codigo'] . ' - ' . $e['nombre'], ENT_QUOTES) ?></option>
                             <?php endforeach; ?>
                         </select>
                         <?php if (empty($espacios)): ?>
@@ -67,13 +69,13 @@ use App\Core\View;
                     </div>
                     <div class="col-md-6">
                         <label class="form-label small">Fecha de asignación</label>
-                        <input type="date" name="fecha_asignacion" class="form-control form-control-sm" value="<?= date('Y-m-d') ?>" required>
+                        <input type="date" name="fecha_asignacion" class="form-control form-control-sm" value="<?= htmlspecialchars($viejo['fecha_asignacion'] ?? date('Y-m-d'), ENT_QUOTES) ?>" required>
                     </div>
                 </div>
 
                 <div class="mt-3">
                     <label class="form-label small">Observaciones (opcional, aplica a todos)</label>
-                    <input type="text" name="observaciones" class="form-control form-control-sm">
+                    <input type="text" name="observaciones" class="form-control form-control-sm" value="<?= htmlspecialchars($viejo['observaciones'] ?? '', ENT_QUOTES) ?>">
                 </div>
             </div>
         </div>
@@ -111,7 +113,7 @@ use App\Core\View;
                 <tbody>
                 <?php foreach ($bienes as $b): ?>
                     <tr>
-                        <td data-label="Seleccionar"><input type="checkbox" name="bienes[]" value="<?= $b['id'] ?>" class="form-check-input casilla-bien"></td>
+                        <td data-label="Seleccionar"><input type="checkbox" name="bienes[]" value="<?= $b['id'] ?>" class="form-check-input casilla-bien" <?= in_array((int) $b['id'], $bienesSeleccionados, true) ? 'checked' : '' ?>></td>
                         <td class="mono" data-label="Código"><?= htmlspecialchars($b['codigo_identificacion'], ENT_QUOTES) ?></td>
                         <td data-label="Descripción"><?= htmlspecialchars($b['descripcion'], ENT_QUOTES) ?></td>
                         <?php if (!$b['asignado']): ?>

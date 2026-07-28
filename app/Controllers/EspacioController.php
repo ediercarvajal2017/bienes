@@ -45,14 +45,16 @@ final class EspacioController
     public function crear(): void
     {
         $institucionId = Auth::institucionId();
+        $viejo = Session::pullOld();
 
         View::layout('partials/layout', 'espacios/form', [
             'title' => 'Nuevo espacio',
             'espacio' => null,
             'usuarios' => Auth::esSuperusuario() ? Usuario::listarTodos(null) : Usuario::listarTodos($institucionId),
-            'responsablesSeleccionados' => [],
+            'responsablesSeleccionados' => $viejo['responsables'] ?? [],
             'instituciones' => Auth::esSuperusuario() ? Institucion::listadoParaSelect() : [],
             'error' => Session::pullFlash('error'),
+            'viejo' => $viejo,
         ]);
     }
 
@@ -65,6 +67,7 @@ final class EspacioController
 
         if ($error = $this->validar($datos, null)) {
             Session::flash('error', $error);
+            Session::flashOld($datos);
             header('Location: ' . Url::to('/espacios/crear'));
             exit;
         }
@@ -81,13 +84,15 @@ final class EspacioController
     {
         $espacio = Espacio::find((int) $id);
         $this->verificarAcceso($espacio);
+        $viejo = Session::pullOld();
 
         View::layout('partials/layout', 'espacios/form', [
             'title' => 'Editar espacio',
             'espacio' => $espacio,
             'usuarios' => Usuario::listarTodos($espacio['institucion_id']),
-            'responsablesSeleccionados' => array_column(Espacio::responsablesDe((int) $id), 'id'),
+            'responsablesSeleccionados' => $viejo['responsables'] ?? array_column(Espacio::responsablesDe((int) $id), 'id'),
             'error' => Session::pullFlash('error'),
+            'viejo' => $viejo,
         ]);
     }
 
@@ -104,6 +109,7 @@ final class EspacioController
 
         if ($error = $this->validar($datos, $id)) {
             Session::flash('error', $error);
+            Session::flashOld($datos);
             header('Location: ' . Url::to("/espacios/{$id}/editar"));
             exit;
         }
