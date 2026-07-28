@@ -10,7 +10,7 @@ final class ArchivoController
 
     public function mostrar(string $tipo, string $archivo): void
     {
-        if (!in_array($tipo, self::CARPETAS_PERMITIDAS, true) || !preg_match('/^[a-f0-9]+\.[a-z0-9]+$/', $archivo)) {
+        if (!in_array($tipo, self::CARPETAS_PERMITIDAS, true) || !preg_match('/^[A-Za-z0-9_-]+\.[a-z0-9]+$/', $archivo)) {
             http_response_code(404);
             exit;
         }
