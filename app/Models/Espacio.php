@@ -79,6 +79,22 @@ final class Espacio
         return $stmt->fetchAll();
     }
 
+    /**
+     * Todos los espacios de la institución (activos e inactivos, igual alcance que
+     * buscarPorCodigoInstitucion) con solo id+codigo — pensado para armar en memoria un
+     * mapa código→id una sola vez, en vez de una consulta por cada fila de un archivo
+     * de carga masiva.
+     */
+    public static function listadoCodigos(int $institucionId): array
+    {
+        $stmt = Database::connection()->prepare(
+            'SELECT id, codigo FROM espacios WHERE institucion_id = ?'
+        );
+        $stmt->execute([$institucionId]);
+
+        return $stmt->fetchAll();
+    }
+
     public static function create(array $datos): int
     {
         $stmt = Database::connection()->prepare(

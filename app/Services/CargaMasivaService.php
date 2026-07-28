@@ -30,6 +30,7 @@ final class CargaMasivaService
         $sheet = IOFactory::load($rutaArchivo)->getActiveSheet();
         $filas = [];
         $codigosVistos = [];
+        $espaciosPorCodigo = self::mapaEspaciosPorCodigo($institucionId);
 
         $ultimaFila = $sheet->getHighestDataRow();
 
@@ -79,8 +80,8 @@ final class CargaMasivaService
 
             $espacioId = null;
             if ($ubicacion !== '') {
-                $espacio = Espacio::buscarPorCodigoInstitucion($institucionId, $ubicacion);
-                if (!$espacio) {
+                $espacioId = $espaciosPorCodigo[self::normalizarCodigoEspacio($ubicacion)] ?? null;
+                if ($espacioId === null) {
                     $filas[] = [
                         'fila' => $numeroFila, 'tipo' => 'invalido',
                         'motivo' => "Ubicación no encontrada: no existe un espacio con código \"{$ubicacion}\"",
@@ -88,7 +89,6 @@ final class CargaMasivaService
                     ];
                     continue;
                 }
-                $espacioId = (int) $espacio['id'];
             }
 
             $existente = Bien::buscarPorCodigoInstitucion($institucionId, $codigo);
@@ -253,6 +253,31 @@ final class CargaMasivaService
         }
 
         return $cambios;
+    }
+
+    /**
+     * Código de espacio -> id, para toda la institución, comparando por código
+     * normalizado (ver normalizarCodigoEspacio) en vez de una consulta exacta por fila.
+     * Evita hasta miles de consultas en un archivo grande y, de paso, hace que la
+     * ubicación coincida aunque el Excel traiga espacios de más o un carácter de
+     * espacio "no separable" (muy común al pegar datos desde Word/PDF).
+     */
+    private static function mapaEspaciosPorCodigo(int $institucionId): array
+    {
+        $mapa = [];
+        foreach (Espacio::listadoCodigos($institucionId) as $espacio) {
+            $mapa[self::normalizarCodigoEspacio($espacio['codigo'])] = (int) $espacio['id'];
+        }
+
+        return $mapa;
+    }
+
+    private static function normalizarCodigoEspacio(string $texto): string
+    {
+        $texto = str_replace("\xC2\xA0", ' ', $texto); // espacio "no separable" (NBSP)
+        $texto = preg_replace('/\s+/u', ' ', $texto) ?? $texto;
+
+        return mb_strtoupper(trim($texto));
     }
 
     private static function leerFecha(\PhpOffice\PhpSpreadsheet\Cell\Cell $celda): ?string
