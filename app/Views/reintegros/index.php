@@ -8,11 +8,11 @@ use App\Core\View;
 ?>
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
     <div>
-        <h1 class="h4 mb-0">Asignar bienes</h1>
-        <p class="text-muted small mb-0">Selecciona uno o varios bienes y asígnalos (o reasígnalos) a un espacio.</p>
+        <h1 class="h4 mb-0">Reintegrar bienes</h1>
+        <p class="text-muted small mb-0">Selecciona uno o varios bienes asignados y regístralos como reintegrados.</p>
     </div>
-    <a href="<?= Url::to('/reintegros') ?>" class="btn btn-sm btn-outline-secondary">
-        <i class="bi bi-box-arrow-in-left me-1"></i>Ir a Reintegrar
+    <a href="<?= Url::to('/asignaciones') ?>" class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-person-check me-1"></i>Ir a Asignar
     </a>
 </div>
 
@@ -33,7 +33,7 @@ use App\Core\View;
     </div>
     <script>
     document.getElementById('selectorInstitucion').addEventListener('change', function () {
-        window.location = <?= json_encode(Url::to('/asignaciones')) ?> + (this.value ? '?institucion=' + encodeURIComponent(this.value) : '');
+        window.location = <?= json_encode(Url::to('/reintegros')) ?> + (this.value ? '?institucion=' + encodeURIComponent(this.value) : '');
     });
     </script>
 <?php endif; ?>
@@ -41,33 +41,25 @@ use App\Core\View;
 <?php if ($institucionId === null): ?>
     <p class="text-muted">Selecciona una institución para continuar.</p>
 <?php elseif ($total === 0 && $q === ''): ?>
-    <p class="text-muted">No hay bienes disponibles para asignar en esta institución.</p>
+    <p class="text-muted">No hay bienes pendientes de reintegro en esta institución.</p>
 <?php else: ?>
 
-    <form method="post" action="<?= Url::to('/asignaciones') ?>" id="formAsignar">
+    <form method="post" action="<?= Url::to('/reintegros') ?>" id="formReintegro">
         <?= Csrf::field() ?>
         <input type="hidden" name="institucion_id" value="<?= $institucionId ?>">
 
         <div class="card mb-3" style="max-width: 760px;">
             <div class="card-body py-3">
-                <h2 class="h6 mb-3">Datos de la asignación</h2>
+                <h2 class="h6 mb-3">Datos del reintegro</h2>
 
                 <div class="row g-3">
                     <div class="col-md-6">
-                        <label class="form-label small">Espacio / ubicación (define el responsable)</label>
-                        <select name="espacio_id" class="form-select form-select-sm" required>
-                            <option value="">-- Selecciona --</option>
-                            <?php foreach ($espacios as $e): ?>
-                                <option value="<?= $e['id'] ?>"><?= htmlspecialchars($e['codigo'] . ' - ' . $e['nombre'], ENT_QUOTES) ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                        <?php if (empty($espacios)): ?>
-                            <div class="form-text text-danger">No hay espacios creados en esta institución. Crea uno en "Espacios" antes de asignar.</div>
-                        <?php endif; ?>
+                        <label class="form-label small">Destino</label>
+                        <input type="text" name="destino_texto" class="form-control form-control-sm" placeholder="Ej. Almacén institucional" required>
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label small">Fecha de asignación</label>
-                        <input type="date" name="fecha_asignacion" class="form-control form-control-sm" value="<?= date('Y-m-d') ?>" required>
+                        <label class="form-label small">Fecha del reintegro</label>
+                        <input type="date" name="fecha" class="form-control form-control-sm" value="<?= date('Y-m-d') ?>" required>
                     </div>
                 </div>
 
@@ -80,13 +72,13 @@ use App\Core\View;
 
         <?php
         $queryBase = ['institucion' => $institucionId, 'q' => $q];
-        $urlBasePaginacion = Url::to('/asignaciones') . '?' . http_build_query($queryBase);
+        $urlBasePaginacion = Url::to('/reintegros') . '?' . http_build_query($queryBase);
         ?>
 
-        <h2 class="h6 mb-2">Bienes (<?= $total ?>)</h2>
+        <h2 class="h6 mb-2">Bienes asignados (<?= $total ?>)</h2>
         <div class="mb-2" style="max-width: 420px;">
             <input type="search" id="buscador" class="form-control form-control-sm"
-                   placeholder="Buscar por código, descripción, responsable, ubicación, estado o valor..."
+                   placeholder="Buscar por código, descripción, responsable, ubicación o valor..."
                    value="<?= htmlspecialchars($q, ENT_QUOTES) ?>">
         </div>
 
@@ -104,7 +96,6 @@ use App\Core\View;
                     <th>Código</th>
                     <th>Descripción</th>
                     <th>Responsable / ubicación</th>
-                    <th>Estado</th>
                     <th class="text-end">Valor</th>
                 </tr>
                 </thead>
@@ -114,18 +105,12 @@ use App\Core\View;
                         <td data-label="Seleccionar"><input type="checkbox" name="bienes[]" value="<?= $b['id'] ?>" class="form-check-input casilla-bien"></td>
                         <td class="mono" data-label="Código"><?= htmlspecialchars($b['codigo_identificacion'], ENT_QUOTES) ?></td>
                         <td data-label="Descripción"><?= htmlspecialchars($b['descripcion'], ENT_QUOTES) ?></td>
-                        <?php if (!$b['asignado']): ?>
-                            <td class="text-muted small" data-label="Responsable / ubicación">— Sin asignar —</td>
-                            <td data-label="Estado"><span class="badge text-bg-light border">Sin asignar</span></td>
-                        <?php else: ?>
-                            <td class="small" data-label="Responsable / ubicación">
-                                <?= htmlspecialchars($b['espacio_nombre'] ?? '—', ENT_QUOTES) ?>
-                                <?php if (!empty($b['responsables_nombres'])): ?>
-                                    <div class="text-muted"><?= htmlspecialchars($b['responsables_nombres'], ENT_QUOTES) ?></div>
-                                <?php endif; ?>
-                            </td>
-                            <td data-label="Estado"><span class="badge badge-estado-activo">Asignado</span></td>
-                        <?php endif; ?>
+                        <td class="small" data-label="Responsable / ubicación">
+                            <?= htmlspecialchars($b['espacio_nombre'] ?? '—', ENT_QUOTES) ?>
+                            <?php if (!empty($b['responsables_nombres'])): ?>
+                                <div class="text-muted"><?= htmlspecialchars($b['responsables_nombres'], ENT_QUOTES) ?></div>
+                            <?php endif; ?>
+                        </td>
                         <td class="text-end" data-label="Valor"><?= number_format((float) $b['valor'], 2) ?></td>
                     </tr>
                 <?php endforeach; ?>
@@ -138,15 +123,15 @@ use App\Core\View;
             'urlBase' => $urlBasePaginacion,
         ]); ?>
 
-        <button type="submit" class="btn btn-primary mt-2" id="botonAsignar" disabled>
-            <i class="bi bi-person-check me-1"></i>Asignar seleccionados (<span id="contadorSeleccionados">0</span>)
+        <button type="submit" class="btn btn-primary mt-2" id="botonReintegrar" disabled>
+            <i class="bi bi-box-arrow-in-left me-1"></i>Reintegrar seleccionados (<span id="contadorSeleccionados">0</span>)
         </button>
     </form>
 
     <script>
     (function () {
         const todos = document.getElementById('seleccionarTodos');
-        const boton = document.getElementById('botonAsignar');
+        const boton = document.getElementById('botonReintegrar');
         const contador = document.getElementById('contadorSeleccionados');
         const casillas = document.querySelectorAll('.casilla-bien');
 
@@ -164,13 +149,13 @@ use App\Core\View;
             actualizarContador();
         });
 
-        document.getElementById('formAsignar').addEventListener('submit', function (e) {
+        document.getElementById('formReintegro').addEventListener('submit', function (e) {
             const seleccionadas = Array.from(casillas).filter(function (c) { return c.checked; }).length;
             if (seleccionadas === 0) {
                 e.preventDefault();
                 return;
             }
-            if (!confirm('¿Asignar ' + seleccionadas + ' bien(es)?')) {
+            if (!confirm('¿Reintegrar ' + seleccionadas + ' bien(es)?')) {
                 e.preventDefault();
             }
         });

@@ -37,7 +37,7 @@ final class AsignacionController
         $total = $institucionId !== null ? Bien::contarOperables($institucionId, $termino) : 0;
 
         View::layout('partials/layout', 'asignaciones/index', [
-            'title' => 'Asignar / Reintegrar',
+            'title' => 'Asignar bienes',
             'instituciones' => Auth::esSuperusuario() ? Institucion::listadoParaSelect(true) : [],
             'institucionId' => $institucionId,
             'espacios' => $institucionId !== null ? Espacio::listadoParaSelect($institucionId) : [],

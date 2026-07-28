@@ -350,17 +350,9 @@ final class Bien
     }
 
     /**
-     * Une "sin asignar" (candidatos a Asignar) y "pendientes de reintegro" (candidatos a
-     * Reintegrar) en un solo listado con un discriminador tipo_operacion, para mostrarlos
-     * en una sola tabla con un único encabezado, una sola búsqueda y una sola paginación.
-     * Se ordenan agrupados por tipo (asignar primero) y dentro de cada grupo por su orden
-     * natural previo, con el id como desempate único para que LIMIT/OFFSET sea estable.
-     */
-    /**
      * Bienes operables desde /asignaciones: todo bien no dado de baja puede Asignarse o
-     * Reasignarse a un espacio (tenga ya uno o no); solo los que además están 'activo' y
-     * con una asignación vigente pueden Reintegrarse. Un mismo bien puede admitir ambas
-     * acciones — el front-end habilita el checkbox según cuál se seleccione.
+     * Reasignarse a un espacio, tenga ya uno o no. (Los candidatos a Reintegrar se listan
+     * aparte, ver reintegrables(), en la pantalla dedicada /reintegros.)
      */
     public static function operables(?int $institucionId = null, ?string $busqueda = null, int $pagina = 1, int $porPagina = 50): array
     {
@@ -396,8 +388,7 @@ final class Bien
 
         $sql = 'SELECT b.id, b.codigo_identificacion, b.descripcion, b.valor,
                        CONCAT(e.codigo, " - ", e.nombre) AS espacio_nombre, ' . self::sqlResponsablesEspacio('e.id') . ' AS responsables_nombres,
-                       CASE WHEN a.id IS NOT NULL THEN 1 ELSE 0 END AS asignado,
-                       CASE WHEN a.id IS NOT NULL AND b.estado = "activo" THEN 1 ELSE 0 END AS puede_reintegrar
+                       CASE WHEN a.id IS NOT NULL THEN 1 ELSE 0 END AS asignado
                 FROM bienes b
                 LEFT JOIN asignaciones a ON a.bien_id = b.id AND a.activa = 1
                 LEFT JOIN espacios e ON e.id = a.espacio_id'
@@ -413,6 +404,67 @@ final class Bien
     private static function condicionesOperables(?int $institucionId, ?string $busqueda): array
     {
         $condiciones = ['b.estado != "dado_de_baja"'];
+        $params = [];
+
+        if ($institucionId !== null) {
+            $condiciones[] = 'b.institucion_id = ?';
+            $params[] = $institucionId;
+        }
+
+        if ($busqueda !== null && $busqueda !== '') {
+            $termino = '%' . $busqueda . '%';
+            $condiciones[] = '(b.codigo_identificacion LIKE ? OR b.descripcion LIKE ? OR e.nombre LIKE ?
+                OR EXISTS (SELECT 1 FROM espacio_responsables er JOIN usuarios u ON u.id = er.usuario_id
+                           WHERE er.espacio_id = e.id AND CONCAT(u.nombres, " ", u.apellidos) LIKE ?)
+                OR CAST(b.valor AS CHAR) LIKE ?)';
+            array_push($params, $termino, $termino, $termino, $termino, $termino);
+        }
+
+        return [' WHERE ' . implode(' AND ', $condiciones), $params];
+    }
+
+    /**
+     * Bienes reintegrables desde /reintegros: 'activo' y con una asignación vigente
+     * (a diferencia de operables(), aquí sí se filtra desde la BD — la pantalla de
+     * reintegro solo debe listar lo que realmente se puede reintegrar).
+     */
+    public static function reintegrables(?int $institucionId = null, ?string $busqueda = null, int $pagina = 1, int $porPagina = 50): array
+    {
+        [$whereSql, $params] = self::condicionesReintegrables($institucionId, $busqueda);
+
+        $sql = 'SELECT b.id, b.codigo_identificacion, b.descripcion, b.valor,
+                       CONCAT(e.codigo, " - ", e.nombre) AS espacio_nombre, ' . self::sqlResponsablesEspacio('e.id') . ' AS responsables_nombres
+                FROM bienes b
+                JOIN asignaciones a ON a.bien_id = b.id AND a.activa = 1
+                LEFT JOIN espacios e ON e.id = a.espacio_id'
+               . $whereSql
+               . ' ORDER BY b.codigo_identificacion ASC, b.id ASC' . self::limitSql($pagina, $porPagina);
+
+        $stmt = Database::connection()->prepare($sql);
+        $stmt->execute($params);
+
+        return $stmt->fetchAll();
+    }
+
+    public static function contarReintegrables(?int $institucionId = null, ?string $busqueda = null): int
+    {
+        [$whereSql, $params] = self::condicionesReintegrables($institucionId, $busqueda);
+
+        $sql = 'SELECT COUNT(*)
+                FROM bienes b
+                JOIN asignaciones a ON a.bien_id = b.id AND a.activa = 1
+                LEFT JOIN espacios e ON e.id = a.espacio_id'
+               . $whereSql;
+
+        $stmt = Database::connection()->prepare($sql);
+        $stmt->execute($params);
+
+        return (int) $stmt->fetchColumn();
+    }
+
+    private static function condicionesReintegrables(?int $institucionId, ?string $busqueda): array
+    {
+        $condiciones = ['b.estado = "activo"'];
         $params = [];
 
         if ($institucionId !== null) {

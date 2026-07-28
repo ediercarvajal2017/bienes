@@ -11,7 +11,7 @@ use App\Core\View;
         <p class="text-muted small mb-0">Cada lote agrupa los reintegros que decidas consolidar, con su formato descargable.</p>
     </div>
     <div class="d-flex gap-2">
-        <a href="<?= Url::to('/asignaciones') ?>" class="btn btn-sm btn-outline-secondary">Ir a reintegrar</a>
+        <a href="<?= Url::to('/reintegros') ?>" class="btn btn-sm btn-outline-secondary">Ir a reintegrar</a>
         <a href="<?= Url::to('/reintegros/lotes/generar') ?>" class="btn btn-sm btn-primary position-relative">
             <i class="bi bi-file-earmark-plus me-1"></i>Generar lote
             <?php if ($pendientesDeLote > 0): ?>

@@ -6,7 +6,8 @@ use App\Core\Url;
 $accesos = [
     ['permiso' => 'bienes.ver', 'icono' => 'box-seam', 'texto' => 'Bienes', 'ruta' => '/bienes'],
     ['permiso' => 'espacios.ver', 'icono' => 'door-open', 'texto' => 'Espacios', 'ruta' => '/espacios'],
-    ['permiso' => 'asignaciones.crear', 'icono' => 'person-check', 'texto' => 'Asignar / Reintegrar', 'ruta' => '/asignaciones'],
+    ['permiso' => 'asignaciones.crear', 'icono' => 'person-check', 'texto' => 'Asignar bienes', 'ruta' => '/asignaciones'],
+    ['permiso' => 'asignaciones.crear', 'icono' => 'box-arrow-in-left', 'texto' => 'Reintegrar bienes', 'ruta' => '/reintegros'],
     ['permiso' => 'asignaciones.crear', 'icono' => 'file-earmark-spreadsheet', 'texto' => 'Lotes de reintegro', 'ruta' => '/reintegros/lotes'],
     ['permiso' => null, 'icono' => 'qr-code-scan', 'texto' => 'Escanear QR', 'ruta' => '/escanear'],
     ['permiso' => ['bajas.crear', 'bajas.aprobar'], 'icono' => 'exclamation-triangle', 'texto' => 'Bajas', 'ruta' => '/bajas'],

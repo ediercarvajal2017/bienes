@@ -62,7 +62,8 @@ $esActiva = static fn (string $prefijo): string => str_starts_with($rutaActual, 
             <?php endif; ?>
 
             <?php if (Auth::esSuperusuario() || Auth::tienePermiso('asignaciones.crear')): ?>
-                <a class="nav-link<?= $esActiva('/asignaciones') ?>" href="<?= Url::to('/asignaciones') ?>"><i class="bi bi-person-check me-2"></i>Asignar / Reintegrar</a>
+                <a class="nav-link<?= $esActiva('/asignaciones') ?>" href="<?= Url::to('/asignaciones') ?>"><i class="bi bi-person-check me-2"></i>Asignar bienes</a>
+                <a class="nav-link<?= $rutaActual === '/reintegros' ? ' active' : '' ?>" href="<?= Url::to('/reintegros') ?>"><i class="bi bi-box-arrow-in-left me-2"></i>Reintegrar bienes</a>
                 <a class="nav-link<?= $esActiva('/reintegros/lotes') ?>" href="<?= Url::to('/reintegros/lotes') ?>"><i class="bi bi-file-earmark-spreadsheet me-2"></i>Lotes de reintegro</a>
             <?php endif; ?>
 

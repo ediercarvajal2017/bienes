@@ -14,6 +14,7 @@ use App\Core\View;
 use App\Helpers\Paginador;
 use App\Models\Asignacion;
 use App\Models\Bien;
+use App\Models\Institucion;
 use App\Models\LoteReintegro;
 use App\Models\Movimiento;
 use App\Services\ReporteService;
@@ -23,10 +24,42 @@ final class ReintegroController
     private const POR_PAGINA_DEFECTO = 50;
     private const OPCIONES_POR_PAGINA = [10, 25, 50, 100, 0];
 
+    public function index(): void
+    {
+        $institucionId = $this->institucionSeleccionada();
+
+        $q = trim((string) ($_GET['q'] ?? ''));
+        $termino = $q !== '' ? $q : null;
+        $pagina = max(1, (int) ($_GET['pagina'] ?? 1));
+        $porPagina = (int) ($_GET['porPagina'] ?? self::POR_PAGINA_DEFECTO);
+        if (!in_array($porPagina, self::OPCIONES_POR_PAGINA, true)) {
+            $porPagina = self::POR_PAGINA_DEFECTO;
+        }
+
+        $total = $institucionId !== null ? Bien::contarReintegrables($institucionId, $termino) : 0;
+
+        View::layout('partials/layout', 'reintegros/index', [
+            'title' => 'Reintegrar bienes',
+            'instituciones' => Auth::esSuperusuario() ? Institucion::listadoParaSelect(true) : [],
+            'institucionId' => $institucionId,
+
+            'bienes' => $institucionId !== null ? Bien::reintegrables($institucionId, $termino, $pagina, $porPagina) : [],
+            'q' => $q,
+            'pagina' => $pagina,
+            'total' => $total,
+            'totalPaginas' => Paginador::totalPaginas($total, $porPagina),
+            'porPagina' => $porPagina,
+            'opcionesPorPagina' => self::OPCIONES_POR_PAGINA,
+
+            'mensaje' => Session::pullFlash('ok'),
+            'error' => Session::pullFlash('error'),
+        ]);
+    }
+
     public function guardar(): void
     {
         $request = new Request();
-        $volverA = '/asignaciones' . (Auth::esSuperusuario() ? '?institucion=' . (int) $request->input('institucion_id') : '');
+        $volverA = '/reintegros' . (Auth::esSuperusuario() ? '?institucion=' . (int) $request->input('institucion_id') : '');
         $this->verificarCsrf($request, $volverA);
 
         $bienIds = array_unique(array_map('intval', (array) $request->input('bienes', [])));
@@ -298,7 +331,23 @@ final class ReintegroController
         return Auth::esSuperusuario() ? null : Auth::institucionId();
     }
 
-    private function verificarCsrf(Request $request, string $volverA = '/asignaciones'): void
+    /**
+     * A diferencia de institucionAListar() (usada por los lotes, que sí pueden listarse
+     * "todas las instituciones" para un superusuario), la pantalla de reintegro necesita
+     * una institución concreta para operar — igual que /asignaciones.
+     */
+    private function institucionSeleccionada(): ?int
+    {
+        if (!Auth::esSuperusuario()) {
+            return Auth::institucionId();
+        }
+
+        $solicitada = $_GET['institucion'] ?? '';
+
+        return $solicitada !== '' ? (int) $solicitada : null;
+    }
+
+    private function verificarCsrf(Request $request, string $volverA = '/reintegros'): void
     {
         if (!Csrf::verify((string) $request->input('_csrf'))) {
             Session::flash('error', 'Tu sesión expiró, intenta de nuevo.');
