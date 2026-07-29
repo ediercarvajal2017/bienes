@@ -6,6 +6,8 @@ use App\Core\Url;
 <h1 class="h4 mb-3">Escanear código QR</h1>
 <p class="text-muted small">Apunta la cámara del celular al código QR pegado sobre el bien.</p>
 
+<?php if (!empty($error)): ?><div class="alert alert-danger py-2 small" style="max-width: 420px;"><?= htmlspecialchars($error, ENT_QUOTES) ?></div><?php endif; ?>
+
 <div style="max-width: 420px;">
     <div id="lector-qr" class="rounded border overflow-hidden bg-dark"></div>
     <div class="d-flex gap-2 mt-2 flex-wrap">
@@ -17,9 +19,9 @@ use App\Core\Url;
 </div>
 
 <div class="mt-4" style="max-width: 420px;">
-    <label class="form-label small">¿No tienes cámara a mano? Escribe el código manualmente</label>
-    <form id="formManual" class="d-flex gap-2">
-        <input type="text" id="tokenManual" class="form-control form-control-sm" placeholder="Código del bien">
+    <label class="form-label small">¿No tienes cámara a mano? Escribe el código del bien</label>
+    <form method="get" action="<?= Url::to('/escanear/buscar') ?>" class="d-flex gap-2">
+        <input type="text" name="codigo" class="form-control form-control-sm" placeholder="Código del bien" required>
         <button type="submit" class="btn btn-sm btn-outline-secondary text-nowrap">Buscar</button>
     </form>
 </div>
@@ -81,13 +83,6 @@ use App\Core\Url;
             await lector.stop().catch(function () {});
         }
         await iniciar(camaras[indiceCamara].id);
-    });
-
-    document.getElementById('formManual').addEventListener('submit', function (evento) {
-        evento.preventDefault();
-        const valor = document.getElementById('tokenManual').value.trim();
-        if (!valor) { return; }
-        irA(valor.startsWith('http') ? valor : <?= json_encode(Url::to('/qr/')) ?> + valor);
     });
 })();
 </script>

@@ -303,6 +303,7 @@ $router->post('/bajas/{id}/rechazar', [BajaController::class, 'rechazar'], [
 ]);
 
 $router->get('/escanear', [EscaneoController::class, 'index'], [AuthMiddleware::class]);
+$router->get('/escanear/buscar', [EscaneoController::class, 'buscar'], [AuthMiddleware::class]);
 
 $router->get('/reportes', [ReporteController::class, 'index'], [
     AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':reportes.generar',
