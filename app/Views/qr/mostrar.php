@@ -140,6 +140,12 @@ $etiquetasEstado = [
                 <i class="bi bi-box-arrow-in-right me-1"></i>Iniciar sesión para gestionar
             </a>
         <?php endif; ?>
+
+        <?php if (Auth::check()): ?>
+            <a href="<?= Url::to('/dashboard') ?>" class="btn btn-link btn-sm w-100 mt-2">
+                <i class="bi bi-arrow-left me-1"></i>Volver al menú principal
+            </a>
+        <?php endif; ?>
     </div>
 </div>
 
