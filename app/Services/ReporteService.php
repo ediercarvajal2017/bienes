@@ -53,7 +53,7 @@ final class ReporteService
         $sheet = $spreadsheet->getActiveSheet();
         $sheet->setTitle('Reintegros pendientes');
 
-        $sheet->fromArray(['Código', 'Descripción', 'Responsable', 'Ubicación', 'Fecha de asignación', 'Valor'], null, 'A1');
+        $sheet->fromArray(['Código', 'Descripción', 'Categoría', 'Responsable', 'Ubicación', 'Fecha de asignación', 'Valor'], null, 'A1');
 
         $fila = 2;
         // Igual que en carteraBienes(): porPagina = 0 trae todas las filas sin paginar.
@@ -61,6 +61,7 @@ final class ReporteService
             $sheet->fromArray([
                 $b['codigo_identificacion'],
                 $b['descripcion'],
+                $b['categoria_nombre'] ?? '',
                 $b['responsables_nombres'] ?? '',
                 $b['espacio_nombre'] ?? '',
                 $b['fecha_asignacion'],
@@ -69,7 +70,7 @@ final class ReporteService
             $fila++;
         }
 
-        self::autoajustarColumnas($sheet, 'A', 'F');
+        self::autoajustarColumnas($sheet, 'A', 'G');
 
         return $spreadsheet;
     }

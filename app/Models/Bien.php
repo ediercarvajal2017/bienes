@@ -308,10 +308,11 @@ final class Bien
         [$whereSql, $params] = self::condicionesPendientesDeReintegro($institucionId, $busqueda);
 
         $sql = 'SELECT b.*, a.fecha_asignacion, CONCAT(e.codigo, " - ", e.nombre) AS espacio_nombre, i.nombre AS institucion_nombre,
-                       ' . self::sqlResponsablesEspacio('e.id') . ' AS responsables_nombres
+                       c.nombre AS categoria_nombre, ' . self::sqlResponsablesEspacio('e.id') . ' AS responsables_nombres
                 FROM bienes b
                 JOIN asignaciones a ON a.bien_id = b.id AND a.activa = 1
                 LEFT JOIN espacios e ON e.id = a.espacio_id
+                LEFT JOIN categorias_bienes c ON c.id = b.categoria_id
                 JOIN instituciones i ON i.id = b.institucion_id'
                . $whereSql
                . ' ORDER BY a.fecha_asignacion ASC, a.id ASC'
