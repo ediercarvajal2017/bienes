@@ -109,7 +109,7 @@ $etiquetasEstado = [
                     <input type="hidden" name="resultado" value="ok">
                     <?php if (empty($bien['foto_path'])): ?>
                         <label class="form-label small text-muted mb-1">Este bien no tiene foto — puedes tomarle una (opcional)</label>
-                        <input type="file" name="foto" accept="image/*" capture="environment" class="form-control form-control-sm mb-2">
+                        <input type="file" name="foto" id="fotoVerificar" accept="image/*" capture="environment" class="form-control form-control-sm mb-2">
                     <?php endif; ?>
                     <button type="submit" class="btn btn-outline-success btn-sm w-100 mb-2">
                         <i class="bi bi-check2-circle me-1"></i>Confirmar: el bien está aquí
@@ -144,5 +144,22 @@ $etiquetasEstado = [
 </div>
 
 <script src="<?= Url::asset('/assets/js/tema.js') ?>"></script>
+<script src="<?= Url::asset('/assets/js/camara.js') ?>"></script>
+<script>
+(function () {
+    var input = document.getElementById('fotoVerificar');
+    if (!input || !window.SigebiFoto) { return; }
+    input.addEventListener('change', async function () {
+        var archivo = input.files && input.files[0];
+        if (!archivo) { return; }
+        var comprimido = await window.SigebiFoto.comprimir(archivo);
+        if (comprimido !== archivo) {
+            var lista = new DataTransfer();
+            lista.items.add(comprimido);
+            input.files = lista.files;
+        }
+    });
+})();
+</script>
 </body>
 </html>

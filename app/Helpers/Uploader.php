@@ -29,7 +29,7 @@ final class Uploader
         'application/zip' => 'xlsx',
     ];
 
-    private const TAMANO_MAXIMO_IMAGEN = 4 * 1024 * 1024;
+    private const TAMANO_MAXIMO_IMAGEN = 2 * 1024 * 1024;
     private const TAMANO_MAXIMO_PDF = 8 * 1024 * 1024;
     private const TAMANO_MAXIMO_DOCUMENTO = 8 * 1024 * 1024;
     private const TAMANO_MAXIMO_EXCEL = 8 * 1024 * 1024;
@@ -126,7 +126,8 @@ final class Uploader
         }
 
         if ($file['size'] > $tamanoMaximo) {
-            throw new \RuntimeException('El archivo supera el tamaño máximo permitido.');
+            $maximoMb = (int) round($tamanoMaximo / 1024 / 1024);
+            throw new \RuntimeException("El archivo supera el tamaño máximo permitido ({$maximoMb}MB).");
         }
 
         return mime_content_type($file['tmp_name']);
@@ -174,7 +175,8 @@ final class Uploader
         }
 
         if ((int) filesize($rutaOrigen) > self::TAMANO_MAXIMO_IMAGEN) {
-            throw new \RuntimeException('El archivo supera el tamaño máximo permitido.');
+            $maximoMb = (int) round(self::TAMANO_MAXIMO_IMAGEN / 1024 / 1024);
+            throw new \RuntimeException("El archivo supera el tamaño máximo permitido ({$maximoMb}MB).");
         }
 
         $mime = mime_content_type($rutaOrigen);
