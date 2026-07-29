@@ -142,8 +142,8 @@ $etiquetasEstado = [
         <?php endif; ?>
 
         <?php if (Auth::check()): ?>
-            <a href="<?= Url::to('/dashboard') ?>" class="btn btn-link btn-sm w-100 mt-2">
-                <i class="bi bi-arrow-left me-1"></i>Volver al menú principal
+            <a href="<?= Url::to('/escanear') ?>" class="btn btn-link btn-sm w-100 mt-2">
+                <i class="bi bi-qr-code-scan me-1"></i>Volver a escanear
             </a>
         <?php endif; ?>
     </div>
