@@ -41,7 +41,7 @@ $viejo ??= [];
 
 <?php if ($institucionId === null): ?>
     <p class="text-muted">Selecciona una institución para continuar.</p>
-<?php elseif ($total === 0 && $q === ''): ?>
+<?php elseif ($total === 0 && $q === '' && !$soloSeleccionados): ?>
     <p class="text-muted">No hay bienes pendientes de reintegro en esta institución.</p>
 <?php else: ?>
 
@@ -74,19 +74,32 @@ $viejo ??= [];
 
         <?php
         $queryBase = ['institucion' => $institucionId, 'q' => $q];
+        if ($soloSeleccionados) {
+            $queryBase['seleccionados'] = implode(',', $idsSeleccionados);
+        }
         $urlBasePaginacion = Url::to('/reintegros') . '?' . http_build_query($queryBase);
         ?>
 
-        <h2 class="h6 mb-2">Bienes asignados (<?= $total ?>)</h2>
+        <h2 class="h6 mb-2"><?= $soloSeleccionados ? 'Bienes seleccionados' : 'Bienes asignados' ?> (<?= $total ?>)</h2>
         <p class="text-muted small mb-2">
             La selección se mantiene al buscar o cambiar de página — puedes ir marcando bienes en varias páginas antes de reintegrar.
             <button type="button" id="botonVaciarSeleccion" class="btn btn-link btn-sm p-0 align-baseline">Vaciar selección</button>
         </p>
-        <div class="mb-2" style="max-width: 420px;">
-            <input type="search" id="buscador" class="form-control form-control-sm"
-                   placeholder="Buscar por código, descripción, responsable, ubicación o valor..."
-                   value="<?= htmlspecialchars($q, ENT_QUOTES) ?>">
+        <div class="mb-2 d-flex flex-wrap gap-3 align-items-center">
+            <div style="max-width: 420px; flex: 1 1 260px;">
+                <input type="search" id="buscador" class="form-control form-control-sm"
+                       placeholder="Buscar por código, descripción, responsable, ubicación o valor..."
+                       value="<?= htmlspecialchars($q, ENT_QUOTES) ?>">
+            </div>
+            <div class="form-check">
+                <input type="checkbox" id="verSoloSeleccionados" class="form-check-input" <?= $soloSeleccionados ? 'checked' : '' ?>>
+                <label class="form-check-label small" for="verSoloSeleccionados">Ver solo seleccionados</label>
+            </div>
         </div>
+
+        <?php if ($soloSeleccionados && $total === 0): ?>
+            <p class="text-muted small">No tienes ningún bien seleccionado todavía.</p>
+        <?php endif; ?>
 
         <div class="mb-3">
             <button type="button" id="botonEscanear" class="btn btn-sm btn-outline-primary">
@@ -231,7 +244,38 @@ $viejo ??= [];
             guardarSeleccion();
             casillas.forEach(function (c) { c.checked = false; });
             actualizarContador();
+
+            // Si estaba activo el filtro "ver solo seleccionados", ya no tiene nada que
+            // mostrar — se vuelve al listado completo en vez de dejar una pantalla vacía.
+            const urlActual = new URL(window.location.href);
+            if (urlActual.searchParams.has('seleccionados')) {
+                urlActual.searchParams.delete('seleccionados');
+                urlActual.searchParams.set('pagina', '1');
+                window.location = urlActual.toString();
+            }
         });
+
+        const verSoloSeleccionados = document.getElementById('verSoloSeleccionados');
+        if (verSoloSeleccionados) {
+            verSoloSeleccionados.addEventListener('change', function () {
+                const url = new URL(window.location.href);
+
+                if (verSoloSeleccionados.checked) {
+                    const ids = Object.keys(seleccion);
+                    if (ids.length === 0) {
+                        verSoloSeleccionados.checked = false;
+                        alert('No tienes ningún bien seleccionado todavía.');
+                        return;
+                    }
+                    url.searchParams.set('seleccionados', ids.join(','));
+                } else {
+                    url.searchParams.delete('seleccionados');
+                }
+
+                url.searchParams.set('pagina', '1');
+                window.location = url.toString();
+            });
+        }
 
         form.addEventListener('submit', function (e) {
             const total = totalSeleccionado();

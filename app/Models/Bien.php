@@ -428,9 +428,13 @@ final class Bien
      * (a diferencia de operables(), aquí sí se filtra desde la BD — la pantalla de
      * reintegro solo debe listar lo que realmente se puede reintegrar).
      */
-    public static function reintegrables(?int $institucionId = null, ?string $busqueda = null, int $pagina = 1, int $porPagina = 50): array
+    public static function reintegrables(?int $institucionId = null, ?string $busqueda = null, int $pagina = 1, int $porPagina = 50, ?array $soloIds = null): array
     {
-        [$whereSql, $params] = self::condicionesReintegrables($institucionId, $busqueda);
+        if ($soloIds !== null && empty($soloIds)) {
+            return [];
+        }
+
+        [$whereSql, $params] = self::condicionesReintegrables($institucionId, $busqueda, $soloIds);
 
         $sql = 'SELECT b.id, b.codigo_identificacion, b.descripcion, b.valor,
                        CONCAT(e.codigo, " - ", e.nombre) AS espacio_nombre, ' . self::sqlResponsablesEspacio('e.id') . ' AS responsables_nombres
@@ -467,9 +471,13 @@ final class Bien
         return $stmt->fetch() ?: null;
     }
 
-    public static function contarReintegrables(?int $institucionId = null, ?string $busqueda = null): int
+    public static function contarReintegrables(?int $institucionId = null, ?string $busqueda = null, ?array $soloIds = null): int
     {
-        [$whereSql, $params] = self::condicionesReintegrables($institucionId, $busqueda);
+        if ($soloIds !== null && empty($soloIds)) {
+            return 0;
+        }
+
+        [$whereSql, $params] = self::condicionesReintegrables($institucionId, $busqueda, $soloIds);
 
         $sql = 'SELECT COUNT(*)
                 FROM bienes b
@@ -483,7 +491,12 @@ final class Bien
         return (int) $stmt->fetchColumn();
     }
 
-    private static function condicionesReintegrables(?int $institucionId, ?string $busqueda): array
+    /**
+     * $soloIds filtra por un conjunto puntual de bienes (usado por "Ver solo
+     * seleccionados" en /reintegros, donde la selección vive en sessionStorage del
+     * navegador y abarca varias páginas — el servidor no la conoce hasta que se le pasa).
+     */
+    private static function condicionesReintegrables(?int $institucionId, ?string $busqueda, ?array $soloIds = null): array
     {
         $condiciones = ['b.estado = "activo"'];
         $params = [];
@@ -491,6 +504,12 @@ final class Bien
         if ($institucionId !== null) {
             $condiciones[] = 'b.institucion_id = ?';
             $params[] = $institucionId;
+        }
+
+        if ($soloIds !== null && !empty($soloIds)) {
+            $marcadores = implode(',', array_fill(0, count($soloIds), '?'));
+            $condiciones[] = "b.id IN ({$marcadores})";
+            array_push($params, ...$soloIds);
         }
 
         if ($busqueda !== null && $busqueda !== '') {

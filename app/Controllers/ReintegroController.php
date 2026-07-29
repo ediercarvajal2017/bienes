@@ -36,20 +36,29 @@ final class ReintegroController
             $porPagina = self::POR_PAGINA_DEFECTO;
         }
 
-        $total = $institucionId !== null ? Bien::contarReintegrables($institucionId, $termino) : 0;
+        // "Ver solo seleccionados": la seleccion vive en sessionStorage del navegador
+        // (abarca varias paginas), asi que el filtro llega como una lista de ids en la URL.
+        $soloSeleccionados = isset($_GET['seleccionados']);
+        $idsSeleccionados = $soloSeleccionados
+            ? array_values(array_unique(array_filter(array_map('intval', explode(',', (string) $_GET['seleccionados'])))))
+            : null;
+
+        $total = $institucionId !== null ? Bien::contarReintegrables($institucionId, $termino, $idsSeleccionados) : 0;
 
         View::layout('partials/layout', 'reintegros/index', [
             'title' => 'Reintegrar bienes',
             'instituciones' => Auth::esSuperusuario() ? Institucion::listadoParaSelect(true) : [],
             'institucionId' => $institucionId,
 
-            'bienes' => $institucionId !== null ? Bien::reintegrables($institucionId, $termino, $pagina, $porPagina) : [],
+            'bienes' => $institucionId !== null ? Bien::reintegrables($institucionId, $termino, $pagina, $porPagina, $idsSeleccionados) : [],
             'q' => $q,
             'pagina' => $pagina,
             'total' => $total,
             'totalPaginas' => Paginador::totalPaginas($total, $porPagina),
             'porPagina' => $porPagina,
             'opcionesPorPagina' => self::OPCIONES_POR_PAGINA,
+            'soloSeleccionados' => $soloSeleccionados,
+            'idsSeleccionados' => $idsSeleccionados ?? [],
 
             'mensaje' => Session::pullFlash('ok'),
             'error' => Session::pullFlash('error'),
