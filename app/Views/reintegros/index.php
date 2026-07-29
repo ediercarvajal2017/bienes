@@ -133,7 +133,7 @@ $viejo ??= [];
                 </thead>
                 <tbody>
                 <?php foreach ($bienes as $b): ?>
-                    <tr>
+                    <tr class="fila-bien" style="cursor:pointer;">
                         <td data-label="Seleccionar"><input type="checkbox" name="bienes[]" value="<?= $b['id'] ?>" class="form-check-input casilla-bien"></td>
                         <td class="mono" data-label="Código"><?= htmlspecialchars($b['codigo_identificacion'], ENT_QUOTES) ?></td>
                         <td data-label="Descripción"><?= htmlspecialchars($b['descripcion'], ENT_QUOTES) ?></td>
@@ -223,6 +223,19 @@ $viejo ??= [];
                 }
                 guardarSeleccion();
                 actualizarContador();
+            });
+        });
+
+        // Clic en cualquier parte de la fila selecciona/deselecciona el bien, no solo la
+        // casilla — el clic sobre la casilla misma se ignora aqui para no revertir su
+        // propio toggle nativo (ya dispara el listener 'change' de arriba).
+        document.querySelectorAll('.fila-bien').forEach(function (fila) {
+            fila.addEventListener('click', function (e) {
+                if (e.target.closest('input, a, button')) { return; }
+                const casilla = fila.querySelector('.casilla-bien');
+                if (!casilla) { return; }
+                casilla.checked = !casilla.checked;
+                casilla.dispatchEvent(new Event('change'));
             });
         });
 
