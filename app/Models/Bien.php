@@ -446,6 +446,27 @@ final class Bien
         return $stmt->fetchAll();
     }
 
+    /**
+     * Busca un bien por su qr_token (escaneado desde /reintegros) verificando que sea
+     * reintegrable: misma institución y con una asignación activa. Devuelve null tanto
+     * si el token no existe como si el bien no cumple esas condiciones — el llamador no
+     * necesita distinguir el motivo, solo informar que ese bien no se puede reintegrar.
+     */
+    public static function buscarReintegrablePorToken(string $token, int $institucionId): ?array
+    {
+        $stmt = Database::connection()->prepare(
+            'SELECT b.id, b.codigo_identificacion, b.descripcion,
+                    CONCAT(e.codigo, " - ", e.nombre) AS espacio_nombre, ' . self::sqlResponsablesEspacio('e.id') . ' AS responsables_nombres
+             FROM bienes b
+             JOIN asignaciones a ON a.bien_id = b.id AND a.activa = 1
+             LEFT JOIN espacios e ON e.id = a.espacio_id
+             WHERE b.qr_token = ? AND b.institucion_id = ? AND b.estado = "activo"'
+        );
+        $stmt->execute([$token, $institucionId]);
+
+        return $stmt->fetch() ?: null;
+    }
+
     public static function contarReintegrables(?int $institucionId = null, ?string $busqueda = null): int
     {
         [$whereSql, $params] = self::condicionesReintegrables($institucionId, $busqueda);

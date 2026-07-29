@@ -88,6 +88,19 @@ $viejo ??= [];
                    value="<?= htmlspecialchars($q, ENT_QUOTES) ?>">
         </div>
 
+        <div class="mb-3">
+            <button type="button" id="botonEscanear" class="btn btn-sm btn-outline-primary">
+                <i class="bi bi-qr-code-scan me-1"></i>Escanear QR para agregar bienes
+            </button>
+            <div id="panelEscaner" class="d-none mt-2" style="max-width: 360px;">
+                <div id="lectorQrReintegro" class="rounded border overflow-hidden bg-dark"></div>
+                <div class="d-flex gap-2 mt-2 flex-wrap">
+                    <button type="button" id="botonDetenerEscaneo" class="btn btn-sm btn-outline-secondary">Detener escaneo</button>
+                </div>
+                <p id="mensajeEscaneo" class="small mt-2 mb-0"></p>
+            </div>
+        </div>
+
         <?php View::render('partials/paginacion', [
             'pagina' => $pagina, 'porPagina' => $porPagina, 'total' => $total, 'totalPaginas' => $totalPaginas,
             'opcionesPorPagina' => $opcionesPorPagina,
@@ -134,6 +147,7 @@ $viejo ??= [];
         </button>
     </form>
 
+    <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <script>
     (function () {
         const todos = document.getElementById('seleccionarTodos');
@@ -248,6 +262,91 @@ $viejo ??= [];
         });
 
         actualizarContador();
+
+        // --- Escaneo de QR para agregar bienes a la selección sin buscarlos a mano ---
+        const botonEscanear = document.getElementById('botonEscanear');
+        const panelEscaner = document.getElementById('panelEscaner');
+        const botonDetenerEscaneo = document.getElementById('botonDetenerEscaneo');
+        const mensajeEscaneo = document.getElementById('mensajeEscaneo');
+
+        if (botonEscanear && window.Html5Qrcode) {
+            let lector = null;
+            let escaneando = false;
+            let procesando = false;
+            let ultimoToken = null;
+            let ultimoEn = 0;
+
+            function mostrarMensajeEscaneo(texto, tipo) {
+                mensajeEscaneo.textContent = texto;
+                mensajeEscaneo.className = 'small mt-2 mb-0 ' + (tipo === 'error' ? 'text-danger' : 'text-success');
+            }
+
+            async function alDetectarQr(textoDecodificado) {
+                if (procesando) { return; }
+
+                const ahora = Date.now();
+                if (textoDecodificado === ultimoToken && (ahora - ultimoEn) < 3000) {
+                    return; // evita reprocesar el mismo QR mientras la camara sigue apuntando a el
+                }
+                ultimoToken = textoDecodificado;
+                ultimoEn = ahora;
+                procesando = true;
+
+                try {
+                    const url = <?= json_encode(Url::to('/reintegros/buscar-qr')) ?>
+                        + '?token=' + encodeURIComponent(textoDecodificado)
+                        + '&institucion=' + encodeURIComponent(<?= json_encode((string) $institucionId) ?>);
+                    const respuesta = await fetch(url);
+                    const datos = await respuesta.json();
+
+                    if (!datos.ok) {
+                        mostrarMensajeEscaneo(datos.mensaje || 'No se pudo agregar ese bien.', 'error');
+                        return;
+                    }
+
+                    if (seleccion[String(datos.id)]) {
+                        mostrarMensajeEscaneo(datos.codigo + ' ya estaba en la selección.', 'ok');
+                        return;
+                    }
+
+                    seleccion[String(datos.id)] = true;
+                    guardarSeleccion();
+                    actualizarContador();
+                    const casilla = document.querySelector('.casilla-bien[value="' + datos.id + '"]');
+                    if (casilla) { casilla.checked = true; }
+                    mostrarMensajeEscaneo('Agregado: ' + datos.codigo + ' — ' + datos.descripcion, 'ok');
+                } catch (e) {
+                    mostrarMensajeEscaneo('Error de conexión al buscar el bien.', 'error');
+                } finally {
+                    procesando = false;
+                }
+            }
+
+            async function iniciarEscaneo() {
+                panelEscaner.classList.remove('d-none');
+                if (escaneando) { return; }
+                mensajeEscaneo.textContent = '';
+                lector = new Html5Qrcode('lectorQrReintegro');
+                try {
+                    await lector.start({ facingMode: 'environment' }, { fps: 10, qrbox: 240 }, alDetectarQr, function () {});
+                    escaneando = true;
+                } catch (e) {
+                    mostrarMensajeEscaneo('No se pudo acceder a la cámara: ' + (e.message || e), 'error');
+                }
+            }
+
+            async function detenerEscaneo() {
+                if (escaneando && lector) {
+                    escaneando = false;
+                    await lector.stop().catch(function () {});
+                    await lector.clear().catch(function () {});
+                }
+                panelEscaner.classList.add('d-none');
+            }
+
+            botonEscanear.addEventListener('click', iniciarEscaneo);
+            botonDetenerEscaneo.addEventListener('click', detenerEscaneo);
+        }
 
         // --- Búsqueda con reload debounceado ---
         const buscador = document.getElementById('buscador');

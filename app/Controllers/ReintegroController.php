@@ -99,6 +99,47 @@ final class ReintegroController
         exit;
     }
 
+    /**
+     * Usado por el escaneo de QR en /reintegros: dado un token (o la URL completa que
+     * trae el QR impreso), busca el bien y valida que sea reintegrable antes de dejar que
+     * el frontend lo agregue a la selección. Respuesta JSON, sin CSRF por ser de solo
+     * lectura (no modifica nada).
+     */
+    public function buscarPorQr(): void
+    {
+        header('Content-Type: application/json; charset=utf-8');
+
+        $institucionId = $this->institucionSeleccionada();
+        if ($institucionId === null) {
+            echo json_encode(['ok' => false, 'mensaje' => 'Selecciona una institución primero.']);
+            return;
+        }
+
+        $crudo = trim((string) ($_GET['token'] ?? ''));
+        if ($crudo === '') {
+            echo json_encode(['ok' => false, 'mensaje' => 'Código vacío.']);
+            return;
+        }
+
+        $bien = Bien::buscarReintegrablePorToken($this->extraerToken($crudo), $institucionId);
+        if (!$bien) {
+            echo json_encode([
+                'ok' => false,
+                'mensaje' => 'Ese código no corresponde a un bien reintegrable de esta institución (verifica que tenga una asignación activa).',
+            ]);
+            return;
+        }
+
+        echo json_encode([
+            'ok' => true,
+            'id' => (int) $bien['id'],
+            'codigo' => $bien['codigo_identificacion'],
+            'descripcion' => $bien['descripcion'],
+            'espacio' => $bien['espacio_nombre'],
+            'responsables' => $bien['responsables_nombres'],
+        ]);
+    }
+
     public function lotes(): void
     {
         $institucionId = $this->institucionAListar();
@@ -356,6 +397,22 @@ final class ReintegroController
         $solicitada = $_GET['institucion'] ?? '';
 
         return $solicitada !== '' ? (int) $solicitada : null;
+    }
+
+    /**
+     * El QR impreso codifica la URL pública completa (/qr/{token}); el escáner también
+     * admite escribir o pegar solo el token a mano, así que se acepta cualquiera de las
+     * dos formas.
+     */
+    private function extraerToken(string $texto): string
+    {
+        if (!str_contains($texto, '/qr/')) {
+            return $texto;
+        }
+
+        $resto = substr($texto, strpos($texto, '/qr/') + 4);
+
+        return explode('/', trim($resto, '/'))[0] ?? $texto;
     }
 
     private function verificarCsrf(Request $request, string $volverA = '/reintegros'): void

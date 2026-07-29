@@ -236,6 +236,9 @@ $router->get('/reintegros', [ReintegroController::class, 'index'], [
 $router->post('/reintegros', [ReintegroController::class, 'guardar'], [
     AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':asignaciones.crear',
 ]);
+$router->get('/reintegros/buscar-qr', [ReintegroController::class, 'buscarPorQr'], [
+    AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':asignaciones.crear',
+]);
 $router->get('/reintegros/lotes/generar', [ReintegroController::class, 'pendientesDeLote'], [
     AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':asignaciones.crear',
 ]);
