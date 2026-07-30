@@ -70,13 +70,14 @@ final class ReintegroController
     {
         $request = new Request();
         $volverA = '/reintegros' . (Auth::esSuperusuario() ? '?institucion=' . (int) $request->input('institucion_id') : '');
-        $this->verificarCsrf($request, $volverA);
 
         $bienIds = array_unique(array_map('intval', (array) $request->input('bienes', [])));
         $fecha = (string) $request->input('fecha');
         $destino = trim((string) $request->input('destino_texto'));
         $observaciones = trim((string) $request->input('observaciones')) ?: null;
         $viejo = ['fecha' => $fecha, 'destino_texto' => $destino, 'observaciones' => $observaciones];
+
+        $this->verificarCsrf($request, $volverA, $viejo);
 
         if (empty($bienIds)) {
             Session::flash('error', 'Selecciona al menos un bien para reintegrar.');
@@ -218,12 +219,13 @@ final class ReintegroController
     public function generarLote(): void
     {
         $request = new Request();
-        $this->verificarCsrf($request, '/reintegros/lotes/generar');
 
         $movimientoIds = array_unique(array_map('intval', (array) $request->input('movimientos', [])));
         $descripcion = trim((string) $request->input('descripcion')) ?: null;
         $observaciones = trim((string) $request->input('observaciones')) ?: null;
         $viejo = ['movimientos' => $movimientoIds, 'descripcion' => $descripcion, 'observaciones' => $observaciones];
+
+        $this->verificarCsrf($request, '/reintegros/lotes/generar', $viejo);
 
         if (empty($movimientoIds)) {
             Session::flash('error', 'Selecciona al menos un reintegro para agrupar en el lote.');
@@ -424,10 +426,20 @@ final class ReintegroController
         return explode('/', trim($resto, '/'))[0] ?? $texto;
     }
 
-    private function verificarCsrf(Request $request, string $volverA = '/reintegros'): void
+    /**
+     * $datosAConservar: si la sesión ya expiró (token CSRF inválido) antes de esta
+     * verificación, se pierde igual la oportunidad de flashOld() más abajo en el método —
+     * por eso cada llamador ya construye $viejo ANTES de este chequeo y lo pasa aquí, para
+     * que el usuario no pierda los datos solo porque el token expiró mientras llenaba
+     * el formulario.
+     */
+    private function verificarCsrf(Request $request, string $volverA = '/reintegros', array $datosAConservar = []): void
     {
         if (!Csrf::verify((string) $request->input('_csrf'))) {
-            Session::flash('error', 'Tu sesión expiró, intenta de nuevo.');
+            Session::flash('error', 'Tu sesión expiró, intenta de nuevo. Revisa los datos e inténtalo otra vez.');
+            if (!empty($datosAConservar)) {
+                Session::flashOld($datosAConservar);
+            }
             header('Location: ' . Url::to($volverA));
             exit;
         }

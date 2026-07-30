@@ -77,9 +77,8 @@ final class BienController
     public function guardar(): void
     {
         $request = new Request();
-        $this->verificarCsrf($request, '/bienes/crear');
-
         $datos = $this->datosDesdeFormulario($request);
+        $this->verificarCsrf($request, '/bienes/crear', $datos);
 
         if ($error = $this->validar($datos, null)) {
             Session::flash('error', $error);
@@ -125,10 +124,9 @@ final class BienController
         $this->verificarAcceso($bien);
 
         $request = new Request();
-        $this->verificarCsrf($request, "/bienes/{$id}/editar");
-
         $datos = $this->datosDesdeFormulario($request, (int) $bien['institucion_id']);
         $datos['estado'] = $this->estadoPermitidoDesdeFormulario($bien['estado'], $datos['estado']);
+        $this->verificarCsrf($request, "/bienes/{$id}/editar", $datos);
 
         if ($error = $this->validar($datos, $id)) {
             Session::flash('error', $error);
@@ -220,10 +218,20 @@ final class BienController
         return null;
     }
 
-    private function verificarCsrf(Request $request, string $volverA): void
+    /**
+     * $datosAConservar: si la sesión ya expiró (token CSRF inválido) antes de esta
+     * verificación, se pierde igual la oportunidad de flashOld() más abajo en el método —
+     * por eso cada llamador ya construye sus $datos ANTES de este chequeo y los pasa aquí,
+     * para que el usuario no pierda todo lo que había escrito solo porque se demoró
+     * llenando el formulario y el token expiró mientras tanto.
+     */
+    private function verificarCsrf(Request $request, string $volverA, array $datosAConservar = []): void
     {
         if (!Csrf::verify((string) $request->input('_csrf'))) {
-            Session::flash('error', 'Tu sesión expiró, intenta de nuevo.');
+            Session::flash('error', 'Tu sesión expiró, intenta de nuevo. Revisa los datos e inténtalo otra vez.');
+            if (!empty($datosAConservar)) {
+                Session::flashOld($datosAConservar);
+            }
             header('Location: ' . Url::to($volverA));
             exit;
         }

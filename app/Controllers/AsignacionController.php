@@ -59,16 +59,17 @@ final class AsignacionController
     public function guardar(): void
     {
         $request = new Request();
-        $this->verificarCsrf($request);
-
-        $institucionId = Auth::esSuperusuario() ? (int) $request->input('institucion_id') : Auth::institucionId();
-        $volverA = '/asignaciones' . (Auth::esSuperusuario() ? '?institucion=' . $institucionId : '');
 
         $bienIds = array_unique(array_map('intval', (array) $request->input('bienes', [])));
         $espacioIdRaw = (string) $request->input('espacio_id');
         $fecha = (string) $request->input('fecha_asignacion');
         $observaciones = trim((string) $request->input('observaciones')) ?: null;
         $viejo = ['bienes' => $bienIds, 'espacio_id' => $espacioIdRaw, 'fecha_asignacion' => $fecha, 'observaciones' => $observaciones];
+
+        $this->verificarCsrf($request, $viejo);
+
+        $institucionId = Auth::esSuperusuario() ? (int) $request->input('institucion_id') : Auth::institucionId();
+        $volverA = '/asignaciones' . (Auth::esSuperusuario() ? '?institucion=' . $institucionId : '');
 
         if (empty($bienIds)) {
             Session::flash('error', 'Selecciona al menos un bien para asignar.');
@@ -174,10 +175,20 @@ final class AsignacionController
         return $solicitada !== '' ? (int) $solicitada : null;
     }
 
-    private function verificarCsrf(Request $request): void
+    /**
+     * $datosAConservar: si la sesión ya expiró (token CSRF inválido) antes de esta
+     * verificación, se pierde igual la oportunidad de flashOld() más abajo en el método —
+     * por eso el llamador ya construye $viejo ANTES de este chequeo y lo pasa aquí, para
+     * que el usuario no pierda la selección y los datos solo porque el token expiró
+     * mientras llenaba el formulario.
+     */
+    private function verificarCsrf(Request $request, array $datosAConservar = []): void
     {
         if (!Csrf::verify((string) $request->input('_csrf'))) {
-            Session::flash('error', 'Tu sesión expiró, intenta de nuevo.');
+            Session::flash('error', 'Tu sesión expiró, intenta de nuevo. Revisa los datos e inténtalo otra vez.');
+            if (!empty($datosAConservar)) {
+                Session::flashOld($datosAConservar);
+            }
             header('Location: ' . Url::to('/asignaciones'));
             exit;
         }
