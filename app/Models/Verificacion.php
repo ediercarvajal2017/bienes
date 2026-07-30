@@ -113,12 +113,24 @@ final class Verificacion
         return $stmt->fetch() ?: null;
     }
 
-    public static function contarPorResultado(int $jornadaId, string $resultado): int
+    /**
+     * $busqueda y $revisada son opcionales: sin ellos, es el conteo total (usado en las
+     * tarjetas resumen de arriba); con ellos, es el conteo ya filtrado que necesita la
+     * paginación de la tabla de detalle (ver listarPorResultado()).
+     */
+    public static function contarPorResultado(int $jornadaId, string $resultado, ?string $busqueda = null, ?bool $revisada = null): int
     {
+        [$whereSql, $params] = self::condicionesPorResultado($jornadaId, $resultado, $busqueda, $revisada);
+
         $stmt = Database::connection()->prepare(
-            'SELECT COUNT(*) FROM verificaciones_bienes WHERE jornada_id = ? AND resultado = ?'
+            'SELECT COUNT(*)
+             FROM verificaciones_bienes v
+             JOIN bienes b ON b.id = v.bien_id
+             LEFT JOIN asignaciones a ON a.bien_id = b.id AND a.activa = 1
+             LEFT JOIN espacios e ON e.id = a.espacio_id'
+            . $whereSql
         );
-        $stmt->execute([$jornadaId, $resultado]);
+        $stmt->execute($params);
 
         return (int) $stmt->fetchColumn();
     }
@@ -141,30 +153,54 @@ final class Verificacion
     /**
      * Detalle de las verificaciones de una jornada con un resultado dado ('ok' o
      * 'discrepancia'): código, descripción, ubicación actual, responsable(s) del espacio
-     * y quién hizo la verificación — para el reporte detallado de la jornada.
+     * y quién hizo la verificación — para el reporte detallado de la jornada. Admite
+     * búsqueda, paginación (mismo patrón que listarPendientes()) y, para discrepancias,
+     * filtrar por estado de revisión ($revisada: true/false/null = todas).
      */
-    public static function listarPorResultado(int $jornadaId, string $resultado): array
+    public static function listarPorResultado(int $jornadaId, string $resultado, ?string $busqueda = null, int $pagina = 1, int $porPagina = 50, ?bool $revisada = null): array
     {
-        $stmt = Database::connection()->prepare(
-            "SELECT v.*, b.codigo_identificacion, b.descripcion, b.qr_token,
-                    CONCAT(e.codigo, ' - ', e.nombre) AS espacio_nombre,
-                    (SELECT GROUP_CONCAT(CONCAT(u2.nombres, ' ', u2.apellidos) SEPARATOR ', ')
-                     FROM espacio_responsables er JOIN usuarios u2 ON u2.id = er.usuario_id
-                     WHERE er.espacio_id = e.id) AS responsables_nombres,
-                    u.nombres, u.apellidos,
-                    ur.nombres AS revisor_nombres, ur.apellidos AS revisor_apellidos
-             FROM verificaciones_bienes v
-             JOIN bienes b ON b.id = v.bien_id
-             LEFT JOIN asignaciones a ON a.bien_id = b.id AND a.activa = 1
-             LEFT JOIN espacios e ON e.id = a.espacio_id
-             JOIN usuarios u ON u.id = v.usuario_id
-             LEFT JOIN usuarios ur ON ur.id = v.revisada_por
-             WHERE v.jornada_id = ? AND v.resultado = ?
-             ORDER BY v.updated_at DESC"
-        );
-        $stmt->execute([$jornadaId, $resultado]);
+        [$whereSql, $params] = self::condicionesPorResultado($jornadaId, $resultado, $busqueda, $revisada);
+
+        $sql = "SELECT v.*, b.codigo_identificacion, b.descripcion, b.qr_token,
+                       CONCAT(e.codigo, ' - ', e.nombre) AS espacio_nombre,
+                       (SELECT GROUP_CONCAT(CONCAT(u2.nombres, ' ', u2.apellidos) SEPARATOR ', ')
+                        FROM espacio_responsables er JOIN usuarios u2 ON u2.id = er.usuario_id
+                        WHERE er.espacio_id = e.id) AS responsables_nombres,
+                       u.nombres, u.apellidos,
+                       ur.nombres AS revisor_nombres, ur.apellidos AS revisor_apellidos
+                FROM verificaciones_bienes v
+                JOIN bienes b ON b.id = v.bien_id
+                LEFT JOIN asignaciones a ON a.bien_id = b.id AND a.activa = 1
+                LEFT JOIN espacios e ON e.id = a.espacio_id
+                JOIN usuarios u ON u.id = v.usuario_id
+                LEFT JOIN usuarios ur ON ur.id = v.revisada_por"
+               . $whereSql
+               . ' ORDER BY v.updated_at DESC'
+               . Paginador::limitSql($pagina, $porPagina);
+
+        $stmt = Database::connection()->prepare($sql);
+        $stmt->execute($params);
 
         return $stmt->fetchAll();
+    }
+
+    private static function condicionesPorResultado(int $jornadaId, string $resultado, ?string $busqueda, ?bool $revisada): array
+    {
+        $condiciones = ['v.jornada_id = ?', 'v.resultado = ?'];
+        $params = [$jornadaId, $resultado];
+
+        if ($revisada !== null) {
+            $condiciones[] = 'v.revisada = ?';
+            $params[] = $revisada ? 1 : 0;
+        }
+
+        if ($busqueda !== null && $busqueda !== '') {
+            $termino = '%' . $busqueda . '%';
+            $condiciones[] = '(b.codigo_identificacion LIKE ? OR b.descripcion LIKE ? OR e.nombre LIKE ?)';
+            array_push($params, $termino, $termino, $termino);
+        }
+
+        return [' WHERE ' . implode(' AND ', $condiciones), $params];
     }
 
     /**

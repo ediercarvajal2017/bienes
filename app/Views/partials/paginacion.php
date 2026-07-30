@@ -7,6 +7,11 @@
  * - $opcionesPorPagina (opcional): array de enteros (ej. [10,25,50,100,0]). Si se pasa,
  *   se muestra un selector "Mostrar N por página" que recarga con ?porPagina=N&pagina=1.
  *   El valor 0 se muestra como "Todos" y desactiva el límite (una sola "página" con todo).
+ * - $paramPagina / $paramPorPagina (opcional, default 'pagina'/'porPagina'): nombre de los
+ *   parámetros de query string a usar. Necesario cuando una misma pantalla tiene varias
+ *   tablas paginadas de forma independiente (ej. /verificaciones/{id}: verificados,
+ *   discrepancias y pendientes cada una con su propia paginación) — así cambiar de
+ *   página en una tabla no pisa ni reinicia las otras dos.
  *
  * Se puede incluir varias veces en la misma vista (arriba y abajo de la tabla): el
  * selector usa una clase (no id) y el script queda protegido contra registrarse más
@@ -14,6 +19,8 @@
  */
 $separador = str_contains($urlBase, '?') ? '&' : '?';
 $opcionesPorPagina = $opcionesPorPagina ?? [];
+$paramPagina = $paramPagina ?? 'pagina';
+$paramPorPagina = $paramPorPagina ?? 'porPagina';
 ?>
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 my-3">
     <span class="text-muted small">
@@ -31,7 +38,9 @@ $opcionesPorPagina = $opcionesPorPagina ?? [];
             <div class="d-flex align-items-center gap-2">
                 <label class="small text-muted mb-0 text-nowrap">Mostrar</label>
                 <select class="form-select form-select-sm selectorPorPagina" style="width: auto;"
-                        data-url-base="<?= htmlspecialchars($urlBase, ENT_QUOTES) ?>">
+                        data-url-base="<?= htmlspecialchars($urlBase, ENT_QUOTES) ?>"
+                        data-param-pagina="<?= htmlspecialchars($paramPagina, ENT_QUOTES) ?>"
+                        data-param-por-pagina="<?= htmlspecialchars($paramPorPagina, ENT_QUOTES) ?>">
                     <?php foreach ($opcionesPorPagina as $opcion): ?>
                         <option value="<?= $opcion ?>" <?= $porPagina === $opcion ? 'selected' : '' ?>>
                             <?= $opcion === 0 ? 'Todos' : $opcion ?>
@@ -45,10 +54,10 @@ $opcionesPorPagina = $opcionesPorPagina ?? [];
         <?php if ($totalPaginas > 1): ?>
             <div class="btn-group btn-group-sm">
                 <a class="btn btn-outline-secondary<?= $pagina <= 1 ? ' disabled' : '' ?>"
-                   href="<?= $urlBase . $separador . 'pagina=' . max(1, $pagina - 1) ?>">Anterior</a>
+                   href="<?= $urlBase . $separador . $paramPagina . '=' . max(1, $pagina - 1) ?>">Anterior</a>
                 <span class="btn btn-outline-secondary disabled">Página <?= $pagina ?> de <?= $totalPaginas ?></span>
                 <a class="btn btn-outline-secondary<?= $pagina >= $totalPaginas ? ' disabled' : '' ?>"
-                   href="<?= $urlBase . $separador . 'pagina=' . min($totalPaginas, $pagina + 1) ?>">Siguiente</a>
+                   href="<?= $urlBase . $separador . $paramPagina . '=' . min($totalPaginas, $pagina + 1) ?>">Siguiente</a>
             </div>
         <?php endif; ?>
     </div>
@@ -62,8 +71,8 @@ $opcionesPorPagina = $opcionesPorPagina ?? [];
             return;
         }
         const url = new URL(evento.target.getAttribute('data-url-base'), window.location.origin);
-        url.searchParams.set('porPagina', evento.target.value);
-        url.searchParams.set('pagina', '1');
+        url.searchParams.set(evento.target.getAttribute('data-param-por-pagina'), evento.target.value);
+        url.searchParams.set(evento.target.getAttribute('data-param-pagina'), '1');
         window.location = url.toString();
     });
     </script>

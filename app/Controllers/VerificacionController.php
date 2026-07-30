@@ -106,36 +106,87 @@ final class VerificacionController
     public function mostrar(string $id): void
     {
         $jornada = $this->jornadaAccesible((int) $id);
+        $jornadaId = (int) $jornada['id'];
         $institucionId = (int) $jornada['institucion_id'];
 
         $busquedaPendientes = trim((string) ($_GET['q'] ?? ''));
-        $terminoBusqueda = $busquedaPendientes !== '' ? $busquedaPendientes : null;
-        $pagina = max(1, (int) ($_GET['pagina'] ?? 1));
-        $porPagina = (int) ($_GET['porPagina'] ?? self::POR_PAGINA_DEFECTO);
-        if (!in_array($porPagina, self::OPCIONES_POR_PAGINA, true)) {
-            $porPagina = self::POR_PAGINA_DEFECTO;
-        }
+        $terminoPendientes = $busquedaPendientes !== '' ? $busquedaPendientes : null;
+        $pagina = $this->paginaDesdeQuery('pagina');
+        $porPagina = $this->porPaginaDesdeQuery('porPagina');
 
-        $totalPendientes = Verificacion::contarPendientes((int) $jornada['id'], $institucionId, $terminoBusqueda);
+        $busquedaOk = trim((string) ($_GET['qOk'] ?? ''));
+        $terminoOk = $busquedaOk !== '' ? $busquedaOk : null;
+        $paginaOk = $this->paginaDesdeQuery('paginaOk');
+        $porPaginaOk = $this->porPaginaDesdeQuery('porPaginaOk');
+
+        $busquedaDiscrepancia = trim((string) ($_GET['qDiscrepancia'] ?? ''));
+        $terminoDiscrepancia = $busquedaDiscrepancia !== '' ? $busquedaDiscrepancia : null;
+        $paginaDiscrepancia = $this->paginaDesdeQuery('paginaDiscrepancia');
+        $porPaginaDiscrepancia = $this->porPaginaDesdeQuery('porPaginaDiscrepancia');
+
+        // Por defecto solo se muestran las discrepancias sin atender: con jornadas de miles
+        // de bienes, una vez resuelta una discrepancia no debe seguir compitiendo por
+        // espacio en la vista de trabajo diaria — pero sigue disponible completa via el
+        // selector, nunca se pierde ni se borra.
+        $estadoDiscrepancia = (string) ($_GET['estadoDiscrepancia'] ?? 'pendiente');
+        if (!in_array($estadoDiscrepancia, ['pendiente', 'revisada', 'todas'], true)) {
+            $estadoDiscrepancia = 'pendiente';
+        }
+        $revisadaFiltro = match ($estadoDiscrepancia) {
+            'pendiente' => false,
+            'revisada' => true,
+            default => null,
+        };
+
+        $totalPendientes = Verificacion::contarPendientes($jornadaId, $institucionId, $terminoPendientes);
+        $totalOkFiltrado = Verificacion::contarPorResultado($jornadaId, 'ok', $terminoOk);
+        $totalDiscrepanciaFiltrado = Verificacion::contarPorResultado($jornadaId, 'discrepancia', $terminoDiscrepancia, $revisadaFiltro);
 
         View::layout('partials/layout', 'verificaciones/mostrar', [
             'title' => 'Jornada de verificación',
             'jornada' => $jornada,
             'universo' => Verificacion::contarUniverso($institucionId),
-            'verificadosOk' => Verificacion::contarPorResultado((int) $jornada['id'], 'ok'),
-            'verificadosDiscrepancia' => Verificacion::contarPorResultado((int) $jornada['id'], 'discrepancia'),
-            'verificadosOkDetalle' => Verificacion::listarPorResultado((int) $jornada['id'], 'ok'),
-            'discrepancias' => Verificacion::listarPorResultado((int) $jornada['id'], 'discrepancia'),
-            'pendientes' => Verificacion::listarPendientes((int) $jornada['id'], $institucionId, $terminoBusqueda, $pagina, $porPagina),
+            'verificadosOk' => Verificacion::contarPorResultado($jornadaId, 'ok'),
+            'verificadosDiscrepancia' => Verificacion::contarPorResultado($jornadaId, 'discrepancia'),
+
+            'verificadosOkDetalle' => Verificacion::listarPorResultado($jornadaId, 'ok', $terminoOk, $paginaOk, $porPaginaOk),
+            'busquedaOk' => $busquedaOk,
+            'paginaOk' => $paginaOk,
+            'porPaginaOk' => $porPaginaOk,
+            'totalOkFiltrado' => $totalOkFiltrado,
+            'totalPaginasOk' => Paginador::totalPaginas($totalOkFiltrado, $porPaginaOk),
+
+            'discrepancias' => Verificacion::listarPorResultado($jornadaId, 'discrepancia', $terminoDiscrepancia, $paginaDiscrepancia, $porPaginaDiscrepancia, $revisadaFiltro),
+            'busquedaDiscrepancia' => $busquedaDiscrepancia,
+            'paginaDiscrepancia' => $paginaDiscrepancia,
+            'porPaginaDiscrepancia' => $porPaginaDiscrepancia,
+            'estadoDiscrepancia' => $estadoDiscrepancia,
+            'totalDiscrepanciaFiltrado' => $totalDiscrepanciaFiltrado,
+            'totalPaginasDiscrepancia' => Paginador::totalPaginas($totalDiscrepanciaFiltrado, $porPaginaDiscrepancia),
+
+            'pendientes' => Verificacion::listarPendientes($jornadaId, $institucionId, $terminoPendientes, $pagina, $porPagina),
             'busquedaPendientes' => $busquedaPendientes,
             'pagina' => $pagina,
             'porPagina' => $porPagina,
             'opcionesPorPagina' => self::OPCIONES_POR_PAGINA,
             'totalPendientes' => $totalPendientes,
             'totalPaginasPendientes' => Paginador::totalPaginas($totalPendientes, $porPagina),
+
             'mensaje' => Session::pullFlash('ok'),
             'error' => Session::pullFlash('error'),
         ]);
+    }
+
+    private function paginaDesdeQuery(string $parametro): int
+    {
+        return max(1, (int) ($_GET[$parametro] ?? 1));
+    }
+
+    private function porPaginaDesdeQuery(string $parametro): int
+    {
+        $porPagina = (int) ($_GET[$parametro] ?? self::POR_PAGINA_DEFECTO);
+
+        return in_array($porPagina, self::OPCIONES_POR_PAGINA, true) ? $porPagina : self::POR_PAGINA_DEFECTO;
     }
 
     public function cerrar(string $id): void

@@ -4,7 +4,34 @@ use App\Core\Csrf;
 use App\Core\Url;
 use App\Core\View;
 
-$urlBasePendientes = Url::to('/verificaciones/' . $jornada['id']) . ($busquedaPendientes !== '' ? '?' . http_build_query(['q' => $busquedaPendientes]) : '');
+/**
+ * Las 3 tablas (verificados, discrepancias, pendientes) paginan y buscan de forma
+ * independiente en la misma pantalla — cada una necesita su URL base con los filtros de
+ * las OTRAS dos ya incluidos, para que cambiar de página en una no resetee lo que el
+ * usuario tenía filtrado en las demás.
+ */
+$parametrosComunes = array_filter([
+    'q' => $busquedaPendientes !== '' ? $busquedaPendientes : null,
+    'pagina' => $pagina,
+    'porPagina' => $porPagina,
+    'qOk' => $busquedaOk !== '' ? $busquedaOk : null,
+    'paginaOk' => $paginaOk,
+    'porPaginaOk' => $porPaginaOk,
+    'qDiscrepancia' => $busquedaDiscrepancia !== '' ? $busquedaDiscrepancia : null,
+    'paginaDiscrepancia' => $paginaDiscrepancia,
+    'porPaginaDiscrepancia' => $porPaginaDiscrepancia,
+    'estadoDiscrepancia' => $estadoDiscrepancia !== 'pendiente' ? $estadoDiscrepancia : null,
+], static fn ($valor) => $valor !== null);
+
+$urlBaseSeccion = static function (array $excluir) use ($jornada, $parametrosComunes): string {
+    $filtrados = array_diff_key($parametrosComunes, array_flip($excluir));
+
+    return Url::to('/verificaciones/' . $jornada['id']) . (!empty($filtrados) ? '?' . http_build_query($filtrados) : '');
+};
+
+$urlBasePendientes = $urlBaseSeccion(['pagina', 'porPagina']);
+$urlBaseOk = $urlBaseSeccion(['paginaOk', 'porPaginaOk']);
+$urlBaseDiscrepancia = $urlBaseSeccion(['paginaDiscrepancia', 'porPaginaDiscrepancia']);
 ?>
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-1">
     <h1 class="h4 mb-0"><?= htmlspecialchars($jornada['nombre'], ENT_QUOTES) ?></h1>
@@ -73,11 +100,29 @@ $urlBasePendientes = Url::to('/verificaciones/' . $jornada['id']) . ($busquedaPe
     </div>
 <?php endif; ?>
 
-<h2 class="h6" id="seccion-ok">Bienes verificados sin novedad</h2>
+<h2 class="h6" id="seccion-ok">Bienes verificados sin novedad (<?= (int) $verificadosOk ?>)</h2>
+
+<?php if ($verificadosOk > 0): ?>
+    <div class="mb-2" style="max-width: 420px;">
+        <input type="search" id="buscadorOk" class="form-control form-control-sm"
+               placeholder="Buscar por código, descripción o ubicación..."
+               value="<?= htmlspecialchars($busquedaOk, ENT_QUOTES) ?>">
+    </div>
+
+    <?php View::render('partials/paginacion', [
+        'pagina' => $paginaOk, 'porPagina' => $porPaginaOk, 'total' => $totalOkFiltrado, 'totalPaginas' => $totalPaginasOk,
+        'opcionesPorPagina' => $opcionesPorPagina,
+        'urlBase' => $urlBaseOk,
+        'paramPagina' => 'paginaOk', 'paramPorPagina' => 'porPaginaOk',
+    ]); ?>
+<?php endif; ?>
+
 <?php if (empty($verificadosOkDetalle)): ?>
-    <p class="text-muted small">Ninguno hasta ahora.</p>
+    <p class="text-muted small">
+        <?= $busquedaOk !== '' ? 'Ningún resultado para esa búsqueda.' : 'Ninguno hasta ahora.' ?>
+    </p>
 <?php else: ?>
-    <div class="table-responsive mb-4">
+    <div class="table-responsive mb-2">
         <table class="table table-sm bg-white tabla-cards">
             <thead>
             <tr><th>Código</th><th>Descripción</th><th>Ubicación</th><th>Responsable(s)</th><th>Verificado por</th><th>Fecha</th></tr>
@@ -98,11 +143,57 @@ $urlBasePendientes = Url::to('/verificaciones/' . $jornada['id']) . ($busquedaPe
     </div>
 <?php endif; ?>
 
-<h2 class="h6" id="seccion-discrepancia">Bienes con discrepancia</h2>
+<?php if ($verificadosOk > 0): ?>
+    <div class="mb-4">
+        <?php View::render('partials/paginacion', [
+            'pagina' => $paginaOk, 'porPagina' => $porPaginaOk, 'total' => $totalOkFiltrado, 'totalPaginas' => $totalPaginasOk,
+            'opcionesPorPagina' => $opcionesPorPagina,
+            'urlBase' => $urlBaseOk,
+            'paramPagina' => 'paginaOk', 'paramPorPagina' => 'porPaginaOk',
+        ]); ?>
+    </div>
+<?php endif; ?>
+
+<h2 class="h6" id="seccion-discrepancia">Bienes con discrepancia (<?= (int) $verificadosDiscrepancia ?>)</h2>
+
+<?php if ($verificadosDiscrepancia > 0): ?>
+    <div class="mb-2 d-flex flex-wrap gap-3 align-items-end">
+        <div style="max-width: 420px; flex: 1 1 260px;">
+            <label class="form-label small mb-1">Buscar</label>
+            <input type="search" id="buscadorDiscrepancia" class="form-control form-control-sm"
+                   placeholder="Buscar por código, descripción o ubicación..."
+                   value="<?= htmlspecialchars($busquedaDiscrepancia, ENT_QUOTES) ?>">
+        </div>
+        <div>
+            <label class="form-label small mb-1">Estado</label>
+            <select id="selectorEstadoDiscrepancia" class="form-select form-select-sm">
+                <option value="pendiente" <?= $estadoDiscrepancia === 'pendiente' ? 'selected' : '' ?>>Sin atender</option>
+                <option value="revisada" <?= $estadoDiscrepancia === 'revisada' ? 'selected' : '' ?>>Revisadas</option>
+                <option value="todas" <?= $estadoDiscrepancia === 'todas' ? 'selected' : '' ?>>Todas</option>
+            </select>
+        </div>
+    </div>
+
+    <?php View::render('partials/paginacion', [
+        'pagina' => $paginaDiscrepancia, 'porPagina' => $porPaginaDiscrepancia, 'total' => $totalDiscrepanciaFiltrado, 'totalPaginas' => $totalPaginasDiscrepancia,
+        'opcionesPorPagina' => $opcionesPorPagina,
+        'urlBase' => $urlBaseDiscrepancia,
+        'paramPagina' => 'paginaDiscrepancia', 'paramPorPagina' => 'porPaginaDiscrepancia',
+    ]); ?>
+<?php endif; ?>
+
 <?php if (empty($discrepancias)): ?>
-    <p class="text-muted small">Ninguna hasta ahora.</p>
+    <p class="text-muted small">
+        <?php if ($verificadosDiscrepancia === 0): ?>
+            Ninguna hasta ahora.
+        <?php elseif ($estadoDiscrepancia === 'pendiente'): ?>
+            No hay discrepancias sin atender — todas están revisadas, o cámbialo arriba para verlas todas.
+        <?php else: ?>
+            Ningún resultado para ese filtro.
+        <?php endif; ?>
+    </p>
 <?php else: ?>
-    <div class="table-responsive mb-4">
+    <div class="table-responsive mb-2">
         <table class="table table-sm bg-white tabla-cards">
             <thead>
             <tr><th>Código</th><th>Descripción</th><th>Ubicación</th><th>Responsable(s)</th><th>Observación</th><th>Reportado por</th><th>Fecha</th><th>Estado</th><th>Acciones</th></tr>
@@ -154,6 +245,17 @@ $urlBasePendientes = Url::to('/verificaciones/' . $jornada['id']) . ($busquedaPe
     </div>
 <?php endif; ?>
 
+<?php if ($verificadosDiscrepancia > 0): ?>
+    <div class="mb-4">
+        <?php View::render('partials/paginacion', [
+            'pagina' => $paginaDiscrepancia, 'porPagina' => $porPaginaDiscrepancia, 'total' => $totalDiscrepanciaFiltrado, 'totalPaginas' => $totalPaginasDiscrepancia,
+            'opcionesPorPagina' => $opcionesPorPagina,
+            'urlBase' => $urlBaseDiscrepancia,
+            'paramPagina' => 'paginaDiscrepancia', 'paramPorPagina' => 'porPaginaDiscrepancia',
+        ]); ?>
+    </div>
+<?php endif; ?>
+
 <h2 class="h6" id="seccion-pendientes">Bienes pendientes de verificar</h2>
 
 <div class="mb-2" style="max-width: 420px;">
@@ -193,23 +295,43 @@ $urlBasePendientes = Url::to('/verificaciones/' . $jornada['id']) . ($busquedaPe
 
 <script>
 (function () {
-    const input = document.getElementById('buscadorPendientes');
-    let temporizador = null;
+    // Buscador con reload debounceado, reutilizable por las 3 tablas de la pantalla —
+    // cada una con su propio parametro de busqueda/pagina para no interferir entre si.
+    function activarBuscador(idInput, paramBusqueda, paramPagina, ancla) {
+        const input = document.getElementById(idInput);
+        if (!input) { return; }
+        let temporizador = null;
 
-    input.addEventListener('input', function () {
-        clearTimeout(temporizador);
-        temporizador = setTimeout(function () {
+        input.addEventListener('input', function () {
+            clearTimeout(temporizador);
+            temporizador = setTimeout(function () {
+                const url = new URL(window.location.href);
+                const valor = input.value.trim();
+                if (valor !== '') {
+                    url.searchParams.set(paramBusqueda, valor);
+                } else {
+                    url.searchParams.delete(paramBusqueda);
+                }
+                url.searchParams.set(paramPagina, '1');
+                url.hash = ancla;
+                window.location = url.toString();
+            }, 450);
+        });
+    }
+
+    activarBuscador('buscadorOk', 'qOk', 'paginaOk', 'seccion-ok');
+    activarBuscador('buscadorDiscrepancia', 'qDiscrepancia', 'paginaDiscrepancia', 'seccion-discrepancia');
+    activarBuscador('buscadorPendientes', 'q', 'pagina', 'seccion-pendientes');
+
+    const selectorEstado = document.getElementById('selectorEstadoDiscrepancia');
+    if (selectorEstado) {
+        selectorEstado.addEventListener('change', function () {
             const url = new URL(window.location.href);
-            const valor = input.value.trim();
-            if (valor !== '') {
-                url.searchParams.set('q', valor);
-            } else {
-                url.searchParams.delete('q');
-            }
-            url.searchParams.set('pagina', '1');
-            url.hash = 'seccion-pendientes';
+            url.searchParams.set('estadoDiscrepancia', selectorEstado.value);
+            url.searchParams.set('paginaDiscrepancia', '1');
+            url.hash = 'seccion-discrepancia';
             window.location = url.toString();
-        }, 450);
-    });
+        });
+    }
 })();
 </script>
