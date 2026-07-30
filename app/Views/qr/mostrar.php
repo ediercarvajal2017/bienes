@@ -122,14 +122,32 @@ $etiquetasEstado = [
                 <form method="post" action="<?= Url::to('/qr/' . $token . '/verificar') ?>" id="formDiscrepancia" style="display:none;" class="mt-2">
                     <?= \App\Core\Csrf::field() ?>
                     <input type="hidden" name="resultado" value="discrepancia">
-                    <textarea name="observaciones" class="form-control form-control-sm mb-2" rows="2"
-                              placeholder="¿Qué no coincide? (ubicación, estado, etc.)" required></textarea>
+                    <label class="form-label small text-muted mb-1">¿Qué pasa con este bien?</label>
+                    <select name="motivo" id="motivoDiscrepancia" class="form-select form-select-sm mb-2" required>
+                        <option value="">-- Selecciona --</option>
+                        <option value="no_se_encuentra">No se encuentra</option>
+                        <option value="otra_ubicacion">Está en otro salón</option>
+                        <option value="danado">Dañado</option>
+                        <option value="responsable_incorrecto">El responsable no es el correcto</option>
+                        <option value="otro">Otro</option>
+                    </select>
+                    <textarea name="observaciones" id="observacionesDiscrepancia" class="form-control form-control-sm mb-2" rows="2"
+                              placeholder="Detalle adicional (opcional)"></textarea>
                     <button type="submit" class="btn btn-warning btn-sm w-100">Enviar discrepancia</button>
                 </form>
                 <script>
                 document.getElementById('btnMostrarDiscrepancia').addEventListener('click', function () {
                     this.style.display = 'none';
                     document.getElementById('formDiscrepancia').style.display = 'block';
+                });
+
+                // Si el motivo es "Otro", el detalle deja de ser opcional — sin un motivo
+                // predefinido, el texto es la unica pista de que se trata.
+                document.getElementById('motivoDiscrepancia').addEventListener('change', function () {
+                    const observaciones = document.getElementById('observacionesDiscrepancia');
+                    const esOtro = this.value === 'otro';
+                    observaciones.required = esOtro;
+                    observaciones.placeholder = esOtro ? 'Describe brevemente la discrepancia' : 'Detalle adicional (opcional)';
                 });
                 </script>
             <?php endif; ?>

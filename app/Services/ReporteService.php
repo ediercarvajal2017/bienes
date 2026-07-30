@@ -191,7 +191,7 @@ final class ReporteService
         $sheetDiscrepancias = $spreadsheet->createSheet();
         $sheetDiscrepancias->setTitle('Discrepancias');
         $sheetDiscrepancias->fromArray(
-            ['Código', 'Descripción', 'Ubicación', 'Responsable(s)', 'Observación', 'Reportado por', 'Fecha reporte', 'Estado', 'Revisado por', 'Fecha revisión'],
+            ['Código', 'Descripción', 'Ubicación', 'Responsable(s)', 'Motivo', 'Observación', 'Reportado por', 'Fecha reporte', 'Estado', 'Revisado por', 'Fecha revisión'],
             null,
             'A1'
         );
@@ -204,6 +204,7 @@ final class ReporteService
                 $d['descripcion'],
                 $d['espacio_nombre'] ?? '',
                 $d['responsables_nombres'] ?? '',
+                Verificacion::etiquetaMotivo($d['motivo'] ?? null),
                 $d['observaciones'] ?? '',
                 trim($d['nombres'] . ' ' . $d['apellidos']),
                 substr($d['updated_at'], 0, 16),
@@ -213,7 +214,7 @@ final class ReporteService
             ], null, "A{$fila}");
             $fila++;
         }
-        self::autoajustarColumnas($sheetDiscrepancias, 'A', 'J');
+        self::autoajustarColumnas($sheetDiscrepancias, 'A', 'K');
 
         $sheetPendientes = $spreadsheet->createSheet();
         $sheetPendientes->setTitle('Pendientes');

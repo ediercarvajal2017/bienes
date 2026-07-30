@@ -158,6 +158,7 @@ final class VerificacionController
             'totalPaginasOk' => Paginador::totalPaginas($totalOkFiltrado, $porPaginaOk),
 
             'discrepancias' => Verificacion::listarPorResultado($jornadaId, 'discrepancia', $terminoDiscrepancia, $paginaDiscrepancia, $porPaginaDiscrepancia, $revisadaFiltro),
+            'discrepanciasPorMotivo' => Verificacion::contarPorMotivo($jornadaId),
             'busquedaDiscrepancia' => $busquedaDiscrepancia,
             'paginaDiscrepancia' => $paginaDiscrepancia,
             'porPaginaDiscrepancia' => $porPaginaDiscrepancia,
@@ -314,10 +315,21 @@ final class VerificacionController
         }
 
         $observaciones = trim((string) $request->input('observaciones')) ?: null;
-        if ($resultado === 'discrepancia' && $observaciones === null) {
-            Session::flash('error', 'Describe brevemente la discrepancia encontrada.');
-            header('Location: ' . Url::to("/qr/{$token}"));
-            exit;
+        $motivo = null;
+
+        if ($resultado === 'discrepancia') {
+            $motivo = (string) $request->input('motivo');
+            if (!in_array($motivo, Verificacion::MOTIVOS, true)) {
+                Session::flash('error', 'Selecciona el motivo de la discrepancia.');
+                header('Location: ' . Url::to("/qr/{$token}"));
+                exit;
+            }
+
+            if ($motivo === 'otro' && $observaciones === null) {
+                Session::flash('error', 'Describe brevemente la discrepancia encontrada.');
+                header('Location: ' . Url::to("/qr/{$token}"));
+                exit;
+            }
         }
 
         // Si el bien todavía no tiene foto, la verificación en terreno es la oportunidad
@@ -337,7 +349,7 @@ final class VerificacionController
             }
         }
 
-        Verificacion::registrar((int) $jornada['id'], (int) $bien['id'], (int) Auth::id(), $resultado, $observaciones);
+        Verificacion::registrar((int) $jornada['id'], (int) $bien['id'], (int) Auth::id(), $resultado, $motivo, $observaciones);
 
         Session::flash('ok', $resultado === 'ok'
             ? 'Bien verificado: coincide con el sistema.'

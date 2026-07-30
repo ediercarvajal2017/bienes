@@ -10,26 +10,48 @@ use App\Helpers\Paginador;
 final class Verificacion
 {
     /**
+     * Motivos estructurados de una discrepancia (además del texto libre en
+     * observaciones), para poder filtrar y contar por tipo en vez de depender de leer
+     * cada observación una por una.
+     */
+    public const MOTIVOS = ['no_se_encuentra', 'otra_ubicacion', 'danado', 'responsable_incorrecto', 'otro'];
+
+    private const ETIQUETAS_MOTIVO = [
+        'no_se_encuentra' => 'No se encuentra',
+        'otra_ubicacion' => 'Está en otro salón',
+        'danado' => 'Dañado',
+        'responsable_incorrecto' => 'El responsable no es el correcto',
+        'otro' => 'Otro',
+    ];
+
+    public static function etiquetaMotivo(?string $motivo): string
+    {
+        return self::ETIQUETAS_MOTIVO[$motivo] ?? '—';
+    }
+
+    /**
      * Registra el resultado de verificar un bien dentro de una jornada. Si el bien ya
      * había sido verificado en esta misma jornada (re-escaneo), se actualiza el registro
      * en vez de duplicarlo — gana la verificación más reciente. Un re-escaneo también
      * reinicia "revisada" a 0: si un admin ya había marcado como atendida una discrepancia
      * y luego llega un reporte nuevo (con otra observación), ese reporte nuevo todavía no
-     * ha sido revisado por nadie, aunque el anterior sí lo estuviera.
+     * ha sido revisado por nadie, aunque el anterior sí lo estuviera. $motivo solo aplica
+     * a discrepancias — para 'ok' siempre se guarda null.
      */
-    public static function registrar(int $jornadaId, int $bienId, int $usuarioId, string $resultado, ?string $observaciones): void
+    public static function registrar(int $jornadaId, int $bienId, int $usuarioId, string $resultado, ?string $motivo, ?string $observaciones): void
     {
         Database::connection()->prepare(
-            'INSERT INTO verificaciones_bienes (jornada_id, bien_id, usuario_id, resultado, observaciones)
-             VALUES (:jornada_id, :bien_id, :usuario_id, :resultado, :observaciones)
+            'INSERT INTO verificaciones_bienes (jornada_id, bien_id, usuario_id, resultado, motivo, observaciones)
+             VALUES (:jornada_id, :bien_id, :usuario_id, :resultado, :motivo, :observaciones)
              ON DUPLICATE KEY UPDATE usuario_id = VALUES(usuario_id), resultado = VALUES(resultado),
-                                     observaciones = VALUES(observaciones), revisada = 0,
+                                     motivo = VALUES(motivo), observaciones = VALUES(observaciones), revisada = 0,
                                      revisada_por = NULL, revisada_en = NULL, updated_at = CURRENT_TIMESTAMP'
         )->execute([
             'jornada_id' => $jornadaId,
             'bien_id' => $bienId,
             'usuario_id' => $usuarioId,
             'resultado' => $resultado,
+            'motivo' => $resultado === 'discrepancia' ? $motivo : null,
             'observaciones' => $observaciones,
         ]);
     }
@@ -133,6 +155,35 @@ final class Verificacion
         $stmt->execute($params);
 
         return (int) $stmt->fetchColumn();
+    }
+
+    /**
+     * Desglose de discrepancias por motivo, para un resumen tipo "12 no se encuentran,
+     * 5 en otro salón, 3 dañados" sin tener que leer observación por observación.
+     * Solo cuenta discrepancias sin atender — una vez resuelta, ya no aporta al panorama
+     * de "qué falta por hacer" (el detalle histórico completo sigue en el Excel exportado).
+     *
+     * @return array<string, int> motivo => cantidad, en el mismo orden que MOTIVOS,
+     *                             incluyendo los motivos en 0 (para no tener que verificar
+     *                             existencia de la clave en la vista).
+     */
+    public static function contarPorMotivo(int $jornadaId): array
+    {
+        $stmt = Database::connection()->prepare(
+            'SELECT motivo, COUNT(*) AS total
+             FROM verificaciones_bienes
+             WHERE jornada_id = ? AND resultado = "discrepancia" AND revisada = 0 AND motivo IS NOT NULL
+             GROUP BY motivo'
+        );
+        $stmt->execute([$jornadaId]);
+        $conteos = array_column($stmt->fetchAll(), 'total', 'motivo');
+
+        $resultado = [];
+        foreach (self::MOTIVOS as $motivo) {
+            $resultado[$motivo] = (int) ($conteos[$motivo] ?? 0);
+        }
+
+        return $resultado;
     }
 
     /**

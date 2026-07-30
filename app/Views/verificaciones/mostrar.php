@@ -3,6 +3,7 @@
 use App\Core\Csrf;
 use App\Core\Url;
 use App\Core\View;
+use App\Models\Verificacion;
 
 /**
  * Las 3 tablas (verificados, discrepancias, pendientes) paginan y buscan de forma
@@ -161,6 +162,20 @@ $urlBaseDiscrepancia = $urlBaseSeccion(['paginaDiscrepancia', 'porPaginaDiscrepa
 
 <h2 class="h6" id="seccion-discrepancia">Bienes con discrepancia (<?= (int) $verificadosDiscrepancia ?>)</h2>
 
+<?php
+$motivosConDatos = array_filter($discrepanciasPorMotivo, static fn (int $cantidad) => $cantidad > 0);
+?>
+<?php if (!empty($motivosConDatos)): ?>
+    <p class="text-muted small mb-2">
+        Sin atender por motivo:
+        <?php $partes = []; ?>
+        <?php foreach ($motivosConDatos as $motivo => $cantidad): ?>
+            <?php $partes[] = $cantidad . ' ' . mb_strtolower(Verificacion::etiquetaMotivo($motivo)); ?>
+        <?php endforeach; ?>
+        <?= htmlspecialchars(implode(', ', $partes), ENT_QUOTES) ?>.
+    </p>
+<?php endif; ?>
+
 <?php if ($verificadosDiscrepancia > 0): ?>
     <div class="mb-2 d-flex flex-wrap gap-3 align-items-end">
         <div style="max-width: 420px; flex: 1 1 260px;">
@@ -201,7 +216,7 @@ $urlBaseDiscrepancia = $urlBaseSeccion(['paginaDiscrepancia', 'porPaginaDiscrepa
     <div class="table-responsive mb-2">
         <table class="table table-sm bg-white tabla-cards">
             <thead>
-            <tr><th>Código</th><th>Descripción</th><th>Ubicación</th><th>Responsable(s)</th><th>Observación</th><th>Reportado por</th><th>Fecha</th><th>Estado</th><th>Acciones</th></tr>
+            <tr><th>Código</th><th>Descripción</th><th>Ubicación</th><th>Responsable(s)</th><th>Motivo</th><th>Observación</th><th>Reportado por</th><th>Fecha</th><th>Estado</th><th>Acciones</th></tr>
             </thead>
             <tbody>
             <?php foreach ($discrepancias as $d): ?>
@@ -210,6 +225,7 @@ $urlBaseDiscrepancia = $urlBaseSeccion(['paginaDiscrepancia', 'porPaginaDiscrepa
                     <td data-label="Descripción"><?= htmlspecialchars($d['descripcion'], ENT_QUOTES) ?></td>
                     <td class="text-muted small" data-label="Ubicación"><?= !empty($d['espacio_nombre']) ? htmlspecialchars($d['espacio_nombre'], ENT_QUOTES) : 'Sin asignar' ?></td>
                     <td class="text-muted small" data-label="Responsable(s)"><?= !empty($d['responsables_nombres']) ? htmlspecialchars($d['responsables_nombres'], ENT_QUOTES) : '—' ?></td>
+                    <td class="small" data-label="Motivo"><?= htmlspecialchars(Verificacion::etiquetaMotivo($d['motivo'] ?? null), ENT_QUOTES) ?></td>
                     <td class="small" data-label="Observación"><?= htmlspecialchars($d['observaciones'] ?? '', ENT_QUOTES) ?></td>
                     <td class="text-muted small" data-label="Reportado por"><?= htmlspecialchars($d['nombres'] . ' ' . $d['apellidos'], ENT_QUOTES) ?></td>
                     <td class="mono small text-muted" data-label="Fecha"><?= htmlspecialchars(substr($d['updated_at'], 0, 16), ENT_QUOTES) ?></td>
