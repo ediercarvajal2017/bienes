@@ -80,6 +80,26 @@ final class Verificacion
         ]);
     }
 
+    /**
+     * Valida que un id de verificación recibido de un formulario/URL (query string o
+     * campo oculto) realmente pertenezca al bien indicado, antes de usarlo para vincular
+     * una acción correctiva (baja, traslado, asignación) con la discrepancia que la
+     * originó. Devuelve null ante cualquier duda — vacío, no numérico, inexistente, o de
+     * OTRO bien (alguien manipulando la URL a mano) — en vez de lanzar error: el llamador
+     * simplemente continúa sin vincular nada, no es una condición que deba tumbar la
+     * petición.
+     */
+    public static function idValidoParaBien(int $bienId, string $crudo): ?int
+    {
+        if ($crudo === '' || !ctype_digit($crudo)) {
+            return null;
+        }
+
+        $verificacion = self::find((int) $crudo);
+
+        return ($verificacion && (int) $verificacion['bien_id'] === $bienId) ? (int) $verificacion['id'] : null;
+    }
+
     public static function deBienEnJornada(int $jornadaId, int $bienId): ?array
     {
         $stmt = Database::connection()->prepare(

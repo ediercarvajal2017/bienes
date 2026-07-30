@@ -18,6 +18,7 @@ use App\Models\Categoria;
 use App\Models\Espacio;
 use App\Models\Institucion;
 use App\Models\Movimiento;
+use App\Models\Verificacion;
 
 final class BienController
 {
@@ -110,6 +111,7 @@ final class BienController
             'asignacionActiva' => Asignacion::activaDe($id),
             'historialMovimientos' => Movimiento::historialDe($id),
             'espaciosInstitucion' => Espacio::listadoParaSelect((int) $bien['institucion_id']),
+            'verificacionId' => Verificacion::idValidoParaBien($id, (string) ($_GET['verificacion_id'] ?? '')),
             'error' => Session::pullFlash('error'),
             'mensaje' => Session::pullFlash('ok'),
             'viejo' => Session::pullOld(),

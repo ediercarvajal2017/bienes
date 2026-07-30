@@ -133,7 +133,10 @@ $urlBasePendientes = Url::to('/verificaciones/' . $jornada['id']) . ($busquedaPe
                         <?php endif; ?>
                     </td>
                     <td data-label="Acciones">
+                        <?php $panelUbicacion = !empty($d['espacio_nombre']) ? 'panelTrasladar' : 'panelAsignar'; ?>
                         <div class="d-flex flex-column gap-1">
+                            <a href="<?= Url::to('/bienes/' . $d['bien_id'] . '/editar') ?>?verificacion_id=<?= (int) $d['id'] ?>#<?= $panelUbicacion ?>"
+                               class="btn btn-sm btn-outline-primary">Corregir ubicación</a>
                             <a href="<?= Url::to('/qr/' . $d['qr_token'] . '/baja') ?>?verificacion_id=<?= (int) $d['id'] ?>"
                                class="btn btn-sm btn-outline-danger">Dar de baja</a>
                             <?php if (empty($d['revisada'])): ?>

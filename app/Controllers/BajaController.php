@@ -60,7 +60,7 @@ final class BajaController
         // El id de verificacion viaja como campo oculto del formulario; se revalida aqui
         // igual que en formulario() para que nadie pueda vincular la baja a la discrepancia
         // de OTRO bien manipulando el valor a mano.
-        $verificacionId = $this->verificacionIdValidoParaBien((int) $bien['id'], (string) $request->input('verificacion_id'));
+        $verificacionId = Verificacion::idValidoParaBien((int) $bien['id'], (string) $request->input('verificacion_id'));
 
         $fotoPath = null;
         try {
@@ -101,20 +101,9 @@ final class BajaController
      */
     private function verificacionDelBienDesdeQuery(array $bien): ?array
     {
-        $id = $this->verificacionIdValidoParaBien((int) $bien['id'], (string) ($_GET['verificacion_id'] ?? ''));
+        $id = Verificacion::idValidoParaBien((int) $bien['id'], (string) ($_GET['verificacion_id'] ?? ''));
 
         return $id !== null ? Verificacion::find($id) : null;
-    }
-
-    private function verificacionIdValidoParaBien(int $bienId, string $verificacionIdCrudo): ?int
-    {
-        if ($verificacionIdCrudo === '' || !ctype_digit($verificacionIdCrudo)) {
-            return null;
-        }
-
-        $verificacion = Verificacion::find((int) $verificacionIdCrudo);
-
-        return ($verificacion && (int) $verificacion['bien_id'] === $bienId) ? (int) $verificacion['id'] : null;
     }
 
     private const POR_PAGINA_DEFECTO = 50;

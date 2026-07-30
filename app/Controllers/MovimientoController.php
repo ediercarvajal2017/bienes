@@ -13,6 +13,7 @@ use App\Core\View;
 use App\Models\Asignacion;
 use App\Models\Bien;
 use App\Models\Movimiento;
+use App\Models\Verificacion;
 
 final class MovimientoController
 {
@@ -27,6 +28,7 @@ final class MovimientoController
         $espacioId = (string) $request->input('espacio_id');
         $fecha = (string) $request->input('fecha_asignacion');
         $observaciones = trim((string) $request->input('observaciones')) ?: null;
+        $verificacionId = Verificacion::idValidoParaBien($id, (string) $request->input('verificacion_id'));
 
         if ($espacioId === '' || $fecha === '' || !strtotime($fecha)) {
             Session::flash('error', 'Selecciona un espacio y una fecha válida para la asignación.');
@@ -47,6 +49,12 @@ final class MovimientoController
             Bien::update($id, array_merge($this->camposSinCambiar($bien), ['estado' => 'activo']));
         }
 
+        // Si la asignacion viene de una discrepancia (el bien no tenia ubicacion y ahora se
+        // le asigno una), esa discrepancia ya quedo atendida.
+        if ($verificacionId !== null) {
+            Verificacion::marcarRevisada($verificacionId, (int) Auth::id());
+        }
+
         Session::flash('ok', 'Bien asignado correctamente.');
         header('Location: ' . Url::to("/bienes/{$id}/editar"));
         exit;
@@ -64,6 +72,7 @@ final class MovimientoController
         $fecha = (string) $request->input('fecha');
         $espacioId = (string) $request->input('espacio_destino_id');
         $observaciones = trim((string) $request->input('observaciones')) ?: null;
+        $verificacionId = Verificacion::idValidoParaBien($id, (string) $request->input('verificacion_id'));
 
         if ($fecha === '' || !strtotime($fecha) || $espacioId === '') {
             Session::flash('error', 'Selecciona una fecha y un espacio de destino válidos.');
@@ -90,6 +99,12 @@ final class MovimientoController
             'observaciones' => $observaciones,
             'asignado_por' => Auth::id(),
         ]);
+
+        // Si el traslado viene de una discrepancia ("no esta aqui, se movio"), esa
+        // discrepancia ya quedo atendida — corregir la ubicacion ES la resolucion.
+        if ($verificacionId !== null) {
+            Verificacion::marcarRevisada($verificacionId, (int) Auth::id());
+        }
 
         Session::flash('ok', 'Traslado registrado.');
         header('Location: ' . Url::to("/bienes/{$id}/editar"));

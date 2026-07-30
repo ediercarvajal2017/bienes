@@ -8,6 +8,7 @@ use App\Core\View;
 $esEdicion = $bien !== null;
 $puedeEditar = Auth::esSuperusuario() || Auth::tienePermiso('bienes.editar') || (!$esEdicion && Auth::tienePermiso('bienes.crear'));
 $viejo ??= [];
+$verificacionId ??= null;
 $v = static fn (string $campo, mixed $porDefecto = '') => $viejo[$campo] ?? $bien[$campo] ?? $porDefecto;
 ?>
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
@@ -192,13 +193,22 @@ $v = static fn (string $campo, mixed $porDefecto = '') => $viejo[$campo] ?? $bie
         </div>
     </div>
 
+    <?php if ($verificacionId !== null): ?>
+        <div class="alert alert-info py-2 small" style="max-width: 680px;">
+            <i class="bi bi-info-circle me-1"></i>Corrigiendo la ubicación a partir de una discrepancia reportada en una jornada de verificación.
+        </div>
+    <?php endif; ?>
+
     <div class="d-flex flex-wrap gap-3 mb-4">
 
         <?php if (!$asignacionActiva && (Auth::esSuperusuario() || Auth::tienePermiso('asignaciones.crear'))): ?>
-            <details class="border rounded p-3 bg-white panel-accion">
+            <details id="panelAsignar" class="border rounded p-3 bg-white panel-accion" <?= $verificacionId !== null ? 'open' : '' ?>>
                 <summary class="fw-semibold" style="cursor:pointer;">Asignar</summary>
                 <form method="post" action="<?= Url::to('/bienes/' . $bien['id'] . '/asignar') ?>" class="mt-3 d-flex flex-column gap-2">
                     <?= Csrf::field() ?>
+                    <?php if ($verificacionId !== null): ?>
+                        <input type="hidden" name="verificacion_id" value="<?= (int) $verificacionId ?>">
+                    <?php endif; ?>
                     <div>
                         <label class="form-label small">Espacio / ubicación (define el responsable)</label>
                         <select name="espacio_id" class="form-select form-select-sm" required>
@@ -234,10 +244,13 @@ $v = static fn (string $campo, mixed $porDefecto = '') => $viejo[$campo] ?? $bie
         <?php endif; ?>
 
         <?php if ($asignacionActiva && (Auth::esSuperusuario() || Auth::tienePermiso('asignaciones.crear'))): ?>
-            <details class="border rounded p-3 bg-white panel-accion">
+            <details id="panelTrasladar" class="border rounded p-3 bg-white panel-accion" <?= $verificacionId !== null ? 'open' : '' ?>>
                 <summary class="fw-semibold" style="cursor:pointer;">Trasladar</summary>
                 <form method="post" action="<?= Url::to('/bienes/' . $bien['id'] . '/trasladar') ?>" class="mt-3 d-flex flex-column gap-2">
                     <?= Csrf::field() ?>
+                    <?php if ($verificacionId !== null): ?>
+                        <input type="hidden" name="verificacion_id" value="<?= (int) $verificacionId ?>">
+                    <?php endif; ?>
                     <div>
                         <label class="form-label small">Nuevo espacio</label>
                         <select name="espacio_destino_id" class="form-select form-select-sm" required>
