@@ -16,6 +16,7 @@
     <title>Olvidé mi correo · SIGEBI</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
     <link href="<?= Url::asset('/assets/css/app.css') ?>" rel="stylesheet">
 </head>
 <body>
@@ -43,7 +44,7 @@
             <?= \App\Core\Csrf::field() ?>
             <div class="mb-3">
                 <label class="form-label small">Institución</label>
-                <select name="institucion_id" class="form-select" required>
+                <select name="institucion_id" class="form-select selector-buscable" required>
                     <option value="">-- Selecciona --</option>
                     <?php foreach ($instituciones as $i): ?>
                         <option value="<?= $i['id'] ?>"><?= htmlspecialchars($i['nombre'], ENT_QUOTES) ?></option>
@@ -64,5 +65,7 @@
 </div>
 
 <script src="<?= Url::asset('/assets/js/tema.js') ?>"></script>
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
+<script src="<?= Url::asset('/assets/js/selector-buscable.js') ?>"></script>
 </body>
 </html>

@@ -19,7 +19,7 @@ use App\Core\View;
 <?php if (Auth::esSuperusuario()): ?>
     <div class="mb-3" style="max-width: 320px;">
         <label class="form-label small">Institución</label>
-        <select id="selectorInstitucion" class="form-select form-select-sm">
+        <select id="selectorInstitucion" class="form-select form-select-sm selector-buscable">
             <option value="">-- Selecciona una institución --</option>
             <?php foreach ($instituciones as $i): ?>
                 <option value="<?= $i['id'] ?>" <?= $institucionId === (int) $i['id'] ? 'selected' : '' ?>>

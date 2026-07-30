@@ -45,7 +45,7 @@ $v = static fn (string $campo, mixed $porDefecto = '') => $viejo[$campo] ?? $ins
 
     <div class="col-12" id="campoPadre" style="<?= $v('tipo_sede') === 'seccion' ? '' : 'display:none;' ?>">
         <label class="form-label small">Institución principal</label>
-        <select name="institucion_padre_id" class="form-select" <?= $puedeEditar ? '' : 'disabled' ?>>
+        <select name="institucion_padre_id" class="form-select selector-buscable" <?= $puedeEditar ? '' : 'disabled' ?>>
             <option value="">-- Selecciona --</option>
             <?php foreach ($instituciones as $opt): ?>
                 <?php if ($esEdicion && (int) $opt['id'] === (int) $institucion['id']) { continue; } ?>

@@ -24,6 +24,7 @@ $esActiva = static fn (string $prefijo): string => str_starts_with($rutaActual, 
     <title><?= htmlspecialchars($title ?? 'SIGEBI', ENT_QUOTES) ?> · SIGEBI</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
     <link href="<?= Url::asset('/assets/css/app.css') ?>" rel="stylesheet">
     <link rel="manifest" href="<?= Url::to('/manifest.json') ?>">
     <meta name="theme-color" content="#1F6F54">
@@ -128,6 +129,8 @@ $esActiva = static fn (string $prefijo): string => str_starts_with($rutaActual, 
 <script src="<?= Url::asset('/assets/js/camara.js') ?>"></script>
 <script src="<?= Url::asset('/assets/js/lightbox.js') ?>"></script>
 <script src="<?= Url::asset('/assets/js/cargando.js') ?>"></script>
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
+<script src="<?= Url::asset('/assets/js/selector-buscable.js') ?>"></script>
 <script>
 (function () {
     var boton = document.getElementById('btnMenu');

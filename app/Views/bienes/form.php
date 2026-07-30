@@ -45,7 +45,7 @@ $v = static fn (string $campo, mixed $porDefecto = '') => $viejo[$campo] ?? $bie
     <?php if (!$esEdicion && Auth::esSuperusuario()): ?>
         <div class="col-12">
             <label class="form-label small">Institución</label>
-            <select name="institucion_id" class="form-select" required>
+            <select name="institucion_id" class="form-select selector-buscable" required>
                 <?php foreach ($instituciones as $i): ?>
                     <option value="<?= $i['id'] ?>" <?= (string) $v('institucion_id') === (string) $i['id'] ? 'selected' : '' ?>><?= htmlspecialchars($i['nombre'], ENT_QUOTES) ?></option>
                 <?php endforeach; ?>
@@ -60,7 +60,7 @@ $v = static fn (string $campo, mixed $porDefecto = '') => $viejo[$campo] ?? $bie
     </div>
     <div class="col-md-4">
         <label class="form-label small">Categoría</label>
-        <select name="categoria_id" class="form-select" <?= $puedeEditar ? '' : 'disabled' ?>>
+        <select name="categoria_id" class="form-select selector-buscable" <?= $puedeEditar ? '' : 'disabled' ?>>
             <option value="">-- Selecciona --</option>
             <?php foreach ($categorias as $c): ?>
                 <option value="<?= $c['id'] ?>" <?= (int) $v('categoria_id', 0) === (int) $c['id'] ? 'selected' : '' ?>>
@@ -211,7 +211,7 @@ $v = static fn (string $campo, mixed $porDefecto = '') => $viejo[$campo] ?? $bie
                     <?php endif; ?>
                     <div>
                         <label class="form-label small">Espacio / ubicación (define el responsable)</label>
-                        <select name="espacio_id" class="form-select form-select-sm" required>
+                        <select name="espacio_id" class="form-select form-select-sm selector-buscable" required>
                             <option value="">-- Selecciona --</option>
                             <?php foreach ($espaciosInstitucion as $e): ?>
                                 <option value="<?= $e['id'] ?>"><?= htmlspecialchars($e['codigo'] . ' - ' . $e['nombre'], ENT_QUOTES) ?></option>
@@ -253,7 +253,7 @@ $v = static fn (string $campo, mixed $porDefecto = '') => $viejo[$campo] ?? $bie
                     <?php endif; ?>
                     <div>
                         <label class="form-label small">Nuevo espacio</label>
-                        <select name="espacio_destino_id" class="form-select form-select-sm" required>
+                        <select name="espacio_destino_id" class="form-select form-select-sm selector-buscable" required>
                             <?php foreach ($espaciosInstitucion as $e): ?>
                                 <option value="<?= $e['id'] ?>"><?= htmlspecialchars($e['codigo'] . ' - ' . $e['nombre'], ENT_QUOTES) ?></option>
                             <?php endforeach; ?>

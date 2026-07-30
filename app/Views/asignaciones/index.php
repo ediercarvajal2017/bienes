@@ -24,7 +24,7 @@ $bienesSeleccionados = $viejo['bienes'] ?? [];
 <?php if (Auth::esSuperusuario()): ?>
     <div class="mb-3" style="max-width: 320px;">
         <label class="form-label small">Institución</label>
-        <select id="selectorInstitucion" class="form-select form-select-sm">
+        <select id="selectorInstitucion" class="form-select form-select-sm selector-buscable">
             <option value="">-- Selecciona una institución --</option>
             <?php foreach ($instituciones as $i): ?>
                 <option value="<?= $i['id'] ?>" <?= $institucionId === (int) $i['id'] ? 'selected' : '' ?>>
@@ -57,7 +57,7 @@ $bienesSeleccionados = $viejo['bienes'] ?? [];
                 <div class="row g-3">
                     <div class="col-md-6">
                         <label class="form-label small">Espacio / ubicación (define el responsable)</label>
-                        <select name="espacio_id" class="form-select form-select-sm" required>
+                        <select name="espacio_id" class="form-select form-select-sm selector-buscable" required>
                             <option value="">-- Selecciona --</option>
                             <?php foreach ($espacios as $e): ?>
                                 <option value="<?= $e['id'] ?>" <?= ($viejo['espacio_id'] ?? '') === (string) $e['id'] ? 'selected' : '' ?>><?= htmlspecialchars($e['codigo'] . ' - ' . $e['nombre'], ENT_QUOTES) ?></option>

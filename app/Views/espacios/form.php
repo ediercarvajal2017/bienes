@@ -26,7 +26,7 @@ $v = static fn (string $campo, mixed $porDefecto = '') => $viejo[$campo] ?? $esp
     <?php if (!$esEdicion && Auth::esSuperusuario()): ?>
         <div class="col-12">
             <label class="form-label small">Institución</label>
-            <select name="institucion_id" class="form-select" required>
+            <select name="institucion_id" class="form-select selector-buscable" required>
                 <?php foreach ($instituciones as $i): ?>
                     <option value="<?= $i['id'] ?>" <?= (string) $v('institucion_id') === (string) $i['id'] ? 'selected' : '' ?>><?= htmlspecialchars($i['nombre'], ENT_QUOTES) ?></option>
                 <?php endforeach; ?>
@@ -50,7 +50,7 @@ $v = static fn (string $campo, mixed $porDefecto = '') => $viejo[$campo] ?? $esp
 
     <div class="col-12">
         <label class="form-label small" for="responsables">Responsable(s) del espacio</label>
-        <select name="responsables[]" id="responsables" class="form-select" multiple size="8" <?= $puedeEditar ? '' : 'disabled' ?>>
+        <select name="responsables[]" id="responsables" class="form-select selector-buscable" multiple size="8" <?= $puedeEditar ? '' : 'disabled' ?>>
             <?php foreach ($usuarios as $u): ?>
                 <option value="<?= $u['id'] ?>" <?= in_array((int) $u['id'], $responsablesSeleccionados, true) ? 'selected' : '' ?>>
                     <?= htmlspecialchars($u['nombres'] . ' ' . $u['apellidos'], ENT_QUOTES) ?>

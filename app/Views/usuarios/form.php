@@ -70,7 +70,7 @@ $v = static fn (string $campo, mixed $porDefecto = '') => $viejo[$campo] ?? $usu
     <?php if (Auth::esSuperusuario()): ?>
         <div class="col-12">
             <label class="form-label small">Institución</label>
-            <select name="institucion_id" class="form-select" required>
+            <select name="institucion_id" class="form-select selector-buscable" required>
                 <?php foreach ($instituciones as $i): ?>
                     <option value="<?= $i['id'] ?>" <?= (int) $v('institucion_id', 0) === (int) $i['id'] ? 'selected' : '' ?>>
                         <?= htmlspecialchars($i['nombre'], ENT_QUOTES) ?>
