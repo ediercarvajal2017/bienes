@@ -46,48 +46,6 @@ $etiquetasEstado = [
            value="<?= htmlspecialchars($busqueda, ENT_QUOTES) ?>">
 </div>
 
-<?php if (!empty($lotes)): ?>
-    <h2 class="h6">Lotes de bienes idénticos</h2>
-    <div class="table-responsive mb-4">
-        <table class="table table-sm table-hover align-middle bg-white tabla-cards">
-            <thead>
-            <tr>
-                <th>Descripción</th>
-                <th>Lote</th>
-                <th>Categoría</th>
-                <th>Unidades</th>
-                <th>Valor total</th>
-                <th></th>
-            </tr>
-            </thead>
-            <tbody>
-            <?php foreach ($lotes as $l): ?>
-                <tr>
-                    <td data-label="Descripción"><?= htmlspecialchars($l['descripcion'], ENT_QUOTES) ?></td>
-                    <td class="text-muted mono" data-label="Lote"><?= htmlspecialchars($l['lote'], ENT_QUOTES) ?></td>
-                    <td class="text-muted" data-label="Categoría"><?= htmlspecialchars($l['categoria_nombre'] ?? '—', ENT_QUOTES) ?></td>
-                    <td class="small" data-label="Unidades">
-                        <?= (int) $l['total'] ?> en total
-                        <div class="text-muted">
-                            <?= (int) $l['activos'] ?> activas
-                            <?php if ((int) $l['reintegrados'] > 0): ?> · <?= (int) $l['reintegrados'] ?> reintegradas<?php endif; ?>
-                            <?php if ((int) $l['en_reparacion'] > 0): ?> · <?= (int) $l['en_reparacion'] ?> en reparación<?php endif; ?>
-                            <?php if ((int) $l['dados_de_baja'] > 0): ?> · <?= (int) $l['dados_de_baja'] ?> dadas de baja<?php endif; ?>
-                        </div>
-                    </td>
-                    <td class="mono" data-label="Valor total">$<?= number_format((float) $l['valor_total'], 0, ',', '.') ?></td>
-                    <td class="text-end">
-                        <a href="<?= Url::to('/bienes') ?>?q=<?= urlencode($l['lote']) ?>" class="btn btn-sm btn-outline-secondary">Ver detalle</a>
-                    </td>
-                </tr>
-            <?php endforeach; ?>
-            </tbody>
-        </table>
-    </div>
-
-    <h2 class="h6">Bienes individuales</h2>
-<?php endif; ?>
-
 <?php View::render('partials/paginacion', [
     'pagina' => $pagina, 'porPagina' => $porPagina, 'total' => $total, 'totalPaginas' => $totalPaginas,
     'opcionesPorPagina' => $opcionesPorPagina,
@@ -109,6 +67,34 @@ $etiquetasEstado = [
         </tr>
         </thead>
         <tbody>
+        <?php foreach ($lotes as $l): ?>
+            <tr>
+                <td>
+                    <span class="d-inline-flex align-items-center justify-content-center bg-light text-muted" style="width:36px;height:36px;border-radius:4px;" title="Lote de bienes idénticos">
+                        <i class="bi bi-boxes"></i>
+                    </span>
+                </td>
+                <td data-label="Descripción">
+                    <?= htmlspecialchars($l['descripcion'], ENT_QUOTES) ?>
+                    <div class="small text-muted"><?= (int) $l['total'] ?> unidades</div>
+                </td>
+                <td class="text-muted mono" data-label="Código"><?= htmlspecialchars($l['lote'], ENT_QUOTES) ?></td>
+                <td class="text-muted" data-label="Categoría"><?= htmlspecialchars($l['categoria_nombre'] ?? '—', ENT_QUOTES) ?></td>
+                <td class="small text-muted" data-label="Responsable / ubicación">—</td>
+                <td class="mono" data-label="Valor">$<?= number_format((float) $l['valor_total'], 0, ',', '.') ?></td>
+                <td class="small" data-label="Estado">
+                    <?= (int) $l['activos'] ?> activas
+                    <?php if ((int) $l['reintegrados'] > 0): ?> · <?= (int) $l['reintegrados'] ?> reintegradas<?php endif; ?>
+                    <?php if ((int) $l['en_reparacion'] > 0): ?> · <?= (int) $l['en_reparacion'] ?> en reparación<?php endif; ?>
+                    <?php if ((int) $l['dados_de_baja'] > 0): ?> · <?= (int) $l['dados_de_baja'] ?> dadas de baja<?php endif; ?>
+                </td>
+                <td class="text-end">
+                    <a href="<?= Url::to('/bienes') ?>?q=<?= urlencode($l['lote']) ?>" class="btn btn-sm btn-outline-secondary">
+                        <i class="bi bi-eye me-1"></i>Ver detalles
+                    </a>
+                </td>
+            </tr>
+        <?php endforeach; ?>
         <?php foreach ($bienes as $b): ?>
             <tr>
                 <td>

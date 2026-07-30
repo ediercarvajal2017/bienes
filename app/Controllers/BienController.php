@@ -56,8 +56,13 @@ final class BienController
             $bienes = Bien::listar($institucionId, $terminoBusqueda, $pagina, $porPagina, $excluirLotes);
         }
 
-        $lotes = (!$soloPropios && $institucionId !== null)
-            ? Bien::listarLotes($institucionId, $terminoBusqueda)
+        // Las filas-resumen de lote se intercalan arriba de los bienes individuales en la
+        // MISMA tabla (una sola lista, sin otra tabla aparte) — pero solo tiene sentido
+        // mostrarlas en la vista sin filtrar de la primera pagina: en cuanto hay una
+        // busqueda activa, "Ver detalles" ya te trae directamente los bienes reales del
+        // lote (ver $excluirLotes arriba), asi que repetir el resumen ahi seria redundante.
+        $lotes = (!$soloPropios && $institucionId !== null && $terminoBusqueda === null && $pagina === 1)
+            ? Bien::listarLotes($institucionId)
             : [];
 
         View::layout('partials/layout', 'bienes/index', [
