@@ -12,7 +12,10 @@ final class Verificacion
     /**
      * Registra el resultado de verificar un bien dentro de una jornada. Si el bien ya
      * había sido verificado en esta misma jornada (re-escaneo), se actualiza el registro
-     * en vez de duplicarlo — gana la verificación más reciente.
+     * en vez de duplicarlo — gana la verificación más reciente. Un re-escaneo también
+     * reinicia "revisada" a 0: si un admin ya había marcado como atendida una discrepancia
+     * y luego llega un reporte nuevo (con otra observación), ese reporte nuevo todavía no
+     * ha sido revisado por nadie, aunque el anterior sí lo estuviera.
      */
     public static function registrar(int $jornadaId, int $bienId, int $usuarioId, string $resultado, ?string $observaciones): void
     {
@@ -20,7 +23,7 @@ final class Verificacion
             'INSERT INTO verificaciones_bienes (jornada_id, bien_id, usuario_id, resultado, observaciones)
              VALUES (:jornada_id, :bien_id, :usuario_id, :resultado, :observaciones)
              ON DUPLICATE KEY UPDATE usuario_id = VALUES(usuario_id), resultado = VALUES(resultado),
-                                     observaciones = VALUES(observaciones), updated_at = CURRENT_TIMESTAMP'
+                                     observaciones = VALUES(observaciones), revisada = 0, updated_at = CURRENT_TIMESTAMP'
         )->execute([
             'jornada_id' => $jornadaId,
             'bien_id' => $bienId,
@@ -28,6 +31,34 @@ final class Verificacion
             'resultado' => $resultado,
             'observaciones' => $observaciones,
         ]);
+    }
+
+    /**
+     * Una verificación puntual (fila de la tabla, no un bien) con datos suficientes para
+     * validar accesos: institucion del bien y jornada a la que pertenece. Usada para
+     * "marcar como revisada" y para vincular un reporte de baja con la discrepancia que
+     * lo originó.
+     */
+    public static function find(int $id): ?array
+    {
+        $stmt = Database::connection()->prepare(
+            'SELECT v.*, b.institucion_id
+             FROM verificaciones_bienes v
+             JOIN bienes b ON b.id = v.bien_id
+             WHERE v.id = ?'
+        );
+        $stmt->execute([$id]);
+
+        return $stmt->fetch() ?: null;
+    }
+
+    /**
+     * Marca una discrepancia como atendida por el administrador — no cambia el resultado
+     * ('discrepancia' sigue siendo el hecho reportado), solo su seguimiento.
+     */
+    public static function marcarRevisada(int $id): void
+    {
+        Database::connection()->prepare('UPDATE verificaciones_bienes SET revisada = 1 WHERE id = ?')->execute([$id]);
     }
 
     public static function deBienEnJornada(int $jornadaId, int $bienId): ?array
@@ -76,7 +107,7 @@ final class Verificacion
     public static function listarPorResultado(int $jornadaId, string $resultado): array
     {
         $stmt = Database::connection()->prepare(
-            "SELECT v.*, b.codigo_identificacion, b.descripcion,
+            "SELECT v.*, b.codigo_identificacion, b.descripcion, b.qr_token,
                     CONCAT(e.codigo, ' - ', e.nombre) AS espacio_nombre,
                     (SELECT GROUP_CONCAT(CONCAT(u2.nombres, ' ', u2.apellidos) SEPARATOR ', ')
                      FROM espacio_responsables er JOIN usuarios u2 ON u2.id = er.usuario_id

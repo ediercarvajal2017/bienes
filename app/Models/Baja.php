@@ -64,11 +64,18 @@ final class Baja
         return $stmt->fetch() ?: null;
     }
 
+    /**
+     * $datos['verificacion_id'] es opcional: cuando la baja se origina desde una
+     * discrepancia reportada en una jornada de verificación (en vez de un reporte suelto),
+     * queda el vínculo guardado para poder rastrear después por qué se dio de baja el bien.
+     */
     public static function crear(array $datos): int
     {
+        $datos['verificacion_id'] ??= null;
+
         $stmt = Database::connection()->prepare(
-            'INSERT INTO bajas_bienes (bien_id, estado_reportado, ubicacion, responsable_id, descripcion, foto_path)
-             VALUES (:bien_id, :estado_reportado, :ubicacion, :responsable_id, :descripcion, :foto_path)'
+            'INSERT INTO bajas_bienes (bien_id, verificacion_id, estado_reportado, ubicacion, responsable_id, descripcion, foto_path)
+             VALUES (:bien_id, :verificacion_id, :estado_reportado, :ubicacion, :responsable_id, :descripcion, :foto_path)'
         );
         $stmt->execute($datos);
 

@@ -291,6 +291,9 @@ $router->get('/verificaciones/{id}', [VerificacionController::class, 'mostrar'],
 $router->post('/verificaciones/{id}/cerrar', [VerificacionController::class, 'cerrar'], [
     AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':verificaciones.gestionar',
 ]);
+$router->post('/verificaciones/{jornadaId}/discrepancias/{verificacionId}/revisada', [VerificacionController::class, 'marcarRevisada'], [
+    AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':verificaciones.gestionar',
+]);
 
 $router->get('/bajas', [BajaController::class, 'index'], [
     AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':bajas.crear',

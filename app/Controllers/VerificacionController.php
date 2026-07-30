@@ -165,6 +165,37 @@ final class VerificacionController
     }
 
     /**
+     * Marca una discrepancia como atendida por el administrador (no cambia el resultado
+     * reportado, solo su seguimiento) — botón "Marcar como revisada" en el detalle de la
+     * jornada. Se valida que la verificación exista, pertenezca a la jornada indicada en la
+     * URL y a una institución accesible para el usuario actual.
+     */
+    public function marcarRevisada(string $jornadaId, string $verificacionId): void
+    {
+        $jornada = $this->jornadaAccesible((int) $jornadaId);
+
+        $request = new Request();
+        if (!Csrf::verify((string) $request->input('_csrf'))) {
+            Session::flash('error', 'Tu sesión expiró, intenta de nuevo.');
+            header('Location: ' . Url::to("/verificaciones/{$jornadaId}#seccion-discrepancia"));
+            exit;
+        }
+
+        $verificacion = Verificacion::find((int) $verificacionId);
+        if (!$verificacion || (int) $verificacion['jornada_id'] !== (int) $jornada['id']) {
+            http_response_code(404);
+            View::render('errors/404');
+            exit;
+        }
+
+        Verificacion::marcarRevisada((int) $verificacionId);
+
+        Session::flash('ok', 'Discrepancia marcada como revisada.');
+        header('Location: ' . Url::to("/verificaciones/{$jornadaId}#seccion-discrepancia"));
+        exit;
+    }
+
+    /**
      * Registra el resultado de verificar un bien, desde su ficha pública /qr/{token}.
      * Requiere una jornada en progreso para la institución del bien, y — si quien
      * verifica es docente — que sea responsable del espacio donde el bien está asignado

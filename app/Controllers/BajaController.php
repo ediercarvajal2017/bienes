@@ -15,18 +15,22 @@ use App\Helpers\Uploader;
 use App\Models\Asignacion;
 use App\Models\Baja;
 use App\Models\Bien;
+use App\Models\Verificacion;
 
 final class BajaController
 {
     public function formulario(string $token): void
     {
         $bien = $this->bienAccesible($token);
+        $verificacion = $this->verificacionDelBienDesdeQuery($bien);
 
         View::layout('partials/layout', 'bajas/form', [
             'title' => 'Reportar baja',
             'bien' => $bien,
             'token' => $token,
             'asignacion' => Asignacion::activaDe((int) $bien['id']),
+            'verificacionId' => $verificacion['id'] ?? null,
+            'descripcionSugerida' => $verificacion['observaciones'] ?? '',
             'error' => Session::pullFlash('error'),
         ]);
     }
@@ -53,6 +57,11 @@ final class BajaController
             exit;
         }
 
+        // El id de verificacion viaja como campo oculto del formulario; se revalida aqui
+        // igual que en formulario() para que nadie pueda vincular la baja a la discrepancia
+        // de OTRO bien manipulando el valor a mano.
+        $verificacionId = $this->verificacionIdValidoParaBien((int) $bien['id'], (string) $request->input('verificacion_id'));
+
         $fotoPath = null;
         try {
             if ($archivo = $request->file('foto')) {
@@ -66,6 +75,7 @@ final class BajaController
 
         Baja::crear([
             'bien_id' => $bien['id'],
+            'verificacion_id' => $verificacionId,
             'estado_reportado' => $estadoReportado,
             'ubicacion' => $ubicacion,
             'responsable_id' => Auth::id(),
@@ -73,9 +83,38 @@ final class BajaController
             'foto_path' => $fotoPath,
         ]);
 
+        // Si la baja viene de una discrepancia reportada en una jornada, ya quedó atendida
+        // — se ahorra al administrador el paso extra de volver a la jornada a marcarla.
+        if ($verificacionId !== null) {
+            Verificacion::marcarRevisada($verificacionId);
+        }
+
         Session::flash('ok', 'Reporte de baja enviado. Queda pendiente de aprobación.');
         header('Location: ' . Url::to("/qr/{$token}"));
         exit;
+    }
+
+    /**
+     * Cuando se llega desde el botón "Dar de baja" de una discrepancia (?verificacion_id=),
+     * trae esa verificación para precargar el formulario — solo si de verdad pertenece a
+     * este bien, para no confiar ciegamente en un id que llega por la URL.
+     */
+    private function verificacionDelBienDesdeQuery(array $bien): ?array
+    {
+        $id = $this->verificacionIdValidoParaBien((int) $bien['id'], (string) ($_GET['verificacion_id'] ?? ''));
+
+        return $id !== null ? Verificacion::find($id) : null;
+    }
+
+    private function verificacionIdValidoParaBien(int $bienId, string $verificacionIdCrudo): ?int
+    {
+        if ($verificacionIdCrudo === '' || !ctype_digit($verificacionIdCrudo)) {
+            return null;
+        }
+
+        $verificacion = Verificacion::find((int) $verificacionIdCrudo);
+
+        return ($verificacion && (int) $verificacion['bien_id'] === $bienId) ? (int) $verificacion['id'] : null;
     }
 
     private const POR_PAGINA_DEFECTO = 50;

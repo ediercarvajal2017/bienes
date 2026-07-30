@@ -4,6 +4,8 @@ use App\Core\Csrf;
 use App\Core\Url;
 use App\Core\View;
 
+$verificacionId ??= null;
+$descripcionSugerida ??= '';
 ?>
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
     <h1 class="h4 mb-0">Reportar baja</h1>
@@ -26,8 +28,17 @@ use App\Core\View;
     <div class="alert alert-danger py-2 small" style="max-width: 560px;"><?= htmlspecialchars($error, ENT_QUOTES) ?></div>
 <?php endif; ?>
 
+<?php if ($verificacionId !== null): ?>
+    <div class="alert alert-info py-2 small" style="max-width: 560px;">
+        <i class="bi bi-info-circle me-1"></i>Este reporte viene de una discrepancia detectada en una jornada de verificación.
+    </div>
+<?php endif; ?>
+
 <form method="post" action="<?= Url::to('/qr/' . $token . '/baja') ?>" enctype="multipart/form-data" class="row g-3" style="max-width: 560px;">
     <?= Csrf::field() ?>
+    <?php if ($verificacionId !== null): ?>
+        <input type="hidden" name="verificacion_id" value="<?= (int) $verificacionId ?>">
+    <?php endif; ?>
 
     <div class="col-12">
         <label class="form-label small">Estado del bien</label>
@@ -48,7 +59,7 @@ use App\Core\View;
 
     <div class="col-12">
         <label class="form-label small">Descripción de la baja</label>
-        <textarea name="descripcion" class="form-control" rows="3" required placeholder="Qué pasó y por qué se solicita la baja"></textarea>
+        <textarea name="descripcion" class="form-control" rows="3" required placeholder="Qué pasó y por qué se solicita la baja"><?= htmlspecialchars($descripcionSugerida, ENT_QUOTES) ?></textarea>
     </div>
 
     <div class="col-12">

@@ -105,7 +105,7 @@ $urlBasePendientes = Url::to('/verificaciones/' . $jornada['id']) . ($busquedaPe
     <div class="table-responsive mb-4">
         <table class="table table-sm bg-white tabla-cards">
             <thead>
-            <tr><th>Código</th><th>Descripción</th><th>Ubicación</th><th>Responsable(s)</th><th>Observación</th><th>Reportado por</th><th>Fecha</th></tr>
+            <tr><th>Código</th><th>Descripción</th><th>Ubicación</th><th>Responsable(s)</th><th>Observación</th><th>Reportado por</th><th>Fecha</th><th>Estado</th><th>Acciones</th></tr>
             </thead>
             <tbody>
             <?php foreach ($discrepancias as $d): ?>
@@ -117,6 +117,25 @@ $urlBasePendientes = Url::to('/verificaciones/' . $jornada['id']) . ($busquedaPe
                     <td class="small" data-label="Observación"><?= htmlspecialchars($d['observaciones'] ?? '', ENT_QUOTES) ?></td>
                     <td class="text-muted small" data-label="Reportado por"><?= htmlspecialchars($d['nombres'] . ' ' . $d['apellidos'], ENT_QUOTES) ?></td>
                     <td class="mono small text-muted" data-label="Fecha"><?= htmlspecialchars(substr($d['updated_at'], 0, 16), ENT_QUOTES) ?></td>
+                    <td data-label="Estado">
+                        <?php if (!empty($d['revisada'])): ?>
+                            <span class="badge text-bg-secondary">Revisada</span>
+                        <?php else: ?>
+                            <span class="badge text-bg-warning">Pendiente</span>
+                        <?php endif; ?>
+                    </td>
+                    <td data-label="Acciones">
+                        <div class="d-flex flex-column gap-1">
+                            <a href="<?= Url::to('/qr/' . $d['qr_token'] . '/baja') ?>?verificacion_id=<?= (int) $d['id'] ?>"
+                               class="btn btn-sm btn-outline-danger">Dar de baja</a>
+                            <?php if (empty($d['revisada'])): ?>
+                                <form method="post" action="<?= Url::to('/verificaciones/' . $jornada['id'] . '/discrepancias/' . $d['id'] . '/revisada') ?>">
+                                    <?= Csrf::field() ?>
+                                    <button type="submit" class="btn btn-sm btn-outline-secondary w-100">Marcar revisada</button>
+                                </form>
+                            <?php endif; ?>
+                        </div>
+                    </td>
                 </tr>
             <?php endforeach; ?>
             </tbody>
