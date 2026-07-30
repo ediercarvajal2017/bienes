@@ -23,7 +23,8 @@ final class Verificacion
             'INSERT INTO verificaciones_bienes (jornada_id, bien_id, usuario_id, resultado, observaciones)
              VALUES (:jornada_id, :bien_id, :usuario_id, :resultado, :observaciones)
              ON DUPLICATE KEY UPDATE usuario_id = VALUES(usuario_id), resultado = VALUES(resultado),
-                                     observaciones = VALUES(observaciones), revisada = 0, updated_at = CURRENT_TIMESTAMP'
+                                     observaciones = VALUES(observaciones), revisada = 0,
+                                     revisada_por = NULL, revisada_en = NULL, updated_at = CURRENT_TIMESTAMP'
         )->execute([
             'jornada_id' => $jornadaId,
             'bien_id' => $bienId,
@@ -54,11 +55,29 @@ final class Verificacion
 
     /**
      * Marca una discrepancia como atendida por el administrador — no cambia el resultado
-     * ('discrepancia' sigue siendo el hecho reportado), solo su seguimiento.
+     * ('discrepancia' sigue siendo el hecho reportado), solo su seguimiento: queda quién
+     * la revisó y cuándo. Reescribe updated_at con su propio valor a propósito: sin eso,
+     * MySQL refresca automáticamente esa columna con cualquier UPDATE a la fila (por el
+     * ON UPDATE CURRENT_TIMESTAMP de la tabla), y la vista usa updated_at como "fecha del
+     * reporte" — sin este truco, marcar como revisada correría esa fecha al momento de la
+     * revisión en vez de conservar el momento real en que se reportó la discrepancia.
      */
-    public static function marcarRevisada(int $id): void
+    public static function marcarRevisada(int $id, int $usuarioId): void
     {
-        Database::connection()->prepare('UPDATE verificaciones_bienes SET revisada = 1 WHERE id = ?')->execute([$id]);
+        $verificacion = self::find($id);
+        if ($verificacion === null) {
+            return;
+        }
+
+        Database::connection()->prepare(
+            'UPDATE verificaciones_bienes
+             SET revisada = 1, revisada_por = :revisada_por, revisada_en = NOW(), updated_at = :updated_at
+             WHERE id = :id'
+        )->execute([
+            'revisada_por' => $usuarioId,
+            'updated_at' => $verificacion['updated_at'],
+            'id' => $id,
+        ]);
     }
 
     public static function deBienEnJornada(int $jornadaId, int $bienId): ?array
@@ -112,12 +131,14 @@ final class Verificacion
                     (SELECT GROUP_CONCAT(CONCAT(u2.nombres, ' ', u2.apellidos) SEPARATOR ', ')
                      FROM espacio_responsables er JOIN usuarios u2 ON u2.id = er.usuario_id
                      WHERE er.espacio_id = e.id) AS responsables_nombres,
-                    u.nombres, u.apellidos
+                    u.nombres, u.apellidos,
+                    ur.nombres AS revisor_nombres, ur.apellidos AS revisor_apellidos
              FROM verificaciones_bienes v
              JOIN bienes b ON b.id = v.bien_id
              LEFT JOIN asignaciones a ON a.bien_id = b.id AND a.activa = 1
              LEFT JOIN espacios e ON e.id = a.espacio_id
              JOIN usuarios u ON u.id = v.usuario_id
+             LEFT JOIN usuarios ur ON ur.id = v.revisada_por
              WHERE v.jornada_id = ? AND v.resultado = ?
              ORDER BY v.updated_at DESC"
         );

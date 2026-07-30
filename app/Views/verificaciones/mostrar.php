@@ -119,7 +119,15 @@ $urlBasePendientes = Url::to('/verificaciones/' . $jornada['id']) . ($busquedaPe
                     <td class="mono small text-muted" data-label="Fecha"><?= htmlspecialchars(substr($d['updated_at'], 0, 16), ENT_QUOTES) ?></td>
                     <td data-label="Estado">
                         <?php if (!empty($d['revisada'])): ?>
-                            <span class="badge text-bg-secondary">Revisada</span>
+                            <span class="badge text-bg-secondary d-block mb-1">Revisada</span>
+                            <?php if (!empty($d['revisor_nombres'])): ?>
+                                <div class="text-muted" style="font-size: 0.75rem;">
+                                    por <?= htmlspecialchars($d['revisor_nombres'] . ' ' . $d['revisor_apellidos'], ENT_QUOTES) ?>
+                                    <?php if (!empty($d['revisada_en'])): ?>
+                                        · <?= htmlspecialchars(substr($d['revisada_en'], 0, 16), ENT_QUOTES) ?>
+                                    <?php endif; ?>
+                                </div>
+                            <?php endif; ?>
                         <?php else: ?>
                             <span class="badge text-bg-warning">Pendiente</span>
                         <?php endif; ?>

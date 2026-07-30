@@ -188,7 +188,7 @@ final class VerificacionController
             exit;
         }
 
-        Verificacion::marcarRevisada((int) $verificacionId);
+        Verificacion::marcarRevisada((int) $verificacionId, (int) Auth::id());
 
         Session::flash('ok', 'Discrepancia marcada como revisada.');
         header('Location: ' . Url::to("/verificaciones/{$jornadaId}#seccion-discrepancia"));

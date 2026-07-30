@@ -86,7 +86,7 @@ final class BajaController
         // Si la baja viene de una discrepancia reportada en una jornada, ya quedó atendida
         // — se ahorra al administrador el paso extra de volver a la jornada a marcarla.
         if ($verificacionId !== null) {
-            Verificacion::marcarRevisada($verificacionId);
+            Verificacion::marcarRevisada($verificacionId, (int) Auth::id());
         }
 
         Session::flash('ok', 'Reporte de baja enviado. Queda pendiente de aprobación.');
