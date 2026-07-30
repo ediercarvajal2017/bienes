@@ -8,9 +8,17 @@ use App\Core\Database;
 
 final class Bien
 {
-    public static function listar(?int $institucionId = null, ?string $busqueda = null, int $pagina = 1, int $porPagina = 50): array
+    /**
+     * $excluirLotes: no incluye bienes que pertenecen a un lote (bienes.lote no nulo,
+     * ver crearLoteIdentico()) — usado por /bienes para no saturar la cartera con
+     * decenas de filas casi idénticas (ej. 250 sillas); esas se muestran agrupadas por
+     * separado (listarLotes()) y solo aparecen aquí individualmente si el usuario busca
+     * algo. El resto de llamadores (reportes, exportaciones, selects) no la pasan y
+     * siguen viendo el listado completo como siempre.
+     */
+    public static function listar(?int $institucionId = null, ?string $busqueda = null, int $pagina = 1, int $porPagina = 50, bool $excluirLotes = false): array
     {
-        [$whereSql, $params] = self::condicionesListado($institucionId, $busqueda);
+        [$whereSql, $params] = self::condicionesListado($institucionId, $busqueda, $excluirLotes);
 
         $sql = 'SELECT b.*, c.nombre AS categoria_nombre, CONCAT(e.codigo, " - ", e.nombre) AS espacio_nombre,
                        ' . self::sqlResponsablesEspacio('e.id') . ' AS responsables_nombres
@@ -28,9 +36,9 @@ final class Bien
         return $stmt->fetchAll();
     }
 
-    public static function contarListado(?int $institucionId = null, ?string $busqueda = null): int
+    public static function contarListado(?int $institucionId = null, ?string $busqueda = null, bool $excluirLotes = false): int
     {
-        [$whereSql, $params] = self::condicionesListado($institucionId, $busqueda);
+        [$whereSql, $params] = self::condicionesListado($institucionId, $busqueda, $excluirLotes);
 
         $sql = 'SELECT COUNT(*)
                 FROM bienes b
@@ -46,10 +54,11 @@ final class Bien
 
     /**
      * Busca por código, descripción, responsable/ubicación, estado (admite "en reparacion"
-     * con o sin guion bajo) y valor — las mismas columnas visibles en /bienes. El responsable
-     * ahora es el espacio (y sus responsables), no una persona asignada directamente al bien.
+     * con o sin guion bajo), valor y lote — las mismas columnas visibles en /bienes. El
+     * responsable ahora es el espacio (y sus responsables), no una persona asignada
+     * directamente al bien.
      */
-    private static function condicionesListado(?int $institucionId, ?string $busqueda): array
+    private static function condicionesListado(?int $institucionId, ?string $busqueda, bool $excluirLotes = false): array
     {
         $condiciones = [];
         $params = [];
@@ -59,13 +68,17 @@ final class Bien
             $params[] = $institucionId;
         }
 
+        if ($excluirLotes) {
+            $condiciones[] = 'b.lote IS NULL';
+        }
+
         if ($busqueda !== null && $busqueda !== '') {
             $termino = '%' . $busqueda . '%';
             $condiciones[] = '(b.codigo_identificacion LIKE ? OR b.descripcion LIKE ? OR e.nombre LIKE ?
                 OR EXISTS (SELECT 1 FROM espacio_responsables er JOIN usuarios u ON u.id = er.usuario_id
                            WHERE er.espacio_id = e.id AND CONCAT(u.nombres, " ", u.apellidos) LIKE ?)
-                OR REPLACE(b.estado, "_", " ") LIKE ? OR CAST(b.valor AS CHAR) LIKE ?)';
-            array_push($params, $termino, $termino, $termino, $termino, $termino, $termino);
+                OR REPLACE(b.estado, "_", " ") LIKE ? OR CAST(b.valor AS CHAR) LIKE ? OR b.lote LIKE ?)';
+            array_push($params, $termino, $termino, $termino, $termino, $termino, $termino, $termino);
         }
 
         $sql = $condiciones ? ' WHERE ' . implode(' AND ', $condiciones) : '';
@@ -248,10 +261,11 @@ final class Bien
     public static function create(array $datos): int
     {
         $datos['qr_token'] = self::generarUuid();
+        $datos['lote'] ??= null;
 
         $stmt = Database::connection()->prepare(
-            'INSERT INTO bienes (institucion_id, codigo_identificacion, descripcion, marca, categoria_id, fecha_ingreso, valor, tiene_factura, estado, qr_token, created_by)
-             VALUES (:institucion_id, :codigo_identificacion, :descripcion, :marca, :categoria_id, :fecha_ingreso, :valor, :tiene_factura, :estado, :qr_token, :created_by)'
+            'INSERT INTO bienes (institucion_id, codigo_identificacion, descripcion, lote, marca, categoria_id, fecha_ingreso, valor, tiene_factura, estado, qr_token, created_by)
+             VALUES (:institucion_id, :codigo_identificacion, :descripcion, :lote, :marca, :categoria_id, :fecha_ingreso, :valor, :tiene_factura, :estado, :qr_token, :created_by)'
         );
         $stmt->execute($datos);
 
@@ -539,6 +553,50 @@ final class Bien
         $stmt->execute($params);
 
         return (bool) $stmt->fetchColumn();
+    }
+
+    public static function existeLote(int $institucionId, string $lote): bool
+    {
+        $stmt = Database::connection()->prepare('SELECT 1 FROM bienes WHERE institucion_id = ? AND lote = ? LIMIT 1');
+        $stmt->execute([$institucionId, $lote]);
+
+        return (bool) $stmt->fetchColumn();
+    }
+
+    /**
+     * Un resumen por lote (conteo total y por estado, valor total) para la sección
+     * "Lotes" de /bienes — evita mostrar de a una las decenas/cientos de filas casi
+     * idénticas que genera crearLoteIdentico(). MIN(descripcion)/MIN(categoria) porque
+     * todos los bienes de un mismo lote comparten esos datos (son el mismo artículo).
+     */
+    public static function listarLotes(int $institucionId, ?string $busqueda = null): array
+    {
+        $condiciones = ['b.institucion_id = ?', 'b.lote IS NOT NULL'];
+        $params = [$institucionId];
+
+        if ($busqueda !== null && $busqueda !== '') {
+            $termino = '%' . $busqueda . '%';
+            $condiciones[] = '(b.lote LIKE ? OR b.descripcion LIKE ?)';
+            array_push($params, $termino, $termino);
+        }
+
+        $stmt = Database::connection()->prepare(
+            'SELECT b.lote, MIN(b.descripcion) AS descripcion, MIN(c.nombre) AS categoria_nombre,
+                    COUNT(*) AS total,
+                    SUM(CASE WHEN b.estado = "activo" THEN 1 ELSE 0 END) AS activos,
+                    SUM(CASE WHEN b.estado = "reintegrado" THEN 1 ELSE 0 END) AS reintegrados,
+                    SUM(CASE WHEN b.estado = "en_reparacion" THEN 1 ELSE 0 END) AS en_reparacion,
+                    SUM(CASE WHEN b.estado = "dado_de_baja" THEN 1 ELSE 0 END) AS dados_de_baja,
+                    SUM(b.valor) AS valor_total
+             FROM bienes b
+             LEFT JOIN categorias_bienes c ON c.id = b.categoria_id
+             WHERE ' . implode(' AND ', $condiciones) . '
+             GROUP BY b.lote
+             ORDER BY b.lote'
+        );
+        $stmt->execute($params);
+
+        return $stmt->fetchAll();
     }
 
     private static function generarUuid(): string

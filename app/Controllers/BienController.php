@@ -6,6 +6,7 @@ namespace App\Controllers;
 
 use App\Core\Auth;
 use App\Core\Csrf;
+use App\Core\Database;
 use App\Core\Request;
 use App\Core\Session;
 use App\Core\Url;
@@ -40,17 +41,29 @@ final class BienController
 
         $soloPropios = Auth::rol() === 'docente';
 
+        // Mientras no se busque nada, los bienes que pertenecen a un lote (ej. 250 sillas
+        // identicas) se excluyen del listado individual y se muestran agrupados aparte
+        // (ver $lotes) — asi la cartera no queda saturada de filas casi identicas. En
+        // cuanto el usuario busca algo, se ve todo, agrupado o no, para que la busqueda
+        // siga siendo confiable.
+        $excluirLotes = !$soloPropios && $terminoBusqueda === null;
+
         if ($soloPropios) {
             $total = Bien::contarPropios((int) Auth::id(), $institucionId, $terminoBusqueda);
             $bienes = Bien::listarPropios((int) Auth::id(), $institucionId, $terminoBusqueda, $pagina, $porPagina);
         } else {
-            $total = Bien::contarListado($institucionId, $terminoBusqueda);
-            $bienes = Bien::listar($institucionId, $terminoBusqueda, $pagina, $porPagina);
+            $total = Bien::contarListado($institucionId, $terminoBusqueda, $excluirLotes);
+            $bienes = Bien::listar($institucionId, $terminoBusqueda, $pagina, $porPagina, $excluirLotes);
         }
+
+        $lotes = (!$soloPropios && $institucionId !== null)
+            ? Bien::listarLotes($institucionId, $terminoBusqueda)
+            : [];
 
         View::layout('partials/layout', 'bienes/index', [
             'title' => 'Bienes',
             'bienes' => $bienes,
+            'lotes' => $lotes,
             'soloPropios' => $soloPropios,
             'busqueda' => $busqueda,
             'pagina' => $pagina,
@@ -95,6 +108,133 @@ final class BienController
         Session::flash('ok', 'Bien registrado correctamente.');
         header('Location: ' . Url::to('/bienes'));
         exit;
+    }
+
+    /**
+     * Alta masiva de bienes idénticos (ej. 250 sillas): cada uno queda como un bien de
+     * pleno derecho, con su propio código consecutivo y QR, pero comparten la etiqueta
+     * "lote" para que /bienes los muestre agrupados en vez de saturar la cartera.
+     */
+    public function crearLote(): void
+    {
+        View::layout('partials/layout', 'bienes/form_lote', [
+            'title' => 'Alta masiva de bienes idénticos',
+            'categorias' => Categoria::activas(),
+            'instituciones' => Auth::esSuperusuario() ? Institucion::listadoParaSelect() : [],
+            'error' => Session::pullFlash('error'),
+            'viejo' => Session::pullOld(),
+        ]);
+    }
+
+    public function guardarLote(): void
+    {
+        $request = new Request();
+        $datos = $this->datosDesdeFormularioLote($request);
+        $this->verificarCsrf($request, '/bienes/alta-masiva', $datos);
+
+        if ($error = $this->validarLote($datos)) {
+            Session::flash('error', $error);
+            Session::flashOld($datos);
+            header('Location: ' . Url::to('/bienes/alta-masiva'));
+            exit;
+        }
+
+        $creados = $this->crearBienesEnLote($datos);
+
+        if ($creados === null) {
+            Session::flash('error', 'Ocurrió un error al crear los bienes del lote. No se aplicó ningún cambio.');
+            Session::flashOld($datos);
+            header('Location: ' . Url::to('/bienes/alta-masiva'));
+            exit;
+        }
+
+        Session::flash('ok', "{$creados} bienes creados correctamente en el lote \"{$datos['lote']}\".");
+        header('Location: ' . Url::to('/bienes'));
+        exit;
+    }
+
+    private function datosDesdeFormularioLote(Request $request): array
+    {
+        $institucionId = Auth::esSuperusuario()
+            ? (int) $request->input('institucion_id')
+            : Auth::institucionId();
+
+        return [
+            'institucion_id' => $institucionId,
+            'lote' => trim((string) $request->input('lote')),
+            'descripcion' => trim((string) $request->input('descripcion')),
+            'marca' => trim((string) $request->input('marca')) ?: null,
+            'categoria_id' => ((int) $request->input('categoria_id')) ?: null,
+            'fecha_ingreso' => (string) $request->input('fecha_ingreso'),
+            'valor' => (string) $request->input('valor'),
+            'cantidad' => (int) $request->input('cantidad'),
+        ];
+    }
+
+    private function validarLote(array $datos): ?string
+    {
+        if ($datos['lote'] === '' || $datos['descripcion'] === '' || $datos['fecha_ingreso'] === '' || !strtotime($datos['fecha_ingreso'])) {
+            return 'Indica el código de lote, la descripción y una fecha de ingreso válida.';
+        }
+
+        if (!preg_match('/^[A-Za-z0-9\-]+$/', $datos['lote'])) {
+            return 'El código de lote solo puede tener letras, números y guiones, sin espacios.';
+        }
+
+        if ($datos['cantidad'] < 2 || $datos['cantidad'] > 500) {
+            return 'La cantidad debe estar entre 2 y 500 (para un solo bien, usa "Registrar bien").';
+        }
+
+        if (!is_numeric($datos['valor']) || (float) $datos['valor'] < 0) {
+            return 'Indica un valor unitario válido.';
+        }
+
+        if (Bien::existeLote($datos['institucion_id'], $datos['lote'])) {
+            return 'Ya existe un lote con ese código en esta institución.';
+        }
+
+        return null;
+    }
+
+    /**
+     * Todo o nada dentro de una única transacción: si algún código consecutivo ya
+     * existiera a mitad de camino, se revierte por completo (no deja el lote a medias).
+     */
+    private function crearBienesEnLote(array $datos): ?int
+    {
+        $pdo = Database::connection();
+        $pdo->beginTransaction();
+        try {
+            for ($i = 1; $i <= $datos['cantidad']; $i++) {
+                $codigo = $datos['lote'] . '-' . str_pad((string) $i, 3, '0', STR_PAD_LEFT);
+
+                if (Bien::existeCodigo($datos['institucion_id'], $codigo)) {
+                    throw new \RuntimeException("El código {$codigo} ya existe.");
+                }
+
+                Bien::create([
+                    'institucion_id' => $datos['institucion_id'],
+                    'codigo_identificacion' => $codigo,
+                    'descripcion' => $datos['descripcion'],
+                    'lote' => $datos['lote'],
+                    'marca' => $datos['marca'],
+                    'categoria_id' => $datos['categoria_id'],
+                    'fecha_ingreso' => $datos['fecha_ingreso'],
+                    'valor' => $datos['valor'],
+                    'tiene_factura' => 0,
+                    'estado' => 'activo',
+                    'created_by' => Auth::id(),
+                ]);
+            }
+
+            $pdo->commit();
+
+            return $datos['cantidad'];
+        } catch (\Throwable $e) {
+            $pdo->rollBack();
+
+            return null;
+        }
     }
 
     public function editar(string $id): void

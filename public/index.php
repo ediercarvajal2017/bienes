@@ -192,6 +192,13 @@ $router->post('/bienes', [BienController::class, 'guardar'], [
     AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':bienes.crear',
 ]);
 
+$router->get('/bienes/alta-masiva', [BienController::class, 'crearLote'], [
+    AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':bienes.crear',
+]);
+$router->post('/bienes/alta-masiva', [BienController::class, 'guardarLote'], [
+    AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':bienes.crear',
+]);
+
 $router->get('/bienes/qr-masivo', [QrMasivoController::class, 'formulario'], [
     AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':bienes.ver',
 ]);
