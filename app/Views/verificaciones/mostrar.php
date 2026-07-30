@@ -35,7 +35,12 @@ $urlBaseDiscrepancia = $urlBaseSeccion(['paginaDiscrepancia', 'porPaginaDiscrepa
 ?>
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-1">
     <h1 class="h4 mb-0"><?= htmlspecialchars($jornada['nombre'], ENT_QUOTES) ?></h1>
-    <a href="<?= Url::to('/verificaciones') ?>" class="btn btn-sm btn-outline-secondary">Volver</a>
+    <div class="d-flex gap-2">
+        <a href="<?= Url::to('/verificaciones/' . $jornada['id'] . '/exportar.xlsx') ?>" class="btn btn-sm btn-outline-primary">
+            <i class="bi bi-file-earmark-excel me-1"></i>Exportar a Excel
+        </a>
+        <a href="<?= Url::to('/verificaciones') ?>" class="btn btn-sm btn-outline-secondary">Volver</a>
+    </div>
 </div>
 <p class="text-muted small mb-3">
     Iniciada el <?= htmlspecialchars($jornada['fecha_inicio'], ENT_QUOTES) ?>

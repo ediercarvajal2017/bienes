@@ -6,6 +6,7 @@ namespace App\Services;
 
 use App\Models\Bien;
 use App\Models\Movimiento;
+use App\Models\Verificacion;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Csv;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
@@ -153,6 +154,93 @@ final class ReporteService
         self::autoajustarColumnas($sheet, 'A', 'F');
 
         return $spreadsheet;
+    }
+
+    /**
+     * Consolidado completo de una jornada de verificación, en 3 hojas — sin paginar ni
+     * filtrar (a diferencia de la pantalla en pantalla, que sí pagina/filtra para no
+     * saturar la vista de trabajo diaria): "Sin novedad", "Discrepancias" (con su estado
+     * de revisión y quién/cuándo la atendió) y "Pendientes". Este archivo es el respaldo
+     * que se puede archivar o compartir con quien pida cuentas de la jornada.
+     */
+    public static function jornadaVerificacion(array $jornada, int $institucionId): Spreadsheet
+    {
+        $jornadaId = (int) $jornada['id'];
+        $spreadsheet = new Spreadsheet();
+
+        $sheetOk = $spreadsheet->getActiveSheet();
+        $sheetOk->setTitle('Sin novedad');
+        self::encabezadoJornada($sheetOk, $jornada);
+
+        $fila = 5;
+        $sheetOk->fromArray(['Código', 'Descripción', 'Ubicación', 'Responsable(s)', 'Verificado por', 'Fecha'], null, "A{$fila}");
+        $fila++;
+        foreach (Verificacion::listarPorResultado($jornadaId, 'ok', null, 1, 0) as $v) {
+            $sheetOk->fromArray([
+                $v['codigo_identificacion'],
+                $v['descripcion'],
+                $v['espacio_nombre'] ?? '',
+                $v['responsables_nombres'] ?? '',
+                trim($v['nombres'] . ' ' . $v['apellidos']),
+                substr($v['updated_at'], 0, 16),
+            ], null, "A{$fila}");
+            $fila++;
+        }
+        self::autoajustarColumnas($sheetOk, 'A', 'F');
+
+        $sheetDiscrepancias = $spreadsheet->createSheet();
+        $sheetDiscrepancias->setTitle('Discrepancias');
+        $sheetDiscrepancias->fromArray(
+            ['Código', 'Descripción', 'Ubicación', 'Responsable(s)', 'Observación', 'Reportado por', 'Fecha reporte', 'Estado', 'Revisado por', 'Fecha revisión'],
+            null,
+            'A1'
+        );
+        $fila = 2;
+        // revisada = null: trae TODAS (atendidas y sin atender), a diferencia de la
+        // pantalla, que por defecto solo muestra las pendientes.
+        foreach (Verificacion::listarPorResultado($jornadaId, 'discrepancia', null, 1, 0, null) as $d) {
+            $sheetDiscrepancias->fromArray([
+                $d['codigo_identificacion'],
+                $d['descripcion'],
+                $d['espacio_nombre'] ?? '',
+                $d['responsables_nombres'] ?? '',
+                $d['observaciones'] ?? '',
+                trim($d['nombres'] . ' ' . $d['apellidos']),
+                substr($d['updated_at'], 0, 16),
+                empty($d['revisada']) ? 'Sin atender' : 'Revisada',
+                !empty($d['revisor_nombres']) ? trim($d['revisor_nombres'] . ' ' . $d['revisor_apellidos']) : '',
+                !empty($d['revisada_en']) ? substr($d['revisada_en'], 0, 16) : '',
+            ], null, "A{$fila}");
+            $fila++;
+        }
+        self::autoajustarColumnas($sheetDiscrepancias, 'A', 'J');
+
+        $sheetPendientes = $spreadsheet->createSheet();
+        $sheetPendientes->setTitle('Pendientes');
+        $sheetPendientes->fromArray(['Código', 'Descripción', 'Ubicación'], null, 'A1');
+        $fila = 2;
+        foreach (Verificacion::listarPendientes($jornadaId, $institucionId, null, 1, 0) as $p) {
+            $sheetPendientes->fromArray([
+                $p['codigo_identificacion'],
+                $p['descripcion'],
+                $p['espacio_nombre'] ?? '',
+            ], null, "A{$fila}");
+            $fila++;
+        }
+        self::autoajustarColumnas($sheetPendientes, 'A', 'C');
+
+        $spreadsheet->setActiveSheetIndex(0);
+
+        return $spreadsheet;
+    }
+
+    private static function encabezadoJornada(\PhpOffice\PhpSpreadsheet\Worksheet\Worksheet $sheet, array $jornada): void
+    {
+        $sheet->setCellValue('A1', 'Jornada: ' . $jornada['nombre']);
+        $sheet->setCellValue('A2', 'Iniciada: ' . $jornada['fecha_inicio']);
+        $sheet->setCellValue('A3', $jornada['estado'] === 'cerrada'
+            ? 'Cerrada: ' . substr((string) $jornada['fecha_cierre'], 0, 16)
+            : 'En progreso');
     }
 
     public static function enviarXlsx(Spreadsheet $spreadsheet, string $nombreArchivo): void

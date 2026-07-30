@@ -294,6 +294,9 @@ $router->post('/verificaciones/{id}/cerrar', [VerificacionController::class, 'ce
 $router->post('/verificaciones/{jornadaId}/discrepancias/{verificacionId}/revisada', [VerificacionController::class, 'marcarRevisada'], [
     AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':verificaciones.gestionar',
 ]);
+$router->get('/verificaciones/{id}/exportar.xlsx', [VerificacionController::class, 'exportarXlsx'], [
+    AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':verificaciones.gestionar',
+]);
 
 $router->get('/bajas', [BajaController::class, 'index'], [
     AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':bajas.crear',

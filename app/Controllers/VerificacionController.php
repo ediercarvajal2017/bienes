@@ -15,6 +15,7 @@ use App\Helpers\Uploader;
 use App\Models\Bien;
 use App\Models\JornadaVerificacion;
 use App\Models\Verificacion;
+use App\Services\ReporteService;
 
 final class VerificacionController
 {
@@ -187,6 +188,20 @@ final class VerificacionController
         $porPagina = (int) ($_GET[$parametro] ?? self::POR_PAGINA_DEFECTO);
 
         return in_array($porPagina, self::OPCIONES_POR_PAGINA, true) ? $porPagina : self::POR_PAGINA_DEFECTO;
+    }
+
+    /**
+     * Consolidado completo de la jornada en Excel (3 hojas), sin los filtros/paginación
+     * que sí aplica la pantalla — este archivo siempre trae todo, es el respaldo.
+     */
+    public function exportarXlsx(string $id): void
+    {
+        $jornada = $this->jornadaAccesible((int) $id);
+
+        ReporteService::enviarXlsx(
+            ReporteService::jornadaVerificacion($jornada, (int) $jornada['institucion_id']),
+            'jornada_verificacion_' . $jornada['id']
+        );
     }
 
     public function cerrar(string $id): void
