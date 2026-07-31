@@ -422,8 +422,9 @@ final class ReintegroController
         }
 
         $resto = substr($texto, strpos($texto, '/qr/') + 4);
+        $token = explode('/', trim($resto, '/'))[0];
 
-        return explode('/', trim($resto, '/'))[0] ?? $texto;
+        return $token !== '' ? $token : $texto;
     }
 
     /**
