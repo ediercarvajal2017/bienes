@@ -35,7 +35,9 @@ $esActiva = static fn (string $prefijo): string => str_starts_with($rutaActual, 
     <button type="button" id="btnMenu" class="navbar-toggle me-2" aria-label="Abrir menú">
         <i class="bi bi-list"></i>
     </button>
-    <span class="navbar-brand"><i class="bi bi-tag-fill me-1"></i>SIGEBI</span>
+    <a class="navbar-brand d-flex align-items-center" href="<?= Url::to('/dashboard') ?>">
+        <img src="<?= Url::asset('/assets/img/logo.png') ?>" alt="SIGEBI" class="navbar-logo">
+    </a>
     <div class="ms-auto d-flex align-items-center gap-2 gap-sm-3">
         <span class="text-white small d-none d-md-inline"><?= htmlspecialchars(Auth::nombreCompleto() ?? '', ENT_QUOTES) ?> · <?= htmlspecialchars(Auth::rol() ?? '', ENT_QUOTES) ?></span>
         <button type="button" id="btnTema" class="theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">

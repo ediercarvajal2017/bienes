@@ -50,6 +50,12 @@ img {
   letter-spacing: 0.02em;
 }
 
+.navbar-logo {
+  height: 34px;
+  width: auto;
+  border-radius: 4px;
+}
+
 .sidebar {
   width: 230px;
   flex: 0 0 230px;
