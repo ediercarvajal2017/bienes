@@ -17,7 +17,7 @@ $etiquetasEstado = [
     (function () {
         try {
             var guardado = localStorage.getItem('sigebi-theme');
-            var tema = guardado || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            var tema = guardado || 'dark';
             document.documentElement.setAttribute('data-bs-theme', tema);
         } catch (e) {}
     })();
