@@ -16,9 +16,9 @@ final class Bien
      * algo. El resto de llamadores (reportes, exportaciones, selects) no la pasan y
      * siguen viendo el listado completo como siempre.
      */
-    public static function listar(?int $institucionId = null, ?string $busqueda = null, int $pagina = 1, int $porPagina = 50, bool $excluirLotes = false): array
+    public static function listar(?int $institucionId = null, ?string $busqueda = null, int $pagina = 1, int $porPagina = 50, bool $excluirLotes = false, ?int $categoriaId = null): array
     {
-        [$whereSql, $params] = self::condicionesListado($institucionId, $busqueda, $excluirLotes);
+        [$whereSql, $params] = self::condicionesListado($institucionId, $busqueda, $excluirLotes, $categoriaId);
 
         $sql = 'SELECT b.*, c.nombre AS categoria_nombre, CONCAT(e.codigo, " - ", e.nombre) AS espacio_nombre,
                        ' . self::sqlResponsablesEspacio('e.id') . ' AS responsables_nombres
@@ -36,9 +36,9 @@ final class Bien
         return $stmt->fetchAll();
     }
 
-    public static function contarListado(?int $institucionId = null, ?string $busqueda = null, bool $excluirLotes = false): int
+    public static function contarListado(?int $institucionId = null, ?string $busqueda = null, bool $excluirLotes = false, ?int $categoriaId = null): int
     {
-        [$whereSql, $params] = self::condicionesListado($institucionId, $busqueda, $excluirLotes);
+        [$whereSql, $params] = self::condicionesListado($institucionId, $busqueda, $excluirLotes, $categoriaId);
 
         $sql = 'SELECT COUNT(*)
                 FROM bienes b
@@ -58,7 +58,7 @@ final class Bien
      * responsable ahora es el espacio (y sus responsables), no una persona asignada
      * directamente al bien.
      */
-    private static function condicionesListado(?int $institucionId, ?string $busqueda, bool $excluirLotes = false): array
+    private static function condicionesListado(?int $institucionId, ?string $busqueda, bool $excluirLotes = false, ?int $categoriaId = null): array
     {
         $condiciones = [];
         $params = [];
@@ -70,6 +70,11 @@ final class Bien
 
         if ($excluirLotes) {
             $condiciones[] = 'b.lote IS NULL';
+        }
+
+        if ($categoriaId !== null) {
+            $condiciones[] = 'b.categoria_id = ?';
+            $params[] = $categoriaId;
         }
 
         if ($busqueda !== null && $busqueda !== '') {
@@ -92,9 +97,9 @@ final class Bien
      * bienes, no todo el inventario de la institución). Un bien sin asignación activa, o
      * asignado a un espacio donde el usuario no es responsable, queda fuera.
      */
-    public static function listarPropios(int $usuarioId, ?int $institucionId = null, ?string $busqueda = null, int $pagina = 1, int $porPagina = 50): array
+    public static function listarPropios(int $usuarioId, ?int $institucionId = null, ?string $busqueda = null, int $pagina = 1, int $porPagina = 50, ?int $categoriaId = null): array
     {
-        [$whereSql, $params] = self::condicionesPropios($institucionId, $busqueda);
+        [$whereSql, $params] = self::condicionesPropios($institucionId, $busqueda, $categoriaId);
 
         $sql = 'SELECT b.*, c.nombre AS categoria_nombre, CONCAT(e.codigo, " - ", e.nombre) AS espacio_nombre,
                        ' . self::sqlResponsablesEspacio('e.id') . ' AS responsables_nombres
@@ -113,9 +118,9 @@ final class Bien
         return $stmt->fetchAll();
     }
 
-    public static function contarPropios(int $usuarioId, ?int $institucionId = null, ?string $busqueda = null): int
+    public static function contarPropios(int $usuarioId, ?int $institucionId = null, ?string $busqueda = null, ?int $categoriaId = null): int
     {
-        [$whereSql, $params] = self::condicionesPropios($institucionId, $busqueda);
+        [$whereSql, $params] = self::condicionesPropios($institucionId, $busqueda, $categoriaId);
 
         $sql = 'SELECT COUNT(*)
                 FROM bienes b
@@ -130,7 +135,7 @@ final class Bien
         return (int) $stmt->fetchColumn();
     }
 
-    private static function condicionesPropios(?int $institucionId, ?string $busqueda): array
+    private static function condicionesPropios(?int $institucionId, ?string $busqueda, ?int $categoriaId = null): array
     {
         $condiciones = [];
         $params = [];
@@ -138,6 +143,11 @@ final class Bien
         if ($institucionId !== null) {
             $condiciones[] = 'b.institucion_id = ?';
             $params[] = $institucionId;
+        }
+
+        if ($categoriaId !== null) {
+            $condiciones[] = 'b.categoria_id = ?';
+            $params[] = $categoriaId;
         }
 
         if ($busqueda !== null && $busqueda !== '') {
@@ -569,10 +579,15 @@ final class Bien
      * idénticas que genera crearLoteIdentico(). MIN(descripcion)/MIN(categoria) porque
      * todos los bienes de un mismo lote comparten esos datos (son el mismo artículo).
      */
-    public static function listarLotes(int $institucionId, ?string $busqueda = null): array
+    public static function listarLotes(int $institucionId, ?string $busqueda = null, ?int $categoriaId = null): array
     {
         $condiciones = ['b.institucion_id = ?', 'b.lote IS NOT NULL'];
         $params = [$institucionId];
+
+        if ($categoriaId !== null) {
+            $condiciones[] = 'b.categoria_id = ?';
+            $params[] = $categoriaId;
+        }
 
         if ($busqueda !== null && $busqueda !== '') {
             $termino = '%' . $busqueda . '%';

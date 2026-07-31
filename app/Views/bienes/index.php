@@ -4,7 +4,11 @@ use App\Core\Auth;
 use App\Core\Url;
 use App\Core\View;
 
-$urlBasePaginacion = Url::to('/bienes') . ($busqueda !== '' ? '?' . http_build_query(['q' => $busqueda]) : '');
+$parametrosPaginacion = array_filter([
+    'q' => $busqueda !== '' ? $busqueda : null,
+    'categoria' => $categoriaId,
+], static fn ($valor) => $valor !== null);
+$urlBasePaginacion = Url::to('/bienes') . (!empty($parametrosPaginacion) ? '?' . http_build_query($parametrosPaginacion) : '');
 
 $etiquetasEstado = [
     'activo' => 'Activo',
@@ -40,10 +44,24 @@ $etiquetasEstado = [
     <p class="text-muted small">Mostrando solo los bienes de los espacios donde eres responsable.</p>
 <?php endif; ?>
 
-<div class="mb-3" style="max-width: 420px;">
-    <input type="search" id="buscador" class="form-control form-control-sm"
-           placeholder="Buscar por código, descripción, responsable, ubicación, estado o valor..."
-           value="<?= htmlspecialchars($busqueda, ENT_QUOTES) ?>">
+<div class="mb-3 d-flex flex-wrap gap-3 align-items-end">
+    <div style="max-width: 420px; flex: 1 1 260px;">
+        <label class="form-label small mb-1">Buscar</label>
+        <input type="search" id="buscador" class="form-control form-control-sm"
+               placeholder="Buscar por código, descripción, responsable, ubicación, estado o valor..."
+               value="<?= htmlspecialchars($busqueda, ENT_QUOTES) ?>">
+    </div>
+    <div style="max-width: 260px;">
+        <label class="form-label small mb-1">Categoría</label>
+        <select id="filtroCategoria" class="form-select form-select-sm selector-buscable">
+            <option value="">Todas las categorías</option>
+            <?php foreach ($categorias as $c): ?>
+                <option value="<?= $c['id'] ?>" <?= $categoriaId === (int) $c['id'] ? 'selected' : '' ?>>
+                    <?= htmlspecialchars($c['nombre'], ENT_QUOTES) ?>
+                </option>
+            <?php endforeach; ?>
+        </select>
+    </div>
 </div>
 
 <?php View::render('partials/paginacion', [
@@ -162,6 +180,18 @@ $etiquetasEstado = [
             url.searchParams.set('pagina', '1');
             window.location = url.toString();
         }, 450);
+    });
+
+    const filtroCategoria = document.getElementById('filtroCategoria');
+    filtroCategoria.addEventListener('change', function () {
+        const url = new URL(window.location.href);
+        if (filtroCategoria.value !== '') {
+            url.searchParams.set('categoria', filtroCategoria.value);
+        } else {
+            url.searchParams.delete('categoria');
+        }
+        url.searchParams.set('pagina', '1');
+        window.location = url.toString();
     });
 })();
 </script>

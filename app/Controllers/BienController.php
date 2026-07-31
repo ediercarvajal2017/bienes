@@ -33,6 +33,7 @@ final class BienController
         $institucionId = Auth::esSuperusuario() ? null : Auth::institucionId();
         $busqueda = trim((string) ($_GET['q'] ?? ''));
         $terminoBusqueda = $busqueda !== '' ? $busqueda : null;
+        $categoriaId = ((int) ($_GET['categoria'] ?? 0)) ?: null;
         $pagina = max(1, (int) ($_GET['pagina'] ?? 1));
         $porPagina = (int) ($_GET['porPagina'] ?? self::POR_PAGINA_DEFECTO);
         if (!in_array($porPagina, self::OPCIONES_POR_PAGINA, true)) {
@@ -49,11 +50,11 @@ final class BienController
         $excluirLotes = !$soloPropios && $terminoBusqueda === null;
 
         if ($soloPropios) {
-            $total = Bien::contarPropios((int) Auth::id(), $institucionId, $terminoBusqueda);
-            $bienes = Bien::listarPropios((int) Auth::id(), $institucionId, $terminoBusqueda, $pagina, $porPagina);
+            $total = Bien::contarPropios((int) Auth::id(), $institucionId, $terminoBusqueda, $categoriaId);
+            $bienes = Bien::listarPropios((int) Auth::id(), $institucionId, $terminoBusqueda, $pagina, $porPagina, $categoriaId);
         } else {
-            $total = Bien::contarListado($institucionId, $terminoBusqueda, $excluirLotes);
-            $bienes = Bien::listar($institucionId, $terminoBusqueda, $pagina, $porPagina, $excluirLotes);
+            $total = Bien::contarListado($institucionId, $terminoBusqueda, $excluirLotes, $categoriaId);
+            $bienes = Bien::listar($institucionId, $terminoBusqueda, $pagina, $porPagina, $excluirLotes, $categoriaId);
         }
 
         // Las filas-resumen de lote se intercalan arriba de los bienes individuales en la
@@ -62,7 +63,7 @@ final class BienController
         // busqueda activa, "Ver detalles" ya te trae directamente los bienes reales del
         // lote (ver $excluirLotes arriba), asi que repetir el resumen ahi seria redundante.
         $lotes = (!$soloPropios && $institucionId !== null && $terminoBusqueda === null && $pagina === 1)
-            ? Bien::listarLotes($institucionId)
+            ? Bien::listarLotes($institucionId, null, $categoriaId)
             : [];
 
         View::layout('partials/layout', 'bienes/index', [
@@ -71,6 +72,8 @@ final class BienController
             'lotes' => $lotes,
             'soloPropios' => $soloPropios,
             'busqueda' => $busqueda,
+            'categorias' => Categoria::activas(),
+            'categoriaId' => $categoriaId,
             'pagina' => $pagina,
             'porPagina' => $porPagina,
             'opcionesPorPagina' => self::OPCIONES_POR_PAGINA,
