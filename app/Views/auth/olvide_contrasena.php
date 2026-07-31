@@ -26,8 +26,10 @@
         <button type="button" id="btnTema" class="theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
             <i class="bi bi-moon-stars"></i>
         </button>
-        <div class="brand"><i class="bi bi-tag-fill me-1"></i>SIGEBI</div>
-        <div class="brand-sub">Recuperar contraseña</div>
+        <div class="text-center mb-2">
+            <img src="<?= Url::asset('/assets/img/logo.png') ?>" alt="SIGEBI" class="auth-logo">
+        </div>
+        <div class="brand-sub text-center">Recuperar contraseña</div>
 
         <?php if (!empty($mensaje)): ?>
             <div class="alert alert-success py-2 small"><?= htmlspecialchars($mensaje, ENT_QUOTES) ?></div>
