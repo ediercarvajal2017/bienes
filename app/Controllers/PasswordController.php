@@ -135,6 +135,14 @@ final class PasswordController
             exit;
         }
 
+        $config = require dirname(__DIR__, 2) . '/config/app.php';
+
+        if (Session::bloqueadoPorIntentos('olvide_correo')) {
+            Session::flash('error', 'Demasiados intentos. Espera unos minutos antes de volver a intentarlo.');
+            header('Location: ' . Url::to('/olvide-correo'));
+            exit;
+        }
+
         $documento = trim((string) $request->input('documento'));
         $institucionId = (int) $request->input('institucion_id');
 
@@ -147,11 +155,13 @@ final class PasswordController
         $usuario = Usuario::findByDocumento($documento, $institucionId);
 
         if (!$usuario || (int) $usuario['activo'] !== 1) {
+            Session::registrarIntentoFallido('olvide_correo', $config['login_max_attempts'], $config['login_lockout_minutes']);
             Session::flash('error', 'No encontramos una cuenta activa con ese documento en esa institución.');
             header('Location: ' . Url::to('/olvide-correo'));
             exit;
         }
 
+        Session::resetearIntentos('olvide_correo');
         Session::flash('resultado_correo', $this->enmascararCorreo($usuario['email']));
         header('Location: ' . Url::to('/olvide-correo'));
         exit;

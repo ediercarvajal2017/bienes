@@ -80,4 +80,34 @@ final class Session
         $_SESSION = [];
         session_destroy();
     }
+
+    /**
+     * Bloqueo de intentos para acciones sin un usuario identificado de antemano
+     * (ej. "¿olvidé mi correo?", que se prueba con un número de documento que puede
+     * no existir). A diferencia del bloqueo de login -que vive en la tabla `usuarios`
+     * porque ahí sí hay una cuenta concreta a la que asociarlo-, este se guarda en la
+     * sesión: la mayoría de intentos fallidos aquí no corresponden a ninguna cuenta
+     * real, así que no hay una fila de BD natural donde contarlos.
+     */
+    public static function registrarIntentoFallido(string $clave, int $maxIntentos, int $minutosBloqueo): void
+    {
+        $intentos = ((int) ($_SESSION['_intentos'][$clave]['n'] ?? 0)) + 1;
+        $_SESSION['_intentos'][$clave]['n'] = $intentos;
+
+        if ($intentos >= $maxIntentos) {
+            $_SESSION['_intentos'][$clave]['bloqueado_hasta'] = time() + $minutosBloqueo * 60;
+        }
+    }
+
+    public static function bloqueadoPorIntentos(string $clave): bool
+    {
+        $hasta = $_SESSION['_intentos'][$clave]['bloqueado_hasta'] ?? null;
+
+        return $hasta !== null && $hasta > time();
+    }
+
+    public static function resetearIntentos(string $clave): void
+    {
+        unset($_SESSION['_intentos'][$clave]);
+    }
 }
