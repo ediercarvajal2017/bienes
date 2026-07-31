@@ -56,6 +56,13 @@ img {
   border-radius: 4px;
 }
 
+.auth-logo {
+  height: 70px;
+  width: auto;
+  max-width: 100%;
+  border-radius: 6px;
+}
+
 .sidebar {
   width: 230px;
   flex: 0 0 230px;

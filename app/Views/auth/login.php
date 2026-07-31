@@ -26,8 +26,10 @@
         <button type="button" id="btnTema" class="theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
             <i class="bi bi-moon-stars"></i>
         </button>
-        <div class="brand"><i class="bi bi-tag-fill me-1"></i>SIGEBI</div>
-        <div class="brand-sub">Sistema de Gestión de Bienes Institucionales</div>
+        <div class="text-center mb-2">
+            <img src="<?= Url::asset('/assets/img/logo.png') ?>" alt="SIGEBI" class="auth-logo">
+        </div>
+        <div class="brand-sub text-center">Sistema de Gestión de Bienes Institucionales</div>
 
         <?php if (!empty($error)): ?>
             <div class="alert alert-danger py-2 small"><?= htmlspecialchars($error, ENT_QUOTES) ?></div>
