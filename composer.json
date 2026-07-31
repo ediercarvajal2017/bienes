@@ -14,5 +14,11 @@
         "psr-4": {
             "App\\": "app/"
         }
+    },
+    "require-dev": {
+        "phpstan/phpstan": "^2.2"
+    },
+    "scripts": {
+        "analyse": "phpstan analyse --memory-limit=512M"
     }
 }

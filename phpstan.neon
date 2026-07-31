@@ -1,0 +1,11 @@
+parameters:
+    level: 5
+    paths:
+        - app/Controllers
+        - app/Core
+        - app/Helpers
+        - app/Middlewares
+        - app/Models
+        - app/Services
+        - public/index.php
+    tmpDir: build/phpstan

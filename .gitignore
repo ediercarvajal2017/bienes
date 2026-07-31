@@ -12,6 +12,7 @@
 
 # Herramientas locales
 /.claude/
+/build/
 
 # Sistema operativo / editores
 .DS_Store
