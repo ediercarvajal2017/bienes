@@ -3,9 +3,20 @@ Options -Indexes -MultiViews
     Header always set X-Content-Type-Options "nosniff"
     Header always set X-Frame-Options "SAMEORIGIN"
     Header always set Referrer-Policy "strict-origin-when-cross-origin"
+    # Solo tiene efecto cuando el navegador ya recibió la respuesta por HTTPS,
+    # así que no afecta en nada al desarrollo local en WAMP (que es HTTP).
+    Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
 </IfModule>
 
 RewriteEngine On
+
+# Forzar HTTPS en producción. Excluye localhost/127.0.0.1 para no romper WAMP en local
+# (que no tiene certificado). En Hostinger, %{HTTPS} viene "off" en cualquier petición
+# que haya llegado por HTTP, así que esto redirige antes de tocar el front controller.
+RewriteCond %{HTTPS} off
+RewriteCond %{HTTP_HOST} !^localhost [NC]
+RewriteCond %{HTTP_HOST} !^127\.0\.0\.1
+RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 
 # Servir archivos y carpetas reales tal cual (css, js, img)
 RewriteCond %{REQUEST_FILENAME} -f [OR]
