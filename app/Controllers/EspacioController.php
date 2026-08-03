@@ -23,16 +23,19 @@ final class EspacioController
     public function index(): void
     {
         $institucionId = Auth::esSuperusuario() ? null : Auth::institucionId();
+        $busqueda = trim((string) ($_GET['q'] ?? ''));
+        $terminoBusqueda = $busqueda !== '' ? $busqueda : null;
         $pagina = max(1, (int) ($_GET['pagina'] ?? 1));
         $porPagina = (int) ($_GET['porPagina'] ?? self::POR_PAGINA_DEFECTO);
         if (!in_array($porPagina, self::OPCIONES_POR_PAGINA, true)) {
             $porPagina = self::POR_PAGINA_DEFECTO;
         }
-        $total = Espacio::contarListado($institucionId);
+        $total = Espacio::contarListado($institucionId, $terminoBusqueda);
 
         View::layout('partials/layout', 'espacios/index', [
             'title' => 'Espacios',
-            'espacios' => Espacio::listar($institucionId, $pagina, $porPagina),
+            'espacios' => Espacio::listar($institucionId, $terminoBusqueda, $pagina, $porPagina),
+            'busqueda' => $busqueda,
             'pagina' => $pagina,
             'porPagina' => $porPagina,
             'opcionesPorPagina' => self::OPCIONES_POR_PAGINA,

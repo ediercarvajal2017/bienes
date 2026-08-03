@@ -9,21 +9,17 @@ use App\Helpers\Paginador;
 
 final class Espacio
 {
-    public static function listar(?int $institucionId = null, int $pagina = 1, int $porPagina = 50): array
+    public static function listar(?int $institucionId = null, ?string $busqueda = null, int $pagina = 1, int $porPagina = 50): array
     {
+        [$whereSql, $params] = self::condicionesListado($institucionId, $busqueda);
+
         $sql = 'SELECT e.*,
                        (SELECT GROUP_CONCAT(CONCAT(u.nombres, " ", u.apellidos) SEPARATOR ", ")
                         FROM espacio_responsables er JOIN usuarios u ON u.id = er.usuario_id
                         WHERE er.espacio_id = e.id) AS responsables_nombres
-                FROM espacios e';
-        $params = [];
-
-        if ($institucionId !== null) {
-            $sql .= ' WHERE e.institucion_id = ?';
-            $params[] = $institucionId;
-        }
-
-        $sql .= ' ORDER BY e.created_at DESC, e.id DESC' . Paginador::limitSql($pagina, $porPagina);
+                FROM espacios e'
+               . $whereSql
+               . ' ORDER BY e.created_at DESC, e.id DESC' . Paginador::limitSql($pagina, $porPagina);
 
         $stmt = Database::connection()->prepare($sql);
         $stmt->execute($params);
@@ -31,20 +27,37 @@ final class Espacio
         return $stmt->fetchAll();
     }
 
-    public static function contarListado(?int $institucionId = null): int
+    public static function contarListado(?int $institucionId = null, ?string $busqueda = null): int
     {
-        $sql = 'SELECT COUNT(*) FROM espacios e';
-        $params = [];
+        [$whereSql, $params] = self::condicionesListado($institucionId, $busqueda);
 
-        if ($institucionId !== null) {
-            $sql .= ' WHERE e.institucion_id = ?';
-            $params[] = $institucionId;
-        }
+        $sql = 'SELECT COUNT(*) FROM espacios e' . $whereSql;
 
         $stmt = Database::connection()->prepare($sql);
         $stmt->execute($params);
 
         return (int) $stmt->fetchColumn();
+    }
+
+    private static function condicionesListado(?int $institucionId, ?string $busqueda): array
+    {
+        $condiciones = [];
+        $params = [];
+
+        if ($institucionId !== null) {
+            $condiciones[] = 'e.institucion_id = ?';
+            $params[] = $institucionId;
+        }
+
+        if ($busqueda !== null && $busqueda !== '') {
+            $termino = '%' . $busqueda . '%';
+            $condiciones[] = '(e.nombre LIKE ? OR e.codigo LIKE ?)';
+            array_push($params, $termino, $termino);
+        }
+
+        $sql = $condiciones ? ' WHERE ' . implode(' AND ', $condiciones) : '';
+
+        return [$sql, $params];
     }
 
     public static function responsablesDe(int $espacioId): array
