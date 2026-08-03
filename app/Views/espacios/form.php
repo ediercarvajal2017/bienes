@@ -58,7 +58,10 @@ $v = static fn (string $campo, mixed $porDefecto = '') => $viejo[$campo] ?? $esp
             <?php endforeach; ?>
         </select>
         <?php if (empty($usuarios)): ?>
-            <div class="form-text text-danger">No hay usuarios disponibles en esta institución.</div>
+            <div class="form-text text-danger">
+                No hay usuarios disponibles en esta institución. Crea uno en
+                "<a href="<?= Url::to('/usuarios/crear') ?>">Usuarios</a>" antes de crear un espacio.
+            </div>
         <?php else: ?>
             <div class="form-text">Mantén Ctrl (o Cmd en Mac) para seleccionar varios. Es obligatorio al menos uno.</div>
         <?php endif; ?>

@@ -43,7 +43,10 @@ $bienesSeleccionados = $viejo['bienes'] ?? [];
 <?php if ($institucionId === null): ?>
     <p class="text-muted">Selecciona una institución para continuar.</p>
 <?php elseif ($total === 0 && $q === ''): ?>
-    <p class="text-muted">No hay bienes disponibles para asignar en esta institución.</p>
+    <p class="text-muted">
+        No hay bienes disponibles para asignar en esta institución (ya están todos asignados, o aún no se ha
+        registrado ninguno — puedes hacerlo en "<a href="<?= Url::to('/bienes/crear') ?>">Registrar bien</a>").
+    </p>
 <?php else: ?>
 
     <form method="post" action="<?= Url::to('/asignaciones') ?>" id="formAsignar">
