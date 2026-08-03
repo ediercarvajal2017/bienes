@@ -145,6 +145,7 @@ $tabPorDefecto = !empty($hallazgos) ? 'hallazgos' : 'discrepancia';
 <?php endif; ?>
 
 <div data-tab-panel="discrepancia" id="seccion-discrepancia" class="<?= $tabPorDefecto === 'discrepancia' ? '' : 'd-none' ?>">
+    <p class="text-muted small mb-2">Bienes que no coinciden con lo esperado: dañados, en otro lugar, sin responsable correcto, o que no aparecieron.</p>
     <?php
     $motivosConDatos = array_filter($discrepanciasPorMotivo, static fn (int $cantidad) => $cantidad > 0);
     ?>
@@ -253,6 +254,7 @@ $tabPorDefecto = !empty($hallazgos) ? 'hallazgos' : 'discrepancia';
 </div>
 
 <div data-tab-panel="pendientes" id="seccion-pendientes" class="d-none">
+    <p class="text-muted small mb-2">Bienes que todavía no han sido escaneados ni verificados en esta jornada.</p>
     <div class="mb-2" style="max-width: 420px;">
         <input type="search" id="buscadorPendientes" class="form-control form-control-sm"
                placeholder="Buscar por código, descripción o ubicación..."
@@ -284,6 +286,7 @@ $tabPorDefecto = !empty($hallazgos) ? 'hallazgos' : 'discrepancia';
 </div>
 
 <div data-tab-panel="ok" id="seccion-ok" class="d-none">
+    <p class="text-muted small mb-2">Bienes confirmados — coinciden exactamente con lo que el sistema tiene registrado.</p>
     <?php if ($verificadosOk > 0): ?>
         <div class="mb-2" style="max-width: 420px;">
             <input type="search" id="buscadorOk" class="form-control form-control-sm"
