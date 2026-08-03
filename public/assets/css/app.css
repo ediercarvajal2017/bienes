@@ -92,6 +92,18 @@ img {
   color: var(--sigebi-primary);
 }
 
+/* Encabezado de grupo dentro del menú lateral (ej. "Operación diaria",
+   "Administración"): el menú era una sola lista de 18 enlaces sin ninguna
+   separación por tipo de tarea. */
+.sidebar .nav-grupo-titulo {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #94a3b8;
+  padding: 0.9rem 0.9rem 0.3rem;
+}
+
 .btn-accent {
   background-color: var(--sigebi-accent);
   border-color: var(--sigebi-accent);
@@ -211,6 +223,10 @@ img {
 [data-bs-theme="dark"] .sidebar .nav-link:hover {
   background-color: rgba(47, 156, 114, 0.2);
   color: #7fe6b0;
+}
+
+[data-bs-theme="dark"] .sidebar .nav-grupo-titulo {
+  color: #64748b;
 }
 
 [data-bs-theme="dark"] .auth-shell {
