@@ -36,9 +36,9 @@ use App\Core\Url;
                 </td>
                 <td data-label="Estado">
                     <?php if ((int) $c['activo'] === 1): ?>
-                        <span class="badge badge-estado-activo">Activo</span>
+                        <span class="badge badge-activo">Activo</span>
                     <?php else: ?>
-                        <span class="badge text-bg-secondary">Inactivo</span>
+                        <span class="badge badge-inactivo">Inactivo</span>
                     <?php endif; ?>
                 </td>
                 <td class="text-end text-nowrap">

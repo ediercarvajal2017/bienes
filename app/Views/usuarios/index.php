@@ -72,9 +72,9 @@ use App\Core\View;
                 <?php if (Auth::esSuperusuario()): ?><td class="text-muted small" data-label="Institución"><?= htmlspecialchars($u['institucion_nombre'], ENT_QUOTES) ?></td><?php endif; ?>
                 <td data-label="Estado">
                     <?php if ((int) $u['activo'] === 1): ?>
-                        <span class="badge badge-estado-activo">Activo</span>
+                        <span class="badge badge-activo">Activo</span>
                     <?php else: ?>
-                        <span class="badge badge-estado-dado_de_baja">Inactivo</span>
+                        <span class="badge badge-inactivo">Inactivo</span>
                     <?php endif; ?>
                 </td>
                 <td class="text-end text-nowrap">

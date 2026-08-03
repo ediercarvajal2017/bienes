@@ -103,6 +103,15 @@ img {
 .badge-estado-en_reparacion { background-color: var(--sigebi-accent); color: #1F2937; }
 .badge-estado-dado_de_baja { background-color: var(--sigebi-danger); }
 
+/*
+ * Vocabulario aparte para el toggle activo/inactivo (usuarios, espacios, categorías,
+ * cargos, instituciones): antes reutilizaba badge-estado-* -pensado para el ciclo de
+ * vida de un bien- o un text-bg-secondary suelto según la pantalla, así que "inactivo"
+ * terminaba en rojo en unas y gris en otras para el mismo significado exacto.
+ */
+.badge-activo { background-color: var(--sigebi-success); }
+.badge-inactivo { background-color: #6c757d; }
+
 .auth-shell {
   min-height: 100vh;
   display: flex;
