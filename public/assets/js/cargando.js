@@ -1,13 +1,17 @@
 /**
- * Overlay de "procesando..." para formularios que suben archivos (enctype
- * multipart/form-data) o que quedan marcados con data-mostrar-cargando (p. ej.
- * "Confirmar importación" de una carga masiva: no sube archivo, pero recorre
- * muchas filas y puede tardar). Se activa por delegación de eventos en el
- * documento — cualquier formulario nuevo lo obtiene automáticamente, sin
- * inicialización aparte.
+ * Overlay de "procesando..." para cualquier formulario de la aplicación — antes solo
+ * cubría los que suben archivos, dejando sin ninguna señal de progreso a los demás
+ * (crear/editar sin foto, activar/desactivar, eliminar...). Se activa por delegación
+ * de eventos en el documento — cualquier formulario nuevo lo obtiene automáticamente,
+ * sin inicialización aparte.
  *
- * También deshabilita el botón de envío para evitar doble clic/doble envío
- * mientras la petición está en curso.
+ * Se excluye automáticamente un formulario con target="_blank" (o cualquier target):
+ * como la respuesta abre en otra pestaña, la página actual nunca navega y el overlay
+ * se quedaría pegado en pantalla sin que nada lo cierre. Un formulario puntual que por
+ * algún otro motivo no deba mostrarlo puede marcarse con data-sin-cargando.
+ *
+ * También deshabilita el botón de envío para evitar doble clic/doble envío mientras
+ * la petición está en curso.
  */
 (function () {
     let overlay = null;
@@ -39,10 +43,9 @@
 
     function requiereOverlay(form) {
         if (form.hasAttribute('data-sin-cargando')) { return false; }
+        if (form.hasAttribute('target')) { return false; }
 
-        const enctype = (form.getAttribute('enctype') || '').toLowerCase();
-
-        return enctype === 'multipart/form-data' || form.hasAttribute('data-mostrar-cargando');
+        return true;
     }
 
     document.addEventListener('submit', function (evento) {

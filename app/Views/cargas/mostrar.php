@@ -28,7 +28,7 @@ $clases = [
 </p>
 
 <?php if ((int) $carga['aplicada'] === 0): ?>
-    <form method="post" action="<?= Url::to('/cargas-masivas/' . $carga['id'] . '/confirmar') ?>" class="mb-3" data-mostrar-cargando
+    <form method="post" action="<?= Url::to('/cargas-masivas/' . $carga['id'] . '/confirmar') ?>" class="mb-3"
           onsubmit="return confirm('¿Confirmar la importación? Se crearán o actualizarán los bienes indicados.');">
         <?= Csrf::field() ?>
         <button type="submit" class="btn btn-primary btn-sm">Confirmar importación</button>
