@@ -6,10 +6,11 @@ use App\Core\View;
 use App\Models\Verificacion;
 
 /**
- * Las 3 tablas (verificados, discrepancias, pendientes) paginan y buscan de forma
- * independiente en la misma pantalla — cada una necesita su URL base con los filtros de
- * las OTRAS dos ya incluidos, para que cambiar de página en una no resetee lo que el
- * usuario tenía filtrado en las demás.
+ * Las 4 secciones (hallazgos, discrepancias, pendientes, verificados) paginan y buscan
+ * de forma independiente, pero ahora se muestran de a una (pestañas) en vez de todas
+ * apiladas — cada una necesita su URL base con los filtros de las OTRAS ya incluidos,
+ * para que cambiar de página en una no resetee lo que el usuario tenía filtrado en
+ * las demás.
  */
 $parametrosComunes = array_filter([
     'q' => $busquedaPendientes !== '' ? $busquedaPendientes : null,
@@ -33,6 +34,10 @@ $urlBaseSeccion = static function (array $excluir) use ($jornada, $parametrosCom
 $urlBasePendientes = $urlBaseSeccion(['pagina', 'porPagina']);
 $urlBaseOk = $urlBaseSeccion(['paginaOk', 'porPaginaOk']);
 $urlBaseDiscrepancia = $urlBaseSeccion(['paginaDiscrepancia', 'porPaginaDiscrepancia']);
+
+// Pestaña visible por defecto (sin JS ni hash en la URL): la primera en orden de
+// prioridad que exista. Hallazgos solo aparece si hay alguno; las otras 3 siempre.
+$tabPorDefecto = !empty($hallazgos) ? 'hallazgos' : 'discrepancia';
 ?>
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-1">
     <h1 class="h4 mb-0"><?= htmlspecialchars($jornada['nombre'], ENT_QUOTES) ?></h1>
@@ -44,7 +49,7 @@ $urlBaseDiscrepancia = $urlBaseSeccion(['paginaDiscrepancia', 'porPaginaDiscrepa
     </div>
 </div>
 <p class="text-muted small mb-3">
-    Iniciada el <?= htmlspecialchars($jornada['fecha_inicio'], ENT_QUOTES) ?>
+    <?= (int) $universo ?> bienes en total · Iniciada el <?= htmlspecialchars($jornada['fecha_inicio'], ENT_QUOTES) ?>
     <?php if ($jornada['estado'] === 'cerrada'): ?>
         · Cerrada el <?= htmlspecialchars(substr($jornada['fecha_cierre'], 0, 16), ENT_QUOTES) ?>
     <?php endif; ?>
@@ -52,41 +57,6 @@ $urlBaseDiscrepancia = $urlBaseSeccion(['paginaDiscrepancia', 'porPaginaDiscrepa
 
 <?php if (!empty($mensaje)): ?><div class="alert alert-success py-2 small"><?= htmlspecialchars($mensaje, ENT_QUOTES) ?></div><?php endif; ?>
 <?php if (!empty($error)): ?><div class="alert alert-danger py-2 small"><?= htmlspecialchars($error, ENT_QUOTES) ?></div><?php endif; ?>
-
-<div class="row g-3 mb-4" style="max-width: 760px;">
-    <div class="col-6 col-md-3">
-        <div class="card h-100">
-            <div class="card-body text-center py-3">
-                <div class="fs-4 fw-semibold"><?= (int) $universo ?></div>
-                <div class="small text-muted">Bienes a verificar</div>
-            </div>
-        </div>
-    </div>
-    <div class="col-6 col-md-3">
-        <a href="#seccion-ok" class="card h-100 text-decoration-none text-body">
-            <div class="card-body text-center py-3">
-                <div class="fs-4 fw-semibold text-success"><i class="bi bi-check2-circle me-1"></i><?= (int) $verificadosOk ?></div>
-                <div class="small text-muted">Verificados sin novedad</div>
-            </div>
-        </a>
-    </div>
-    <div class="col-6 col-md-3">
-        <a href="#seccion-discrepancia" class="card h-100 text-decoration-none text-body">
-            <div class="card-body text-center py-3">
-                <div class="fs-4 fw-semibold text-warning"><i class="bi bi-exclamation-triangle me-1"></i><?= (int) $verificadosDiscrepancia ?></div>
-                <div class="small text-muted">Con discrepancia</div>
-            </div>
-        </a>
-    </div>
-    <div class="col-6 col-md-3">
-        <a href="#seccion-pendientes" class="card h-100 text-decoration-none text-body">
-            <div class="card-body text-center py-3">
-                <div class="fs-4 fw-semibold text-muted"><i class="bi bi-hourglass-split me-1"></i><?= (int) $totalPendientes ?></div>
-                <div class="small text-muted">Pendientes</div>
-            </div>
-        </a>
-    </div>
-</div>
 
 <?php if ($jornada['estado'] === 'en_progreso'): ?>
     <form method="post" action="<?= Url::to('/verificaciones/' . $jornada['id'] . '/cerrar') ?>" class="card mb-4" style="max-width: 480px;"
@@ -106,11 +76,36 @@ $urlBaseDiscrepancia = $urlBaseSeccion(['paginaDiscrepancia', 'porPaginaDiscrepa
     </div>
 <?php endif; ?>
 
-<?php if (!empty($hallazgos)): ?>
-    <h2 class="h6" id="seccion-hallazgos">Bienes no registrados encontrados (<?= count($hallazgos) ?>)</h2>
-    <p class="text-muted small mb-2">Reportados por el personal durante la verificación — bienes físicos que no están en el sistema.</p>
+<ul class="nav nav-tabs mb-3" id="tabsVerificacion">
+    <?php if (!empty($hallazgos)): ?>
+        <li class="nav-item">
+            <a class="nav-link<?= $tabPorDefecto === 'hallazgos' ? ' active' : '' ?>" href="#seccion-hallazgos" data-tab-link="hallazgos">
+                <i class="bi bi-flag me-1"></i>Hallazgos <span class="badge rounded-pill text-bg-primary ms-1"><?= count($hallazgos) ?></span>
+            </a>
+        </li>
+    <?php endif; ?>
+    <li class="nav-item">
+        <a class="nav-link<?= $tabPorDefecto === 'discrepancia' ? ' active' : '' ?>" href="#seccion-discrepancia" data-tab-link="discrepancia">
+            <i class="bi bi-exclamation-triangle me-1"></i>Discrepancias <span class="badge rounded-pill text-bg-warning ms-1"><?= (int) $verificadosDiscrepancia ?></span>
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" href="#seccion-pendientes" data-tab-link="pendientes">
+            <i class="bi bi-hourglass-split me-1"></i>Pendientes <span class="badge rounded-pill text-bg-secondary ms-1"><?= (int) $totalPendientes ?></span>
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" href="#seccion-ok" data-tab-link="ok">
+            <i class="bi bi-check2-circle me-1"></i>Verificados <span class="badge rounded-pill text-bg-success ms-1"><?= (int) $verificadosOk ?></span>
+        </a>
+    </li>
+</ul>
 
-    <div class="table-responsive mb-4">
+<?php if (!empty($hallazgos)): ?>
+<div data-tab-panel="hallazgos" id="seccion-hallazgos" class="<?= $tabPorDefecto === 'hallazgos' ? '' : 'd-none' ?>">
+    <p class="text-muted small mb-2">Bienes físicos reportados por el personal durante la verificación, que no están en el sistema.</p>
+
+    <div class="table-responsive mb-2">
         <table class="table table-sm bg-white tabla-cards">
             <thead>
             <tr><th>Descripción</th><th>Espacio</th><th>Foto</th><th>Reportado por</th><th>Fecha</th><th>Acciones</th></tr>
@@ -146,219 +141,196 @@ $urlBaseDiscrepancia = $urlBaseSeccion(['paginaDiscrepancia', 'porPaginaDiscrepa
             </tbody>
         </table>
     </div>
+</div>
 <?php endif; ?>
 
-<h2 class="h6" id="seccion-ok">Bienes verificados sin novedad (<?= (int) $verificadosOk ?>)</h2>
-
-<?php if ($verificadosOk > 0): ?>
-    <div class="mb-2" style="max-width: 420px;">
-        <input type="search" id="buscadorOk" class="form-control form-control-sm"
-               placeholder="Buscar por código, descripción o ubicación..."
-               value="<?= htmlspecialchars($busquedaOk, ENT_QUOTES) ?>">
-    </div>
-
-    <?php View::render('partials/paginacion', [
-        'pagina' => $paginaOk, 'porPagina' => $porPaginaOk, 'total' => $totalOkFiltrado, 'totalPaginas' => $totalPaginasOk,
-        'opcionesPorPagina' => $opcionesPorPagina,
-        'urlBase' => $urlBaseOk,
-        'paramPagina' => 'paginaOk', 'paramPorPagina' => 'porPaginaOk',
-    ]); ?>
-<?php endif; ?>
-
-<?php if (empty($verificadosOkDetalle)): ?>
-    <p class="text-muted small">
-        <?= $busquedaOk !== '' ? 'Ningún resultado para esa búsqueda.' : 'Ninguno hasta ahora.' ?>
-    </p>
-<?php else: ?>
-    <div class="table-responsive mb-2">
-        <table class="table table-sm bg-white tabla-cards">
-            <thead>
-            <tr><th>Código</th><th>Descripción</th><th>Ubicación</th><th>Responsable(s)</th><th>Verificado por</th><th>Fecha</th></tr>
-            </thead>
-            <tbody>
-            <?php foreach ($verificadosOkDetalle as $v): ?>
-                <tr>
-                    <td class="mono small" data-label="Código"><?= htmlspecialchars($v['codigo_identificacion'], ENT_QUOTES) ?></td>
-                    <td data-label="Descripción"><?= htmlspecialchars($v['descripcion'], ENT_QUOTES) ?></td>
-                    <td class="text-muted small" data-label="Ubicación"><?= !empty($v['espacio_nombre']) ? htmlspecialchars($v['espacio_nombre'], ENT_QUOTES) : 'Sin asignar' ?></td>
-                    <td class="text-muted small" data-label="Responsable(s)"><?= !empty($v['responsables_nombres']) ? htmlspecialchars($v['responsables_nombres'], ENT_QUOTES) : '—' ?></td>
-                    <td class="small" data-label="Verificado por"><?= htmlspecialchars($v['nombres'] . ' ' . $v['apellidos'], ENT_QUOTES) ?></td>
-                    <td class="mono small text-muted" data-label="Fecha"><?= htmlspecialchars(substr($v['updated_at'], 0, 16), ENT_QUOTES) ?></td>
-                </tr>
+<div data-tab-panel="discrepancia" id="seccion-discrepancia" class="<?= $tabPorDefecto === 'discrepancia' ? '' : 'd-none' ?>">
+    <?php
+    $motivosConDatos = array_filter($discrepanciasPorMotivo, static fn (int $cantidad) => $cantidad > 0);
+    ?>
+    <?php if (!empty($motivosConDatos)): ?>
+        <p class="text-muted small mb-2">
+            Sin atender por motivo:
+            <?php $partes = []; ?>
+            <?php foreach ($motivosConDatos as $motivo => $cantidad): ?>
+                <?php $partes[] = $cantidad . ' ' . mb_strtolower(Verificacion::etiquetaMotivo($motivo)); ?>
             <?php endforeach; ?>
-            </tbody>
-        </table>
-    </div>
-<?php endif; ?>
+            <?= htmlspecialchars(implode(', ', $partes), ENT_QUOTES) ?>.
+        </p>
+    <?php endif; ?>
 
-<?php if ($verificadosOk > 0): ?>
-    <div class="mb-4">
-        <?php View::render('partials/paginacion', [
-            'pagina' => $paginaOk, 'porPagina' => $porPaginaOk, 'total' => $totalOkFiltrado, 'totalPaginas' => $totalPaginasOk,
-            'opcionesPorPagina' => $opcionesPorPagina,
-            'urlBase' => $urlBaseOk,
-            'paramPagina' => 'paginaOk', 'paramPorPagina' => 'porPaginaOk',
-        ]); ?>
-    </div>
-<?php endif; ?>
-
-<h2 class="h6" id="seccion-discrepancia">Bienes con discrepancia (<?= (int) $verificadosDiscrepancia ?>)</h2>
-
-<?php
-$motivosConDatos = array_filter($discrepanciasPorMotivo, static fn (int $cantidad) => $cantidad > 0);
-?>
-<?php if (!empty($motivosConDatos)): ?>
-    <p class="text-muted small mb-2">
-        Sin atender por motivo:
-        <?php $partes = []; ?>
-        <?php foreach ($motivosConDatos as $motivo => $cantidad): ?>
-            <?php $partes[] = $cantidad . ' ' . mb_strtolower(Verificacion::etiquetaMotivo($motivo)); ?>
-        <?php endforeach; ?>
-        <?= htmlspecialchars(implode(', ', $partes), ENT_QUOTES) ?>.
-    </p>
-<?php endif; ?>
-
-<?php if ($verificadosDiscrepancia > 0): ?>
-    <div class="mb-2 d-flex flex-wrap gap-3 align-items-end">
-        <div style="max-width: 420px; flex: 1 1 260px;">
-            <label class="form-label small mb-1">Buscar</label>
-            <input type="search" id="buscadorDiscrepancia" class="form-control form-control-sm"
-                   placeholder="Buscar por código, descripción o ubicación..."
-                   value="<?= htmlspecialchars($busquedaDiscrepancia, ENT_QUOTES) ?>">
+    <?php if ($verificadosDiscrepancia > 0): ?>
+        <div class="mb-2 d-flex flex-wrap gap-3 align-items-end">
+            <div style="max-width: 420px; flex: 1 1 260px;">
+                <label class="form-label small mb-1">Buscar</label>
+                <input type="search" id="buscadorDiscrepancia" class="form-control form-control-sm"
+                       placeholder="Buscar por código, descripción o ubicación..."
+                       value="<?= htmlspecialchars($busquedaDiscrepancia, ENT_QUOTES) ?>">
+            </div>
+            <div>
+                <label class="form-label small mb-1">Estado</label>
+                <select id="selectorEstadoDiscrepancia" class="form-select form-select-sm">
+                    <option value="pendiente" <?= $estadoDiscrepancia === 'pendiente' ? 'selected' : '' ?>>Sin atender</option>
+                    <option value="revisada" <?= $estadoDiscrepancia === 'revisada' ? 'selected' : '' ?>>Revisadas</option>
+                    <option value="todas" <?= $estadoDiscrepancia === 'todas' ? 'selected' : '' ?>>Todas</option>
+                </select>
+            </div>
         </div>
-        <div>
-            <label class="form-label small mb-1">Estado</label>
-            <select id="selectorEstadoDiscrepancia" class="form-select form-select-sm">
-                <option value="pendiente" <?= $estadoDiscrepancia === 'pendiente' ? 'selected' : '' ?>>Sin atender</option>
-                <option value="revisada" <?= $estadoDiscrepancia === 'revisada' ? 'selected' : '' ?>>Revisadas</option>
-                <option value="todas" <?= $estadoDiscrepancia === 'todas' ? 'selected' : '' ?>>Todas</option>
-            </select>
+    <?php endif; ?>
+
+    <?php if (empty($discrepancias)): ?>
+        <p class="text-muted small">
+            <?php if ($verificadosDiscrepancia === 0): ?>
+                Ninguna hasta ahora.
+            <?php elseif ($estadoDiscrepancia === 'pendiente'): ?>
+                No hay discrepancias sin atender — todas están revisadas, o cámbialo arriba para verlas todas.
+            <?php else: ?>
+                Ningún resultado para ese filtro.
+            <?php endif; ?>
+        </p>
+    <?php else: ?>
+        <div class="table-responsive mb-2">
+            <table class="table table-sm bg-white tabla-cards">
+                <thead>
+                <tr><th>Código</th><th>Descripción</th><th>Ubicación</th><th>Responsable(s)</th><th>Motivo</th><th>Observación</th><th>Reportado por</th><th>Fecha</th><th>Estado</th><th>Acciones</th></tr>
+                </thead>
+                <tbody>
+                <?php foreach ($discrepancias as $d): ?>
+                    <tr>
+                        <td class="mono small" data-label="Código"><?= htmlspecialchars($d['codigo_identificacion'], ENT_QUOTES) ?></td>
+                        <td data-label="Descripción"><?= htmlspecialchars($d['descripcion'], ENT_QUOTES) ?></td>
+                        <td class="text-muted small" data-label="Ubicación"><?= !empty($d['espacio_nombre']) ? htmlspecialchars($d['espacio_nombre'], ENT_QUOTES) : 'Sin asignar' ?></td>
+                        <td class="text-muted small" data-label="Responsable(s)"><?= !empty($d['responsables_nombres']) ? htmlspecialchars($d['responsables_nombres'], ENT_QUOTES) : '—' ?></td>
+                        <td class="small" data-label="Motivo"><?= htmlspecialchars(Verificacion::etiquetaMotivo($d['motivo'] ?? null), ENT_QUOTES) ?></td>
+                        <td class="small" data-label="Observación"><?= htmlspecialchars($d['observaciones'] ?? '', ENT_QUOTES) ?></td>
+                        <td class="text-muted small" data-label="Reportado por"><?= htmlspecialchars($d['nombres'] . ' ' . $d['apellidos'], ENT_QUOTES) ?></td>
+                        <td class="mono small text-muted" data-label="Fecha"><?= htmlspecialchars(substr($d['updated_at'], 0, 16), ENT_QUOTES) ?></td>
+                        <td data-label="Estado">
+                            <?php if (!empty($d['revisada'])): ?>
+                                <span class="badge text-bg-secondary d-block mb-1">Revisada</span>
+                                <?php if (!empty($d['revisor_nombres'])): ?>
+                                    <div class="text-muted" style="font-size: 0.75rem;">
+                                        por <?= htmlspecialchars($d['revisor_nombres'] . ' ' . $d['revisor_apellidos'], ENT_QUOTES) ?>
+                                        <?php if (!empty($d['revisada_en'])): ?>
+                                            · <?= htmlspecialchars(substr($d['revisada_en'], 0, 16), ENT_QUOTES) ?>
+                                        <?php endif; ?>
+                                    </div>
+                                <?php endif; ?>
+                            <?php else: ?>
+                                <span class="badge text-bg-warning">Pendiente</span>
+                            <?php endif; ?>
+                        </td>
+                        <td data-label="Acciones">
+                            <?php $panelUbicacion = !empty($d['espacio_nombre']) ? 'panelTrasladar' : 'panelAsignar'; ?>
+                            <div class="d-flex flex-column gap-1">
+                                <a href="<?= Url::to('/bienes/' . $d['bien_id'] . '/editar') ?>?verificacion_id=<?= (int) $d['id'] ?>#<?= $panelUbicacion ?>"
+                                   class="btn btn-sm btn-outline-primary">Corregir ubicación</a>
+                                <a href="<?= Url::to('/qr/' . $d['qr_token'] . '/baja') ?>?verificacion_id=<?= (int) $d['id'] ?>"
+                                   class="btn btn-sm btn-outline-danger">Dar de baja</a>
+                                <?php if (empty($d['revisada'])): ?>
+                                    <form method="post" action="<?= Url::to('/verificaciones/' . $jornada['id'] . '/discrepancias/' . $d['id'] . '/revisada') ?>">
+                                        <?= Csrf::field() ?>
+                                        <button type="submit" class="btn btn-sm btn-outline-secondary w-100">Marcar revisada</button>
+                                    </form>
+                                <?php endif; ?>
+                            </div>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+                </tbody>
+            </table>
         </div>
-    </div>
+    <?php endif; ?>
 
-    <?php View::render('partials/paginacion', [
-        'pagina' => $paginaDiscrepancia, 'porPagina' => $porPaginaDiscrepancia, 'total' => $totalDiscrepanciaFiltrado, 'totalPaginas' => $totalPaginasDiscrepancia,
-        'opcionesPorPagina' => $opcionesPorPagina,
-        'urlBase' => $urlBaseDiscrepancia,
-        'paramPagina' => 'paginaDiscrepancia', 'paramPorPagina' => 'porPaginaDiscrepancia',
-    ]); ?>
-<?php endif; ?>
-
-<?php if (empty($discrepancias)): ?>
-    <p class="text-muted small">
-        <?php if ($verificadosDiscrepancia === 0): ?>
-            Ninguna hasta ahora.
-        <?php elseif ($estadoDiscrepancia === 'pendiente'): ?>
-            No hay discrepancias sin atender — todas están revisadas, o cámbialo arriba para verlas todas.
-        <?php else: ?>
-            Ningún resultado para ese filtro.
-        <?php endif; ?>
-    </p>
-<?php else: ?>
-    <div class="table-responsive mb-2">
-        <table class="table table-sm bg-white tabla-cards">
-            <thead>
-            <tr><th>Código</th><th>Descripción</th><th>Ubicación</th><th>Responsable(s)</th><th>Motivo</th><th>Observación</th><th>Reportado por</th><th>Fecha</th><th>Estado</th><th>Acciones</th></tr>
-            </thead>
-            <tbody>
-            <?php foreach ($discrepancias as $d): ?>
-                <tr>
-                    <td class="mono small" data-label="Código"><?= htmlspecialchars($d['codigo_identificacion'], ENT_QUOTES) ?></td>
-                    <td data-label="Descripción"><?= htmlspecialchars($d['descripcion'], ENT_QUOTES) ?></td>
-                    <td class="text-muted small" data-label="Ubicación"><?= !empty($d['espacio_nombre']) ? htmlspecialchars($d['espacio_nombre'], ENT_QUOTES) : 'Sin asignar' ?></td>
-                    <td class="text-muted small" data-label="Responsable(s)"><?= !empty($d['responsables_nombres']) ? htmlspecialchars($d['responsables_nombres'], ENT_QUOTES) : '—' ?></td>
-                    <td class="small" data-label="Motivo"><?= htmlspecialchars(Verificacion::etiquetaMotivo($d['motivo'] ?? null), ENT_QUOTES) ?></td>
-                    <td class="small" data-label="Observación"><?= htmlspecialchars($d['observaciones'] ?? '', ENT_QUOTES) ?></td>
-                    <td class="text-muted small" data-label="Reportado por"><?= htmlspecialchars($d['nombres'] . ' ' . $d['apellidos'], ENT_QUOTES) ?></td>
-                    <td class="mono small text-muted" data-label="Fecha"><?= htmlspecialchars(substr($d['updated_at'], 0, 16), ENT_QUOTES) ?></td>
-                    <td data-label="Estado">
-                        <?php if (!empty($d['revisada'])): ?>
-                            <span class="badge text-bg-secondary d-block mb-1">Revisada</span>
-                            <?php if (!empty($d['revisor_nombres'])): ?>
-                                <div class="text-muted" style="font-size: 0.75rem;">
-                                    por <?= htmlspecialchars($d['revisor_nombres'] . ' ' . $d['revisor_apellidos'], ENT_QUOTES) ?>
-                                    <?php if (!empty($d['revisada_en'])): ?>
-                                        · <?= htmlspecialchars(substr($d['revisada_en'], 0, 16), ENT_QUOTES) ?>
-                                    <?php endif; ?>
-                                </div>
-                            <?php endif; ?>
-                        <?php else: ?>
-                            <span class="badge text-bg-warning">Pendiente</span>
-                        <?php endif; ?>
-                    </td>
-                    <td data-label="Acciones">
-                        <?php $panelUbicacion = !empty($d['espacio_nombre']) ? 'panelTrasladar' : 'panelAsignar'; ?>
-                        <div class="d-flex flex-column gap-1">
-                            <a href="<?= Url::to('/bienes/' . $d['bien_id'] . '/editar') ?>?verificacion_id=<?= (int) $d['id'] ?>#<?= $panelUbicacion ?>"
-                               class="btn btn-sm btn-outline-primary">Corregir ubicación</a>
-                            <a href="<?= Url::to('/qr/' . $d['qr_token'] . '/baja') ?>?verificacion_id=<?= (int) $d['id'] ?>"
-                               class="btn btn-sm btn-outline-danger">Dar de baja</a>
-                            <?php if (empty($d['revisada'])): ?>
-                                <form method="post" action="<?= Url::to('/verificaciones/' . $jornada['id'] . '/discrepancias/' . $d['id'] . '/revisada') ?>">
-                                    <?= Csrf::field() ?>
-                                    <button type="submit" class="btn btn-sm btn-outline-secondary w-100">Marcar revisada</button>
-                                </form>
-                            <?php endif; ?>
-                        </div>
-                    </td>
-                </tr>
-            <?php endforeach; ?>
-            </tbody>
-        </table>
-    </div>
-<?php endif; ?>
-
-<?php if ($verificadosDiscrepancia > 0): ?>
-    <div class="mb-4">
+    <?php if ($verificadosDiscrepancia > 0): ?>
         <?php View::render('partials/paginacion', [
             'pagina' => $paginaDiscrepancia, 'porPagina' => $porPaginaDiscrepancia, 'total' => $totalDiscrepanciaFiltrado, 'totalPaginas' => $totalPaginasDiscrepancia,
             'opcionesPorPagina' => $opcionesPorPagina,
             'urlBase' => $urlBaseDiscrepancia,
             'paramPagina' => 'paginaDiscrepancia', 'paramPorPagina' => 'porPaginaDiscrepancia',
         ]); ?>
+    <?php endif; ?>
+</div>
+
+<div data-tab-panel="pendientes" id="seccion-pendientes" class="d-none">
+    <div class="mb-2" style="max-width: 420px;">
+        <input type="search" id="buscadorPendientes" class="form-control form-control-sm"
+               placeholder="Buscar por código, descripción o ubicación..."
+               value="<?= htmlspecialchars($busquedaPendientes, ENT_QUOTES) ?>">
     </div>
-<?php endif; ?>
 
-<h2 class="h6" id="seccion-pendientes">Bienes pendientes de verificar</h2>
+    <div class="table-responsive">
+        <table class="table table-sm bg-white tabla-cards">
+            <thead>
+            <tr><th>Código</th><th>Descripción</th><th>Ubicación</th></tr>
+            </thead>
+            <tbody>
+            <?php foreach ($pendientes as $p): ?>
+                <tr>
+                    <td class="mono small" data-label="Código"><?= htmlspecialchars($p['codigo_identificacion'], ENT_QUOTES) ?></td>
+                    <td data-label="Descripción"><?= htmlspecialchars($p['descripcion'], ENT_QUOTES) ?></td>
+                    <td class="text-muted small" data-label="Ubicación"><?= !empty($p['espacio_nombre']) ? htmlspecialchars($p['espacio_nombre'], ENT_QUOTES) : 'Sin asignar' ?></td>
+                </tr>
+            <?php endforeach; ?>
+            </tbody>
+        </table>
+    </div>
 
-<div class="mb-2" style="max-width: 420px;">
-    <input type="search" id="buscadorPendientes" class="form-control form-control-sm"
-           placeholder="Buscar por código, descripción o ubicación..."
-           value="<?= htmlspecialchars($busquedaPendientes, ENT_QUOTES) ?>">
+    <?php View::render('partials/paginacion', [
+        'pagina' => $pagina, 'porPagina' => $porPagina, 'total' => $totalPendientes, 'totalPaginas' => $totalPaginasPendientes,
+        'opcionesPorPagina' => $opcionesPorPagina,
+        'urlBase' => $urlBasePendientes,
+    ]); ?>
 </div>
 
-<?php View::render('partials/paginacion', [
-    'pagina' => $pagina, 'porPagina' => $porPagina, 'total' => $totalPendientes, 'totalPaginas' => $totalPaginasPendientes,
-    'opcionesPorPagina' => $opcionesPorPagina,
-    'urlBase' => $urlBasePendientes,
-]); ?>
+<div data-tab-panel="ok" id="seccion-ok" class="d-none">
+    <?php if ($verificadosOk > 0): ?>
+        <div class="mb-2" style="max-width: 420px;">
+            <input type="search" id="buscadorOk" class="form-control form-control-sm"
+                   placeholder="Buscar por código, descripción o ubicación..."
+                   value="<?= htmlspecialchars($busquedaOk, ENT_QUOTES) ?>">
+        </div>
+    <?php endif; ?>
 
-<div class="table-responsive">
-    <table class="table table-sm bg-white tabla-cards">
-        <thead>
-        <tr><th>Código</th><th>Descripción</th><th>Ubicación</th></tr>
-        </thead>
-        <tbody>
-        <?php foreach ($pendientes as $p): ?>
-            <tr>
-                <td class="mono small" data-label="Código"><?= htmlspecialchars($p['codigo_identificacion'], ENT_QUOTES) ?></td>
-                <td data-label="Descripción"><?= htmlspecialchars($p['descripcion'], ENT_QUOTES) ?></td>
-                <td class="text-muted small" data-label="Ubicación"><?= !empty($p['espacio_nombre']) ? htmlspecialchars($p['espacio_nombre'], ENT_QUOTES) : 'Sin asignar' ?></td>
-            </tr>
-        <?php endforeach; ?>
-        </tbody>
-    </table>
+    <?php if (empty($verificadosOkDetalle)): ?>
+        <p class="text-muted small">
+            <?= $busquedaOk !== '' ? 'Ningún resultado para esa búsqueda.' : 'Ninguno hasta ahora.' ?>
+        </p>
+    <?php else: ?>
+        <div class="table-responsive mb-2">
+            <table class="table table-sm bg-white tabla-cards">
+                <thead>
+                <tr><th>Código</th><th>Descripción</th><th>Ubicación</th><th>Responsable(s)</th><th>Verificado por</th><th>Fecha</th></tr>
+                </thead>
+                <tbody>
+                <?php foreach ($verificadosOkDetalle as $v): ?>
+                    <tr>
+                        <td class="mono small" data-label="Código"><?= htmlspecialchars($v['codigo_identificacion'], ENT_QUOTES) ?></td>
+                        <td data-label="Descripción"><?= htmlspecialchars($v['descripcion'], ENT_QUOTES) ?></td>
+                        <td class="text-muted small" data-label="Ubicación"><?= !empty($v['espacio_nombre']) ? htmlspecialchars($v['espacio_nombre'], ENT_QUOTES) : 'Sin asignar' ?></td>
+                        <td class="text-muted small" data-label="Responsable(s)"><?= !empty($v['responsables_nombres']) ? htmlspecialchars($v['responsables_nombres'], ENT_QUOTES) : '—' ?></td>
+                        <td class="small" data-label="Verificado por"><?= htmlspecialchars($v['nombres'] . ' ' . $v['apellidos'], ENT_QUOTES) ?></td>
+                        <td class="mono small text-muted" data-label="Fecha"><?= htmlspecialchars(substr($v['updated_at'], 0, 16), ENT_QUOTES) ?></td>
+                    </tr>
+                <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+    <?php endif; ?>
+
+    <?php if ($verificadosOk > 0): ?>
+        <?php View::render('partials/paginacion', [
+            'pagina' => $paginaOk, 'porPagina' => $porPaginaOk, 'total' => $totalOkFiltrado, 'totalPaginas' => $totalPaginasOk,
+            'opcionesPorPagina' => $opcionesPorPagina,
+            'urlBase' => $urlBaseOk,
+            'paramPagina' => 'paginaOk', 'paramPorPagina' => 'porPaginaOk',
+        ]); ?>
+    <?php endif; ?>
 </div>
-
-<?php View::render('partials/paginacion', [
-    'pagina' => $pagina, 'porPagina' => $porPagina, 'total' => $totalPendientes, 'totalPaginas' => $totalPaginasPendientes,
-    'opcionesPorPagina' => $opcionesPorPagina,
-    'urlBase' => $urlBasePendientes,
-]); ?>
 
 <script>
 (function () {
-    // Buscador con reload debounceado, reutilizable por las 3 tablas de la pantalla —
+    // Buscador con reload debounceado, reutilizable por las tablas de la pantalla —
     // cada una con su propio parametro de busqueda/pagina para no interferir entre si.
     function activarBuscador(idInput, paramBusqueda, paramPagina, ancla) {
         const input = document.getElementById(idInput);
@@ -395,6 +367,36 @@ $motivosConDatos = array_filter($discrepanciasPorMotivo, static fn (int $cantida
             url.hash = 'seccion-discrepancia';
             window.location = url.toString();
         });
+    }
+
+    // Pestañas: sin recarga, solo muestra/oculta paneles ya renderizados y recuerda
+    // la elección en el hash de la URL (así un reintento tras buscar/paginar vuelve a
+    // la pestaña correcta, y el enlace se puede compartir apuntando a una sección).
+    const enlaces = Array.prototype.slice.call(document.querySelectorAll('[data-tab-link]'));
+    const paneles = Array.prototype.slice.call(document.querySelectorAll('[data-tab-panel]'));
+
+    function activarTab(nombre) {
+        paneles.forEach(function (panel) {
+            panel.classList.toggle('d-none', panel.dataset.tabPanel !== nombre);
+        });
+        enlaces.forEach(function (enlace) {
+            enlace.classList.toggle('active', enlace.dataset.tabLink === nombre);
+        });
+    }
+
+    enlaces.forEach(function (enlace) {
+        enlace.addEventListener('click', function (e) {
+            e.preventDefault();
+            const nombre = enlace.dataset.tabLink;
+            activarTab(nombre);
+            history.replaceState(null, '', '#seccion-' + nombre);
+        });
+    });
+
+    const disponibles = enlaces.map(function (enlace) { return enlace.dataset.tabLink; });
+    const hashInicial = window.location.hash.replace('#seccion-', '');
+    if (disponibles.indexOf(hashInicial) !== -1) {
+        activarTab(hashInicial);
     }
 })();
 </script>
