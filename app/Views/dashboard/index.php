@@ -46,6 +46,56 @@ $puedeVer = static function (array $item): bool {
 <h1 class="h4 mb-1">Hola, <?= htmlspecialchars(Auth::nombreCompleto() ?? '', ENT_QUOTES) ?></h1>
 <p class="text-muted mb-4">Rol: <?= htmlspecialchars(Auth::rol() ?? '', ENT_QUOTES) ?></p>
 
+<?php if ($primerosPasos !== null): ?>
+    <div class="card mb-4" style="max-width: 640px;">
+        <div class="card-body">
+            <h2 class="h6 mb-1"><i class="bi bi-flag me-1"></i>Primeros pasos</h2>
+            <p class="text-muted small mb-3">
+                Tu institución todavía no tiene bienes registrados. Este es el orden recomendado para empezar:
+            </p>
+            <ol class="list-unstyled mb-0">
+                <li class="d-flex align-items-start gap-2 mb-2">
+                    <?php if ($primerosPasos['totalEspacios'] > 0): ?>
+                        <i class="bi bi-check-circle-fill text-success mt-1"></i>
+                    <?php else: ?>
+                        <i class="bi bi-circle text-muted mt-1"></i>
+                    <?php endif; ?>
+                    <div>
+                        <div class="fw-semibold small">1. Registra tus espacios</div>
+                        <div class="text-muted small">
+                            Aulas, oficinas, bodegas...
+                            <?php if ($primerosPasos['totalEspacios'] > 0): ?>
+                                (<?= (int) $primerosPasos['totalEspacios'] ?> ya registrado<?= $primerosPasos['totalEspacios'] === 1 ? '' : 's' ?>)
+                            <?php elseif (Auth::esSuperusuario() || Auth::tienePermiso('espacios.crear')): ?>
+                                — <a href="<?= Url::to('/espacios/crear') ?>">Crear espacio</a>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </li>
+                <li class="d-flex align-items-start gap-2 mb-2">
+                    <i class="bi bi-circle text-muted mt-1"></i>
+                    <div>
+                        <div class="fw-semibold small">2. Registra tus bienes</div>
+                        <div class="text-muted small">
+                            Muebles, equipos, tecnología...
+                            <?php if (Auth::esSuperusuario() || Auth::tienePermiso('bienes.crear')): ?>
+                                — <a href="<?= Url::to('/bienes/crear') ?>">Registrar bien</a>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </li>
+                <li class="d-flex align-items-start gap-2">
+                    <i class="bi bi-circle text-muted mt-1"></i>
+                    <div>
+                        <div class="fw-semibold small">3. Asigna cada bien a un espacio</div>
+                        <div class="text-muted small">Así queda registrado quién es responsable y dónde está.</div>
+                    </div>
+                </li>
+            </ol>
+        </div>
+    </div>
+<?php endif; ?>
+
 <div class="row g-3" style="max-width: 980px;">
     <?php foreach ($accesos as $a): ?>
         <?php if (!$puedeVer($a)) { continue; } ?>
