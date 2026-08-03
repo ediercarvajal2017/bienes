@@ -17,6 +17,7 @@ use App\Models\Asignacion;
 use App\Models\Bien;
 use App\Models\Categoria;
 use App\Models\Espacio;
+use App\Models\Hallazgo;
 use App\Models\Institucion;
 use App\Models\Movimiento;
 use App\Models\Verificacion;
@@ -85,13 +86,24 @@ final class BienController
 
     public function crear(): void
     {
+        $hallazgo = Hallazgo::pendienteAccesible(
+            (int) ($_GET['hallazgo_id'] ?? 0),
+            Auth::esSuperusuario() ? null : Auth::institucionId()
+        );
+
+        $viejo = Session::pullOld();
+        if (empty($viejo) && $hallazgo !== null) {
+            $viejo = ['descripcion' => $hallazgo['descripcion']];
+        }
+
         View::layout('partials/layout', 'bienes/form', [
             'title' => 'Registrar bien',
             'bien' => null,
             'categorias' => Categoria::activas(),
             'instituciones' => Auth::esSuperusuario() ? Institucion::listadoParaSelect() : [],
             'error' => Session::pullFlash('error'),
-            'viejo' => Session::pullOld(),
+            'viejo' => $viejo,
+            'hallazgo' => $hallazgo,
         ]);
     }
 
@@ -101,10 +113,16 @@ final class BienController
         $datos = $this->datosDesdeFormulario($request);
         $this->verificarCsrf($request, '/bienes/crear', $datos);
 
+        $hallazgo = Hallazgo::pendienteAccesible(
+            (int) $request->input('hallazgo_id'),
+            Auth::esSuperusuario() ? null : Auth::institucionId()
+        );
+        $volverA = '/bienes/crear' . ($hallazgo !== null ? '?hallazgo_id=' . $hallazgo['id'] : '');
+
         if ($error = $this->validar($datos, null)) {
             Session::flash('error', $error);
             Session::flashOld($datos);
-            header('Location: ' . Url::to('/bienes/crear'));
+            header('Location: ' . Url::to($volverA));
             exit;
         }
 
@@ -113,7 +131,20 @@ final class BienController
 
         $this->procesarArchivos($id, $request, $datos['codigo_identificacion']);
 
-        Session::flash('ok', 'Bien registrado correctamente.');
+        if ($hallazgo !== null) {
+            Asignacion::crear([
+                'bien_id' => $id,
+                'espacio_id' => $hallazgo['espacio_id'],
+                'fecha_asignacion' => date('Y-m-d'),
+                'observaciones' => 'Bien registrado a partir de un hallazgo reportado durante una jornada de verificación física.',
+                'asignado_por' => Auth::id(),
+            ]);
+            Hallazgo::marcarRegistrado((int) $hallazgo['id'], $id, (int) Auth::id());
+            Session::flash('ok', 'Bien registrado y asignado a ' . $hallazgo['espacio_nombre'] . '.');
+        } else {
+            Session::flash('ok', 'Bien registrado correctamente.');
+        }
+
         header('Location: ' . Url::to('/bienes'));
         exit;
     }

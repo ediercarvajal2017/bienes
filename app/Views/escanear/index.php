@@ -26,6 +26,15 @@ use App\Core\Url;
     </form>
 </div>
 
+<?php if (!empty($jornadaActiva)): ?>
+    <div class="alert alert-secondary mt-4 py-3" style="max-width: 420px;">
+        <div class="small mb-2">¿Encontraste un bien físico que no tiene código ni QR?</div>
+        <a href="<?= Url::to('/hallazgos/crear') ?>" class="btn btn-sm btn-outline-primary">
+            <i class="bi bi-flag me-1"></i>Reportar bien no registrado
+        </a>
+    </div>
+<?php endif; ?>
+
 <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <script>
 (function () {

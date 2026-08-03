@@ -85,6 +85,25 @@ final class Espacio
      * mapa código→id una sola vez, en vez de una consulta por cada fila de un archivo
      * de carga masiva.
      */
+    /**
+     * Espacios donde $usuarioId es responsable — usado para el docente al reportar un
+     * hallazgo (bien físico no registrado): solo puede reportarlo en su(s) propio(s)
+     * espacio(s), igual que solo ve "sus" bienes en Bien::listarPropios().
+     */
+    public static function propiosDe(int $usuarioId, int $institucionId): array
+    {
+        $stmt = Database::connection()->prepare(
+            'SELECT e.id, e.nombre, e.codigo
+             FROM espacios e
+             JOIN espacio_responsables er ON er.espacio_id = e.id
+             WHERE er.usuario_id = ? AND e.institucion_id = ? AND e.activo = 1
+             ORDER BY e.codigo'
+        );
+        $stmt->execute([$usuarioId, $institucionId]);
+
+        return $stmt->fetchAll();
+    }
+
     public static function listadoCodigos(int $institucionId): array
     {
         $stmt = Database::connection()->prepare(

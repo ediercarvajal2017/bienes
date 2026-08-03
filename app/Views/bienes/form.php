@@ -9,6 +9,7 @@ $esEdicion = $bien !== null;
 $puedeEditar = Auth::esSuperusuario() || Auth::tienePermiso('bienes.editar') || (!$esEdicion && Auth::tienePermiso('bienes.crear'));
 $viejo ??= [];
 $verificacionId ??= null;
+$hallazgo ??= null;
 $v = static fn (string $campo, mixed $porDefecto = '') => $viejo[$campo] ?? $bien[$campo] ?? $porDefecto;
 ?>
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
@@ -37,10 +38,22 @@ $v = static fn (string $campo, mixed $porDefecto = '') => $viejo[$campo] ?? $bie
     <div class="alert alert-danger py-2 small"><?= htmlspecialchars($error, ENT_QUOTES) ?></div>
 <?php endif; ?>
 
+<?php if (!$esEdicion && $hallazgo !== null): ?>
+    <div class="alert alert-info py-2 small" style="max-width: 680px;">
+        <i class="bi bi-info-circle me-1"></i>Formalizando un hallazgo reportado en
+        <strong><?= htmlspecialchars($hallazgo['espacio_nombre'], ENT_QUOTES) ?></strong>
+        por <?= htmlspecialchars($hallazgo['nombres'] . ' ' . $hallazgo['apellidos'], ENT_QUOTES) ?>.
+        Al guardar, el bien quedará asignado automáticamente a ese espacio.
+    </div>
+<?php endif; ?>
+
 <form method="post"
       action="<?= $esEdicion ? Url::to('/bienes/' . $bien['id']) : Url::to('/bienes') ?>"
       enctype="multipart/form-data" class="row g-3" style="max-width: 680px;">
     <?= Csrf::field() ?>
+    <?php if (!$esEdicion && $hallazgo !== null): ?>
+        <input type="hidden" name="hallazgo_id" value="<?= (int) $hallazgo['id'] ?>">
+    <?php endif; ?>
 
     <?php if (!$esEdicion && Auth::esSuperusuario()): ?>
         <div class="col-12">
@@ -122,7 +135,9 @@ $v = static fn (string $campo, mixed $porDefecto = '') => $viejo[$campo] ?? $bie
             <?php View::render('partials/campo_foto', [
                 'nombreCampo' => 'foto',
                 'etiqueta' => 'Fotografía del bien',
-                'fotoActualUrl' => !empty($bien['foto_path']) ? Url::to('/archivos/' . $bien['foto_path']) : null,
+                'fotoActualUrl' => !empty($bien['foto_path'])
+                    ? Url::to('/archivos/' . $bien['foto_path'])
+                    : (!empty($hallazgo['foto_path']) ? Url::to('/archivos/' . $hallazgo['foto_path']) : null),
             ]); ?>
         <?php elseif (!empty($bien['foto_path'])): ?>
             <label class="form-label small d-block">Fotografía del bien</label>

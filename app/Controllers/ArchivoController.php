@@ -9,7 +9,7 @@ use App\Models\Archivo;
 
 final class ArchivoController
 {
-    private const CARPETAS_PERMITIDAS = ['logos', 'fotos_usuarios', 'fotos_bienes', 'facturas', 'bajas', 'cartera', 'reintegros', 'plaqueteo'];
+    private const CARPETAS_PERMITIDAS = ['logos', 'fotos_usuarios', 'fotos_bienes', 'facturas', 'bajas', 'cartera', 'reintegros', 'plaqueteo', 'hallazgos'];
 
     public function mostrar(string $tipo, string $archivo): void
     {

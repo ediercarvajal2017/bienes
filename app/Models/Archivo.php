@@ -33,6 +33,7 @@ final class Archivo
             'cartera' => ['SELECT institucion_id FROM cartera_envios WHERE archivo_path = ?'],
             'reintegros' => ['SELECT institucion_id FROM formatos_reintegro WHERE archivo_path = ?'],
             'plaqueteo' => ['SELECT institucion_id FROM formatos_plaqueteo WHERE archivo_path = ?'],
+            'hallazgos' => ['SELECT institucion_id FROM hallazgos_verificacion WHERE foto_path = ?'],
             default => [],
         };
 

@@ -38,6 +38,7 @@ use App\Controllers\EspacioController;
 use App\Controllers\FacturaAdministrativaController;
 use App\Controllers\FormatoPlaqueteoController;
 use App\Controllers\FormatoReintegroController;
+use App\Controllers\HallazgoController;
 use App\Controllers\InstitucionController;
 use App\Controllers\MovimientoController;
 use App\Controllers\PasswordController;
@@ -317,6 +318,16 @@ $router->post('/bajas/{id}/rechazar', [BajaController::class, 'rechazar'], [
 
 $router->get('/escanear', [EscaneoController::class, 'index'], [AuthMiddleware::class]);
 $router->get('/escanear/buscar', [EscaneoController::class, 'buscar'], [AuthMiddleware::class]);
+
+$router->get('/hallazgos/crear', [HallazgoController::class, 'crear'], [
+    AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':bienes.ver',
+]);
+$router->post('/hallazgos', [HallazgoController::class, 'guardar'], [
+    AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':bienes.ver',
+]);
+$router->post('/hallazgos/{id}/descartar', [HallazgoController::class, 'descartar'], [
+    AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':bienes.crear',
+]);
 
 $router->get('/reportes', [ReporteController::class, 'index'], [
     AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':reportes.generar',

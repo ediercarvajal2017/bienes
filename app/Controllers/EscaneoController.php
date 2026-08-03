@@ -9,14 +9,18 @@ use App\Core\Session;
 use App\Core\Url;
 use App\Core\View;
 use App\Models\Bien;
+use App\Models\JornadaVerificacion;
 
 final class EscaneoController
 {
     public function index(): void
     {
+        $institucionId = Auth::institucionId();
+
         View::layout('partials/layout', 'escanear/index', [
             'title' => 'Escanear código QR',
             'error' => Session::pullFlash('error'),
+            'jornadaActiva' => $institucionId !== null && JornadaVerificacion::activaPara($institucionId) !== null,
         ]);
     }
 

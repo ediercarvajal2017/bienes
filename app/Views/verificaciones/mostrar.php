@@ -106,6 +106,48 @@ $urlBaseDiscrepancia = $urlBaseSeccion(['paginaDiscrepancia', 'porPaginaDiscrepa
     </div>
 <?php endif; ?>
 
+<?php if (!empty($hallazgos)): ?>
+    <h2 class="h6" id="seccion-hallazgos">Bienes no registrados encontrados (<?= count($hallazgos) ?>)</h2>
+    <p class="text-muted small mb-2">Reportados por el personal durante la verificación — bienes físicos que no están en el sistema.</p>
+
+    <div class="table-responsive mb-4">
+        <table class="table table-sm bg-white tabla-cards">
+            <thead>
+            <tr><th>Descripción</th><th>Espacio</th><th>Foto</th><th>Reportado por</th><th>Fecha</th><th>Acciones</th></tr>
+            </thead>
+            <tbody>
+            <?php foreach ($hallazgos as $h): ?>
+                <tr>
+                    <td data-label="Descripción"><?= htmlspecialchars($h['descripcion'], ENT_QUOTES) ?></td>
+                    <td class="text-muted small" data-label="Espacio"><?= htmlspecialchars($h['espacio_nombre'], ENT_QUOTES) ?></td>
+                    <td data-label="Foto">
+                        <?php if (!empty($h['foto_path'])): ?>
+                            <img src="<?= Url::to('/archivos/' . $h['foto_path']) ?>"
+                                 data-lightbox-src="<?= Url::to('/archivos/' . $h['foto_path']) ?>"
+                                 style="width:36px;height:36px;object-fit:cover;border-radius:4px;cursor:zoom-in;">
+                        <?php else: ?>
+                            <span class="text-muted small">—</span>
+                        <?php endif; ?>
+                    </td>
+                    <td class="small" data-label="Reportado por"><?= htmlspecialchars($h['nombres'] . ' ' . $h['apellidos'], ENT_QUOTES) ?></td>
+                    <td class="mono small text-muted" data-label="Fecha"><?= htmlspecialchars(substr($h['created_at'], 0, 16), ENT_QUOTES) ?></td>
+                    <td data-label="Acciones">
+                        <div class="d-flex flex-column gap-1">
+                            <a href="<?= Url::to('/bienes/crear') ?>?hallazgo_id=<?= (int) $h['id'] ?>" class="btn btn-sm btn-outline-primary">Registrar como bien</a>
+                            <form method="post" action="<?= Url::to('/hallazgos/' . $h['id'] . '/descartar') ?>"
+                                  onsubmit="return confirm('¿Descartar este hallazgo? No se creará ningún bien.');">
+                                <?= Csrf::field() ?>
+                                <button type="submit" class="btn btn-sm btn-outline-secondary w-100">Descartar</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+            <?php endforeach; ?>
+            </tbody>
+        </table>
+    </div>
+<?php endif; ?>
+
 <h2 class="h6" id="seccion-ok">Bienes verificados sin novedad (<?= (int) $verificadosOk ?>)</h2>
 
 <?php if ($verificadosOk > 0): ?>

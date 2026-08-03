@@ -13,6 +13,7 @@ use App\Core\View;
 use App\Helpers\Paginador;
 use App\Helpers\Uploader;
 use App\Models\Bien;
+use App\Models\Hallazgo;
 use App\Models\JornadaVerificacion;
 use App\Models\Verificacion;
 use App\Services\ReporteService;
@@ -173,6 +174,8 @@ final class VerificacionController
             'opcionesPorPagina' => self::OPCIONES_POR_PAGINA,
             'totalPendientes' => $totalPendientes,
             'totalPaginasPendientes' => Paginador::totalPaginas($totalPendientes, $porPagina),
+
+            'hallazgos' => Hallazgo::pendientesDeJornada($jornadaId),
 
             'mensaje' => Session::pullFlash('ok'),
             'error' => Session::pullFlash('error'),
