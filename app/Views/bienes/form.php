@@ -47,6 +47,10 @@ $v = static fn (string $campo, mixed $porDefecto = '') => $viejo[$campo] ?? $bie
     </div>
 <?php endif; ?>
 
+<?php if ($puedeEditar): ?>
+    <p class="text-muted small mb-2">Los campos marcados con <span class="text-danger">*</span> son obligatorios.</p>
+<?php endif; ?>
+
 <form method="post"
       action="<?= $esEdicion ? Url::to('/bienes/' . $bien['id']) : Url::to('/bienes') ?>"
       enctype="multipart/form-data" class="row g-3" style="max-width: 680px;">
@@ -57,7 +61,7 @@ $v = static fn (string $campo, mixed $porDefecto = '') => $viejo[$campo] ?? $bie
 
     <?php if (!$esEdicion && Auth::esSuperusuario()): ?>
         <div class="col-12">
-            <label class="form-label small">Institución</label>
+            <label class="form-label small requerido">Institución</label>
             <select name="institucion_id" class="form-select selector-buscable" required>
                 <?php foreach ($instituciones as $i): ?>
                     <option value="<?= $i['id'] ?>" <?= (string) $v('institucion_id') === (string) $i['id'] ? 'selected' : '' ?>><?= htmlspecialchars($i['nombre'], ENT_QUOTES) ?></option>
@@ -67,7 +71,7 @@ $v = static fn (string $campo, mixed $porDefecto = '') => $viejo[$campo] ?? $bie
     <?php endif; ?>
 
     <div class="col-md-4">
-        <label class="form-label small">Código de identificación</label>
+        <label class="form-label small requerido">Código de identificación</label>
         <input type="text" name="codigo_identificacion" class="form-control" required <?= $puedeEditar ? '' : 'disabled' ?>
                value="<?= htmlspecialchars($v('codigo_identificacion'), ENT_QUOTES) ?>">
     </div>
@@ -89,14 +93,14 @@ $v = static fn (string $campo, mixed $porDefecto = '') => $viejo[$campo] ?? $bie
     </div>
 
     <div class="col-12">
-        <label class="form-label small">Descripción</label>
+        <label class="form-label small requerido">Descripción</label>
         <input type="text" name="descripcion" class="form-control" required <?= $puedeEditar ? '' : 'disabled' ?>
                placeholder="Ej. Silla plástica azul, Proyector Epson X200..."
                value="<?= htmlspecialchars($v('descripcion'), ENT_QUOTES) ?>">
     </div>
 
     <div class="col-md-4">
-        <label class="form-label small">Fecha de ingreso</label>
+        <label class="form-label small requerido">Fecha de ingreso</label>
         <input type="date" name="fecha_ingreso" class="form-control" required <?= $puedeEditar ? '' : 'disabled' ?>
                value="<?= htmlspecialchars((string) $v('fecha_ingreso', date('Y-m-d')), ENT_QUOTES) ?>">
     </div>

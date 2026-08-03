@@ -11,12 +11,14 @@ use App\Core\Url;
 
 <?php if (!empty($error)): ?><div class="alert alert-danger py-2 small"><?= htmlspecialchars($error, ENT_QUOTES) ?></div><?php endif; ?>
 
-<form method="post" action="<?= Url::to('/formatos-reintegro/' . $registro['id'] . '/actualizar') ?>" enctype="multipart/form-data" class="row g-3" style="max-width: 480px;">
+<p class="text-muted small mb-2">Los campos marcados con <span class="text-danger">*</span> son obligatorios.</p>
+
+<form method="post" action="<?= Url::to('/formatos-reintegro/' . $registro['id'] . '/actualizar') ?>" enctype="multipart/form-data" class="row g-3" style="max-width: 640px;">
     <?= Csrf::field() ?>
 
     <div class="col-md-6">
-        <label class="form-label small">Fecha del reintegro</label>
-        <input type="date" name="fecha_reintegro" class="form-control form-control-sm" required
+        <label class="form-label small requerido">Fecha del reintegro</label>
+        <input type="date" name="fecha_reintegro" class="form-control" required
                value="<?= htmlspecialchars($registro['fecha_reintegro'], ENT_QUOTES) ?>">
     </div>
     <div class="col-md-6">
@@ -27,11 +29,11 @@ use App\Core\Url;
     </div>
     <div class="col-12">
         <label class="form-label small">Reemplazar archivo (opcional, PDF)</label>
-        <input type="file" name="archivo" accept="application/pdf" class="form-control form-control-sm">
+        <input type="file" name="archivo" accept="application/pdf" class="form-control">
     </div>
     <div class="col-12">
         <label class="form-label small">Descripción (opcional)</label>
-        <input type="text" name="descripcion" class="form-control form-control-sm"
+        <input type="text" name="descripcion" class="form-control"
                value="<?= htmlspecialchars($registro['descripcion'] ?? '', ENT_QUOTES) ?>">
     </div>
 

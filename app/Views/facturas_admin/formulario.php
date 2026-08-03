@@ -39,13 +39,14 @@ use App\Core\View;
 <?php if ($institucionId === 0): ?>
     <p class="text-muted">Selecciona una institución para continuar.</p>
 <?php else: ?>
-    <form method="post" action="<?= Url::to('/facturas') ?>" enctype="multipart/form-data" class="row g-3" style="max-width: 480px;">
+    <p class="text-muted small mb-2">Los campos marcados con <span class="text-danger">*</span> son obligatorios.</p>
+    <form method="post" action="<?= Url::to('/facturas') ?>" enctype="multipart/form-data" class="row g-3" style="max-width: 640px;">
         <?= Csrf::field() ?>
         <input type="hidden" name="institucion_id" value="<?= $institucionId ?>">
 
         <div class="col-md-6">
-            <label class="form-label small">Fecha de la factura</label>
-            <input type="date" name="fecha_factura" class="form-control form-control-sm" required value="<?= date('Y-m-d') ?>">
+            <label class="form-label small requerido">Fecha de la factura</label>
+            <input type="date" name="fecha_factura" class="form-control" required value="<?= date('Y-m-d') ?>">
         </div>
         <div class="col-12">
             <?php View::render('partials/campo_foto', [
@@ -57,8 +58,8 @@ use App\Core\View;
             ]); ?>
         </div>
         <div class="col-12">
-            <label class="form-label small">Descripción breve</label>
-            <input type="text" name="descripcion" class="form-control form-control-sm" required placeholder="Ej. Compra de sillas para aula 101">
+            <label class="form-label small requerido">Descripción breve</label>
+            <input type="text" name="descripcion" class="form-control" required placeholder="Ej. Compra de sillas para aula 101">
         </div>
 
         <div class="col-12">

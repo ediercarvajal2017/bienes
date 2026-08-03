@@ -18,35 +18,37 @@ $v = static fn (string $campo, mixed $porDefecto = '') => $viejo[$campo] ?? $usu
     <div class="alert alert-danger py-2 small"><?= htmlspecialchars($error, ENT_QUOTES) ?></div>
 <?php endif; ?>
 
+<p class="text-muted small mb-2">Los campos marcados con <span class="text-danger">*</span> son obligatorios.</p>
+
 <form method="post"
       action="<?= $esEdicion ? Url::to('/usuarios/' . $usuario['id']) : Url::to('/usuarios') ?>"
       enctype="multipart/form-data" class="row g-3" style="max-width: 640px;">
     <?= Csrf::field() ?>
 
     <div class="col-md-6">
-        <label class="form-label small">Documento</label>
+        <label class="form-label small requerido">Documento</label>
         <input type="text" name="documento" class="form-control" required
                value="<?= htmlspecialchars($v('documento'), ENT_QUOTES) ?>">
     </div>
     <div class="col-md-6">
-        <label class="form-label small">Correo</label>
+        <label class="form-label small requerido">Correo</label>
         <input type="email" name="email" class="form-control" required
                value="<?= htmlspecialchars($v('email'), ENT_QUOTES) ?>">
     </div>
 
     <div class="col-md-6">
-        <label class="form-label small">Nombres</label>
+        <label class="form-label small requerido">Nombres</label>
         <input type="text" name="nombres" class="form-control" required
                value="<?= htmlspecialchars($v('nombres'), ENT_QUOTES) ?>">
     </div>
     <div class="col-md-6">
-        <label class="form-label small">Apellidos</label>
+        <label class="form-label small requerido">Apellidos</label>
         <input type="text" name="apellidos" class="form-control" required
                value="<?= htmlspecialchars($v('apellidos'), ENT_QUOTES) ?>">
     </div>
 
     <div class="col-md-6">
-        <label class="form-label small">Cargo</label>
+        <label class="form-label small requerido">Cargo</label>
         <select name="cargo_id" class="form-select" required>
             <?php foreach ($cargos as $c): ?>
                 <option value="<?= $c['id'] ?>" <?= (int) $v('cargo_id', 0) === (int) $c['id'] ? 'selected' : '' ?>>
@@ -57,7 +59,7 @@ $v = static fn (string $campo, mixed $porDefecto = '') => $viejo[$campo] ?? $usu
     </div>
 
     <div class="col-md-6">
-        <label class="form-label small">Rol</label>
+        <label class="form-label small requerido">Rol</label>
         <select name="rol_id" class="form-select" required>
             <?php foreach ($roles as $r): ?>
                 <option value="<?= $r['id'] ?>" <?= (int) $v('rol_id', 0) === (int) $r['id'] ? 'selected' : '' ?>>
@@ -69,7 +71,7 @@ $v = static fn (string $campo, mixed $porDefecto = '') => $viejo[$campo] ?? $usu
 
     <?php if (Auth::esSuperusuario()): ?>
         <div class="col-12">
-            <label class="form-label small">Institución</label>
+            <label class="form-label small requerido">Institución</label>
             <select name="institucion_id" class="form-select selector-buscable" required>
                 <?php foreach ($instituciones as $i): ?>
                     <option value="<?= $i['id'] ?>" <?= (int) $v('institucion_id', 0) === (int) $i['id'] ? 'selected' : '' ?>>
@@ -81,7 +83,7 @@ $v = static fn (string $campo, mixed $porDefecto = '') => $viejo[$campo] ?? $usu
     <?php endif; ?>
 
     <div class="col-md-6">
-        <label class="form-label small"><?= $esEdicion ? 'Nueva contraseña (opcional)' : 'Contraseña' ?></label>
+        <label class="form-label small<?= $esEdicion ? '' : ' requerido' ?>"><?= $esEdicion ? 'Nueva contraseña (opcional)' : 'Contraseña' ?></label>
         <input type="password" name="password" class="form-control" <?= $esEdicion ? '' : 'required' ?> minlength="8">
     </div>
 

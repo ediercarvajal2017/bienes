@@ -18,13 +18,17 @@ $v = static fn (string $campo, mixed $porDefecto = '') => $viejo[$campo] ?? $ins
     <div class="alert alert-danger py-2 small"><?= htmlspecialchars($error, ENT_QUOTES) ?></div>
 <?php endif; ?>
 
+<?php if ($puedeEditar): ?>
+    <p class="text-muted small mb-2">Los campos marcados con <span class="text-danger">*</span> son obligatorios.</p>
+<?php endif; ?>
+
 <form method="post"
       action="<?= $esEdicion ? Url::to('/instituciones/' . $institucion['id']) : Url::to('/instituciones') ?>"
       enctype="multipart/form-data" class="row g-3" style="max-width: 640px;">
     <?= Csrf::field() ?>
 
     <div class="col-md-6">
-        <label class="form-label small">Código DANE</label>
+        <label class="form-label small requerido">Código DANE</label>
         <input type="text" name="codigo_dane" class="form-control" required <?= $puedeEditar ? '' : 'disabled' ?>
                value="<?= htmlspecialchars($v('codigo_dane'), ENT_QUOTES) ?>">
     </div>
@@ -38,7 +42,7 @@ $v = static fn (string $campo, mixed $porDefecto = '') => $viejo[$campo] ?? $ins
     </div>
 
     <div class="col-12">
-        <label class="form-label small">Nombre</label>
+        <label class="form-label small requerido">Nombre</label>
         <input type="text" name="nombre" class="form-control" required <?= $puedeEditar ? '' : 'disabled' ?>
                value="<?= htmlspecialchars($v('nombre'), ENT_QUOTES) ?>">
     </div>

@@ -12,7 +12,7 @@ $descripcionSugerida ??= '';
     <a href="<?= Url::to('/qr/' . $token) ?>" class="btn btn-sm btn-outline-secondary">Volver</a>
 </div>
 
-<div class="card mb-3" style="max-width: 560px;">
+<div class="card mb-3" style="max-width: 640px;">
     <div class="card-body py-3 d-flex gap-3 align-items-center">
         <?php if (!empty($bien['foto_path'])): ?>
             <img src="<?= Url::to('/archivos/' . $bien['foto_path']) ?>" style="width:52px;height:52px;object-fit:cover;border-radius:6px;">
@@ -25,23 +25,25 @@ $descripcionSugerida ??= '';
 </div>
 
 <?php if (!empty($error)): ?>
-    <div class="alert alert-danger py-2 small" style="max-width: 560px;"><?= htmlspecialchars($error, ENT_QUOTES) ?></div>
+    <div class="alert alert-danger py-2 small" style="max-width: 640px;"><?= htmlspecialchars($error, ENT_QUOTES) ?></div>
 <?php endif; ?>
 
 <?php if ($verificacionId !== null): ?>
-    <div class="alert alert-info py-2 small" style="max-width: 560px;">
+    <div class="alert alert-info py-2 small" style="max-width: 640px;">
         <i class="bi bi-info-circle me-1"></i>Este reporte viene de una discrepancia detectada en una jornada de verificación.
     </div>
 <?php endif; ?>
 
-<form method="post" action="<?= Url::to('/qr/' . $token . '/baja') ?>" enctype="multipart/form-data" class="row g-3" style="max-width: 560px;">
+<p class="text-muted small mb-2">Los campos marcados con <span class="text-danger">*</span> son obligatorios.</p>
+
+<form method="post" action="<?= Url::to('/qr/' . $token . '/baja') ?>" enctype="multipart/form-data" class="row g-3" style="max-width: 640px;">
     <?= Csrf::field() ?>
     <?php if ($verificacionId !== null): ?>
         <input type="hidden" name="verificacion_id" value="<?= (int) $verificacionId ?>">
     <?php endif; ?>
 
     <div class="col-12">
-        <label class="form-label small">Estado del bien</label>
+        <label class="form-label small requerido">Estado del bien</label>
         <input type="text" name="estado_reportado" class="form-control" required list="sugerenciasEstado" placeholder="Ej. Dañado, Perdido, Obsoleto...">
         <datalist id="sugerenciasEstado">
             <option value="Dañado">
@@ -58,7 +60,7 @@ $descripcionSugerida ??= '';
     </div>
 
     <div class="col-12">
-        <label class="form-label small">Descripción de la baja</label>
+        <label class="form-label small requerido">Descripción de la baja</label>
         <textarea name="descripcion" class="form-control" rows="3" required placeholder="Qué pasó y por qué se solicita la baja"><?= htmlspecialchars($descripcionSugerida, ENT_QUOTES) ?></textarea>
     </div>
 

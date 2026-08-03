@@ -22,12 +22,14 @@ $v = static fn (string $campo, mixed $porDefecto = '') => $viejo[$campo] ?? $por
     <div class="alert alert-danger py-2 small" style="max-width: 680px;"><?= htmlspecialchars($error, ENT_QUOTES) ?></div>
 <?php endif; ?>
 
+<p class="text-muted small mb-2">Los campos marcados con <span class="text-danger">*</span> son obligatorios.</p>
+
 <form method="post" action="<?= Url::to('/bienes/alta-masiva') ?>" class="row g-3" style="max-width: 680px;">
     <?= Csrf::field() ?>
 
     <?php if (Auth::esSuperusuario()): ?>
         <div class="col-12">
-            <label class="form-label small">Institución</label>
+            <label class="form-label small requerido">Institución</label>
             <select name="institucion_id" class="form-select selector-buscable" required>
                 <?php foreach ($instituciones as $i): ?>
                     <option value="<?= $i['id'] ?>" <?= (string) $v('institucion_id') === (string) $i['id'] ? 'selected' : '' ?>><?= htmlspecialchars($i['nombre'], ENT_QUOTES) ?></option>
@@ -37,14 +39,14 @@ $v = static fn (string $campo, mixed $porDefecto = '') => $viejo[$campo] ?? $por
     <?php endif; ?>
 
     <div class="col-md-4">
-        <label class="form-label small">Código de lote</label>
+        <label class="form-label small requerido">Código de lote</label>
         <input type="text" name="lote" class="form-control" required
                placeholder="Ej. SILLAS-2026"
                value="<?= htmlspecialchars($v('lote'), ENT_QUOTES) ?>">
         <div class="form-text">Solo letras, números y guiones. Cada bien queda con el código "{lote}-001", "{lote}-002", etc.</div>
     </div>
     <div class="col-md-4">
-        <label class="form-label small">Cantidad</label>
+        <label class="form-label small requerido">Cantidad</label>
         <input type="number" name="cantidad" class="form-control" min="2" max="500" required
                value="<?= htmlspecialchars((string) $v('cantidad', '2'), ENT_QUOTES) ?>">
     </div>
@@ -61,7 +63,7 @@ $v = static fn (string $campo, mixed $porDefecto = '') => $viejo[$campo] ?? $por
     </div>
 
     <div class="col-12">
-        <label class="form-label small">Descripción</label>
+        <label class="form-label small requerido">Descripción</label>
         <input type="text" name="descripcion" class="form-control" required
                placeholder="Ej. Silla metálica con espaldar en polipropileno"
                value="<?= htmlspecialchars($v('descripcion'), ENT_QUOTES) ?>">
@@ -72,7 +74,7 @@ $v = static fn (string $campo, mixed $porDefecto = '') => $viejo[$campo] ?? $por
         <input type="text" name="marca" class="form-control" value="<?= htmlspecialchars($v('marca'), ENT_QUOTES) ?>">
     </div>
     <div class="col-md-4">
-        <label class="form-label small">Fecha de ingreso</label>
+        <label class="form-label small requerido">Fecha de ingreso</label>
         <input type="date" name="fecha_ingreso" class="form-control" required value="<?= htmlspecialchars((string) $v('fecha_ingreso', date('Y-m-d')), ENT_QUOTES) ?>">
     </div>
     <div class="col-md-4">

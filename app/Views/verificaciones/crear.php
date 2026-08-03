@@ -16,16 +16,18 @@ use App\Core\Url;
     o reportar una discrepancia. Un docente solo puede verificar los bienes de los espacios donde es responsable.
 </p>
 
-<form method="post" action="<?= Url::to('/verificaciones') ?>" class="card" style="max-width: 480px;">
+<p class="text-muted small mb-2" style="max-width: 640px;">Los campos marcados con <span class="text-danger">*</span> son obligatorios.</p>
+
+<form method="post" action="<?= Url::to('/verificaciones') ?>" class="card" style="max-width: 640px;">
     <div class="card-body">
         <?= Csrf::field() ?>
         <div class="mb-3">
-            <label class="form-label small">Nombre de la jornada</label>
-            <input type="text" name="nombre" class="form-control form-control-sm" placeholder="Ej. Verificación semestre 1 - 2026" required>
+            <label class="form-label small requerido">Nombre de la jornada</label>
+            <input type="text" name="nombre" class="form-control" placeholder="Ej. Verificación semestre 1 - 2026" required>
         </div>
         <div class="mb-3">
-            <label class="form-label small">Fecha de inicio</label>
-            <input type="date" name="fecha_inicio" class="form-control form-control-sm" value="<?= date('Y-m-d') ?>" required>
+            <label class="form-label small requerido">Fecha de inicio</label>
+            <input type="date" name="fecha_inicio" class="form-control" value="<?= date('Y-m-d') ?>" required>
         </div>
         <button type="submit" class="btn btn-primary btn-sm">
             <i class="bi bi-clipboard2-check me-1"></i>Iniciar jornada

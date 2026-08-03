@@ -112,6 +112,13 @@ img {
 .badge-activo { background-color: var(--sigebi-success); }
 .badge-inactivo { background-color: #6c757d; }
 
+/* Asterisco junto a la etiqueta de un campo obligatorio (ningun formulario lo indicaba
+   antes; el usuario solo se enteraba de que faltaba un dato al intentar guardar). */
+.form-label.requerido::after {
+  content: " *";
+  color: var(--sigebi-danger);
+}
+
 .auth-shell {
   min-height: 100vh;
   display: flex;

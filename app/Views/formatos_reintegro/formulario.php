@@ -38,21 +38,22 @@ use App\Core\Url;
 <?php if ($institucionId === 0): ?>
     <p class="text-muted">Selecciona una institución para continuar.</p>
 <?php else: ?>
-    <form method="post" action="<?= Url::to('/formatos-reintegro') ?>" enctype="multipart/form-data" class="row g-3" style="max-width: 480px;">
+    <p class="text-muted small mb-2">Los campos marcados con <span class="text-danger">*</span> son obligatorios.</p>
+    <form method="post" action="<?= Url::to('/formatos-reintegro') ?>" enctype="multipart/form-data" class="row g-3" style="max-width: 640px;">
         <?= Csrf::field() ?>
         <input type="hidden" name="institucion_id" value="<?= $institucionId ?>">
 
         <div class="col-md-6">
-            <label class="form-label small">Fecha del reintegro</label>
-            <input type="date" name="fecha_reintegro" class="form-control form-control-sm" required value="<?= date('Y-m-d') ?>">
+            <label class="form-label small requerido">Fecha del reintegro</label>
+            <input type="date" name="fecha_reintegro" class="form-control" required value="<?= date('Y-m-d') ?>">
         </div>
         <div class="col-md-6">
-            <label class="form-label small">Archivo adjunto (PDF)</label>
-            <input type="file" name="archivo" accept="application/pdf" class="form-control form-control-sm" required>
+            <label class="form-label small requerido">Archivo adjunto (PDF)</label>
+            <input type="file" name="archivo" accept="application/pdf" class="form-control" required>
         </div>
         <div class="col-12">
             <label class="form-label small">Descripción (opcional)</label>
-            <input type="text" name="descripcion" class="form-control form-control-sm" placeholder="Ej. Reintegro de equipos de la sede principal">
+            <input type="text" name="descripcion" class="form-control" placeholder="Ej. Reintegro de equipos de la sede principal">
         </div>
 
         <div class="col-12">

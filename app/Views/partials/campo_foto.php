@@ -22,7 +22,7 @@ $accept = $accept ?? 'image/jpeg,image/png';
 $soloImagen = !str_contains($accept, 'pdf');
 ?>
 <div class="campo-foto" data-campo-foto>
-    <label class="form-label small d-block"><?= htmlspecialchars($etiqueta ?? 'Fotografía', ENT_QUOTES) ?></label>
+    <label class="form-label small d-block<?= $requerido ? ' requerido' : '' ?>"><?= htmlspecialchars($etiqueta ?? 'Fotografía', ENT_QUOTES) ?></label>
 
     <?php if (!empty($fotoActualUrl)): ?>
         <img src="<?= htmlspecialchars($fotoActualUrl, ENT_QUOTES) ?>" class="mb-2 d-block" style="height:72px;border-radius:4px;object-fit:cover;">
