@@ -50,7 +50,7 @@ use App\Core\View;
                             <i class="bi bi-download me-1"></i>Descargar
                         </a>
                         <a href="<?= Url::to('/formatos-plaqueteo/' . $f['id'] . '/editar') ?>" class="btn btn-sm btn-outline-primary">
-                            <i class="bi bi-pencil"></i>
+                            <i class="bi bi-pencil me-1"></i>Editar
                         </a>
                     </td>
                 </tr>
