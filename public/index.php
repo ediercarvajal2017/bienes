@@ -40,6 +40,7 @@ use App\Controllers\FormatoPlaqueteoController;
 use App\Controllers\FormatoReintegroController;
 use App\Controllers\HallazgoController;
 use App\Controllers\InstitucionController;
+use App\Controllers\ManualController;
 use App\Controllers\MovimientoController;
 use App\Controllers\PasswordController;
 use App\Controllers\QrController;
@@ -328,6 +329,8 @@ $router->post('/hallazgos', [HallazgoController::class, 'guardar'], [
 $router->post('/hallazgos/{id}/descartar', [HallazgoController::class, 'descartar'], [
     AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':bienes.crear',
 ]);
+
+$router->get('/manual', [ManualController::class, 'index'], [AuthMiddleware::class]);
 
 $router->get('/reportes', [ReporteController::class, 'index'], [
     AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':reportes.generar',

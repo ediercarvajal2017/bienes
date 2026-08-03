@@ -10,6 +10,7 @@ $accesos = [
     ['permiso' => 'asignaciones.crear', 'icono' => 'box-arrow-in-left', 'texto' => 'Reintegrar bienes', 'ruta' => '/reintegros'],
     ['permiso' => 'asignaciones.crear', 'icono' => 'file-earmark-spreadsheet', 'texto' => 'Lotes de reintegro', 'ruta' => '/reintegros/lotes'],
     ['permiso' => null, 'icono' => 'qr-code-scan', 'texto' => 'Escanear QR', 'ruta' => '/escanear'],
+    ['permiso' => null, 'icono' => 'question-circle', 'texto' => 'Guía rápida', 'ruta' => '/manual'],
     ['permiso' => ['bajas.crear', 'bajas.aprobar'], 'icono' => 'exclamation-triangle', 'texto' => 'Bajas', 'ruta' => '/bajas'],
     ['permiso' => 'verificaciones.gestionar', 'icono' => 'clipboard2-check', 'texto' => 'Verificación física', 'ruta' => '/verificaciones'],
     ['permiso' => 'reportes.generar', 'icono' => 'file-earmark-bar-graph', 'texto' => 'Reportes', 'ruta' => '/reportes'],
