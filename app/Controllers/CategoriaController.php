@@ -36,7 +36,7 @@ final class CategoriaController
             Session::flash('error', 'Esa categoría ya existe.');
         } else {
             Categoria::create($nombre);
-            Session::flash('ok', 'Categoría agregada.');
+            Session::flash('ok', 'Categoría creada correctamente.');
         }
 
         header('Location: ' . Url::to('/categorias'));

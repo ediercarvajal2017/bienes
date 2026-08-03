@@ -36,7 +36,7 @@ final class CargoController
             Session::flash('error', 'Ese cargo ya existe.');
         } else {
             Cargo::create($nombre);
-            Session::flash('ok', 'Cargo agregado.');
+            Session::flash('ok', 'Cargo creado correctamente.');
         }
 
         header('Location: ' . Url::to('/cargos'));

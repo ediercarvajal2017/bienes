@@ -269,7 +269,7 @@ final class UsuarioController
     private function verificarCsrf(Request $request, string $volverA, array $datosAConservar = []): void
     {
         if (!Csrf::verify((string) $request->input('_csrf'))) {
-            Session::flash('error', 'Tu sesión expiró, intenta de nuevo. Revisa los datos e inténtalo otra vez.');
+            Session::flash('error', 'Tu sesión expiró, intenta de nuevo.');
             if (!empty($datosAConservar)) {
                 Session::flashOld($datosAConservar);
             }
