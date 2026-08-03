@@ -11,6 +11,8 @@ use PhpOffice\PhpSpreadsheet\Cell\DataType;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Worksheet\Drawing;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use PhpOffice\PhpSpreadsheet\Writer\Csv;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
@@ -116,6 +118,8 @@ final class ReporteService
     private const REINTEGRO_BODEGA_DOCUMENTO = '111111111';
     private const REINTEGRO_RESOLUCION = 'Resolución número SSS202250105520 DEL 10 DE OCTUBRE DE 2022';
     private const REINTEGRO_BIENES_POR_HOJA = 8;
+    private const REINTEGRO_LOGO = __DIR__ . '/../../storage/plantillas/comprobante_reintegro_logo.png';
+    private const REINTEGRO_TEXTO_LEGAL = __DIR__ . '/../../storage/plantillas/comprobante_reintegro_legal.png';
 
     /**
      * Comprobante oficial FO-ADMI-009 "Comprobante traslado y reintegro" (versión 6)
@@ -145,6 +149,20 @@ final class ReporteService
         return $spreadsheet;
     }
 
+    private static function insertarImagen(Worksheet $sheet, string $ruta, string $celda, int $ancho, int $alto): void
+    {
+        if (!is_file($ruta)) {
+            return;
+        }
+
+        $dibujo = new Drawing();
+        $dibujo->setPath($ruta);
+        $dibujo->setCoordinates($celda);
+        $dibujo->setWidth($ancho);
+        $dibujo->setHeight($alto);
+        $dibujo->setWorksheet($sheet);
+    }
+
     private static function dibujarComprobanteReintegro(Worksheet $sheet, array $lote, array $bienes, array $rector): void
     {
         foreach (['A', 'B'] as $columna) {
@@ -161,6 +179,7 @@ final class ReporteService
         $negrita = ['font' => ['bold' => true]];
         $centrado = ['alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER]];
         $bordeFino = ['borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]]];
+        $grisEtiqueta = ['fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'C0C0C0']]];
 
         $sheet->mergeCells('A2:B2')->setCellValue('A2', 'Cód. FO-ADMI-009');
         $sheet->mergeCells('C2:I2')->setCellValue('C2', 'Formato');
@@ -257,6 +276,15 @@ final class ReporteService
         $sheet->getStyle('C15:C22')->applyFromArray($centrado);
         $sheet->getStyle('A25:K25')->applyFromArray($negrita);
         $sheet->getStyle('A6:K22')->applyFromArray($bordeFino);
+
+        // Relleno gris: igual que en el formato original, solo en las etiquetas de
+        // encabezado, nunca en las celdas donde se escribe un dato.
+        foreach (['A6:A7', 'D6:D7', 'F6:F7', 'H6:H7', 'I6', 'J6', 'K6', 'A8:K8', 'A11:K11', 'A14:K14'] as $rango) {
+            $sheet->getStyle($rango)->applyFromArray($grisEtiqueta);
+        }
+
+        self::insertarImagen($sheet, self::REINTEGRO_LOGO, 'J2', 162, 61);
+        self::insertarImagen($sheet, self::REINTEGRO_TEXTO_LEGAL, 'A33', 832, 364);
         $sheet->getStyle('A25:K28')->applyFromArray($bordeFino);
     }
 
