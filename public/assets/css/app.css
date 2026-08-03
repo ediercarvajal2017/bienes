@@ -354,11 +354,16 @@ img {
   }
 }
 
-/* ---------- Tabla que se convierte en tarjetas apiladas en teléfonos ----------
-   En pantallas < 576px, cada fila pasa a ser una tarjeta y cada celda muestra su
-   etiqueta (data-label) a la izquierda y el valor a la derecha, de modo que TODAS
-   las columnas (incluido el Valor) quedan visibles sin desplazamiento horizontal. */
-@media (max-width: 575.98px) {
+/* ---------- Tabla que se convierte en tarjetas apiladas en pantallas angostas ----------
+   Antes el quiebre era 576px, dejando una "zona gris" entre 576-992px (tablets, o una
+   ventana de escritorio no maximizada) donde la tabla ya no cabía cómoda pero tampoco
+   se apilaba como tarjeta. Se sube a 992px para que coincida exactamente con el punto
+   donde el propio menú lateral pasa a menú hamburguesa (ver @media 991.98px más arriba):
+   un solo umbral de "modo compacto" para toda la app, no dos distintos.
+   Cada fila pasa a ser una tarjeta y cada celda muestra su etiqueta (data-label) a la
+   izquierda y el valor a la derecha, de modo que TODAS las columnas (incluido el Valor)
+   quedan visibles sin desplazamiento horizontal. */
+@media (max-width: 991.98px) {
   .tabla-cards thead {
     display: none;
   }
