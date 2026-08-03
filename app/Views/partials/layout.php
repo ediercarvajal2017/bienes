@@ -7,6 +7,21 @@ use App\Core\Url;
 $rutaActual = (new Request())->uri;
 $esActiva = static fn (string $prefijo): string => str_starts_with($rutaActual, $prefijo) ? ' active' : '';
 
+/**
+ * Un grupo del menú se abre por defecto solo si la página actual pertenece a él —
+ * así el usuario siempre ve el contexto de dónde está, y el resto queda plegado
+ * hasta que le da clic, en vez de mostrar los 4 grupos siempre expandidos.
+ */
+$grupoAbierto = static function (array $prefijos) use ($rutaActual): string {
+    foreach ($prefijos as $prefijo) {
+        if (str_starts_with($rutaActual, $prefijo)) {
+            return ' open';
+        }
+    }
+
+    return '';
+};
+
 ?><!DOCTYPE html>
 <html lang="es">
 <head>
@@ -62,82 +77,90 @@ $esActiva = static fn (string $prefijo): string => str_starts_with($rutaActual, 
         <nav class="nav flex-column">
             <a class="nav-link<?= $esActiva('/dashboard') ?>" href="<?= Url::to('/dashboard') ?>"><i class="bi bi-grid-1x2 me-2"></i>Panel principal</a>
 
-            <div class="nav-grupo-titulo">Operación diaria</div>
+            <details class="nav-grupo"<?= $grupoAbierto(['/bienes', '/espacios', '/asignaciones', '/reintegros', '/escanear']) ?>>
+                <summary class="nav-grupo-titulo">Operación diaria<i class="bi bi-chevron-right nav-grupo-chevron"></i></summary>
 
-            <?php if (Auth::esSuperusuario() || Auth::tienePermiso('bienes.ver')): ?>
-                <a class="nav-link<?= $esActiva('/bienes') ?>" href="<?= Url::to('/bienes') ?>"><i class="bi bi-box-seam me-2"></i>Bienes</a>
-            <?php endif; ?>
+                <?php if (Auth::esSuperusuario() || Auth::tienePermiso('bienes.ver')): ?>
+                    <a class="nav-link<?= $esActiva('/bienes') ?>" href="<?= Url::to('/bienes') ?>"><i class="bi bi-box-seam me-2"></i>Bienes</a>
+                <?php endif; ?>
 
-            <?php if (Auth::esSuperusuario() || Auth::tienePermiso('espacios.ver')): ?>
-                <a class="nav-link<?= $esActiva('/espacios') ?>" href="<?= Url::to('/espacios') ?>"><i class="bi bi-door-open me-2"></i>Espacios</a>
-            <?php endif; ?>
+                <?php if (Auth::esSuperusuario() || Auth::tienePermiso('espacios.ver')): ?>
+                    <a class="nav-link<?= $esActiva('/espacios') ?>" href="<?= Url::to('/espacios') ?>"><i class="bi bi-door-open me-2"></i>Espacios</a>
+                <?php endif; ?>
 
-            <?php if (Auth::esSuperusuario() || Auth::tienePermiso('asignaciones.crear')): ?>
-                <a class="nav-link<?= $esActiva('/asignaciones') ?>" href="<?= Url::to('/asignaciones') ?>"><i class="bi bi-person-check me-2"></i>Asignar bienes</a>
-                <a class="nav-link<?= $rutaActual === '/reintegros' ? ' active' : '' ?>" href="<?= Url::to('/reintegros') ?>"><i class="bi bi-box-arrow-in-left me-2"></i>Reintegrar bienes</a>
-                <a class="nav-link<?= $esActiva('/reintegros/lotes') ?>" href="<?= Url::to('/reintegros/lotes') ?>"><i class="bi bi-file-earmark-spreadsheet me-2"></i>Lotes de reintegro</a>
-            <?php endif; ?>
+                <?php if (Auth::esSuperusuario() || Auth::tienePermiso('asignaciones.crear')): ?>
+                    <a class="nav-link<?= $esActiva('/asignaciones') ?>" href="<?= Url::to('/asignaciones') ?>"><i class="bi bi-person-check me-2"></i>Asignar bienes</a>
+                    <a class="nav-link<?= $rutaActual === '/reintegros' ? ' active' : '' ?>" href="<?= Url::to('/reintegros') ?>"><i class="bi bi-box-arrow-in-left me-2"></i>Reintegrar bienes</a>
+                    <a class="nav-link<?= $esActiva('/reintegros/lotes') ?>" href="<?= Url::to('/reintegros/lotes') ?>"><i class="bi bi-file-earmark-spreadsheet me-2"></i>Lotes de reintegro</a>
+                <?php endif; ?>
 
-            <a class="nav-link<?= $esActiva('/escanear') ?>" href="<?= Url::to('/escanear') ?>"><i class="bi bi-qr-code-scan me-2"></i>Escanear QR</a>
+                <a class="nav-link<?= $esActiva('/escanear') ?>" href="<?= Url::to('/escanear') ?>"><i class="bi bi-qr-code-scan me-2"></i>Escanear QR</a>
+            </details>
 
             <?php if ($mostrarVerificacion): ?>
-                <div class="nav-grupo-titulo">Verificación y control</div>
+                <details class="nav-grupo"<?= $grupoAbierto(['/bajas', '/verificaciones']) ?>>
+                    <summary class="nav-grupo-titulo">Verificación y control<i class="bi bi-chevron-right nav-grupo-chevron"></i></summary>
 
-                <?php if (Auth::esSuperusuario() || Auth::tienePermiso('bajas.crear') || Auth::tienePermiso('bajas.aprobar')): ?>
-                    <a class="nav-link<?= $esActiva('/bajas') ?>" href="<?= Url::to('/bajas') ?>"><i class="bi bi-exclamation-triangle me-2"></i>Bajas</a>
-                <?php endif; ?>
+                    <?php if (Auth::esSuperusuario() || Auth::tienePermiso('bajas.crear') || Auth::tienePermiso('bajas.aprobar')): ?>
+                        <a class="nav-link<?= $esActiva('/bajas') ?>" href="<?= Url::to('/bajas') ?>"><i class="bi bi-exclamation-triangle me-2"></i>Bajas</a>
+                    <?php endif; ?>
 
-                <?php if (Auth::esSuperusuario() || Auth::tienePermiso('verificaciones.gestionar')): ?>
-                    <a class="nav-link<?= $esActiva('/verificaciones') ?>" href="<?= Url::to('/verificaciones') ?>"><i class="bi bi-clipboard2-check me-2"></i>Verificación física</a>
-                <?php endif; ?>
+                    <?php if (Auth::esSuperusuario() || Auth::tienePermiso('verificaciones.gestionar')): ?>
+                        <a class="nav-link<?= $esActiva('/verificaciones') ?>" href="<?= Url::to('/verificaciones') ?>"><i class="bi bi-clipboard2-check me-2"></i>Verificación física</a>
+                    <?php endif; ?>
+                </details>
             <?php endif; ?>
 
             <?php if ($mostrarReportes): ?>
-                <div class="nav-grupo-titulo">Reportes y evidencia</div>
+                <details class="nav-grupo"<?= $grupoAbierto(['/reportes', '/cartera', '/formatos-reintegro', '/formatos-plaqueteo', '/facturas']) ?>>
+                    <summary class="nav-grupo-titulo">Reportes y evidencia<i class="bi bi-chevron-right nav-grupo-chevron"></i></summary>
 
-                <?php if (Auth::esSuperusuario() || Auth::tienePermiso('reportes.generar')): ?>
-                    <a class="nav-link<?= $esActiva('/reportes') ?>" href="<?= Url::to('/reportes') ?>"><i class="bi bi-file-earmark-spreadsheet me-2"></i>Reportes</a>
-                <?php endif; ?>
+                    <?php if (Auth::esSuperusuario() || Auth::tienePermiso('reportes.generar')): ?>
+                        <a class="nav-link<?= $esActiva('/reportes') ?>" href="<?= Url::to('/reportes') ?>"><i class="bi bi-file-earmark-spreadsheet me-2"></i>Reportes</a>
+                    <?php endif; ?>
 
-                <?php if (Auth::esSuperusuario() || Auth::tienePermiso('cartera.gestionar')): ?>
-                    <a class="nav-link<?= $esActiva('/cartera') ?>" href="<?= Url::to('/cartera/enviar') ?>"><i class="bi bi-archive me-2"></i>Cartera (histórico)</a>
-                <?php endif; ?>
+                    <?php if (Auth::esSuperusuario() || Auth::tienePermiso('cartera.gestionar')): ?>
+                        <a class="nav-link<?= $esActiva('/cartera') ?>" href="<?= Url::to('/cartera/enviar') ?>"><i class="bi bi-archive me-2"></i>Cartera (histórico)</a>
+                    <?php endif; ?>
 
-                <?php if (Auth::esSuperusuario() || Auth::tienePermiso('formatos_reintegro.gestionar')): ?>
-                    <a class="nav-link<?= $esActiva('/formatos-reintegro') ?>" href="<?= Url::to('/formatos-reintegro') ?>"><i class="bi bi-file-earmark-check me-2"></i>Formatos de reintegro</a>
-                <?php endif; ?>
+                    <?php if (Auth::esSuperusuario() || Auth::tienePermiso('formatos_reintegro.gestionar')): ?>
+                        <a class="nav-link<?= $esActiva('/formatos-reintegro') ?>" href="<?= Url::to('/formatos-reintegro') ?>"><i class="bi bi-file-earmark-check me-2"></i>Formatos de reintegro</a>
+                    <?php endif; ?>
 
-                <?php if (Auth::esSuperusuario() || Auth::tienePermiso('formatos_plaqueteo.gestionar')): ?>
-                    <a class="nav-link<?= $esActiva('/formatos-plaqueteo') ?>" href="<?= Url::to('/formatos-plaqueteo') ?>"><i class="bi bi-tag me-2"></i>Formatos de plaqueteo</a>
-                <?php endif; ?>
+                    <?php if (Auth::esSuperusuario() || Auth::tienePermiso('formatos_plaqueteo.gestionar')): ?>
+                        <a class="nav-link<?= $esActiva('/formatos-plaqueteo') ?>" href="<?= Url::to('/formatos-plaqueteo') ?>"><i class="bi bi-tag me-2"></i>Formatos de plaqueteo</a>
+                    <?php endif; ?>
 
-                <?php if (Auth::esSuperusuario() || Auth::tienePermiso('facturas_admin.gestionar')): ?>
-                    <a class="nav-link<?= $esActiva('/facturas') ?>" href="<?= Url::to('/facturas') ?>"><i class="bi bi-receipt me-2"></i>Facturas</a>
-                <?php endif; ?>
+                    <?php if (Auth::esSuperusuario() || Auth::tienePermiso('facturas_admin.gestionar')): ?>
+                        <a class="nav-link<?= $esActiva('/facturas') ?>" href="<?= Url::to('/facturas') ?>"><i class="bi bi-receipt me-2"></i>Facturas</a>
+                    <?php endif; ?>
+                </details>
             <?php endif; ?>
 
             <?php if ($mostrarAdmin): ?>
-                <div class="nav-grupo-titulo">Administración</div>
+                <details class="nav-grupo"<?= $grupoAbierto(['/cargas-masivas', '/usuarios', '/instituciones', '/cargos', '/categorias']) ?>>
+                    <summary class="nav-grupo-titulo">Administración<i class="bi bi-chevron-right nav-grupo-chevron"></i></summary>
 
-                <?php if (Auth::esSuperusuario() || Auth::tienePermiso('cargas.masivas')): ?>
-                    <a class="nav-link<?= $esActiva('/cargas-masivas') ?>" href="<?= Url::to('/cargas-masivas') ?>"><i class="bi bi-upload me-2"></i>Carga masiva</a>
-                <?php endif; ?>
+                    <?php if (Auth::esSuperusuario() || Auth::tienePermiso('cargas.masivas')): ?>
+                        <a class="nav-link<?= $esActiva('/cargas-masivas') ?>" href="<?= Url::to('/cargas-masivas') ?>"><i class="bi bi-upload me-2"></i>Carga masiva</a>
+                    <?php endif; ?>
 
-                <?php if (Auth::esSuperusuario() || Auth::tienePermiso('usuarios.ver')): ?>
-                    <a class="nav-link<?= $esActiva('/usuarios') ?>" href="<?= Url::to('/usuarios') ?>"><i class="bi bi-people me-2"></i>Usuarios</a>
-                <?php endif; ?>
+                    <?php if (Auth::esSuperusuario() || Auth::tienePermiso('usuarios.ver')): ?>
+                        <a class="nav-link<?= $esActiva('/usuarios') ?>" href="<?= Url::to('/usuarios') ?>"><i class="bi bi-people me-2"></i>Usuarios</a>
+                    <?php endif; ?>
 
-                <?php if (Auth::esSuperusuario() || Auth::tienePermiso('instituciones.ver')): ?>
-                    <a class="nav-link<?= $esActiva('/instituciones') ?>" href="<?= Url::to('/instituciones') ?>"><i class="bi bi-building me-2"></i>Instituciones</a>
-                <?php endif; ?>
+                    <?php if (Auth::esSuperusuario() || Auth::tienePermiso('instituciones.ver')): ?>
+                        <a class="nav-link<?= $esActiva('/instituciones') ?>" href="<?= Url::to('/instituciones') ?>"><i class="bi bi-building me-2"></i>Instituciones</a>
+                    <?php endif; ?>
 
-                <?php if (Auth::esSuperusuario()): ?>
-                    <a class="nav-link<?= $esActiva('/cargos') ?>" href="<?= Url::to('/cargos') ?>"><i class="bi bi-person-badge me-2"></i>Cargos</a>
-                <?php endif; ?>
+                    <?php if (Auth::esSuperusuario()): ?>
+                        <a class="nav-link<?= $esActiva('/cargos') ?>" href="<?= Url::to('/cargos') ?>"><i class="bi bi-person-badge me-2"></i>Cargos</a>
+                    <?php endif; ?>
 
-                <?php if (Auth::esSuperusuario() || Auth::tienePermiso('categorias.gestionar')): ?>
-                    <a class="nav-link<?= $esActiva('/categorias') ?>" href="<?= Url::to('/categorias') ?>"><i class="bi bi-tags me-2"></i>Categorías</a>
-                <?php endif; ?>
+                    <?php if (Auth::esSuperusuario() || Auth::tienePermiso('categorias.gestionar')): ?>
+                        <a class="nav-link<?= $esActiva('/categorias') ?>" href="<?= Url::to('/categorias') ?>"><i class="bi bi-tags me-2"></i>Categorías</a>
+                    <?php endif; ?>
+                </details>
             <?php endif; ?>
         </nav>
     </aside>

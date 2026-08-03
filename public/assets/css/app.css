@@ -92,16 +92,37 @@ img {
   color: var(--sigebi-primary);
 }
 
-/* Encabezado de grupo dentro del menú lateral (ej. "Operación diaria",
-   "Administración"): el menú era una sola lista de 18 enlaces sin ninguna
-   separación por tipo de tarea. */
+/* Grupo plegable del menú lateral (ej. "Operación diaria", "Administración"):
+   <details>/<summary> nativos, igual que los paneles de Asignar/Trasladar de la
+   ficha de un bien -sin depender del JS de Bootstrap, que este proyecto no carga-.
+   Por defecto cada grupo empieza plegado, salvo el que contiene la página actual
+   (ver $grupoAbierto en layout.php), así el usuario siempre ve su contexto sin
+   tener que desplegar los otros 3 para encontrarlo. */
 .sidebar .nav-grupo-titulo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  list-style: none;
   font-size: 0.72rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: #94a3b8;
   padding: 0.9rem 0.9rem 0.3rem;
+}
+
+.sidebar .nav-grupo-titulo::-webkit-details-marker {
+  display: none;
+}
+
+.sidebar .nav-grupo-chevron {
+  font-size: 0.68rem;
+  transition: transform 0.15s ease;
+}
+
+.sidebar details[open] > .nav-grupo-titulo .nav-grupo-chevron {
+  transform: rotate(90deg);
 }
 
 .btn-accent {
