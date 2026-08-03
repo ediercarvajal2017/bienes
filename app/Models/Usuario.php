@@ -40,6 +40,27 @@ final class Usuario
         return $stmt->fetch() ?: null;
     }
 
+    /**
+     * El rector de la institución, para documentos oficiales que exigen su nombre y
+     * documento (ej. el comprobante de reintegro FO-ADMI-009). El esquema no impone
+     * que haya un único rector activo por institución, así que si hay varios se toma
+     * el más antiguo (menor id) de forma determinista.
+     */
+    public static function rectorDe(int $institucionId): ?array
+    {
+        $stmt = Database::connection()->prepare(
+            'SELECT u.documento, u.nombres, u.apellidos
+             FROM usuarios u
+             JOIN roles r ON r.id = u.rol_id
+             WHERE u.institucion_id = ? AND r.nombre = "rector" AND u.activo = 1
+             ORDER BY u.id
+             LIMIT 1'
+        );
+        $stmt->execute([$institucionId]);
+
+        return $stmt->fetch() ?: null;
+    }
+
     public static function registrarIntentoFallido(int $usuarioId): void
     {
         $config = require dirname(__DIR__, 2) . '/config/app.php';

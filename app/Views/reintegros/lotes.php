@@ -59,7 +59,7 @@ use App\Core\View;
                     <td class="text-end" data-label="Bienes"><?= (int) $l['total_bienes'] ?></td>
                     <td class="text-end text-nowrap">
                         <a href="<?= Url::to('/reintegros/lotes/' . $l['id']) ?>" class="btn btn-sm btn-outline-secondary">Ver</a>
-                        <a href="<?= Url::to('/reintegros/lotes/' . $l['id'] . '/formato.xlsx') ?>" class="btn btn-sm btn-primary">
+                        <a href="<?= Url::to('/reintegros/lotes/' . $l['id'] . '/formato.xlsx') ?>" class="btn btn-sm btn-primary" title="Descargar comprobante FO-ADMI-009">
                             <i class="bi bi-file-earmark-excel me-1"></i>Formato
                         </a>
                     </td>

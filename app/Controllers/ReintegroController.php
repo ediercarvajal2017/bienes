@@ -17,6 +17,7 @@ use App\Models\Bien;
 use App\Models\Institucion;
 use App\Models\LoteReintegro;
 use App\Models\Movimiento;
+use App\Models\Usuario;
 use App\Services\ReporteService;
 
 final class ReintegroController
@@ -189,8 +190,18 @@ final class ReintegroController
         $lote = LoteReintegro::find((int) $id);
         $this->verificarAccesoLote($lote);
 
+        $rector = Usuario::rectorDe((int) $lote['institucion_id']);
+        if ($rector === null) {
+            Session::flash('error', 'Esta institución no tiene un rector activo registrado; no se puede generar el comprobante oficial. Registra o activa un usuario con rol Rector antes de descargarlo.');
+            header('Location: ' . Url::to('/reintegros/lotes/' . $id));
+            exit;
+        }
+
         $bienes = LoteReintegro::bienesDe((int) $id);
-        ReporteService::enviarXlsx(ReporteService::formatoReintegroLote($lote, $bienes), 'formato_reintegro_lote_' . $id);
+        ReporteService::enviarXlsx(
+            ReporteService::comprobanteReintegroLote($lote, $bienes, $rector),
+            'comprobante_reintegro_lote_' . $id
+        );
     }
 
     public function pendientesDeLote(): void

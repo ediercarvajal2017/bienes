@@ -92,7 +92,7 @@ final class LoteReintegro
     {
         $stmt = Database::connection()->prepare(
             'SELECT m.fecha AS fecha_reintegro, m.destino_texto, m.observaciones,
-                    b.codigo_identificacion, b.descripcion, b.valor,
+                    b.codigo_identificacion, b.descripcion, b.marca, b.valor,
                     CONCAT(eo.codigo, " - ", eo.nombre) AS espacio_origen_nombre
              FROM movimientos m
              JOIN bienes b ON b.id = m.bien_id

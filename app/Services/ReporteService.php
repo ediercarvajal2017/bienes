@@ -7,7 +7,11 @@ namespace App\Services;
 use App\Models\Bien;
 use App\Models\Movimiento;
 use App\Models\Verificacion;
+use PhpOffice\PhpSpreadsheet\Cell\DataType;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\Border;
+use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use PhpOffice\PhpSpreadsheet\Writer\Csv;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
@@ -107,53 +111,153 @@ final class ReporteService
         return $spreadsheet;
     }
 
+    private const REINTEGRO_BODEGA_NOMBRE = 'BODEGA DE REINTEGRO';
+    private const REINTEGRO_BODEGA_DEPENDENCIA = 'BIENES MUEBLES';
+    private const REINTEGRO_BODEGA_DOCUMENTO = '111111111';
+    private const REINTEGRO_RESOLUCION = 'Resolución número SSS202250105520 DEL 10 DE OCTUBRE DE 2022';
+    private const REINTEGRO_BIENES_POR_HOJA = 8;
+
     /**
-     * "Formato de reintegro" oficial de un lote: encabezado con los datos del lote,
-     * el detalle de bienes devueltos y líneas de firma al final. Reemplaza la carga
-     * manual de un PDF firmado — el sistema lo genera automáticamente en Excel.
+     * Comprobante oficial FO-ADMI-009 "Comprobante traslado y reintegro" (versión 6)
+     * que exige la Alcaldía para recibir bienes reintegrados — reproduce ese formato
+     * exacto en Excel. El "responsable que entrega" siempre es el rector de la
+     * institución (así lo exige la Alcaldía, sin importar quién operó el reintegro
+     * en el sistema); el "responsable que recibe" es la bodega de reintegro, un dato
+     * fijo que no depende de la institución. Si el lote tiene más bienes de los que
+     * caben en un comprobante, se reparten en varias hojas.
      */
-    public static function formatoReintegroLote(array $lote, array $bienes): Spreadsheet
+    public static function comprobanteReintegroLote(array $lote, array $bienes, array $rector): Spreadsheet
     {
         $spreadsheet = new Spreadsheet();
-        $sheet = $spreadsheet->getActiveSheet();
-        $sheet->setTitle('Formato de reintegro');
+        $spreadsheet->removeSheetByIndex(0);
 
-        $sheet->setCellValue('A1', 'FORMATO DE REINTEGRO DE BIENES');
-        $sheet->setCellValue('A2', 'Institución:');
-        $sheet->setCellValue('B2', $lote['institucion_nombre']);
-        $sheet->setCellValue('A3', 'Fecha del lote:');
-        $sheet->setCellValue('B3', $lote['fecha']);
-        $sheet->setCellValue('A4', 'Descripción del lote:');
-        $sheet->setCellValue('B4', $lote['destino_texto'] ?? '');
-        $sheet->setCellValue('A5', 'Registrado por:');
-        $sheet->setCellValue('B5', trim($lote['registrado_por_nombres'] . ' ' . $lote['registrado_por_apellidos']));
-        $sheet->setCellValue('A6', 'Observaciones:');
-        $sheet->setCellValue('B6', $lote['observaciones'] ?? '');
+        $paginas = array_chunk($bienes, self::REINTEGRO_BIENES_POR_HOJA) ?: [[]];
+        $totalPaginas = count($paginas);
 
-        $fila = 8;
-        $sheet->fromArray(['Código', 'Descripción', 'Fecha de reintegro', 'Destino', 'Espacio de origen', 'Valor'], null, "A{$fila}");
-        $fila++;
-
-        foreach ($bienes as $b) {
-            $sheet->fromArray([
-                $b['codigo_identificacion'],
-                $b['descripcion'],
-                $b['fecha_reintegro'],
-                $b['destino_texto'],
-                $b['espacio_origen_nombre'] ?? '—',
-                (float) $b['valor'],
-            ], null, "A{$fila}");
-            $fila++;
+        foreach ($paginas as $indice => $bienesPagina) {
+            $sheet = $spreadsheet->createSheet();
+            $sheet->setTitle($totalPaginas > 1 ? 'Comprobante ' . ($indice + 1) : 'Comprobante');
+            self::dibujarComprobanteReintegro($sheet, $lote, $bienesPagina, $rector);
         }
 
-        $fila += 2;
-        $sheet->setCellValue("A{$fila}", 'Firma de quien entrega: ____________________________');
-        $fila++;
-        $sheet->setCellValue("A{$fila}", 'Firma de quien recibe: ____________________________');
-
-        self::autoajustarColumnas($sheet, 'A', 'F');
+        $spreadsheet->setActiveSheetIndex(0);
 
         return $spreadsheet;
+    }
+
+    private static function dibujarComprobanteReintegro(Worksheet $sheet, array $lote, array $bienes, array $rector): void
+    {
+        foreach (['A', 'B'] as $columna) {
+            $sheet->getColumnDimension($columna)->setWidth(11);
+        }
+        $sheet->getColumnDimension('C')->setWidth(8);
+        foreach (['D', 'E', 'F', 'G'] as $columna) {
+            $sheet->getColumnDimension($columna)->setWidth(13);
+        }
+        foreach (['H', 'I', 'J', 'K'] as $columna) {
+            $sheet->getColumnDimension($columna)->setWidth(11);
+        }
+
+        $negrita = ['font' => ['bold' => true]];
+        $centrado = ['alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER]];
+        $bordeFino = ['borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]]];
+
+        $sheet->mergeCells('A2:B2')->setCellValue('A2', 'Cód. FO-ADMI-009');
+        $sheet->mergeCells('C2:I2')->setCellValue('C2', 'Formato');
+        $sheet->mergeCells('J2:K4');
+        $sheet->mergeCells('A3:B4')->setCellValue('A3', 'Versión.6');
+        $sheet->mergeCells('C3:I4')->setCellValue('C3', 'FO-ADMI Comprobante traslado y reintegro');
+        $sheet->mergeCells('A5:K5');
+
+        $sheet->mergeCells('A6:A7')->setCellValue('A6', 'COMPROBANTE');
+        $sheet->mergeCells('B6:C7');
+        $sheet->mergeCells('D6:D7')->setCellValue('D6', ' TRASLADO');
+        $sheet->mergeCells('E6:E7');
+        $sheet->mergeCells('F6:F7')->setCellValue('F6', 'REINTEGRO');
+        $sheet->mergeCells('G6:G7')->setCellValue('G6', 'X');
+        $sheet->mergeCells('H6:H7')->setCellValue('H6', 'FECHA');
+        $sheet->setCellValue('I6', 'DÍA');
+        $sheet->setCellValue('J6', 'MES');
+        $sheet->setCellValue('K6', 'AÑO');
+
+        [$anio, $mes, $dia] = array_pad(explode('-', (string) $lote['fecha']), 3, '');
+        $sheet->setCellValue('I7', (int) $dia);
+        $sheet->setCellValue('J7', (int) $mes);
+        $sheet->setCellValue('K7', (int) $anio);
+
+        // Responsable que entrega: siempre el rector, dato exigido por la Alcaldía.
+        $sheet->mergeCells('A8:C8')->setCellValue('A8', 'RESPONSABLE QUE ENTREGA');
+        $sheet->mergeCells('D8:G8')->setCellValue('D8', 'DEPENDENCIA');
+        $sheet->mergeCells('H8:K8')->setCellValue('H8', 'DOC. DE IDENTIDAD');
+        $sheet->mergeCells('A9:C10')->setCellValue('A9', trim($rector['nombres'] . ' ' . $rector['apellidos']));
+        $sheet->mergeCells('D9:G10')->setCellValue('D9', $lote['institucion_nombre']);
+        $sheet->mergeCells('H9:K10')->setCellValueExplicit('H9', $rector['documento'], DataType::TYPE_STRING);
+
+        // Responsable que recibe: la bodega de reintegro, dato fijo que no depende
+        // de la institución.
+        $sheet->mergeCells('A11:C11')->setCellValue('A11', 'RESPONSABLE QUE RECIBE');
+        $sheet->mergeCells('D11:G11')->setCellValue('D11', 'DEPENDENCIA');
+        $sheet->mergeCells('H11:K11')->setCellValue('H11', 'DOC. DE IDENTIDAD');
+        $sheet->mergeCells('A12:C13')->setCellValue('A12', self::REINTEGRO_BODEGA_NOMBRE);
+        $sheet->mergeCells('D12:G13')->setCellValue('D12', self::REINTEGRO_BODEGA_DEPENDENCIA);
+        $sheet->mergeCells('H12:K13')->setCellValueExplicit('H12', self::REINTEGRO_BODEGA_DOCUMENTO, DataType::TYPE_STRING);
+
+        $sheet->mergeCells('A14:B14')->setCellValue('A14', 'PLACA');
+        $sheet->setCellValue('C14', 'CANT.');
+        $sheet->mergeCells('D14:G14')->setCellValue('D14', 'ARTÍCULO');
+        $sheet->mergeCells('H14:K14')->setCellValue('H14', 'MARCA');
+
+        $fila = 15;
+        foreach ($bienes as $bien) {
+            $sheet->mergeCells("A{$fila}:B{$fila}")->setCellValueExplicit("A{$fila}", $bien['codigo_identificacion'], DataType::TYPE_STRING);
+            $sheet->setCellValue("C{$fila}", 1);
+            $sheet->mergeCells("D{$fila}:G{$fila}")->setCellValue("D{$fila}", $bien['descripcion']);
+            $sheet->mergeCells("H{$fila}:K{$fila}")->setCellValue("H{$fila}", $bien['marca'] ?? '');
+            $fila++;
+        }
+        // Filas vacías hasta completar la plantilla (siempre 8 renglones, como el
+        // formato oficial impreso), aunque el lote tenga menos bienes.
+        for (; $fila <= 22; $fila++) {
+            $sheet->mergeCells("A{$fila}:B{$fila}");
+            $sheet->mergeCells("D{$fila}:G{$fila}");
+            $sheet->mergeCells("H{$fila}:K{$fila}");
+        }
+
+        $sheet->setCellValue('A23', 'Observaciones:');
+        $observaciones = trim(($lote['observaciones'] ?? '') . (!empty($lote['destino_texto']) ? ' Destino: ' . $lote['destino_texto'] : ''));
+        $sheet->mergeCells('B23:K23')->setCellValue('B23', $observaciones);
+        $sheet->mergeCells('A24:K24');
+
+        $sheet->mergeCells('A25:C25')->setCellValue('A25', 'RESP. QUE ENTREGA');
+        $sheet->mergeCells('D25:E25')->setCellValue('D25', 'JEFE DEP. ENTREGA');
+        $sheet->setCellValue('F25', 'U. BIENES MUEBLES');
+        $sheet->mergeCells('G25:I25')->setCellValue('G25', 'RESP. QUE RECIBE');
+        $sheet->mergeCells('J25:K25')->setCellValue('J25', 'JEFE. DEP. RECIBE');
+        $sheet->mergeCells('A26:C27');
+        $sheet->mergeCells('D26:E28');
+        $sheet->mergeCells('F26:F28');
+        $sheet->mergeCells('G26:I27');
+        $sheet->mergeCells('J26:K28');
+        $sheet->setCellValue('A28', 'C.C.');
+        $sheet->mergeCells('B28:C28')->setCellValueExplicit('B28', $rector['documento'], DataType::TYPE_STRING);
+        $sheet->setCellValue('G28', 'C.C.');
+        $sheet->mergeCells('H28:I28');
+
+        $sheet->mergeCells('A29:K29');
+        $sheet->mergeCells('A30:K30');
+        $sheet->mergeCells('A31:K31')->setCellValue('A31', self::REINTEGRO_RESOLUCION);
+
+        $sheet->getStyle('A2:K3')->applyFromArray($negrita);
+        $sheet->getStyle('A6:K7')->applyFromArray($negrita);
+        $sheet->getStyle('A6:K7')->applyFromArray($centrado);
+        $sheet->getStyle('A8:K8')->applyFromArray($negrita);
+        $sheet->getStyle('A11:K11')->applyFromArray($negrita);
+        $sheet->getStyle('A14:K14')->applyFromArray($negrita);
+        $sheet->getStyle('A14:K14')->applyFromArray($centrado);
+        $sheet->getStyle('C15:C22')->applyFromArray($centrado);
+        $sheet->getStyle('A25:K25')->applyFromArray($negrita);
+        $sheet->getStyle('A6:K22')->applyFromArray($bordeFino);
+        $sheet->getStyle('A25:K28')->applyFromArray($bordeFino);
     }
 
     /**

@@ -8,7 +8,7 @@ use App\Core\Url;
     <div class="d-flex gap-2">
         <a href="<?= Url::to('/reintegros/lotes') ?>" class="btn btn-sm btn-outline-secondary">Volver</a>
         <a href="<?= Url::to('/reintegros/lotes/' . $lote['id'] . '/formato.xlsx') ?>" class="btn btn-sm btn-primary">
-            <i class="bi bi-file-earmark-excel me-1"></i>Descargar formato
+            <i class="bi bi-file-earmark-excel me-1"></i>Descargar comprobante (FO-ADMI-009)
         </a>
     </div>
 </div>
