@@ -155,7 +155,7 @@ $etiquetasEstado = [
         <?php elseif (Auth::check()): ?>
             <p class="small text-muted mb-0">Este bien pertenece a otra institución; no puedes gestionarlo desde tu cuenta.</p>
         <?php else: ?>
-            <a href="<?= Url::to('/login') ?>" class="btn btn-outline-secondary btn-sm w-100">
+            <a href="<?= Url::to('/login') ?>" class="btn btn-primary btn-sm w-100">
                 <i class="bi bi-box-arrow-in-right me-1"></i>Iniciar sesión para gestionar
             </a>
         <?php endif; ?>

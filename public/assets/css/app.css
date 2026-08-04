@@ -131,6 +131,31 @@ img {
   color: #1F2937;
 }
 
+/* El gris por defecto de Bootstrap (#6c757d) se pierde junto a los botones de
+   acción principal en azul — se oscurece para que un botón secundario (Volver,
+   Cancelar, Ver, filtros) siga siendo claramente un botón y no un texto apagado. */
+.btn-outline-secondary {
+  --bs-btn-color: #495057;
+  --bs-btn-border-color: #495057;
+  --bs-btn-hover-color: #fff;
+  --bs-btn-hover-bg: #495057;
+  --bs-btn-hover-border-color: #495057;
+  --bs-btn-active-color: #fff;
+  --bs-btn-active-bg: #495057;
+  --bs-btn-active-border-color: #495057;
+}
+
+[data-bs-theme="dark"] .btn-outline-secondary {
+  --bs-btn-color: #94a3b8;
+  --bs-btn-border-color: #64748b;
+  --bs-btn-hover-color: #fff;
+  --bs-btn-hover-bg: #475569;
+  --bs-btn-hover-border-color: #64748b;
+  --bs-btn-active-color: #fff;
+  --bs-btn-active-bg: #475569;
+  --bs-btn-active-border-color: #64748b;
+}
+
 .badge-estado-activo { background-color: var(--sigebi-success); }
 .badge-estado-reintegrado { background-color: #6c757d; }
 .badge-estado-en_reparacion { background-color: var(--sigebi-accent); color: #1F2937; }
