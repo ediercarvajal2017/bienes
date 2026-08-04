@@ -50,7 +50,7 @@ use App\Core\View;
 </form>
 
 <form method="post" action="<?= Url::to('/facturas/' . $registro['id'] . '/eliminar') ?>" class="mt-2"
-      onsubmit="return confirm('¿Eliminar este registro de forma permanente? Esta acción no se puede deshacer.');">
+      onsubmit="return prompt('Para eliminar este registro, escribe ELIMINAR (un superusuario podrá restaurarlo desde la papelera si fue un error):') === 'ELIMINAR';">
     <?= Csrf::field() ?>
     <button type="submit" class="btn btn-sm btn-outline-danger">
         <i class="bi bi-trash me-1"></i>Eliminar registro

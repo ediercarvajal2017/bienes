@@ -13,6 +13,7 @@ use App\Core\View;
 use App\Helpers\Evidencia;
 use App\Helpers\Paginador;
 use App\Helpers\Uploader;
+use App\Models\Auditoria;
 use App\Models\FormatoReintegro;
 use App\Models\Institucion;
 
@@ -163,10 +164,10 @@ final class FormatoReintegroController
         $registro = FormatoReintegro::find($id);
         Evidencia::verificarAcceso($registro);
 
-        Evidencia::eliminarArchivoFisico($registro['archivo_path']);
-        FormatoReintegro::eliminar($id);
+        FormatoReintegro::eliminar($id, Auth::id());
+        Auditoria::registrar(Auth::id(), (int) $registro['institucion_id'], 'eliminar', 'formato_reintegro', $id, $registro);
 
-        Session::flash('ok', 'Registro eliminado.');
+        Session::flash('ok', 'Registro enviado a la papelera. Un superusuario puede restaurarlo si fue un error.');
         header('Location: ' . Url::to('/formatos-reintegro/historial'));
         exit;
     }

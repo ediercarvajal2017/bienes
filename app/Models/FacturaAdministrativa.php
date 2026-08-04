@@ -26,7 +26,7 @@ final class FacturaAdministrativa
 
     public static function find(int $id): ?array
     {
-        $stmt = Database::connection()->prepare('SELECT * FROM facturas_administrativas WHERE id = ?');
+        $stmt = Database::connection()->prepare('SELECT * FROM facturas_administrativas WHERE id = ? AND eliminado_en IS NULL');
         $stmt->execute([$id]);
         $fila = $stmt->fetch();
 
@@ -43,9 +43,23 @@ final class FacturaAdministrativa
         $stmt->execute($datos + ['id' => $id]);
     }
 
-    public static function eliminar(int $id): void
+    /**
+     * Borrado suave: la fila (y el archivo adjunto) siguen existiendo, recuperables
+     * desde la papelera de superusuario, hasta que el script de purga los borre de
+     * verdad después del periodo de retención.
+     */
+    public static function eliminar(int $id, int $eliminadoPor): void
     {
-        Database::connection()->prepare('DELETE FROM facturas_administrativas WHERE id = ?')->execute([$id]);
+        Database::connection()
+            ->prepare('UPDATE facturas_administrativas SET eliminado_en = NOW(), eliminado_por = ? WHERE id = ?')
+            ->execute([$eliminadoPor, $id]);
+    }
+
+    public static function restaurar(int $id): void
+    {
+        Database::connection()
+            ->prepare('UPDATE facturas_administrativas SET eliminado_en = NULL, eliminado_por = NULL WHERE id = ?')
+            ->execute([$id]);
     }
 
     public static function listar(?int $institucionId = null, int $pagina = 1, int $porPagina = 50): array
@@ -54,11 +68,12 @@ final class FacturaAdministrativa
                        u.nombres AS registrado_por_nombres, u.apellidos AS registrado_por_apellidos
                 FROM facturas_administrativas f
                 JOIN instituciones i ON i.id = f.institucion_id
-                LEFT JOIN usuarios u ON u.id = f.registrado_por';
+                LEFT JOIN usuarios u ON u.id = f.registrado_por
+                WHERE f.eliminado_en IS NULL';
         $params = [];
 
         if ($institucionId !== null) {
-            $sql .= ' WHERE f.institucion_id = ?';
+            $sql .= ' AND f.institucion_id = ?';
             $params[] = $institucionId;
         }
 
@@ -72,11 +87,11 @@ final class FacturaAdministrativa
 
     public static function contarListado(?int $institucionId = null): int
     {
-        $sql = 'SELECT COUNT(*) FROM facturas_administrativas f';
+        $sql = 'SELECT COUNT(*) FROM facturas_administrativas f WHERE f.eliminado_en IS NULL';
         $params = [];
 
         if ($institucionId !== null) {
-            $sql .= ' WHERE f.institucion_id = ?';
+            $sql .= ' AND f.institucion_id = ?';
             $params[] = $institucionId;
         }
 

@@ -13,6 +13,7 @@ use App\Core\View;
 use App\Helpers\Evidencia;
 use App\Helpers\Paginador;
 use App\Helpers\Uploader;
+use App\Models\Auditoria;
 use App\Models\CarteraEnvio;
 use App\Models\Institucion;
 
@@ -168,10 +169,10 @@ final class CarteraController
         $registro = CarteraEnvio::find($id);
         Evidencia::verificarAcceso($registro);
 
-        Evidencia::eliminarArchivoFisico($registro['archivo_path']);
-        CarteraEnvio::eliminar($id);
+        CarteraEnvio::eliminar($id, Auth::id());
+        Auditoria::registrar(Auth::id(), (int) $registro['institucion_id'], 'eliminar', 'cartera_envio', $id, $registro);
 
-        Session::flash('ok', 'Registro eliminado.');
+        Session::flash('ok', 'Registro enviado a la papelera. Un superusuario puede restaurarlo si fue un error.');
         header('Location: ' . Url::to('/cartera/enviados'));
         exit;
     }

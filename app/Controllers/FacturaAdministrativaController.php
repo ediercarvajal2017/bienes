@@ -13,6 +13,7 @@ use App\Core\View;
 use App\Helpers\Evidencia;
 use App\Helpers\Paginador;
 use App\Helpers\Uploader;
+use App\Models\Auditoria;
 use App\Models\FacturaAdministrativa;
 use App\Models\Institucion;
 
@@ -163,10 +164,10 @@ final class FacturaAdministrativaController
         $registro = FacturaAdministrativa::find($id);
         Evidencia::verificarAcceso($registro);
 
-        Evidencia::eliminarArchivoFisico($registro['archivo_path']);
-        FacturaAdministrativa::eliminar($id);
+        FacturaAdministrativa::eliminar($id, Auth::id());
+        Auditoria::registrar(Auth::id(), (int) $registro['institucion_id'], 'eliminar', 'factura_administrativa', $id, $registro);
 
-        Session::flash('ok', 'Registro eliminado.');
+        Session::flash('ok', 'Registro enviado a la papelera. Un superusuario puede restaurarlo si fue un error.');
         header('Location: ' . Url::to('/facturas/historial'));
         exit;
     }
