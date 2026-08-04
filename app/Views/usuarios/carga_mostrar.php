@@ -29,7 +29,7 @@ $clases = [
 
 <?php if ((int) $carga['aplicada'] === 0): ?>
     <form method="post" action="<?= Url::to('/usuarios/carga-masiva/' . $carga['id'] . '/confirmar') ?>" class="mb-3"
-          onsubmit="return confirm('¿Confirmar la importación? Se crearán o actualizarán los usuarios indicados. Los nuevos recibirán un correo para definir su contraseña.');">
+          onsubmit="return confirm('¿Confirmar la importación? Se crearán o actualizarán los usuarios indicados. Los nuevos deberán entrar a \'¿Olvidaste tu contraseña?\' con su correo registrado para activarse.');">
         <?= Csrf::field() ?>
         <button type="submit" class="btn btn-primary btn-sm">Confirmar importación</button>
     </form>
