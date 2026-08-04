@@ -157,6 +157,36 @@ img {
   --bs-btn-active-border-color: #f1f5f9;
 }
 
+/* Los <select> con buscador (Tom Select: categoría, institución, espacio,
+   responsable) traen de fábrica un borde gris muy claro (var(--bs-border-color)
+   de Bootstrap, nunca redefinida para tema claro) que se camufla contra el fondo
+   — y en tema oscuro, la librería fija su texto en un gris oscuro que no usa
+   ninguna variable de Bootstrap, así que queda casi invisible. También se resalta
+   más la opción activa al navegar la lista, reutilizando el mismo verde que ya
+   usa el menú lateral para su estado "seleccionado". */
+.ts-wrapper .ts-control {
+  border-color: #94a3b8;
+}
+
+.ts-dropdown .active {
+  background-color: rgba(31, 111, 84, 0.12);
+}
+
+[data-bs-theme="dark"] .ts-control,
+[data-bs-theme="dark"] .ts-control input,
+[data-bs-theme="dark"] .ts-dropdown,
+[data-bs-theme="dark"] .ts-dropdown .optgroup-header {
+  color: var(--sigebi-text);
+}
+
+[data-bs-theme="dark"] .ts-wrapper .ts-control {
+  border-color: var(--sigebi-border);
+}
+
+[data-bs-theme="dark"] .ts-dropdown .active {
+  background-color: rgba(63, 174, 130, 0.18);
+}
+
 .badge-estado-activo { background-color: var(--sigebi-success); }
 .badge-estado-reintegrado { background-color: #6c757d; }
 .badge-estado-en_reparacion { background-color: var(--sigebi-accent); color: #1F2937; }
