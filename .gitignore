@@ -10,6 +10,10 @@
 /storage/logs/*
 !/storage/logs/.gitkeep
 
+# Respaldos de la base de datos generados por database/respaldo.php
+/storage/backups/*
+!/storage/backups/.gitkeep
+
 # Herramientas locales
 /.claude/
 /build/

@@ -18,4 +18,9 @@ return [
     // STORAGE_PATH en el .env a una ruta absoluta fuera de esa carpeta. Si no se define,
     // usa la ruta local de siempre (comportamiento sin cambios en WAMP).
     'storage_path' => Env::get('STORAGE_PATH') ?: dirname(__DIR__) . '/storage',
+    // A dónde se envía cada respaldo de la base de datos (database/respaldo.php). Vacío
+    // por defecto: el respaldo igual se genera y se guarda en storage/backups/, pero
+    // solo se envía por correo (la copia fuera del servidor) si se configura esto.
+    'backup_email' => Env::get('BACKUP_EMAIL', ''),
+    'backup_retencion_dias' => (int) Env::get('BACKUP_RETENCION_DIAS', 14),
 ];

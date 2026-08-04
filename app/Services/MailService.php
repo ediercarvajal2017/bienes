@@ -47,4 +47,50 @@ final class MailService
             throw new \RuntimeException('No se pudo enviar el correo: ' . $mail->ErrorInfo);
         }
     }
+
+    /**
+     * Igual que enviar(), con un archivo adjunto — usado hoy solo por el respaldo
+     * automático de la base de datos (database/respaldo.php).
+     */
+    public static function enviarConAdjunto(
+        string $paraCorreo,
+        string $paraNombre,
+        string $asunto,
+        string $cuerpoHtml,
+        string $rutaAdjunto,
+        string $nombreAdjunto
+    ): void {
+        $config = require dirname(__DIR__, 2) . '/config/mail.php';
+
+        if ($config['host'] === '' || $config['from_address'] === '') {
+            throw new \RuntimeException('El envío de correo no está configurado en este servidor.');
+        }
+
+        $mail = new PHPMailer(true);
+
+        try {
+            $mail->isSMTP();
+            $mail->Host = $config['host'];
+            $mail->SMTPAuth = true;
+            $mail->Username = $config['username'];
+            $mail->Password = $config['password'];
+            $mail->Port = $config['port'];
+            if ($config['encryption'] !== '') {
+                $mail->SMTPSecure = $config['encryption'];
+            }
+            $mail->CharSet = 'UTF-8';
+
+            $mail->setFrom($config['from_address'], $config['from_name']);
+            $mail->addAddress($paraCorreo, $paraNombre);
+            $mail->addAttachment($rutaAdjunto, $nombreAdjunto);
+            $mail->isHTML(true);
+            $mail->Subject = $asunto;
+            $mail->Body = $cuerpoHtml;
+            $mail->AltBody = trim(strip_tags($cuerpoHtml));
+
+            $mail->send();
+        } catch (PHPMailerException $e) {
+            throw new \RuntimeException('No se pudo enviar el correo: ' . $mail->ErrorInfo);
+        }
+    }
 }
