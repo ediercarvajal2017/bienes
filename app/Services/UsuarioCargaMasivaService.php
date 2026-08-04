@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Core\Url;
 use App\Models\Cargo;
-use App\Models\PasswordReset;
 use App\Models\Usuario;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
@@ -169,9 +167,11 @@ final class UsuarioCargaMasivaService
 
     /**
      * Aplica los cambios a la BD. Los usuarios nuevos se crean con una contraseña
-     * provisional inutilizable (nadie la conoce) y reciben un correo de bienvenida con un
-     * enlace para definir su propia contraseña — el mismo mecanismo de "olvidé mi
-     * contraseña" — así el archivo nunca necesita traer contraseñas en texto plano.
+     * provisional inutilizable (nadie la conoce): no se envía ningún correo desde aquí —
+     * con archivos grandes, enviar un correo de bienvenida por cada usuario dentro de esta
+     * misma petición agotaba el tiempo de espera de nginx (504 Gateway Time-out) — así que
+     * cada usuario nuevo debe usar "¿Olvidaste tu contraseña?" con su correo registrado para
+     * activarse la primera vez.
      *
      * Devuelve cuántas filas se omitieron por un choque de documento/correo detectado justo
      * al escribir (p. ej. si alguien registró ese mismo documento por otra vía entre que se
@@ -184,7 +184,7 @@ final class UsuarioCargaMasivaService
         foreach ($filas as $fila) {
             try {
                 if ($fila['tipo'] === 'nuevo') {
-                    $id = Usuario::create([
+                    Usuario::create([
                         'documento' => $fila['datos']['documento'],
                         'nombres' => $fila['datos']['nombres'],
                         'apellidos' => $fila['datos']['apellidos'],
@@ -194,7 +194,6 @@ final class UsuarioCargaMasivaService
                         'institucion_id' => $institucionId,
                         'rol_id' => $fila['datos']['rol_id'],
                     ]);
-                    self::enviarCorreoBienvenida($id, trim($fila['datos']['nombres'] . ' ' . $fila['datos']['apellidos']), $fila['datos']['email']);
                     continue;
                 }
 
@@ -260,35 +259,5 @@ final class UsuarioCargaMasivaService
         }
 
         return $cambios;
-    }
-
-    private static function enviarCorreoBienvenida(int $usuarioId, string $nombre, string $email): void
-    {
-        try {
-            $token = PasswordReset::crear($usuarioId, 60 * 24 * 7);
-            $enlace = Url::absoluta('/restablecer-contrasena/' . $token);
-
-            MailService::enviar(
-                $email,
-                $nombre,
-                'Bienvenido a SIGEBI · Define tu contraseña',
-                self::plantillaCorreoBienvenida($nombre, $enlace)
-            );
-        } catch (\RuntimeException $e) {
-            error_log('MailService (bienvenida carga masiva de usuarios): ' . $e->getMessage());
-        }
-    }
-
-    private static function plantillaCorreoBienvenida(string $nombre, string $enlace): string
-    {
-        $nombreEscapado = htmlspecialchars($nombre, ENT_QUOTES);
-        $enlaceEscapado = htmlspecialchars($enlace, ENT_QUOTES);
-
-        return <<<HTML
-            <p>Hola {$nombreEscapado},</p>
-            <p>Se creó tu cuenta en SIGEBI. Para poder ingresar, primero define tu contraseña en el siguiente enlace (válido por 7 días):</p>
-            <p><a href="{$enlaceEscapado}">{$enlaceEscapado}</a></p>
-            <p>Si no esperabas este correo, puedes ignorarlo.</p>
-            HTML;
     }
 }

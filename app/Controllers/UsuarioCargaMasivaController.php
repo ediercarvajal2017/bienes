@@ -142,9 +142,10 @@ final class UsuarioCargaMasivaController
         $omitidas = UsuarioCargaMasivaService::aplicar($filas, (int) $carga['institucion_id']);
         CargaMasiva::marcarAplicada($id);
 
+        $nota = ' Los usuarios nuevos deben entrar a "¿Olvidaste tu contraseña?" con su correo registrado para activarse la primera vez.';
         Session::flash('ok', $omitidas > 0
-            ? "Carga masiva aplicada. {$omitidas} fila(s) se omitieron por un choque de documento o correo detectado al guardar."
-            : 'Carga masiva aplicada correctamente. Los usuarios nuevos recibirán un correo para definir su contraseña.');
+            ? "Carga masiva aplicada. {$omitidas} fila(s) se omitieron por un choque de documento o correo detectado al guardar.{$nota}"
+            : 'Carga masiva aplicada correctamente.' . $nota);
         header('Location: ' . Url::to("/usuarios/carga-masiva/{$id}"));
         exit;
     }
