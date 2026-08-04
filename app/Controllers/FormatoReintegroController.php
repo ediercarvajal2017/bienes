@@ -62,13 +62,15 @@ final class FormatoReintegroController
                 exit;
             }
 
-            FormatoReintegro::create([
+            $datos = [
                 'institucion_id' => $institucionId,
                 'fecha_reintegro' => $fechaReintegro,
                 'descripcion' => $descripcion,
                 'archivo_path' => $archivoPath,
                 'registrado_por' => Auth::id(),
-            ]);
+            ];
+            $id = FormatoReintegro::create($datos);
+            Auditoria::registrar(Auth::id(), $institucionId, 'crear', 'formato_reintegro', $id, null, $datos);
 
             Session::flash('ok', 'Formato de reintegro guardado en la biblioteca de evidencia.');
         } catch (\RuntimeException $e) {
@@ -138,11 +140,13 @@ final class FormatoReintegroController
                 $archivoPath = $nuevoArchivo;
             }
 
-            FormatoReintegro::actualizar($id, [
+            $datosNuevos = [
                 'fecha_reintegro' => $fechaReintegro,
                 'descripcion' => $descripcion,
                 'archivo_path' => $archivoPath,
-            ]);
+            ];
+            FormatoReintegro::actualizar($id, $datosNuevos);
+            Auditoria::registrar(Auth::id(), (int) $registro['institucion_id'], 'editar', 'formato_reintegro', $id, $registro, $datosNuevos);
 
             Session::flash('ok', 'Registro actualizado.');
         } catch (\RuntimeException $e) {

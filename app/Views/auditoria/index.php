@@ -3,14 +3,30 @@
 use App\Core\View;
 
 $etiquetasAccion = [
+    'crear' => 'Crear',
+    'editar' => 'Editar',
+    'activar' => 'Activar',
+    'desactivar' => 'Desactivar',
     'eliminar' => 'Eliminar',
     'restaurar' => 'Restaurar',
+    'purgar' => 'Purgar',
+];
+$coloresAccion = [
+    'crear' => 'text-bg-primary',
+    'editar' => 'text-bg-info',
+    'activar' => 'text-bg-success',
+    'desactivar' => 'text-bg-warning',
+    'eliminar' => 'text-bg-danger',
+    'restaurar' => 'text-bg-success',
+    'purgar' => 'text-bg-dark',
 ];
 $etiquetasEntidad = [
     'usuario' => 'Usuario',
     'espacio' => 'Espacio',
     'categoria' => 'Categoría',
     'cargo' => 'Cargo',
+    'bien' => 'Bien',
+    'institucion' => 'Institución',
     'factura_administrativa' => 'Factura',
     'formato_reintegro' => 'Formato de reintegro',
     'formato_plaqueteo' => 'Formato de plaqueteo',
@@ -56,7 +72,7 @@ $etiquetasEntidad = [
                     </td>
                     <td class="text-muted" data-label="Institución"><?= htmlspecialchars($r['institucion_nombre'] ?? '—', ENT_QUOTES) ?></td>
                     <td data-label="Acción">
-                        <span class="badge <?= $r['accion'] === 'eliminar' ? 'text-bg-danger' : 'text-bg-success' ?>">
+                        <span class="badge <?= $coloresAccion[$r['accion']] ?? 'text-bg-secondary' ?>">
                             <?= htmlspecialchars($etiquetasAccion[$r['accion']] ?? $r['accion'], ENT_QUOTES) ?>
                         </span>
                     </td>

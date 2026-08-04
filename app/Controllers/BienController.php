@@ -14,6 +14,7 @@ use App\Core\View;
 use App\Helpers\Paginador;
 use App\Helpers\Uploader;
 use App\Models\Asignacion;
+use App\Models\Auditoria;
 use App\Models\Bien;
 use App\Models\Categoria;
 use App\Models\Espacio;
@@ -128,6 +129,7 @@ final class BienController
 
         $datos['created_by'] = Auth::id();
         $id = Bien::create($datos);
+        Auditoria::registrar(Auth::id(), (int) $datos['institucion_id'], 'crear', 'bien', $id, null, $datos);
 
         $this->procesarArchivos($id, $request, $datos['codigo_identificacion']);
 
@@ -315,6 +317,7 @@ final class BienController
         }
 
         Bien::update($id, $datos);
+        Auditoria::registrar(Auth::id(), (int) $datos['institucion_id'], 'editar', 'bien', $id, $bien, $datos);
 
         $this->procesarArchivos($id, $request, $datos['codigo_identificacion']);
 

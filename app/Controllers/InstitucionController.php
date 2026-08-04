@@ -11,6 +11,7 @@ use App\Core\Session;
 use App\Core\Url;
 use App\Core\View;
 use App\Helpers\Uploader;
+use App\Models\Auditoria;
 use App\Models\Institucion;
 
 final class InstitucionController
@@ -60,6 +61,7 @@ final class InstitucionController
         }
 
         $id = Institucion::create($datos);
+        Auditoria::registrar(Auth::id(), $id, 'crear', 'institucion', $id, null, $datos);
 
         if ($archivo = $request->file('logo')) {
             $this->subirLogo($id, $archivo);
@@ -96,6 +98,8 @@ final class InstitucionController
         $id = (int) $id;
         $this->verificarAcceso($id);
 
+        $antes = Institucion::find($id);
+
         $request = new Request();
         $datos = $this->datosDesdeFormulario($request);
         $this->verificarCsrf($request, "/instituciones/{$id}/editar", $datos);
@@ -108,6 +112,7 @@ final class InstitucionController
         }
 
         Institucion::update($id, $datos);
+        Auditoria::registrar(Auth::id(), $id, 'editar', 'institucion', $id, $antes, $datos);
 
         if ($archivo = $request->file('logo')) {
             $this->subirLogo($id, $archivo);
@@ -127,7 +132,9 @@ final class InstitucionController
         $institucion = Institucion::find($id);
 
         if ($institucion) {
-            Institucion::setActivo($id, !((bool) $institucion['activo']));
+            $nuevoEstado = !((bool) $institucion['activo']);
+            Institucion::setActivo($id, $nuevoEstado);
+            Auditoria::registrar(Auth::id(), $id, $nuevoEstado ? 'activar' : 'desactivar', 'institucion', $id, $institucion, null);
             Session::flash('ok', 'Estado de la institución actualizado.');
         }
 

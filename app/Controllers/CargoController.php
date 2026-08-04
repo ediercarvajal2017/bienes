@@ -37,7 +37,8 @@ final class CargoController
         } elseif (Cargo::existeNombre($nombre)) {
             Session::flash('error', 'Ese cargo ya existe.');
         } else {
-            Cargo::create($nombre);
+            $id = Cargo::create($nombre);
+            Auditoria::registrar(Auth::id(), Auth::institucionId(), 'crear', 'cargo', $id, null, ['nombre' => $nombre]);
             Session::flash('ok', 'Cargo creado correctamente.');
         }
 
@@ -62,6 +63,7 @@ final class CargoController
             Session::flash('error', 'Ya existe otro cargo con ese nombre.');
         } else {
             Cargo::renombrar($id, $nombre);
+            Auditoria::registrar(Auth::id(), Auth::institucionId(), 'editar', 'cargo', $id, $cargo, ['nombre' => $nombre]);
             Session::flash('ok', 'Cargo actualizado.');
         }
 

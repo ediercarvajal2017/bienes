@@ -62,13 +62,15 @@ final class FacturaAdministrativaController
                 exit;
             }
 
-            FacturaAdministrativa::create([
+            $datos = [
                 'institucion_id' => $institucionId,
                 'fecha_factura' => $fechaFactura,
                 'descripcion' => $descripcion,
                 'archivo_path' => $archivoPath,
                 'registrado_por' => Auth::id(),
-            ]);
+            ];
+            $id = FacturaAdministrativa::create($datos);
+            Auditoria::registrar(Auth::id(), $institucionId, 'crear', 'factura_administrativa', $id, null, $datos);
 
             Session::flash('ok', 'Factura guardada en la biblioteca de evidencia.');
         } catch (\RuntimeException $e) {
@@ -138,11 +140,13 @@ final class FacturaAdministrativaController
                 $archivoPath = $nuevoArchivo;
             }
 
-            FacturaAdministrativa::actualizar($id, [
+            $datosNuevos = [
                 'fecha_factura' => $fechaFactura,
                 'descripcion' => $descripcion,
                 'archivo_path' => $archivoPath,
-            ]);
+            ];
+            FacturaAdministrativa::actualizar($id, $datosNuevos);
+            Auditoria::registrar(Auth::id(), (int) $registro['institucion_id'], 'editar', 'factura_administrativa', $id, $registro, $datosNuevos);
 
             Session::flash('ok', 'Registro actualizado.');
         } catch (\RuntimeException $e) {

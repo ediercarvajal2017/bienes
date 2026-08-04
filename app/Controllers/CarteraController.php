@@ -64,14 +64,16 @@ final class CarteraController
                 exit;
             }
 
-            CarteraEnvio::create([
+            $datos = [
                 'institucion_id' => $institucionId,
                 'archivo_path' => $archivoPath,
                 'correo_remitente' => $correoRemitente,
                 'nombre_funcionario' => $nombreFuncionario,
                 'fecha_envio' => $fechaEnvio,
                 'registrado_por' => Auth::id(),
-            ]);
+            ];
+            $id = CarteraEnvio::create($datos);
+            Auditoria::registrar(Auth::id(), $institucionId, 'crear', 'cartera_envio', $id, null, $datos);
 
             Session::flash('ok', 'Registro guardado en la biblioteca de evidencia.');
         } catch (\RuntimeException $e) {
@@ -142,12 +144,14 @@ final class CarteraController
                 $archivoPath = $nuevoArchivo;
             }
 
-            CarteraEnvio::actualizar($id, [
+            $datosNuevos = [
                 'correo_remitente' => $correoRemitente,
                 'nombre_funcionario' => $nombreFuncionario,
                 'fecha_envio' => $fechaEnvio,
                 'archivo_path' => $archivoPath,
-            ]);
+            ];
+            CarteraEnvio::actualizar($id, $datosNuevos);
+            Auditoria::registrar(Auth::id(), (int) $registro['institucion_id'], 'editar', 'cartera_envio', $id, $registro, $datosNuevos);
 
             Session::flash('ok', 'Registro actualizado.');
         } catch (\RuntimeException $e) {

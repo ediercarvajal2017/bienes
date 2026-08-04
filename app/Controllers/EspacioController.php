@@ -77,6 +77,7 @@ final class EspacioController
 
         $id = Espacio::create($datos);
         Espacio::sincronizarResponsables($id, $datos['responsables']);
+        Auditoria::registrar(Auth::id(), (int) $datos['institucion_id'], 'crear', 'espacio', $id, null, $datos);
 
         Session::flash('ok', 'Espacio creado correctamente.');
         header('Location: ' . Url::to('/espacios'));
@@ -118,6 +119,7 @@ final class EspacioController
 
         Espacio::update($id, $datos);
         Espacio::sincronizarResponsables($id, $datos['responsables']);
+        Auditoria::registrar(Auth::id(), (int) $espacio['institucion_id'], 'editar', 'espacio', $id, $espacio, $datos);
 
         Session::flash('ok', 'Espacio actualizado.');
         header('Location: ' . Url::to('/espacios'));

@@ -37,7 +37,8 @@ final class CategoriaController
         } elseif (Categoria::existeNombre($nombre)) {
             Session::flash('error', 'Esa categoría ya existe.');
         } else {
-            Categoria::create($nombre);
+            $id = Categoria::create($nombre);
+            Auditoria::registrar(Auth::id(), Auth::institucionId(), 'crear', 'categoria', $id, null, ['nombre' => $nombre]);
             Session::flash('ok', 'Categoría creada correctamente.');
         }
 
@@ -62,6 +63,7 @@ final class CategoriaController
             Session::flash('error', 'Ya existe otra categoría con ese nombre.');
         } else {
             Categoria::renombrar($id, $nombre);
+            Auditoria::registrar(Auth::id(), Auth::institucionId(), 'editar', 'categoria', $id, $categoria, ['nombre' => $nombre]);
             Session::flash('ok', 'Categoría actualizada.');
         }
 

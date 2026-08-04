@@ -63,14 +63,16 @@ final class FormatoPlaqueteoController
                 exit;
             }
 
-            FormatoPlaqueteo::create([
+            $datos = [
                 'institucion_id' => $institucionId,
                 'fecha_plaqueteo' => $fechaPlaqueteo,
                 'funcionario_asistio' => $funcionario,
                 'descripcion' => $descripcion,
                 'archivo_path' => $archivoPath,
                 'registrado_por' => Auth::id(),
-            ]);
+            ];
+            $id = FormatoPlaqueteo::create($datos);
+            Auditoria::registrar(Auth::id(), $institucionId, 'crear', 'formato_plaqueteo', $id, null, $datos);
 
             Session::flash('ok', 'Formato de plaqueteo guardado en la biblioteca de evidencia.');
         } catch (\RuntimeException $e) {
@@ -141,12 +143,14 @@ final class FormatoPlaqueteoController
                 $archivoPath = $nuevoArchivo;
             }
 
-            FormatoPlaqueteo::actualizar($id, [
+            $datosNuevos = [
                 'fecha_plaqueteo' => $fechaPlaqueteo,
                 'funcionario_asistio' => $funcionario,
                 'descripcion' => $descripcion,
                 'archivo_path' => $archivoPath,
-            ]);
+            ];
+            FormatoPlaqueteo::actualizar($id, $datosNuevos);
+            Auditoria::registrar(Auth::id(), (int) $registro['institucion_id'], 'editar', 'formato_plaqueteo', $id, $registro, $datosNuevos);
 
             Session::flash('ok', 'Registro actualizado.');
         } catch (\RuntimeException $e) {

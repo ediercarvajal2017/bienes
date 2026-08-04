@@ -76,8 +76,10 @@ final class UsuarioController
             exit;
         }
 
+        $snapshot = $datos;
         $datos['password_hash'] = password_hash($password, PASSWORD_BCRYPT);
         $id = Usuario::create($datos);
+        Auditoria::registrar(Auth::id(), (int) $datos['institucion_id'], 'crear', 'usuario', $id, null, $snapshot);
 
         if ($archivo = $request->file('foto')) {
             $this->subirFoto($id, $archivo);
@@ -123,7 +125,10 @@ final class UsuarioController
             exit;
         }
 
+        $antes = $usuario;
+        unset($antes['password_hash']);
         Usuario::update($id, $datos);
+        Auditoria::registrar(Auth::id(), (int) $datos['institucion_id'], 'editar', 'usuario', $id, $antes, $datos);
 
         if ($password !== '') {
             Usuario::updatePassword($id, password_hash($password, PASSWORD_BCRYPT));
