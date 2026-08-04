@@ -138,7 +138,7 @@ $grupoAbierto = static function (array $prefijos) use ($rutaActual): string {
             <?php endif; ?>
 
             <?php if ($mostrarAdmin): ?>
-                <details class="nav-grupo"<?= $grupoAbierto(['/cargas-masivas', '/usuarios', '/instituciones', '/cargos', '/categorias']) ?>>
+                <details class="nav-grupo"<?= $grupoAbierto(['/cargas-masivas', '/usuarios', '/instituciones', '/cargos', '/categorias', '/papelera', '/auditoria']) ?>>
                     <summary class="nav-grupo-titulo">Administración<i class="bi bi-chevron-right nav-grupo-chevron"></i></summary>
 
                     <?php if (Auth::esSuperusuario() || Auth::tienePermiso('cargas.masivas')): ?>
@@ -159,6 +159,11 @@ $grupoAbierto = static function (array $prefijos) use ($rutaActual): string {
 
                     <?php if (Auth::esSuperusuario() || Auth::tienePermiso('categorias.gestionar')): ?>
                         <a class="nav-link<?= $esActiva('/categorias') ?>" href="<?= Url::to('/categorias') ?>"><i class="bi bi-tags me-2"></i>Categorías</a>
+                    <?php endif; ?>
+
+                    <?php if (Auth::esSuperusuario()): ?>
+                        <a class="nav-link<?= $esActiva('/papelera') ?>" href="<?= Url::to('/papelera') ?>"><i class="bi bi-trash3 me-2"></i>Papelera de reciclaje</a>
+                        <a class="nav-link<?= $esActiva('/auditoria') ?>" href="<?= Url::to('/auditoria') ?>"><i class="bi bi-journal-text me-2"></i>Auditoría</a>
                     <?php endif; ?>
                 </details>
             <?php endif; ?>

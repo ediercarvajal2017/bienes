@@ -23,6 +23,7 @@ if ($appConfig['debug']) {
 
 use App\Controllers\ArchivoController;
 use App\Controllers\AsignacionController;
+use App\Controllers\AuditoriaController;
 use App\Controllers\AuthController;
 use App\Controllers\BajaController;
 use App\Controllers\BienController;
@@ -42,6 +43,7 @@ use App\Controllers\HallazgoController;
 use App\Controllers\InstitucionController;
 use App\Controllers\ManualController;
 use App\Controllers\MovimientoController;
+use App\Controllers\PapeleraController;
 use App\Controllers\PasswordController;
 use App\Controllers\QrController;
 use App\Controllers\QrMasivoController;
@@ -144,6 +146,11 @@ $router->post('/cargos', [CargoController::class, 'guardar'], [AuthMiddleware::c
 $router->post('/cargos/{id}', [CargoController::class, 'actualizar'], [AuthMiddleware::class, SuperusuarioMiddleware::class]);
 $router->post('/cargos/{id}/estado', [CargoController::class, 'cambiarEstado'], [AuthMiddleware::class, SuperusuarioMiddleware::class]);
 $router->post('/cargos/{id}/eliminar', [CargoController::class, 'eliminar'], [AuthMiddleware::class, SuperusuarioMiddleware::class]);
+
+$router->get('/papelera', [PapeleraController::class, 'index'], [AuthMiddleware::class, SuperusuarioMiddleware::class]);
+$router->post('/papelera/{tipo}/{id}/restaurar', [PapeleraController::class, 'restaurar'], [AuthMiddleware::class, SuperusuarioMiddleware::class]);
+
+$router->get('/auditoria', [AuditoriaController::class, 'index'], [AuthMiddleware::class, SuperusuarioMiddleware::class]);
 
 $router->get('/espacios', [EspacioController::class, 'index'], [
     AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':espacios.ver',
