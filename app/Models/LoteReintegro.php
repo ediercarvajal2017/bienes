@@ -92,13 +92,14 @@ final class LoteReintegro
     {
         $stmt = Database::connection()->prepare(
             'SELECT m.fecha AS fecha_reintegro, m.destino_texto, m.observaciones,
-                    b.codigo_identificacion, b.descripcion, b.marca, b.valor,
+                    b.codigo_identificacion, b.descripcion, b.marca, b.valor, b.categoria_id, c.nombre AS categoria_nombre,
                     CONCAT(eo.codigo, " - ", eo.nombre) AS espacio_origen_nombre
              FROM movimientos m
              JOIN bienes b ON b.id = m.bien_id
+             LEFT JOIN categorias_bienes c ON c.id = b.categoria_id
              LEFT JOIN espacios eo ON eo.id = m.espacio_origen_id
              WHERE m.lote_reintegro_id = ?
-             ORDER BY b.codigo_identificacion'
+             ORDER BY c.nombre, b.codigo_identificacion'
         );
         $stmt->execute([$loteId]);
 

@@ -130,26 +130,52 @@ final class ReporteService
      * exacto en Excel. El "responsable que entrega" siempre es el rector de la
      * institución (así lo exige la Alcaldía, sin importar quién operó el reintegro
      * en el sistema); el "responsable que recibe" es la bodega de reintegro, un dato
-     * fijo que no depende de la institución. Si el lote tiene más bienes de los que
-     * caben en un comprobante, se reparten en varias hojas.
+     * fijo que no depende de la institución. Los bienes se agrupan por categoría
+     * (cada categoría en sus propias hojas) y, dentro de cada categoría, se reparten
+     * en bloques de self::REINTEGRO_BIENES_POR_HOJA si no caben en un solo comprobante.
+     * "Sin categoría" es solo un resguardo para lotes antiguos: el flujo de reintegro
+     * ya exige categoría, así que en lotes nuevos no debería aparecer.
      */
     public static function comprobanteReintegroLote(array $lote, array $bienes, array $rector): Spreadsheet
     {
         $spreadsheet = new Spreadsheet();
         $spreadsheet->removeSheetByIndex(0);
 
-        $paginas = array_chunk($bienes, self::REINTEGRO_BIENES_POR_HOJA) ?: [[]];
-        $totalPaginas = count($paginas);
+        $grupos = [];
+        foreach ($bienes as $bien) {
+            $grupos[$bien['categoria_nombre'] ?? 'Sin categoría'][] = $bien;
+        }
+        if ($grupos === []) {
+            $grupos = ['Sin bienes' => []];
+        }
 
-        foreach ($paginas as $indice => $bienesPagina) {
-            $sheet = $spreadsheet->createSheet();
-            $sheet->setTitle($totalPaginas > 1 ? 'Comprobante ' . ($indice + 1) : 'Comprobante');
-            self::dibujarComprobanteReintegro($sheet, $lote, $bienesPagina, $rector);
+        foreach ($grupos as $categoria => $bienesCategoria) {
+            $paginas = array_chunk($bienesCategoria, self::REINTEGRO_BIENES_POR_HOJA) ?: [[]];
+            $totalPaginas = count($paginas);
+
+            foreach ($paginas as $indice => $bienesPagina) {
+                $sheet = $spreadsheet->createSheet();
+                $titulo = 'Comprobante - ' . $categoria . ($totalPaginas > 1 ? ' ' . ($indice + 1) : '');
+                $sheet->setTitle(self::tituloHojaValido($titulo));
+                self::dibujarComprobanteReintegro($sheet, $lote, $bienesPagina, $rector);
+            }
         }
 
         $spreadsheet->setActiveSheetIndex(0);
 
         return $spreadsheet;
+    }
+
+    /**
+     * Los nombres de hoja de Excel no aceptan : \ / ? * [ ] y están limitados a 31
+     * caracteres; el nombre de una categoría lo escribe un administrador sin esa
+     * restricción en mente, así que hay que sanearlo antes de usarlo como título.
+     */
+    private static function tituloHojaValido(string $titulo): string
+    {
+        $titulo = str_replace([':', '\\', '/', '?', '*', '[', ']'], '-', $titulo);
+
+        return mb_substr($titulo, 0, 31);
     }
 
     /**

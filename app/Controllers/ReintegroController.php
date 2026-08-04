@@ -271,8 +271,8 @@ final class ReintegroController
     /**
      * Agrupa bienes en un reintegro masivo dentro de una única transacción (todo o nada
      * ante un error de BD). Los bienes que ya no cumplen las condiciones (no asignados,
-     * de otra institución) se omiten en silencio; se cuenta solo lo que sí se procesó.
-     * El lote se genera después, como acción manual aparte.
+     * de otra institución, sin categoría) se omiten en silencio; se cuenta solo lo que sí
+     * se procesó. El lote se genera después, como acción manual aparte.
      */
     private function reintegrarLote(array $bienIds, string $fecha, string $destino, ?string $observaciones): ?int
     {
@@ -288,6 +288,10 @@ final class ReintegroController
                 }
 
                 if (!Auth::esSuperusuario() && (int) $bien['institucion_id'] !== Auth::institucionId()) {
+                    continue;
+                }
+
+                if ($bien['categoria_id'] === null) {
                     continue;
                 }
 

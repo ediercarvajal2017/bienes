@@ -33,6 +33,7 @@ use App\Core\Url;
         <tr>
             <th>Código</th>
             <th>Descripción</th>
+            <th>Categoría</th>
             <th>Fecha de reintegro</th>
             <th>Destino</th>
             <th>Espacio de origen</th>
@@ -44,6 +45,9 @@ use App\Core\Url;
             <tr>
                 <td class="mono" data-label="Código"><?= htmlspecialchars($b['codigo_identificacion'], ENT_QUOTES) ?></td>
                 <td data-label="Descripción"><?= htmlspecialchars($b['descripcion'], ENT_QUOTES) ?></td>
+                <td class="text-muted" data-label="Categoría">
+                    <?= !empty($b['categoria_nombre']) ? htmlspecialchars($b['categoria_nombre'], ENT_QUOTES) : '—' ?>
+                </td>
                 <td class="text-muted mono" data-label="Fecha de reintegro"><?= htmlspecialchars($b['fecha_reintegro'], ENT_QUOTES) ?></td>
                 <td class="text-muted" data-label="Destino"><?= htmlspecialchars($b['destino_texto'], ENT_QUOTES) ?></td>
                 <td class="text-muted" data-label="Espacio de origen">

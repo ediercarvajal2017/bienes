@@ -117,6 +117,12 @@ final class MovimientoController
         $bien = $this->bienDeLaInstitucion($id);
         $asignacionActiva = $this->verificarAutoridadSobreMovimiento($id);
 
+        if ($bien['categoria_id'] === null) {
+            Session::flash('error', 'Este bien no tiene categoría asignada; asígnale una antes de reintegrarlo.');
+            header('Location: ' . Url::to("/bienes/{$id}/editar"));
+            exit;
+        }
+
         $request = new Request();
         $this->verificarCsrf($request, $id);
 
