@@ -17,7 +17,7 @@ final class Usuario
              FROM usuarios u
              JOIN roles r ON r.id = u.rol_id
              JOIN instituciones i ON i.id = u.institucion_id
-             WHERE u.email = ?'
+             WHERE u.email = ? AND u.eliminado_en IS NULL'
         );
         $stmt->execute([$email]);
         $usuario = $stmt->fetch();
@@ -52,7 +52,7 @@ final class Usuario
             'SELECT u.documento, u.nombres, u.apellidos
              FROM usuarios u
              JOIN roles r ON r.id = u.rol_id
-             WHERE u.institucion_id = ? AND r.nombre = "rector" AND u.activo = 1
+             WHERE u.institucion_id = ? AND r.nombre = "rector" AND u.activo = 1 AND u.eliminado_en IS NULL
              ORDER BY u.id
              LIMIT 1'
         );
@@ -108,7 +108,7 @@ final class Usuario
              JOIN roles r ON r.id = u.rol_id
              JOIN cargos c ON c.id = u.cargo_id
              JOIN instituciones i ON i.id = u.institucion_id
-             WHERE u.id = ?'
+             WHERE u.id = ? AND u.eliminado_en IS NULL'
         );
         $stmt->execute([$id]);
 
@@ -154,7 +154,7 @@ final class Usuario
      */
     private static function condicionesListado(?int $institucionId, ?string $busqueda): array
     {
-        $condiciones = [];
+        $condiciones = ['u.eliminado_en IS NULL'];
         $params = [];
 
         if ($institucionId !== null) {
@@ -168,7 +168,7 @@ final class Usuario
             array_push($params, $termino, $termino, $termino, $termino, $termino);
         }
 
-        $sql = $condiciones ? ' WHERE ' . implode(' AND ', $condiciones) : '';
+        $sql = ' WHERE ' . implode(' AND ', $condiciones);
 
         return [$sql, $params];
     }
@@ -183,11 +183,12 @@ final class Usuario
                 FROM usuarios u
                 JOIN roles r ON r.id = u.rol_id
                 JOIN cargos c ON c.id = u.cargo_id
-                JOIN instituciones i ON i.id = u.institucion_id';
+                JOIN instituciones i ON i.id = u.institucion_id
+                WHERE u.eliminado_en IS NULL';
         $params = [];
 
         if ($institucionId !== null) {
-            $sql .= ' WHERE u.institucion_id = ?';
+            $sql .= ' AND u.institucion_id = ?';
             $params[] = $institucionId;
         }
 
@@ -244,6 +245,14 @@ final class Usuario
         Database::connection()->prepare('UPDATE usuarios SET activo = ? WHERE id = ?')->execute([(int) $activo, $id]);
     }
 
+    /**
+     * Antes solo cubría asignaciones/movimientos/evidencias/bajas/cargas/bienes creados
+     * — se le agregaron jornadas y verificaciones/hallazgos porque esas tablas también
+     * referencian al usuario sin CASCADE, así que un usuario cuya única actividad fuera
+     * gestionar una jornada de verificación pasaba este chequeo como "libre" y luego el
+     * DELETE fallaba igual por la restricción de la base de datos, con un error 500 en
+     * vez de un aviso claro.
+     */
     public static function estaEnUso(int $id): bool
     {
         $pdo = Database::connection();
@@ -264,11 +273,15 @@ final class Usuario
             'SELECT id FROM cargas_masivas WHERE usuario_id = ? LIMIT 1',
             'SELECT id FROM espacio_responsables WHERE usuario_id = ? LIMIT 1',
             'SELECT id FROM bienes WHERE created_by = ? LIMIT 1',
+            'SELECT id FROM jornadas_verificacion WHERE creada_por = ? LIMIT 1',
+            'SELECT id FROM verificaciones_bienes WHERE usuario_id = ? OR revisada_por = ? LIMIT 1',
+            'SELECT id FROM hallazgos_verificacion WHERE reportado_por = ? OR resuelto_por = ? LIMIT 1',
         ];
 
         foreach ($consultas as $sql) {
             $stmt = $pdo->prepare($sql);
-            $stmt->execute([$id]);
+            $parametros = substr_count($sql, '?') === 2 ? [$id, $id] : [$id];
+            $stmt->execute($parametros);
             if ($stmt->fetchColumn()) {
                 return true;
             }
@@ -277,9 +290,22 @@ final class Usuario
         return false;
     }
 
-    public static function eliminar(int $id): void
+    /**
+     * Borrado suave: la fila sigue en la base de datos (recuperable desde la papelera
+     * de superusuario), solo deja de aparecer en los listados normales.
+     */
+    public static function eliminar(int $id, int $eliminadoPor): void
     {
-        Database::connection()->prepare('DELETE FROM usuarios WHERE id = ?')->execute([$id]);
+        Database::connection()
+            ->prepare('UPDATE usuarios SET eliminado_en = NOW(), eliminado_por = ? WHERE id = ?')
+            ->execute([$eliminadoPor, $id]);
+    }
+
+    public static function restaurar(int $id): void
+    {
+        Database::connection()
+            ->prepare('UPDATE usuarios SET eliminado_en = NULL, eliminado_por = NULL WHERE id = ?')
+            ->execute([$id]);
     }
 
     public static function existeDocumento(string $documento, ?int $exceptId = null): bool

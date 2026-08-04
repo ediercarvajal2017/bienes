@@ -49,7 +49,7 @@ use App\Core\Url;
                         </button>
                     </form>
                     <form method="post" action="<?= Url::to('/cargos/' . $c['id'] . '/eliminar') ?>" class="d-inline"
-                          onsubmit="return confirm('¿Eliminar este cargo de forma permanente? Solo es posible si ningún usuario lo tiene asignado.');">
+                          onsubmit="return confirm('¿Eliminar este cargo? Solo es posible si ningún usuario lo tiene asignado. Un superusuario podrá restaurarlo desde la papelera si fue un error.');">
                         <?= Csrf::field() ?>
                         <button type="submit" class="btn btn-sm btn-outline-danger">Eliminar</button>
                     </form>

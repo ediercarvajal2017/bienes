@@ -74,7 +74,7 @@ $urlBasePaginacion = Url::to('/espacios') . ($busqueda !== '' ? '?q=' . urlencod
                             </button>
                         </form>
                         <form method="post" action="<?= Url::to('/espacios/' . $e['id'] . '/eliminar') ?>" class="d-inline"
-                              onsubmit="return confirm('¿Eliminar este espacio de forma permanente? Solo es posible si no tiene asignaciones ni movimientos registrados.');">
+                              onsubmit="return confirm('¿Eliminar este espacio? Solo es posible si no tiene asignaciones ni movimientos registrados. Un superusuario podrá restaurarlo desde la papelera si fue un error.');">
                             <?= Csrf::field() ?>
                             <button type="submit" class="btn btn-sm btn-outline-danger">Eliminar</button>
                         </form>

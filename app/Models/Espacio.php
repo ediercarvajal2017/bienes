@@ -41,7 +41,7 @@ final class Espacio
 
     private static function condicionesListado(?int $institucionId, ?string $busqueda): array
     {
-        $condiciones = [];
+        $condiciones = ['e.eliminado_en IS NULL'];
         $params = [];
 
         if ($institucionId !== null) {
@@ -55,7 +55,7 @@ final class Espacio
             array_push($params, $termino, $termino);
         }
 
-        $sql = $condiciones ? ' WHERE ' . implode(' AND ', $condiciones) : '';
+        $sql = ' WHERE ' . implode(' AND ', $condiciones);
 
         return [$sql, $params];
     }
@@ -76,7 +76,7 @@ final class Espacio
 
     public static function find(int $id): ?array
     {
-        $stmt = Database::connection()->prepare('SELECT * FROM espacios WHERE id = ?');
+        $stmt = Database::connection()->prepare('SELECT * FROM espacios WHERE id = ? AND eliminado_en IS NULL');
         $stmt->execute([$id]);
 
         return $stmt->fetch() ?: null;
@@ -85,7 +85,7 @@ final class Espacio
     public static function listadoParaSelect(int $institucionId): array
     {
         $stmt = Database::connection()->prepare(
-            'SELECT id, nombre, codigo FROM espacios WHERE institucion_id = ? AND activo = 1 ORDER BY codigo'
+            'SELECT id, nombre, codigo FROM espacios WHERE institucion_id = ? AND activo = 1 AND eliminado_en IS NULL ORDER BY codigo'
         );
         $stmt->execute([$institucionId]);
 
@@ -109,7 +109,7 @@ final class Espacio
             'SELECT e.id, e.nombre, e.codigo
              FROM espacios e
              JOIN espacio_responsables er ON er.espacio_id = e.id
-             WHERE er.usuario_id = ? AND e.institucion_id = ? AND e.activo = 1
+             WHERE er.usuario_id = ? AND e.institucion_id = ? AND e.activo = 1 AND e.eliminado_en IS NULL
              ORDER BY e.codigo'
         );
         $stmt->execute([$usuarioId, $institucionId]);
@@ -181,25 +181,49 @@ final class Espacio
         Database::connection()->prepare('UPDATE espacios SET activo = ? WHERE id = ?')->execute([(int) $activo, $id]);
     }
 
+    /**
+     * Antes solo cubría asignaciones y el destino de un traslado — se le agregó el
+     * origen del movimiento y los hallazgos, que también referencian al espacio sin
+     * CASCADE, por la misma razón que en Usuario::estaEnUso().
+     */
     public static function estaEnUso(int $id): bool
     {
         $pdo = Database::connection();
 
-        $stmt = $pdo->prepare('SELECT id FROM asignaciones WHERE espacio_id = ? LIMIT 1');
-        $stmt->execute([$id]);
-        if ($stmt->fetchColumn()) {
-            return true;
+        $consultas = [
+            'SELECT id FROM asignaciones WHERE espacio_id = ? LIMIT 1',
+            'SELECT id FROM movimientos WHERE espacio_destino_id = ? OR espacio_origen_id = ? LIMIT 1',
+            'SELECT id FROM hallazgos_verificacion WHERE espacio_id = ? LIMIT 1',
+        ];
+
+        foreach ($consultas as $sql) {
+            $stmt = $pdo->prepare($sql);
+            $parametros = substr_count($sql, '?') === 2 ? [$id, $id] : [$id];
+            $stmt->execute($parametros);
+            if ($stmt->fetchColumn()) {
+                return true;
+            }
         }
 
-        $stmt = $pdo->prepare('SELECT id FROM movimientos WHERE espacio_destino_id = ? LIMIT 1');
-        $stmt->execute([$id]);
-
-        return (bool) $stmt->fetchColumn();
+        return false;
     }
 
-    public static function eliminar(int $id): void
+    /**
+     * Borrado suave: la fila sigue en la base de datos (recuperable desde la papelera
+     * de superusuario), solo deja de aparecer en los listados normales.
+     */
+    public static function eliminar(int $id, int $eliminadoPor): void
     {
-        Database::connection()->prepare('DELETE FROM espacios WHERE id = ?')->execute([$id]);
+        Database::connection()
+            ->prepare('UPDATE espacios SET eliminado_en = NOW(), eliminado_por = ? WHERE id = ?')
+            ->execute([$eliminadoPor, $id]);
+    }
+
+    public static function restaurar(int $id): void
+    {
+        Database::connection()
+            ->prepare('UPDATE espacios SET eliminado_en = NULL, eliminado_por = NULL WHERE id = ?')
+            ->execute([$id]);
     }
 
     public static function buscarPorCodigoInstitucion(int $institucionId, string $codigo): ?array

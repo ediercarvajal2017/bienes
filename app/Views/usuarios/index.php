@@ -89,7 +89,7 @@ use App\Core\View;
                             </button>
                         </form>
                         <form method="post" action="<?= Url::to('/usuarios/' . $u['id'] . '/eliminar') ?>" class="d-inline"
-                              onsubmit="return confirm('¿Eliminar este usuario de forma permanente? Solo es posible si no tiene movimientos ni registros asociados.');">
+                              onsubmit="return confirm('¿Eliminar este usuario? Solo es posible si no tiene movimientos ni registros asociados. Un superusuario podrá restaurarlo desde la papelera si fue un error.');">
                             <?= Csrf::field() ?>
                             <button type="submit" class="btn btn-sm btn-outline-danger">Eliminar</button>
                         </form>

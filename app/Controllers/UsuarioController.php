@@ -12,6 +12,7 @@ use App\Core\Url;
 use App\Core\View;
 use App\Helpers\Paginador;
 use App\Helpers\Uploader;
+use App\Models\Auditoria;
 use App\Models\Cargo;
 use App\Models\Institucion;
 use App\Models\Usuario;
@@ -177,8 +178,11 @@ final class UsuarioController
         if (Usuario::estaEnUso($id)) {
             Session::flash('error', 'No se puede eliminar: el usuario tiene movimientos o registros asociados. Desactívalo en su lugar.');
         } else {
-            Usuario::eliminar($id);
-            Session::flash('ok', 'Usuario eliminado.');
+            $snapshot = $usuario;
+            unset($snapshot['password_hash']);
+            Usuario::eliminar($id, Auth::id());
+            Auditoria::registrar(Auth::id(), (int) $usuario['institucion_id'], 'eliminar', 'usuario', $id, $snapshot);
+            Session::flash('ok', 'Usuario enviado a la papelera. Un superusuario puede restaurarlo si fue un error.');
         }
 
         header('Location: ' . Url::to('/usuarios'));

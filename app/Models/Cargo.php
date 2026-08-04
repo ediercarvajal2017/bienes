@@ -10,17 +10,17 @@ final class Cargo
 {
     public static function activos(): array
     {
-        return Database::connection()->query('SELECT * FROM cargos WHERE activo = 1 ORDER BY nombre')->fetchAll();
+        return Database::connection()->query('SELECT * FROM cargos WHERE activo = 1 AND eliminado_en IS NULL ORDER BY nombre')->fetchAll();
     }
 
     public static function all(): array
     {
-        return Database::connection()->query('SELECT * FROM cargos ORDER BY nombre')->fetchAll();
+        return Database::connection()->query('SELECT * FROM cargos WHERE eliminado_en IS NULL ORDER BY nombre')->fetchAll();
     }
 
     public static function find(int $id): ?array
     {
-        $stmt = Database::connection()->prepare('SELECT * FROM cargos WHERE id = ?');
+        $stmt = Database::connection()->prepare('SELECT * FROM cargos WHERE id = ? AND eliminado_en IS NULL');
         $stmt->execute([$id]);
 
         return $stmt->fetch() ?: null;
@@ -28,7 +28,7 @@ final class Cargo
 
     public static function findByNombre(string $nombre): ?array
     {
-        $stmt = Database::connection()->prepare('SELECT * FROM cargos WHERE nombre = ? AND activo = 1');
+        $stmt = Database::connection()->prepare('SELECT * FROM cargos WHERE nombre = ? AND activo = 1 AND eliminado_en IS NULL');
         $stmt->execute([$nombre]);
 
         return $stmt->fetch() ?: null;
@@ -60,9 +60,22 @@ final class Cargo
         return (bool) $stmt->fetchColumn();
     }
 
-    public static function eliminar(int $id): void
+    /**
+     * Borrado suave: la fila sigue en la base de datos (recuperable desde la papelera
+     * de superusuario), solo deja de aparecer en los listados normales.
+     */
+    public static function eliminar(int $id, int $eliminadoPor): void
     {
-        Database::connection()->prepare('DELETE FROM cargos WHERE id = ?')->execute([$id]);
+        Database::connection()
+            ->prepare('UPDATE cargos SET eliminado_en = NOW(), eliminado_por = ? WHERE id = ?')
+            ->execute([$eliminadoPor, $id]);
+    }
+
+    public static function restaurar(int $id): void
+    {
+        Database::connection()
+            ->prepare('UPDATE cargos SET eliminado_en = NULL, eliminado_por = NULL WHERE id = ?')
+            ->execute([$id]);
     }
 
     public static function existeNombre(string $nombre, ?int $exceptId = null): bool

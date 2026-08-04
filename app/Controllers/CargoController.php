@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Core\Auth;
 use App\Core\Csrf;
 use App\Core\Request;
 use App\Core\Session;
 use App\Core\Url;
 use App\Core\View;
+use App\Models\Auditoria;
 use App\Models\Cargo;
 
 final class CargoController
@@ -96,8 +98,9 @@ final class CargoController
         } elseif (Cargo::estaEnUso($id)) {
             Session::flash('error', 'No se puede eliminar: hay usuarios con este cargo asignado. Desactívalo en su lugar.');
         } else {
-            Cargo::eliminar($id);
-            Session::flash('ok', 'Cargo eliminado.');
+            Cargo::eliminar($id, Auth::id());
+            Auditoria::registrar(Auth::id(), Auth::institucionId(), 'eliminar', 'cargo', $id, $cargo);
+            Session::flash('ok', 'Cargo enviado a la papelera. Un superusuario puede restaurarlo si fue un error.');
         }
 
         header('Location: ' . Url::to('/cargos'));

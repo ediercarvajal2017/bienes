@@ -11,6 +11,7 @@ use App\Core\Session;
 use App\Core\Url;
 use App\Core\View;
 use App\Helpers\Paginador;
+use App\Models\Auditoria;
 use App\Models\Espacio;
 use App\Models\Institucion;
 use App\Models\Usuario;
@@ -151,8 +152,9 @@ final class EspacioController
         if (Espacio::estaEnUso($id)) {
             Session::flash('error', 'No se puede eliminar: el espacio tiene asignaciones o movimientos registrados. Desactívalo en su lugar.');
         } else {
-            Espacio::eliminar($id);
-            Session::flash('ok', 'Espacio eliminado.');
+            Espacio::eliminar($id, Auth::id());
+            Auditoria::registrar(Auth::id(), (int) $espacio['institucion_id'], 'eliminar', 'espacio', $id, $espacio);
+            Session::flash('ok', 'Espacio enviado a la papelera. Un superusuario puede restaurarlo si fue un error.');
         }
 
         header('Location: ' . Url::to('/espacios'));

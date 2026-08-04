@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Core\Auth;
 use App\Core\Csrf;
 use App\Core\Request;
 use App\Core\Session;
 use App\Core\Url;
 use App\Core\View;
+use App\Models\Auditoria;
 use App\Models\Categoria;
 
 final class CategoriaController
@@ -96,8 +98,9 @@ final class CategoriaController
         } elseif (Categoria::estaEnUso($id)) {
             Session::flash('error', 'No se puede eliminar: hay bienes registrados en esta categoría. Desactívala en su lugar.');
         } else {
-            Categoria::eliminar($id);
-            Session::flash('ok', 'Categoría eliminada.');
+            Categoria::eliminar($id, Auth::id());
+            Auditoria::registrar(Auth::id(), Auth::institucionId(), 'eliminar', 'categoria', $id, $categoria);
+            Session::flash('ok', 'Categoría enviada a la papelera. Un superusuario puede restaurarla si fue un error.');
         }
 
         header('Location: ' . Url::to('/categorias'));

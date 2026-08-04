@@ -49,7 +49,7 @@ use App\Core\Url;
                         </button>
                     </form>
                     <form method="post" action="<?= Url::to('/categorias/' . $c['id'] . '/eliminar') ?>" class="d-inline"
-                          onsubmit="return confirm('¿Eliminar esta categoría de forma permanente? Solo es posible si ningún bien la usa.');">
+                          onsubmit="return confirm('¿Eliminar esta categoría? Solo es posible si ningún bien la usa. Un superusuario podrá restaurarla desde la papelera si fue un error.');">
                         <?= Csrf::field() ?>
                         <button type="submit" class="btn btn-sm btn-outline-danger">Eliminar</button>
                     </form>
