@@ -351,7 +351,9 @@ final class ReporteService
         $sheet->getStyle('A6:K7')->applyFromArray($negrita);
         $sheet->getStyle('A6:K7')->applyFromArray($centrado);
         $sheet->getStyle('A8:K8')->applyFromArray($negrita);
+        $sheet->getStyle('A9:K10')->applyFromArray($centrado);
         $sheet->getStyle('A11:K11')->applyFromArray($negrita);
+        $sheet->getStyle('A12:K13')->applyFromArray($centrado);
         $sheet->getStyle('A14:K14')->applyFromArray($negrita);
         $sheet->getStyle('A14:K14')->applyFromArray($centrado);
         $sheet->getStyle('C15:C22')->applyFromArray($centrado);
