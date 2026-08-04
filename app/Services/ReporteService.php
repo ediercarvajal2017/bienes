@@ -8,10 +8,12 @@ use App\Models\Bien;
 use App\Models\Movimiento;
 use App\Models\Verificacion;
 use PhpOffice\PhpSpreadsheet\Cell\DataType;
+use PhpOffice\PhpSpreadsheet\Shared\Drawing as MedidaDibujo;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Style\Font;
 use PhpOffice\PhpSpreadsheet\Worksheet\Drawing;
 use PhpOffice\PhpSpreadsheet\Worksheet\PageSetup;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
@@ -150,18 +152,88 @@ final class ReporteService
         return $spreadsheet;
     }
 
-    private static function insertarImagen(Worksheet $sheet, string $ruta, string $celda, int $ancho, int $alto): void
-    {
+    /**
+     * Inserta una imagen ajustada a un área de celdas (conservando su proporción,
+     * para no verla deforme), y la centra dentro de esa área si sobra espacio.
+     */
+    private static function insertarImagenAjustada(
+        Worksheet $sheet,
+        string $ruta,
+        string $celda,
+        array $columnas,
+        array $filas,
+        int $anchoNatural,
+        int $altoNatural
+    ): void {
         if (!is_file($ruta)) {
             return;
         }
 
+        $anchoDisponible = self::anchoColumnasPx($sheet, $columnas);
+        $altoDisponible = self::altoFilasPx($sheet, $filas);
+
+        $escala = min($anchoDisponible / $anchoNatural, $altoDisponible / $altoNatural);
+        $ancho = (int) round($anchoNatural * $escala);
+        $alto = (int) round($altoNatural * $escala);
+
         $dibujo = new Drawing();
         $dibujo->setPath($ruta);
+        $dibujo->setResizeProportional(false);
+        $dibujo->setCoordinates($celda);
+        $dibujo->setWidth($ancho);
+        $dibujo->setHeight($alto);
+        $dibujo->setOffsetX((int) round(($anchoDisponible - $ancho) / 2));
+        $dibujo->setOffsetY((int) round(($altoDisponible - $alto) / 2));
+        $dibujo->setWorksheet($sheet);
+    }
+
+    /**
+     * Inserta una imagen al ancho exacto de un rango de columnas (p. ej. el ancho
+     * completo de la tabla de bienes), conservando su proporción original.
+     */
+    private static function insertarImagenAlAncho(
+        Worksheet $sheet,
+        string $ruta,
+        string $celda,
+        array $columnas,
+        int $anchoNatural,
+        int $altoNatural
+    ): void {
+        if (!is_file($ruta)) {
+            return;
+        }
+
+        $ancho = self::anchoColumnasPx($sheet, $columnas);
+        $alto = (int) round($altoNatural * ($ancho / $anchoNatural));
+
+        $dibujo = new Drawing();
+        $dibujo->setPath($ruta);
+        $dibujo->setResizeProportional(false);
         $dibujo->setCoordinates($celda);
         $dibujo->setWidth($ancho);
         $dibujo->setHeight($alto);
         $dibujo->setWorksheet($sheet);
+    }
+
+    private static function anchoColumnasPx(Worksheet $sheet, array $columnas): int
+    {
+        $fuente = new Font();
+        $total = 0;
+        foreach ($columnas as $columna) {
+            $total += MedidaDibujo::cellDimensionToPixels((float) $sheet->getColumnDimension($columna)->getWidth(), $fuente);
+        }
+
+        return $total;
+    }
+
+    private static function altoFilasPx(Worksheet $sheet, array $filas): int
+    {
+        $total = 0;
+        foreach ($filas as $fila) {
+            $total += MedidaDibujo::pointsToPixels($sheet->getRowDimension($fila)->getRowHeight());
+        }
+
+        return $total;
     }
 
     private static function dibujarComprobanteReintegro(Worksheet $sheet, array $lote, array $bienes, array $rector): void
@@ -176,6 +248,12 @@ final class ReporteService
         foreach (['H', 'I', 'J', 'K'] as $columna) {
             $sheet->getColumnDimension($columna)->setWidth(11);
         }
+        // Alto explícito de las filas del logo (2 a 4): sin esto, PhpSpreadsheet no
+        // reporta un alto de fila (usa -1) y no se puede calcular el área disponible
+        // para ajustar el logo a la celda.
+        $sheet->getRowDimension(2)->setRowHeight(15);
+        $sheet->getRowDimension(3)->setRowHeight(15);
+        $sheet->getRowDimension(4)->setRowHeight(15.75);
 
         $negrita = ['font' => ['bold' => true]];
         $centrado = ['alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER]];
@@ -286,8 +364,8 @@ final class ReporteService
             $sheet->getStyle($rango)->applyFromArray($grisEtiqueta);
         }
 
-        self::insertarImagen($sheet, self::REINTEGRO_LOGO, 'J2', 162, 61);
-        self::insertarImagen($sheet, self::REINTEGRO_TEXTO_LEGAL, 'A33', 832, 364);
+        self::insertarImagenAjustada($sheet, self::REINTEGRO_LOGO, 'J2', ['J', 'K'], [2, 3, 4], 162, 61);
+        self::insertarImagenAlAncho($sheet, self::REINTEGRO_TEXTO_LEGAL, 'A33', ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K'], 832, 364);
         $sheet->getStyle('A25:K28')->applyFromArray($bordeFino);
 
         // Página lista para imprimir tal como en el formato original de la Alcaldía,
