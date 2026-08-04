@@ -13,6 +13,7 @@ use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Worksheet\Drawing;
+use PhpOffice\PhpSpreadsheet\Worksheet\PageSetup;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use PhpOffice\PhpSpreadsheet\Writer\Csv;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
@@ -266,7 +267,9 @@ final class ReporteService
         $sheet->mergeCells('A30:K30');
         $sheet->mergeCells('A31:K31')->setCellValue('A31', self::REINTEGRO_RESOLUCION);
 
-        $sheet->getStyle('A2:K3')->applyFromArray($negrita);
+        $sheet->getStyle('A2:K4')->applyFromArray($negrita);
+        $sheet->getStyle('A2:K4')->applyFromArray($centrado);
+        $sheet->getStyle('A2:K4')->applyFromArray($bordeFino);
         $sheet->getStyle('A6:K7')->applyFromArray($negrita);
         $sheet->getStyle('A6:K7')->applyFromArray($centrado);
         $sheet->getStyle('A8:K8')->applyFromArray($negrita);
@@ -286,6 +289,23 @@ final class ReporteService
         self::insertarImagen($sheet, self::REINTEGRO_LOGO, 'J2', 162, 61);
         self::insertarImagen($sheet, self::REINTEGRO_TEXTO_LEGAL, 'A33', 832, 364);
         $sheet->getStyle('A25:K28')->applyFromArray($bordeFino);
+
+        // Página lista para imprimir tal como en el formato original de la Alcaldía,
+        // sin que quien la descargue tenga que configurar nada a mano: horizontal,
+        // tamaño A4 y los mismos márgenes del archivo oficial.
+        $pageSetup = $sheet->getPageSetup();
+        $pageSetup->setOrientation(PageSetup::ORIENTATION_LANDSCAPE);
+        $pageSetup->setPaperSize(PageSetup::PAPERSIZE_A4);
+        $pageSetup->setFitToPage(false);
+        $pageSetup->setScale(100);
+
+        $margenes = $sheet->getPageMargins();
+        $margenes->setTop(0.98425196850394);
+        $margenes->setBottom(0.15748031496063);
+        $margenes->setLeft(0.51181102362205);
+        $margenes->setRight(0.70866141732283);
+        $margenes->setHeader(0.31496062992126);
+        $margenes->setFooter(0.31496062992126);
     }
 
     /**
