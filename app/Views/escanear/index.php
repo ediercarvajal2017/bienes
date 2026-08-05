@@ -14,6 +14,9 @@ use App\Core\Url;
         <button type="button" id="btnCambiarCamara" class="btn btn-sm btn-outline-secondary d-none">
             <i class="bi bi-arrow-repeat me-1"></i>Cambiar cámara
         </button>
+        <button type="button" id="btnLinterna" class="btn btn-sm btn-outline-secondary d-none">
+            <i class="bi bi-flashlight me-1"></i>Linterna
+        </button>
     </div>
     <p id="mensajeEstadoCamara" class="small text-danger mt-2 mb-0"></p>
 </div>
@@ -39,12 +42,14 @@ use App\Core\Url;
 <script>
 (function () {
     const btnCambiar = document.getElementById('btnCambiarCamara');
+    const btnLinterna = document.getElementById('btnLinterna');
     const mensaje = document.getElementById('mensajeEstadoCamara');
     const lector = new Html5Qrcode('lector-qr');
 
     let camaras = [];
     let indiceCamara = 0;
     let escaneando = false;
+    let linternaEncendida = false;
 
     function irA(texto) {
         window.location.href = texto;
@@ -53,16 +58,36 @@ use App\Core\Url;
     function alDetectar(textoDecodificado) {
         if (!escaneando) { return; }
         escaneando = false;
+        mensaje.classList.remove('text-danger');
+        mensaje.classList.add('text-success');
+        mensaje.textContent = 'Código detectado, abriendo…';
         lector.stop().catch(function () {}).finally(function () {
             irA(textoDecodificado);
         });
+    }
+
+    // No todas las cámaras/navegadores exponen la linterna (Safari en iOS, por ejemplo,
+    // no la soporta vía web) — el botón solo se muestra cuando de verdad se puede usar.
+    function actualizarLinterna() {
+        linternaEncendida = false;
+        btnLinterna.classList.remove('btn-warning');
+        btnLinterna.classList.add('btn-outline-secondary', 'd-none');
+        try {
+            const soportada = lector.getRunningTrackCameraCapabilities().torchFeature().isSupported();
+            btnLinterna.classList.toggle('d-none', !soportada);
+        } catch (e) {
+            // Navegador sin soporte para esta API: la linterna queda oculta.
+        }
     }
 
     async function iniciar(cameraIdOConfig) {
         try {
             await lector.start(cameraIdOConfig, { fps: 10, qrbox: 240 }, alDetectar, function () {});
             escaneando = true;
+            mensaje.classList.remove('text-success');
+            mensaje.classList.add('text-danger');
             mensaje.textContent = '';
+            actualizarLinterna();
         } catch (e) {
             mensaje.textContent = 'No se pudo acceder a la cámara: ' + (e.message || e);
         }
@@ -92,6 +117,18 @@ use App\Core\Url;
             await lector.stop().catch(function () {});
         }
         await iniciar(camaras[indiceCamara].id);
+    });
+
+    btnLinterna.addEventListener('click', async function () {
+        try {
+            linternaEncendida = !linternaEncendida;
+            await lector.getRunningTrackCameraCapabilities().torchFeature().apply(linternaEncendida);
+            btnLinterna.classList.toggle('btn-warning', linternaEncendida);
+            btnLinterna.classList.toggle('btn-outline-secondary', !linternaEncendida);
+        } catch (e) {
+            linternaEncendida = !linternaEncendida;
+            mensaje.textContent = 'No se pudo controlar la linterna en este dispositivo.';
+        }
     });
 })();
 </script>

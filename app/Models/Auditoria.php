@@ -8,11 +8,10 @@ use App\Core\Database;
 use App\Helpers\Paginador;
 
 /**
- * Bitácora de acciones destructivas/reversibles (hoy: enviar a la papelera y
- * restaurar). La tabla `auditoria` ya existía en el esquema desde el inicio del
- * proyecto pero nunca se conectó a ningún código — este modelo es lo que la pone
- * en uso. No registra cada creación/edición del sistema, solo lo relacionado con
- * la papelera, que es lo que puede perder datos si nadie se entera a tiempo.
+ * Bitácora de quién hizo qué: crear, editar, activar/desactivar, eliminar (enviar a
+ * la papelera), restaurar y purgar. La tabla `auditoria` ya existía en el esquema
+ * desde el inicio del proyecto pero nunca se conectó a ningún código — este modelo
+ * es lo que la pone en uso.
  */
 final class Auditoria
 {
@@ -41,19 +40,69 @@ final class Auditoria
         ]);
     }
 
-    public static function listar(int $pagina = 1, int $porPagina = 50): array
+    public static function listar(array $filtros = [], int $pagina = 1, int $porPagina = 50): array
     {
+        [$whereSql, $params] = self::condiciones($filtros);
+
         $sql = 'SELECT a.*, u.nombres AS usuario_nombres, u.apellidos AS usuario_apellidos, i.nombre AS institucion_nombre
                 FROM auditoria a
                 LEFT JOIN usuarios u ON u.id = a.usuario_id
-                LEFT JOIN instituciones i ON i.id = a.institucion_id
-                ORDER BY a.created_at DESC' . Paginador::limitSql($pagina, $porPagina);
+                LEFT JOIN instituciones i ON i.id = a.institucion_id'
+               . $whereSql
+               . ' ORDER BY a.created_at DESC' . Paginador::limitSql($pagina, $porPagina);
 
-        return Database::connection()->query($sql)->fetchAll();
+        $stmt = Database::connection()->prepare($sql);
+        $stmt->execute($params);
+
+        return $stmt->fetchAll();
     }
 
-    public static function contar(): int
+    public static function contar(array $filtros = []): int
     {
-        return (int) Database::connection()->query('SELECT COUNT(*) FROM auditoria')->fetchColumn();
+        [$whereSql, $params] = self::condiciones($filtros);
+
+        $stmt = Database::connection()->prepare('SELECT COUNT(*) FROM auditoria a' . $whereSql);
+        $stmt->execute($params);
+
+        return (int) $stmt->fetchColumn();
+    }
+
+    /**
+     * $filtros admite: institucion_id, entidad, accion, desde (Y-m-d), hasta (Y-m-d).
+     * Cualquier clave ausente o vacía no se aplica.
+     */
+    private static function condiciones(array $filtros): array
+    {
+        $condiciones = [];
+        $params = [];
+
+        if (!empty($filtros['institucion_id'])) {
+            $condiciones[] = 'a.institucion_id = ?';
+            $params[] = (int) $filtros['institucion_id'];
+        }
+
+        if (!empty($filtros['entidad'])) {
+            $condiciones[] = 'a.entidad = ?';
+            $params[] = $filtros['entidad'];
+        }
+
+        if (!empty($filtros['accion'])) {
+            $condiciones[] = 'a.accion = ?';
+            $params[] = $filtros['accion'];
+        }
+
+        if (!empty($filtros['desde'])) {
+            $condiciones[] = 'a.created_at >= ?';
+            $params[] = $filtros['desde'] . ' 00:00:00';
+        }
+
+        if (!empty($filtros['hasta'])) {
+            $condiciones[] = 'a.created_at <= ?';
+            $params[] = $filtros['hasta'] . ' 23:59:59';
+        }
+
+        $sql = $condiciones ? ' WHERE ' . implode(' AND ', $condiciones) : '';
+
+        return [$sql, $params];
     }
 }

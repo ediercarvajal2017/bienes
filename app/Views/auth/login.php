@@ -45,6 +45,10 @@
                 <label class="form-label small">Contraseña</label>
                 <input type="password" name="password" class="form-control" required>
             </div>
+            <div class="form-check mb-3">
+                <input type="checkbox" name="recordar" value="1" id="recordar" class="form-check-input">
+                <label class="form-check-label small" for="recordar">Recordarme en este dispositivo</label>
+            </div>
             <button type="submit" class="btn btn-primary w-100">Ingresar</button>
         </form>
 
@@ -56,5 +60,7 @@
 </div>
 
 <script src="<?= Url::asset('/assets/js/tema.js') ?>"></script>
+<script src="<?= Url::asset('/assets/js/alertas.js') ?>"></script>
+<script src="<?= Url::asset('/assets/js/mostrar-contrasena.js') ?>"></script>
 </body>
 </html>

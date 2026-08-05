@@ -43,6 +43,10 @@ final class AuthController
         $password = (string) $request->input('password');
 
         if ($email !== '' && $password !== '' && Auth::attempt($email, $password)) {
+            if ($request->input('recordar')) {
+                Session::extender(30);
+            }
+
             header('Location: ' . Url::to('/dashboard'));
             exit;
         }

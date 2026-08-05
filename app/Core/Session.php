@@ -29,6 +29,23 @@ final class Session
         session_regenerate_id(true);
     }
 
+    /**
+     * "Recordarme" del login: la sesión ya se creó como cookie de sesión normal
+     * (lifetime 0, se borra al cerrar el navegador — ver start()); esto reemite la
+     * MISMA cookie con una fecha de expiración fija, sin tocar los datos de sesión
+     * ni regenerar el id. Debe llamarse antes de cualquier salida al navegador.
+     */
+    public static function extender(int $dias): void
+    {
+        setcookie(session_name(), session_id(), [
+            'expires' => time() + $dias * 86400,
+            'path' => '/',
+            'httponly' => true,
+            'samesite' => 'Strict',
+            'secure' => (($_SERVER['HTTPS'] ?? '') === 'on'),
+        ]);
+    }
+
     public static function put(string $key, mixed $value): void
     {
         $_SESSION[$key] = $value;

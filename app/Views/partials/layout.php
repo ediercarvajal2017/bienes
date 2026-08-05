@@ -22,6 +22,28 @@ $grupoAbierto = static function (array $prefijos) use ($rutaActual): string {
     return '';
 };
 
+/**
+ * Mismos grupos y prefijos que $grupoAbierto() más abajo, pero solo para nombrar el
+ * grupo en el breadcrumb — se mantienen separados a propósito: unificarlos obligaría
+ * a tocar el árbol del menú lateral (con sus permisos por ítem) solo para resolver un
+ * texto, más riesgo que la pequeña duplicación de estas 4 listas de prefijos.
+ */
+$gruposBreadcrumb = [
+    ['prefijos' => ['/bienes', '/espacios', '/asignaciones', '/reintegros', '/escanear'], 'titulo' => 'Operación diaria'],
+    ['prefijos' => ['/bajas', '/verificaciones'], 'titulo' => 'Verificación y control'],
+    ['prefijos' => ['/reportes', '/cartera', '/formatos-reintegro', '/formatos-plaqueteo', '/facturas'], 'titulo' => 'Reportes y evidencia'],
+    ['prefijos' => ['/cargas-masivas', '/usuarios', '/instituciones', '/cargos', '/categorias', '/papelera', '/auditoria'], 'titulo' => 'Administración'],
+];
+$grupoActual = null;
+foreach ($gruposBreadcrumb as $g) {
+    foreach ($g['prefijos'] as $prefijo) {
+        if (str_starts_with($rutaActual, $prefijo)) {
+            $grupoActual = $g['titulo'];
+            break 2;
+        }
+    }
+}
+
 ?><!DOCTYPE html>
 <html lang="es">
 <head>
@@ -46,6 +68,8 @@ $grupoAbierto = static function (array $prefijos) use ($rutaActual): string {
     <meta name="theme-color" content="#1F6F54">
 </head>
 <body>
+
+<a class="visually-hidden-focusable" href="#contenidoPrincipal">Saltar al contenido</a>
 
 <nav class="navbar navbar-sigebi navbar-expand px-3">
     <button type="button" id="btnMenu" class="navbar-toggle me-2" aria-label="Abrir menú">
@@ -170,12 +194,25 @@ $grupoAbierto = static function (array $prefijos) use ($rutaActual): string {
         </nav>
     </aside>
 
-    <main class="flex-fill p-4">
+    <main id="contenidoPrincipal" class="flex-fill p-4">
+        <?php if ($rutaActual !== '/dashboard'): ?>
+            <nav aria-label="Ruta de navegación" class="mb-3">
+                <ol class="breadcrumb small mb-0">
+                    <li class="breadcrumb-item"><a href="<?= Url::to('/dashboard') ?>">Panel principal</a></li>
+                    <?php if ($grupoActual !== null): ?>
+                        <li class="breadcrumb-item text-muted"><?= htmlspecialchars($grupoActual, ENT_QUOTES) ?></li>
+                    <?php endif; ?>
+                    <li class="breadcrumb-item active" aria-current="page"><?= htmlspecialchars($title ?? '', ENT_QUOTES) ?></li>
+                </ol>
+            </nav>
+        <?php endif; ?>
         <?php $content(); ?>
     </main>
 </div>
 
 <script src="<?= Url::asset('/assets/js/tema.js') ?>"></script>
+<script src="<?= Url::asset('/assets/js/alertas.js') ?>"></script>
+<script src="<?= Url::asset('/assets/js/mostrar-contrasena.js') ?>"></script>
 <script src="<?= Url::asset('/assets/js/camara.js') ?>"></script>
 <script src="<?= Url::asset('/assets/js/lightbox.js') ?>"></script>
 <script src="<?= Url::asset('/assets/js/cargando.js') ?>"></script>

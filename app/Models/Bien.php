@@ -16,9 +16,9 @@ final class Bien
      * algo. El resto de llamadores (reportes, exportaciones, selects) no la pasan y
      * siguen viendo el listado completo como siempre.
      */
-    public static function listar(?int $institucionId = null, ?string $busqueda = null, int $pagina = 1, int $porPagina = 50, bool $excluirLotes = false, ?int $categoriaId = null): array
+    public static function listar(?int $institucionId = null, ?string $busqueda = null, int $pagina = 1, int $porPagina = 50, bool $excluirLotes = false, ?int $categoriaId = null, ?string $estado = null, ?int $espacioId = null): array
     {
-        [$whereSql, $params] = self::condicionesListado($institucionId, $busqueda, $excluirLotes, $categoriaId);
+        [$whereSql, $params] = self::condicionesListado($institucionId, $busqueda, $excluirLotes, $categoriaId, $estado, $espacioId);
 
         $sql = 'SELECT b.*, c.nombre AS categoria_nombre, CONCAT(e.codigo, " - ", e.nombre) AS espacio_nombre,
                        ' . self::sqlResponsablesEspacio('e.id') . ' AS responsables_nombres
@@ -36,9 +36,9 @@ final class Bien
         return $stmt->fetchAll();
     }
 
-    public static function contarListado(?int $institucionId = null, ?string $busqueda = null, bool $excluirLotes = false, ?int $categoriaId = null): int
+    public static function contarListado(?int $institucionId = null, ?string $busqueda = null, bool $excluirLotes = false, ?int $categoriaId = null, ?string $estado = null, ?int $espacioId = null): int
     {
-        [$whereSql, $params] = self::condicionesListado($institucionId, $busqueda, $excluirLotes, $categoriaId);
+        [$whereSql, $params] = self::condicionesListado($institucionId, $busqueda, $excluirLotes, $categoriaId, $estado, $espacioId);
 
         $sql = 'SELECT COUNT(*)
                 FROM bienes b
@@ -58,7 +58,7 @@ final class Bien
      * responsable ahora es el espacio (y sus responsables), no una persona asignada
      * directamente al bien.
      */
-    private static function condicionesListado(?int $institucionId, ?string $busqueda, bool $excluirLotes = false, ?int $categoriaId = null): array
+    private static function condicionesListado(?int $institucionId, ?string $busqueda, bool $excluirLotes = false, ?int $categoriaId = null, ?string $estado = null, ?int $espacioId = null): array
     {
         $condiciones = [];
         $params = [];
@@ -75,6 +75,16 @@ final class Bien
         if ($categoriaId !== null) {
             $condiciones[] = 'b.categoria_id = ?';
             $params[] = $categoriaId;
+        }
+
+        if ($estado !== null) {
+            $condiciones[] = 'b.estado = ?';
+            $params[] = $estado;
+        }
+
+        if ($espacioId !== null) {
+            $condiciones[] = 'e.id = ?';
+            $params[] = $espacioId;
         }
 
         if ($busqueda !== null && $busqueda !== '') {
@@ -97,9 +107,9 @@ final class Bien
      * bienes, no todo el inventario de la institución). Un bien sin asignación activa, o
      * asignado a un espacio donde el usuario no es responsable, queda fuera.
      */
-    public static function listarPropios(int $usuarioId, ?int $institucionId = null, ?string $busqueda = null, int $pagina = 1, int $porPagina = 50, ?int $categoriaId = null): array
+    public static function listarPropios(int $usuarioId, ?int $institucionId = null, ?string $busqueda = null, int $pagina = 1, int $porPagina = 50, ?int $categoriaId = null, ?string $estado = null, ?int $espacioId = null): array
     {
-        [$whereSql, $params] = self::condicionesPropios($institucionId, $busqueda, $categoriaId);
+        [$whereSql, $params] = self::condicionesPropios($institucionId, $busqueda, $categoriaId, $estado, $espacioId);
 
         $sql = 'SELECT b.*, c.nombre AS categoria_nombre, CONCAT(e.codigo, " - ", e.nombre) AS espacio_nombre,
                        ' . self::sqlResponsablesEspacio('e.id') . ' AS responsables_nombres
@@ -118,9 +128,9 @@ final class Bien
         return $stmt->fetchAll();
     }
 
-    public static function contarPropios(int $usuarioId, ?int $institucionId = null, ?string $busqueda = null, ?int $categoriaId = null): int
+    public static function contarPropios(int $usuarioId, ?int $institucionId = null, ?string $busqueda = null, ?int $categoriaId = null, ?string $estado = null, ?int $espacioId = null): int
     {
-        [$whereSql, $params] = self::condicionesPropios($institucionId, $busqueda, $categoriaId);
+        [$whereSql, $params] = self::condicionesPropios($institucionId, $busqueda, $categoriaId, $estado, $espacioId);
 
         $sql = 'SELECT COUNT(*)
                 FROM bienes b
@@ -135,7 +145,7 @@ final class Bien
         return (int) $stmt->fetchColumn();
     }
 
-    private static function condicionesPropios(?int $institucionId, ?string $busqueda, ?int $categoriaId = null): array
+    private static function condicionesPropios(?int $institucionId, ?string $busqueda, ?int $categoriaId = null, ?string $estado = null, ?int $espacioId = null): array
     {
         $condiciones = [];
         $params = [];
@@ -148,6 +158,16 @@ final class Bien
         if ($categoriaId !== null) {
             $condiciones[] = 'b.categoria_id = ?';
             $params[] = $categoriaId;
+        }
+
+        if ($estado !== null) {
+            $condiciones[] = 'b.estado = ?';
+            $params[] = $estado;
+        }
+
+        if ($espacioId !== null) {
+            $condiciones[] = 'e.id = ?';
+            $params[] = $espacioId;
         }
 
         if ($busqueda !== null && $busqueda !== '') {
@@ -214,6 +234,28 @@ final class Bien
         $stmt->execute([$institucionId, ...$ids]);
 
         return $stmt->fetchAll();
+    }
+
+    /** Para el indicador del panel principal: bienes activos que hoy no están asignados a ningún espacio. */
+    public static function contarSinAsignar(?int $institucionId = null): int
+    {
+        $condiciones = ['b.estado = "activo"', 'a.id IS NULL'];
+        $params = [];
+
+        if ($institucionId !== null) {
+            $condiciones[] = 'b.institucion_id = ?';
+            $params[] = $institucionId;
+        }
+
+        $sql = 'SELECT COUNT(*)
+                FROM bienes b
+                LEFT JOIN asignaciones a ON a.bien_id = b.id AND a.activa = 1
+                WHERE ' . implode(' AND ', $condiciones);
+
+        $stmt = Database::connection()->prepare($sql);
+        $stmt->execute($params);
+
+        return (int) $stmt->fetchColumn();
     }
 
     public static function find(int $id): ?array

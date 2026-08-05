@@ -56,5 +56,6 @@
 </div>
 
 <script src="<?= Url::asset('/assets/js/tema.js') ?>"></script>
+<script src="<?= Url::asset('/assets/js/alertas.js') ?>"></script>
 </body>
 </html>

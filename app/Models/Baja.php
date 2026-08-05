@@ -51,6 +51,23 @@ final class Baja
         return (int) $stmt->fetchColumn();
     }
 
+    /** Para el indicador del panel principal: cuántas bajas siguen a la espera de aprobación. */
+    public static function contarPendientes(?int $institucionId = null): int
+    {
+        $sql = 'SELECT COUNT(*) FROM bajas_bienes bb JOIN bienes b ON b.id = bb.bien_id WHERE bb.aprobada = 0';
+        $params = [];
+
+        if ($institucionId !== null) {
+            $sql .= ' AND b.institucion_id = ?';
+            $params[] = $institucionId;
+        }
+
+        $stmt = Database::connection()->prepare($sql);
+        $stmt->execute($params);
+
+        return (int) $stmt->fetchColumn();
+    }
+
     public static function find(int $id): ?array
     {
         $stmt = Database::connection()->prepare(

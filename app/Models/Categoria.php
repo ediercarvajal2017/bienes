@@ -5,12 +5,23 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Core\Database;
+use PDO;
 
 final class Categoria
 {
     public static function all(): array
     {
         return Database::connection()->query('SELECT * FROM categorias_bienes WHERE eliminado_en IS NULL ORDER BY nombre')->fetchAll();
+    }
+
+    /**
+     * id => nombre de TODAS las categorías, incluidas las inactivas/eliminadas — usado
+     * para resolver referencias históricas en la auditoría, donde un registro viejo
+     * puede apuntar a una categoría que ya no aparece en los listados normales.
+     */
+    public static function mapaIdNombre(): array
+    {
+        return Database::connection()->query('SELECT id, nombre FROM categorias_bienes')->fetchAll(PDO::FETCH_KEY_PAIR);
     }
 
     public static function activas(): array

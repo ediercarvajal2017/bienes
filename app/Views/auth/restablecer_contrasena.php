@@ -58,5 +58,7 @@
 </div>
 
 <script src="<?= Url::asset('/assets/js/tema.js') ?>"></script>
+<script src="<?= Url::asset('/assets/js/alertas.js') ?>"></script>
+<script src="<?= Url::asset('/assets/js/mostrar-contrasena.js') ?>"></script>
 </body>
 </html>

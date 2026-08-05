@@ -36,6 +36,9 @@ final class BienController
         $busqueda = trim((string) ($_GET['q'] ?? ''));
         $terminoBusqueda = $busqueda !== '' ? $busqueda : null;
         $categoriaId = ((int) ($_GET['categoria'] ?? 0)) ?: null;
+        $estado = (string) ($_GET['estado'] ?? '');
+        $estado = in_array($estado, self::ESTADOS, true) ? $estado : null;
+        $espacioId = $institucionId !== null ? (((int) ($_GET['espacio'] ?? 0)) ?: null) : null;
         $pagina = max(1, (int) ($_GET['pagina'] ?? 1));
         $porPagina = (int) ($_GET['porPagina'] ?? self::POR_PAGINA_DEFECTO);
         if (!in_array($porPagina, self::OPCIONES_POR_PAGINA, true)) {
@@ -44,27 +47,28 @@ final class BienController
 
         $soloPropios = Auth::rol() === 'docente';
 
-        // Mientras no se busque nada, los bienes que pertenecen a un lote (ej. 250 sillas
-        // identicas) se excluyen del listado individual y se muestran agrupados aparte
-        // (ver $lotes) — asi la cartera no queda saturada de filas casi identicas. En
-        // cuanto el usuario busca algo, se ve todo, agrupado o no, para que la busqueda
-        // siga siendo confiable.
-        $excluirLotes = !$soloPropios && $terminoBusqueda === null;
+        // Mientras no se busque ni filtre nada, los bienes que pertenecen a un lote (ej.
+        // 250 sillas identicas) se excluyen del listado individual y se muestran agrupados
+        // aparte (ver $lotes) — asi la cartera no queda saturada de filas casi identicas.
+        // En cuanto el usuario busca o filtra algo, se ve todo, agrupado o no, para que el
+        // resultado siga siendo confiable.
+        $hayFiltroActivo = $terminoBusqueda !== null || $estado !== null || $espacioId !== null;
+        $excluirLotes = !$soloPropios && !$hayFiltroActivo;
 
         if ($soloPropios) {
-            $total = Bien::contarPropios((int) Auth::id(), $institucionId, $terminoBusqueda, $categoriaId);
-            $bienes = Bien::listarPropios((int) Auth::id(), $institucionId, $terminoBusqueda, $pagina, $porPagina, $categoriaId);
+            $total = Bien::contarPropios((int) Auth::id(), $institucionId, $terminoBusqueda, $categoriaId, $estado, $espacioId);
+            $bienes = Bien::listarPropios((int) Auth::id(), $institucionId, $terminoBusqueda, $pagina, $porPagina, $categoriaId, $estado, $espacioId);
         } else {
-            $total = Bien::contarListado($institucionId, $terminoBusqueda, $excluirLotes, $categoriaId);
-            $bienes = Bien::listar($institucionId, $terminoBusqueda, $pagina, $porPagina, $excluirLotes, $categoriaId);
+            $total = Bien::contarListado($institucionId, $terminoBusqueda, $excluirLotes, $categoriaId, $estado, $espacioId);
+            $bienes = Bien::listar($institucionId, $terminoBusqueda, $pagina, $porPagina, $excluirLotes, $categoriaId, $estado, $espacioId);
         }
 
         // Las filas-resumen de lote se intercalan arriba de los bienes individuales en la
         // MISMA tabla (una sola lista, sin otra tabla aparte) — pero solo tiene sentido
         // mostrarlas en la vista sin filtrar de la primera pagina: en cuanto hay una
-        // busqueda activa, "Ver detalles" ya te trae directamente los bienes reales del
-        // lote (ver $excluirLotes arriba), asi que repetir el resumen ahi seria redundante.
-        $lotes = (!$soloPropios && $institucionId !== null && $terminoBusqueda === null && $pagina === 1)
+        // busqueda o filtro activo, "Ver detalles" ya te trae directamente los bienes reales
+        // del lote (ver $excluirLotes arriba), asi que repetir el resumen ahi seria redundante.
+        $lotes = (!$soloPropios && $institucionId !== null && !$hayFiltroActivo && $pagina === 1)
             ? Bien::listarLotes($institucionId, null, $categoriaId)
             : [];
 
@@ -76,6 +80,11 @@ final class BienController
             'busqueda' => $busqueda,
             'categorias' => Categoria::activas(),
             'categoriaId' => $categoriaId,
+            'estado' => $estado,
+            'espacioId' => $espacioId,
+            'espacios' => $institucionId !== null
+                ? ($soloPropios ? Espacio::propiosDe((int) Auth::id(), $institucionId) : Espacio::listadoParaSelect($institucionId))
+                : [],
             'pagina' => $pagina,
             'porPagina' => $porPagina,
             'opcionesPorPagina' => self::OPCIONES_POR_PAGINA,

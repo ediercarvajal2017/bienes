@@ -13,6 +13,11 @@
             placeholder: 'Buscar...',
             allowEmptyOption: true,
             maxOptions: null,
+            render: {
+                no_results: function () {
+                    return '<div class="no-results">Sin resultados</div>';
+                },
+            },
             onChange: function () {
                 // El <select> original queda oculto pero sigue en el DOM; algunas pantallas
                 // ya tenian su propio listener de 'change' sobre ese elemento (ej. el

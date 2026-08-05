@@ -46,6 +46,23 @@ final class Hallazgo
         return (int) $stmt->fetchColumn();
     }
 
+    /** Para el indicador del panel principal: hallazgos pendientes en cualquier jornada de la institución. */
+    public static function contarPendientesInstitucion(?int $institucionId = null): int
+    {
+        $sql = 'SELECT COUNT(*) FROM hallazgos_verificacion WHERE estado = "pendiente"';
+        $params = [];
+
+        if ($institucionId !== null) {
+            $sql .= ' AND institucion_id = ?';
+            $params[] = $institucionId;
+        }
+
+        $stmt = Database::connection()->prepare($sql);
+        $stmt->execute($params);
+
+        return (int) $stmt->fetchColumn();
+    }
+
     /**
      * Devuelve el hallazgo (con nombre de espacio y de quien lo reportó) si sigue
      * pendiente y, cuando se indica $institucionId (todos menos el superusuario),

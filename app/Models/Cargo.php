@@ -5,12 +5,22 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Core\Database;
+use PDO;
 
 final class Cargo
 {
     public static function activos(): array
     {
         return Database::connection()->query('SELECT * FROM cargos WHERE activo = 1 AND eliminado_en IS NULL ORDER BY nombre')->fetchAll();
+    }
+
+    /**
+     * id => nombre de TODOS los cargos, incluidos los inactivos/eliminados — ver
+     * Categoria::mapaIdNombre() para el motivo (resolver referencias históricas en auditoría).
+     */
+    public static function mapaIdNombre(): array
+    {
+        return Database::connection()->query('SELECT id, nombre FROM cargos')->fetchAll(PDO::FETCH_KEY_PAIR);
     }
 
     public static function all(): array

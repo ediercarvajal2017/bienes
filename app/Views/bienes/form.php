@@ -18,6 +18,13 @@ $v = static fn (string $campo, mixed $porDefecto = '') => $viejo[$campo] ?? $bie
 </div>
 
 <?php if ($esEdicion): ?>
+    <nav class="nav nav-pills small mb-3">
+        <a class="nav-link" href="#datosBien">Datos del bien</a>
+        <a class="nav-link" href="#asignacionMovimientos">Asignación y movimientos</a>
+    </nav>
+<?php endif; ?>
+
+<?php if ($esEdicion): ?>
     <div class="card mb-4" style="max-width: 680px;">
         <div class="card-body d-flex align-items-center gap-3 py-3">
             <img src="<?= Url::to('/qr/' . $bien['qr_token'] . '/imagen') ?>" alt="Código QR" style="width:80px;height:80px;">
@@ -51,7 +58,7 @@ $v = static fn (string $campo, mixed $porDefecto = '') => $viejo[$campo] ?? $bie
     <p class="text-muted small mb-2">Los campos marcados con <span class="text-danger">*</span> son obligatorios.</p>
 <?php endif; ?>
 
-<form method="post"
+<form id="datosBien" method="post"
       action="<?= $esEdicion ? Url::to('/bienes/' . $bien['id']) : Url::to('/bienes') ?>"
       enctype="multipart/form-data" class="row g-3" style="max-width: 680px;">
     <?= Csrf::field() ?>
@@ -184,7 +191,7 @@ $v = static fn (string $campo, mixed $porDefecto = '') => $viejo[$campo] ?? $bie
 <?php if ($esEdicion): ?>
     <hr class="my-4" style="max-width: 680px;">
 
-    <h2 class="h5 mb-3">Asignación y movimientos</h2>
+    <h2 id="asignacionMovimientos" class="h5 mb-3">Asignación y movimientos</h2>
 
     <?php if (!empty($mensaje)): ?>
         <div class="alert alert-success py-2 small" style="max-width: 680px;"><?= htmlspecialchars($mensaje, ENT_QUOTES) ?></div>

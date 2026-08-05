@@ -344,4 +344,21 @@ final class Usuario
 
         return Database::connection()->query($sql)->fetchAll();
     }
+
+    /**
+     * id => "Nombres Apellidos" de TODOS los usuarios — ver Categoria::mapaIdNombre()
+     * para el motivo (resolver referencias históricas en auditoría).
+     */
+    public static function mapaIdNombreCompleto(): array
+    {
+        return Database::connection()
+            ->query("SELECT id, CONCAT(nombres, ' ', apellidos) FROM usuarios")
+            ->fetchAll(PDO::FETCH_KEY_PAIR);
+    }
+
+    /** id => nombre de todos los roles — usado para resolver rol_id en la auditoría. */
+    public static function mapaRoles(): array
+    {
+        return Database::connection()->query('SELECT id, nombre FROM roles')->fetchAll(PDO::FETCH_KEY_PAIR);
+    }
 }

@@ -5,9 +5,19 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Core\Database;
+use PDO;
 
 final class Institucion
 {
+    /**
+     * id => nombre de TODAS las instituciones — ver Categoria::mapaIdNombre() para el
+     * motivo (resolver referencias históricas en auditoría).
+     */
+    public static function mapaIdNombre(): array
+    {
+        return Database::connection()->query('SELECT id, nombre FROM instituciones')->fetchAll(PDO::FETCH_KEY_PAIR);
+    }
+
     public static function all(): array
     {
         return Database::connection()->query(

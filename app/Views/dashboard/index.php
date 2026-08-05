@@ -47,6 +47,21 @@ $puedeVer = static function (array $item): bool {
 <h1 class="h4 mb-1">Hola, <?= htmlspecialchars(Auth::nombreCompleto() ?? '', ENT_QUOTES) ?></h1>
 <p class="text-muted mb-4">Rol: <?= htmlspecialchars(Auth::rol() ?? '', ENT_QUOTES) ?></p>
 
+<?php if (!empty($indicadores)): ?>
+    <div class="row g-3 mb-4" style="max-width: 980px;">
+        <?php foreach ($indicadores as $ind): ?>
+            <div class="col-12 col-md-6 col-lg-4">
+                <a href="<?= Url::to($ind['ruta']) ?>" class="card text-decoration-none h-100 border-<?= $ind['color'] ?>">
+                    <div class="card-body d-flex align-items-center gap-3 py-3">
+                        <i class="bi bi-<?= $ind['icono'] ?> fs-3 text-<?= $ind['color'] ?>"></i>
+                        <span class="text-body"><?= htmlspecialchars($ind['texto'], ENT_QUOTES) ?></span>
+                    </div>
+                </a>
+            </div>
+        <?php endforeach; ?>
+    </div>
+<?php endif; ?>
+
 <?php if ($primerosPasos !== null): ?>
     <div class="card mb-4" style="max-width: 640px;">
         <div class="card-body">

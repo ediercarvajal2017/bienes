@@ -7,6 +7,8 @@ use App\Core\View;
 $parametrosPaginacion = array_filter([
     'q' => $busqueda !== '' ? $busqueda : null,
     'categoria' => $categoriaId,
+    'estado' => $estado,
+    'espacio' => $espacioId,
 ], static fn ($valor) => $valor !== null);
 $urlBasePaginacion = Url::to('/bienes') . (!empty($parametrosPaginacion) ? '?' . http_build_query($parametrosPaginacion) : '');
 
@@ -62,6 +64,28 @@ $etiquetasEstado = [
             <?php endforeach; ?>
         </select>
     </div>
+    <div style="max-width: 220px;">
+        <label class="form-label small mb-1">Estado</label>
+        <select id="filtroEstado" class="form-select form-select-sm">
+            <option value="">Todos los estados</option>
+            <?php foreach ($etiquetasEstado as $valorEstado => $etiqueta): ?>
+                <option value="<?= $valorEstado ?>" <?= $estado === $valorEstado ? 'selected' : '' ?>><?= $etiqueta ?></option>
+            <?php endforeach; ?>
+        </select>
+    </div>
+    <?php if (!empty($espacios)): ?>
+        <div style="max-width: 260px;">
+            <label class="form-label small mb-1">Espacio</label>
+            <select id="filtroEspacio" class="form-select form-select-sm selector-buscable">
+                <option value="">Todos los espacios</option>
+                <?php foreach ($espacios as $e): ?>
+                    <option value="<?= $e['id'] ?>" <?= $espacioId === (int) $e['id'] ? 'selected' : '' ?>>
+                        <?= htmlspecialchars($e['codigo'] . ' - ' . $e['nombre'], ENT_QUOTES) ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+    <?php endif; ?>
 </div>
 
 <?php View::render('partials/paginacion', [
@@ -182,16 +206,25 @@ $etiquetasEstado = [
         }, 450);
     });
 
-    const filtroCategoria = document.getElementById('filtroCategoria');
-    filtroCategoria.addEventListener('change', function () {
-        const url = new URL(window.location.href);
-        if (filtroCategoria.value !== '') {
-            url.searchParams.set('categoria', filtroCategoria.value);
-        } else {
-            url.searchParams.delete('categoria');
-        }
-        url.searchParams.set('pagina', '1');
-        window.location = url.toString();
+    const filtrosSelect = [
+        ['filtroCategoria', 'categoria'],
+        ['filtroEstado', 'estado'],
+        ['filtroEspacio', 'espacio'],
+    ];
+    filtrosSelect.forEach(function (par) {
+        const select = document.getElementById(par[0]);
+        if (!select) { return; }
+
+        select.addEventListener('change', function () {
+            const url = new URL(window.location.href);
+            if (select.value !== '') {
+                url.searchParams.set(par[1], select.value);
+            } else {
+                url.searchParams.delete(par[1]);
+            }
+            url.searchParams.set('pagina', '1');
+            window.location = url.toString();
+        });
     });
 })();
 </script>
