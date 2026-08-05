@@ -19,12 +19,19 @@ $clases = [
 <?php if (!empty($mensaje)): ?>
     <div class="alert alert-success py-2 small"><?= htmlspecialchars($mensaje, ENT_QUOTES) ?></div>
 <?php endif; ?>
+<?php if (!empty($error)): ?>
+    <div class="alert alert-danger py-2 small"><?= htmlspecialchars($error, ENT_QUOTES) ?></div>
+<?php endif; ?>
 
+<?php $invalidas = (int) $carga['total_filas'] - (int) $carga['nuevos'] - (int) $carga['modificados'] - (int) $carga['sin_cambios']; ?>
 <p class="text-muted small">
     <?= (int) $carga['total_filas'] ?> filas ·
     <?= (int) $carga['nuevos'] ?> nuevas ·
     <?= (int) $carga['modificados'] ?> modificadas ·
     <?= (int) $carga['sin_cambios'] ?> sin cambios
+    <?php if ($invalidas > 0): ?>
+        · <span class="text-danger"><?= $invalidas ?> con error</span>
+    <?php endif; ?>
 </p>
 
 <?php if ((int) $carga['aplicada'] === 0): ?>

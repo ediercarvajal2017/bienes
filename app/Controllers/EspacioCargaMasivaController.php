@@ -107,6 +107,7 @@ final class EspacioCargaMasivaController
             'carga' => $carga,
             'filas' => json_decode($carga['resultado_diff_json'], true) ?? [],
             'mensaje' => Session::pullFlash('ok'),
+            'error' => Session::pullFlash('error'),
         ]);
     }
 
@@ -132,11 +133,41 @@ final class EspacioCargaMasivaController
         $omitidas = EspacioCargaMasivaService::aplicar($filas, (int) $carga['institucion_id']);
         CargaMasiva::marcarAplicada($id);
 
-        Session::flash('ok', $omitidas > 0
-            ? "Carga masiva aplicada. {$omitidas} fila(s) se omitieron por un choque de número de espacio detectado al guardar."
-            : 'Carga masiva aplicada correctamente.');
+        $invalidas = count(array_filter($filas, static fn (array $f): bool => $f['tipo'] === 'invalido'));
+        $this->flashResultado($invalidas, $omitidas);
+
         header('Location: ' . Url::to("/espacios/carga-masiva/{$id}"));
         exit;
+    }
+
+    /**
+     * Antes siempre decía "aplicada correctamente" aunque el archivo trajera filas
+     * inválidas que nunca se llegaron a intentar guardar (analizar() las descarta desde
+     * el análisis, aplicar() ni las toca) — el usuario veía un mensaje de éxito sin
+     * enterarse de que parte del archivo no entró. Ahora, si algo quedó sin aplicar
+     * (inválidas o chocadas), el mensaje lo dice explícitamente y se muestra en rojo.
+     */
+    private function flashResultado(int $invalidas, int $omitidas): void
+    {
+        if ($invalidas === 0 && $omitidas === 0) {
+            Session::flash('ok', 'Carga masiva aplicada correctamente.');
+
+            return;
+        }
+
+        $partes = [];
+        if ($invalidas > 0) {
+            $partes[] = $invalidas === 1
+                ? '1 fila no se cargó por tener un error (revisa el detalle abajo)'
+                : "{$invalidas} filas no se cargaron por tener errores (revisa el detalle abajo)";
+        }
+        if ($omitidas > 0) {
+            $partes[] = $omitidas === 1
+                ? '1 fila se omitió por un choque de número de espacio detectado al guardar'
+                : "{$omitidas} filas se omitieron por un choque de número de espacio detectado al guardar";
+        }
+
+        Session::flash('error', 'Carga masiva aplicada parcialmente: ' . implode('; ', $partes) . '.');
     }
 
     private function guardarArchivo(array $archivo): string
