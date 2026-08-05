@@ -6,6 +6,7 @@ namespace App\Services;
 
 use App\Models\Asignacion;
 use App\Models\Bien;
+use App\Models\Categoria;
 use App\Models\Espacio;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Shared\Date as FechaExcel;
@@ -15,13 +16,16 @@ use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 final class CargaMasivaService
 {
     /**
-     * Lee un .xlsx (columnas A-F: Código, Descripción, Marca, Fecha_Ingreso, Valor, Ubicación)
-     * y compara cada fila contra la base de datos de la institución. No escribe nada todavía.
+     * Lee un .xlsx (columnas A-G: Código, Descripción, Marca, Fecha_Ingreso, Valor, Ubicación,
+     * Categoría) y compara cada fila contra la base de datos de la institución. No escribe nada
+     * todavía.
      *
      * Fecha_Ingreso es opcional: si se deja en blanco, se usa la fecha de hoy para un bien
      * nuevo, o se conserva la que ya tenía el bien si es una actualización. Ubicación (opcional)
      * es el código de un espacio ya existente en la institución; si se indica y no existe, la
-     * fila se marca inválida en vez de crear un espacio nuevo a ciegas.
+     * fila se marca inválida en vez de crear un espacio nuevo a ciegas. Categoría (opcional)
+     * sigue el mismo criterio: debe coincidir con el NOMBRE de una categoría activa ya
+     * existente, o la fila se marca inválida — nunca crea una categoría nueva a ciegas.
      *
      * @return array<int, array<string, mixed>>
      */
@@ -31,6 +35,8 @@ final class CargaMasivaService
         $filas = [];
         $codigosVistos = [];
         $espaciosPorCodigo = self::mapaEspaciosPorCodigo($institucionId);
+        $categoriasPorNombre = self::mapaCategoriasPorNombre();
+        $categoriasPorId = Categoria::mapaIdNombre();
 
         $ultimaFila = $sheet->getHighestDataRow();
 
@@ -39,6 +45,7 @@ final class CargaMasivaService
             $descripcion = trim((string) $sheet->getCell("B{$numeroFila}")->getValue());
             $marca = trim((string) $sheet->getCell("C{$numeroFila}")->getValue());
             $ubicacion = trim((string) $sheet->getCell("F{$numeroFila}")->getValue());
+            $categoriaTexto = trim((string) $sheet->getCell("G{$numeroFila}")->getValue());
 
             if ($codigo === '' && $descripcion === '') {
                 continue;
@@ -91,10 +98,29 @@ final class CargaMasivaService
                 }
             }
 
+            $categoriaId = null;
+            if ($categoriaTexto !== '') {
+                $categoriaId = $categoriasPorNombre[self::normalizarNombreCategoria($categoriaTexto)] ?? null;
+                if ($categoriaId === null) {
+                    $filas[] = [
+                        'fila' => $numeroFila, 'tipo' => 'invalido',
+                        'motivo' => "Categoría no encontrada: no existe una categoría activa llamada \"{$categoriaTexto}\"",
+                        'codigo' => $codigo, 'descripcion' => $descripcion,
+                    ];
+                    continue;
+                }
+            }
+
             $existente = Bien::buscarPorCodigoInstitucion($institucionId, $codigo);
 
             if ($fecha === null) {
                 $fecha = $existente ? $existente['fecha_ingreso'] : date('Y-m-d');
+            }
+
+            // Categoría en blanco: para un bien nuevo queda sin categoría, para uno existente
+            // se conserva la que ya tenía — mismo criterio que Fecha_Ingreso más arriba.
+            if ($categoriaTexto === '') {
+                $categoriaId = ($existente && $existente['categoria_id'] !== null) ? (int) $existente['categoria_id'] : null;
             }
 
             $datos = [
@@ -105,6 +131,7 @@ final class CargaMasivaService
                 'valor' => $valor,
                 'espacio_id' => $espacioId,
                 'ubicacion_texto' => $ubicacion !== '' ? $ubicacion : null,
+                'categoria_id' => $categoriaId,
             ];
 
             if (!$existente) {
@@ -113,7 +140,7 @@ final class CargaMasivaService
             }
 
             $asignacionActiva = $espacioId !== null ? Asignacion::activaDe((int) $existente['id']) : null;
-            $cambios = self::detectarCambios($existente, $datos, $asignacionActiva);
+            $cambios = self::detectarCambios($existente, $datos, $asignacionActiva, $categoriasPorId);
 
             $filas[] = $cambios === []
                 ? ['fila' => $numeroFila, 'tipo' => 'sin_cambios', 'datos' => $datos, 'bien_id' => $existente['id']]
@@ -141,7 +168,7 @@ final class CargaMasivaService
                         'codigo_identificacion' => $fila['datos']['codigo_identificacion'],
                         'descripcion' => $fila['datos']['descripcion'],
                         'marca' => $fila['datos']['marca'],
-                        'categoria_id' => null,
+                        'categoria_id' => $fila['datos']['categoria_id'],
                         'fecha_ingreso' => $fila['datos']['fecha_ingreso'],
                         'valor' => $fila['datos']['valor'],
                         'tiene_factura' => 0,
@@ -167,7 +194,7 @@ final class CargaMasivaService
                         'codigo_identificacion' => $fila['datos']['codigo_identificacion'],
                         'descripcion' => $fila['datos']['descripcion'],
                         'marca' => $fila['datos']['marca'],
-                        'categoria_id' => $bien['categoria_id'],
+                        'categoria_id' => $fila['datos']['categoria_id'],
                         'fecha_ingreso' => $fila['datos']['fecha_ingreso'],
                         'valor' => $fila['datos']['valor'],
                         'tiene_factura' => $bien['tiene_factura'],
@@ -200,9 +227,9 @@ final class CargaMasivaService
     {
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
-        $sheet->fromArray(['Codigo', 'Descripcion', 'Marca', 'Fecha_Ingreso', 'Valor', 'Ubicacion'], null, 'A1');
-        $sheet->fromArray(['BIEN-0001', 'Silla plástica azul', 'Rimax', '2026-01-15', 85000, 'AULA-101'], null, 'A2');
-        foreach (range('A', 'F') as $columna) {
+        $sheet->fromArray(['Codigo', 'Descripcion', 'Marca', 'Fecha_Ingreso', 'Valor', 'Ubicacion', 'Categoria'], null, 'A1');
+        $sheet->fromArray(['BIEN-0001', 'Silla plástica azul', 'Rimax', '2026-01-15', 85000, 'AULA-101', 'Sillas'], null, 'A2');
+        foreach (range('A', 'G') as $columna) {
             $sheet->getColumnDimension($columna)->setAutoSize(true);
         }
 
@@ -213,7 +240,7 @@ final class CargaMasivaService
         exit;
     }
 
-    private static function detectarCambios(array $existente, array $nuevo, ?array $asignacionActiva): array
+    private static function detectarCambios(array $existente, array $nuevo, ?array $asignacionActiva, array $categoriasPorId): array
     {
         $cambios = [];
         $comparar = [
@@ -240,6 +267,15 @@ final class CargaMasivaService
             if ($actualTexto !== $propuestoTexto) {
                 $cambios[$etiqueta] = ['antes' => $actualTexto, 'despues' => $propuestoTexto];
             }
+        }
+
+        $categoriaActualId = $existente['categoria_id'] !== null ? (int) $existente['categoria_id'] : null;
+        $categoriaNuevaId = $nuevo['categoria_id'];
+        if ($categoriaActualId !== $categoriaNuevaId) {
+            $cambios['Categoría'] = [
+                'antes' => $categoriaActualId !== null ? ($categoriasPorId[$categoriaActualId] ?? '—') : 'Sin categoría',
+                'despues' => $categoriaNuevaId !== null ? ($categoriasPorId[$categoriaNuevaId] ?? '—') : 'Sin categoría',
+            ];
         }
 
         if ($nuevo['espacio_id'] !== null) {
@@ -273,6 +309,30 @@ final class CargaMasivaService
     }
 
     private static function normalizarCodigoEspacio(string $texto): string
+    {
+        $texto = str_replace("\xC2\xA0", ' ', $texto); // espacio "no separable" (NBSP)
+        $texto = preg_replace('/\s+/u', ' ', $texto) ?? $texto;
+
+        return mb_strtoupper(trim($texto));
+    }
+
+    /**
+     * Nombre de categoría -> id, solo activas (una categoría inactiva no se puede asignar
+     * desde el formulario normal de un bien tampoco, así que la carga masiva respeta la
+     * misma regla). Comparación normalizada igual que mapaEspaciosPorCodigo(), por el mismo
+     * motivo: tolerar espacios de más o un NBSP pegado desde Word/PDF.
+     */
+    private static function mapaCategoriasPorNombre(): array
+    {
+        $mapa = [];
+        foreach (Categoria::activas() as $categoria) {
+            $mapa[self::normalizarNombreCategoria($categoria['nombre'])] = (int) $categoria['id'];
+        }
+
+        return $mapa;
+    }
+
+    private static function normalizarNombreCategoria(string $texto): string
     {
         $texto = str_replace("\xC2\xA0", ' ', $texto); // espacio "no separable" (NBSP)
         $texto = preg_replace('/\s+/u', ' ', $texto) ?? $texto;
