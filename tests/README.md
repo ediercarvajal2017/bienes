@@ -1,9 +1,10 @@
 # Pruebas de navegador (Playwright)
 
 Cubre los flujos con JavaScript de SIGEBI (login, catálogos, formularios, evidencias,
-carga masiva, papelera/auditoría, ciclo de vida de un bien) contra tu WAMP local. No
-reemplaza los scripts de prueba en PHP contra la base de datos — los complementa,
-cubriendo lo que pasa en el navegador, que `php -l`/PHPStan no pueden ver.
+carga masiva, papelera/auditoría, ciclo de vida de un bien, bajas, verificación física,
+reintegros por lote) contra tu WAMP local. No reemplaza los scripts de prueba en PHP
+contra la base de datos — los complementa, cubriendo lo que pasa en el navegador, que
+`php -l`/PHPStan no pueden ver.
 
 ## Primera vez
 
@@ -58,7 +59,11 @@ corriendo una vez por archivo en vez de una vez para toda la suite).
 | `cartera.spec.js` | Igual, para `/cartera` (adjunto en Excel en vez de PDF). |
 | `carga_masiva.spec.js` | Sube un `.xlsx` de bienes con una fila válida y una inválida a propósito, confirma que el mensaje final diga *"aplicada parcialmente"* en rojo — regresión directa de un bug corregido en esta misma sesión. |
 | `espacios_carga_masiva.spec.js` | Igual, para la carga masiva de `/espacios`. |
+| `bienes_carga_masiva_fotos.spec.js` | Sube un `.zip` con una foto nombrada como el código de un bien y confirma que se empareje (idempotente: código fijo, reutilizable entre corridas). |
 | `bienes_ciclo_vida.spec.js` | Un bien recorre crear → asignar a un espacio → trasladar a otro → reintegrar, de punta a punta. |
+| `reintegros_lote.spec.js` | Reintegra un bien desde la selección masiva `/reintegros` (no el panel individual) y lo agrupa en un lote nuevo hasta el comprobante FO-ADMI-009. |
+| `bajas.spec.js` | Reporta una baja desde la ficha pública del bien y la aprueba desde `/bajas`. |
+| `verificaciones.spec.js` | Crea una jornada de verificación, verifica un bien escaneando su ficha pública, y cierra la jornada. |
 | `reportes.spec.js` | La pantalla carga y descarga de verdad el reporte de cartera de bienes (.xlsx). |
 | `papelera.spec.js` | `/papelera` y `/auditoria` cargan con sus elementos esperados para un superusuario. |
 
@@ -67,44 +72,56 @@ que SIGEBI convierte en Tom Select (buscador con menú) — reutilízalo en cual
 prueba nueva que necesite elegir una opción de uno de esos campos. Documenta un bug
 real que encontramos armando estas pruebas (ver más abajo).
 
-## Dos bugs reales que salieron de armar esta suite (no de la app en sí, pero vale la pena conocerlos)
+## Bugs y reglas reales que salieron de armar esta suite (no defectos de las pruebas)
 
 - **El input de búsqueda de un Tom Select "single" con valor ya elegido se saca de
   la pantalla** (coordenada X negativa) hasta que se clickea el control visible —
   intentar escribirle directo falla con "element is outside of the viewport" aunque
   el elemento "exista". El helper ya lo resuelve clickeando el contenedor visible
   primero, nunca el input directo.
-- **Un bien necesita categoría asignada para poder reintegrarse** — SIGEBI lo
-  bloquea con el mensaje "Este bien no tiene categoría asignada; asígnele una antes
-  de reintegrarlo." si no la tiene. No es un bug, es una regla real que
-  `bienes_ciclo_vida.spec.js` tuvo que aprender a respetar (por eso ese test elige
-  una categoría al crear el bien, aunque el formulario no la marque obligatoria).
+- **Un bien necesita categoría asignada para poder reintegrarse** (individualmente o
+  en lote) — SIGEBI lo bloquea con un mensaje claro si no la tiene. No es un bug, es
+  una regla real que `bienes_ciclo_vida.spec.js` y `reintegros_lote.spec.js` tuvieron
+  que aprender a respetar (por eso ambos eligen una categoría al crear el bien,
+  aunque el formulario no la marque obligatoria).
+- **Solo puede haber una jornada de verificación activa por institución** — si una
+  corrida anterior de `verificaciones.spec.js` quedó a medias (falló antes de cerrar
+  la jornada), la siguiente no podría crear una nueva. La prueba se protege sola:
+  busca y cierra cualquier jornada activa antes de empezar.
 
 ## Advertencias de este arranque (léelas antes de confiar ciegamente en la suite)
 
 - **No hay base de datos de pruebas aislada.** Las pruebas escriben de verdad en tu
   BD de desarrollo. La mayoría se limpia sola:
-  - categorías/cargos/espacios/usuarios terminan en la papelera, igual que si lo
-    hicieras a mano;
-  - `bienes_ciclo_vida.spec.js` desactiva (no elimina) sus dos espacios de apoyo al
-    final, porque para entonces ya tienen historial de asignación/traslado y SIGEBI
-    rechaza borrarlos igual que se lo rechazaría a una persona;
-  - `carga_masiva.spec.js`, `espacios_carga_masiva.spec.js` y `bienes_ciclo_vida.spec.js`
-    sí dejan rastro que **no** se autolimpia: un bien (`PW-TEST-BIEN-001` y
-    `PW-TEST-CICLO-*`) y filas en `cargas_masivas`, porque SIGEBI nunca borra un bien
-    ni siquiera a mano. Bórralos de vez en cuando si te molesta el ruido en `/bienes`.
+  - categorías/cargos/usuarios terminan en la papelera, igual que si lo hicieras a mano;
+  - los espacios de apoyo de `bienes_ciclo_vida.spec.js` y `reintegros_lote.spec.js`
+    se desactivan (no eliminan) al final, porque para entonces ya tienen historial de
+    asignación/traslado y SIGEBI rechaza borrarlos igual que se lo rechazaría a una
+    persona real;
+  - `bienes_carga_masiva_fotos.spec.js` usa un código de bien **fijo a propósito**
+    (`PW-TEST-FOTO-001`, no con timestamp) para que coincida siempre con el nombre
+    del archivo dentro de `fixtures/fotos_bienes.zip` — ese bien queda para siempre,
+    es intencional, no hace falta limpiarlo.
+  - `carga_masiva.spec.js`, `espacios_carga_masiva.spec.js`, `bienes_ciclo_vida.spec.js`,
+    `reintegros_lote.spec.js`, `bajas.spec.js` y `verificaciones.spec.js` dejan bienes
+    y/o filas en `cargas_masivas` que **no** se autolimpian, porque SIGEBI nunca borra
+    un bien ni siquiera a mano. Bórralos de vez en cuando si te molesta el ruido en
+    `/bienes` — todos usan el prefijo `PW-TEST-` para que sea fácil identificarlos.
 
   Nunca corras esto contra producción.
 - **`instituciones.spec.js` no crea una institución nueva a propósito**: a diferencia
   de los demás catálogos, una institución no se puede enviar a la papelera ni borrar,
   solo desactivar — cualquiera que creáramos quedaría para siempre. En su lugar edita
   una existente guardando los mismos datos, para probar el formulario sin ensuciar nada.
+- **`bajas.spec.js` y `verificaciones.spec.js` solo prueban el flujo funcional, no la
+  separación de roles.** Con una sola cuenta (superusuario, que puede reportar Y
+  aprobar/verificar) no se puede comprobar que un rol sin permiso quede realmente
+  bloqueado — haría falta una segunda cuenta de prueba con un rol distinto.
 - **El escaneo de QR con cámara no está cubierto.** Simular una cámara en Playwright
   exige configuración adicional (dispositivo de video falso); quedó fuera a propósito.
-- **Quedó pendiente para un próximo lote**: asignaciones/reintegros individuales fuera
-  del flujo de ciclo de vida ya cubierto, reintegros por lote, bajas y verificación
-  física (estas dos últimas necesitan más de una cuenta de prueba para probar la
-  aprobación entre roles distintos), carga masiva de fotos (`.zip`).
+  `bajas.spec.js` y `verificaciones.spec.js` llegan a la ficha pública navegando
+  directo a su URL (con el token extraído del enlace "Ver ficha pública"), no
+  escaneando de verdad.
 - **Solo se instaló el navegador Chromium**, no Firefox/WebKit, para mantener el
   arranque liviano — `npx playwright install` (sin argumento) los agrega si más
   adelante quieres probar en los tres.
