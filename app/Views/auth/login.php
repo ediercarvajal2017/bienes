@@ -38,12 +38,12 @@
         <form method="post" action="<?= Url::to('/login') ?>">
             <?= \App\Core\Csrf::field() ?>
             <div class="mb-3">
-                <label class="form-label small">Correo institucional</label>
-                <input type="email" name="email" class="form-control" required autofocus>
+                <label class="form-label small" for="email">Correo institucional</label>
+                <input type="email" name="email" id="email" class="form-control" required autofocus autocomplete="username">
             </div>
             <div class="mb-3">
-                <label class="form-label small">Contraseña</label>
-                <input type="password" name="password" class="form-control" required>
+                <label class="form-label small" for="password">Contraseña</label>
+                <input type="password" name="password" id="password" class="form-control" required autocomplete="current-password">
             </div>
             <div class="form-check mb-3">
                 <input type="checkbox" name="recordar" value="1" id="recordar" class="form-check-input">

@@ -40,12 +40,12 @@
             <form method="post" action="<?= Url::to('/restablecer-contrasena/' . $token) ?>">
                 <?= \App\Core\Csrf::field() ?>
                 <div class="mb-3">
-                    <label class="form-label small">Nueva contraseña</label>
-                    <input type="password" name="password" class="form-control" required minlength="8" autofocus>
+                    <label class="form-label small" for="password">Nueva contraseña</label>
+                    <input type="password" name="password" id="password" class="form-control" required minlength="8" autofocus autocomplete="new-password">
                 </div>
                 <div class="mb-3">
-                    <label class="form-label small">Confirmar contraseña</label>
-                    <input type="password" name="password_confirmacion" class="form-control" required minlength="8">
+                    <label class="form-label small" for="password_confirmacion">Confirmar contraseña</label>
+                    <input type="password" name="password_confirmacion" id="password_confirmacion" class="form-control" required minlength="8" autocomplete="new-password">
                 </div>
                 <button type="submit" class="btn btn-primary w-100">Guardar contraseña</button>
             </form>

@@ -83,8 +83,8 @@ $v = static fn (string $campo, mixed $porDefecto = '') => $viejo[$campo] ?? $usu
     <?php endif; ?>
 
     <div class="col-md-6">
-        <label class="form-label small<?= $esEdicion ? '' : ' requerido' ?>"><?= $esEdicion ? 'Nueva contraseña (opcional)' : 'Contraseña' ?></label>
-        <input type="password" name="password" class="form-control" <?= $esEdicion ? '' : 'required' ?> minlength="8">
+        <label class="form-label small<?= $esEdicion ? '' : ' requerido' ?>" for="password"><?= $esEdicion ? 'Nueva contraseña (opcional)' : 'Contraseña' ?></label>
+        <input type="password" name="password" id="password" class="form-control" <?= $esEdicion ? '' : 'required' ?> minlength="8" autocomplete="new-password">
     </div>
 
     <div class="col-12">
