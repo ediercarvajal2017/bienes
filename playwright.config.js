@@ -21,6 +21,14 @@ if (!baseURL.endsWith('/')) {
 export default defineConfig({
     testDir: './tests',
     fullyParallel: false,
+    // SIGEBI usa sesiones de PHP tradicionales con un token CSRF guardado en la sesión
+    // del servidor. Todas las pruebas "authenticated" reutilizan la MISMA sesión (ver
+    // storageState más abajo) — si dos corren en paralelo, una puede regenerar/consumir
+    // el token CSRF justo cuando la otra lo estaba por usar, y esa otra falla con
+    // "Tu sesión expiró" aunque la app esté perfectamente bien. No es una prueba
+    // "flaky": es una corrida en paralelo pisándose la sesión. workers:1 corre todo en
+    // serie para que esto no pase nunca (la suite es chica, el costo es unos segundos).
+    workers: 1,
     forbidOnly: !!process.env.CI,
     retries: process.env.CI ? 1 : 0,
     reporter: [['list'], ['html', { open: 'never' }]],
@@ -48,9 +56,12 @@ export default defineConfig({
             testMatch: /auth\.setup\.js/,
         },
 
+        // Cualquier *.spec.js nuevo entra acá automáticamente (menos login.spec.js,
+        // que vive en "guest") — no hay que acordarse de agregarlo a una lista.
         {
             name: 'authenticated',
-            testMatch: /(carga_masiva|papelera)\.spec\.js/,
+            testMatch: /\.spec\.js$/,
+            testIgnore: /login\.spec\.js/,
             use: { ...devices['Desktop Chrome'], storageState: 'playwright/.auth/user.json' },
             dependencies: ['setup'],
         },
