@@ -1,9 +1,9 @@
 # Pruebas de navegador (Playwright)
 
-Cubre los flujos con JavaScript de SIGEBI (login, catálogos, formularios, carga
-masiva, papelera/auditoría) contra tu WAMP local. No reemplaza los scripts de
-prueba en PHP contra la base de datos — los complementa, cubriendo lo que pasa
-en el navegador, que `php -l`/PHPStan no pueden ver.
+Cubre los flujos con JavaScript de SIGEBI (login, catálogos, formularios, evidencias,
+carga masiva, papelera/auditoría, ciclo de vida de un bien) contra tu WAMP local. No
+reemplaza los scripts de prueba en PHP contra la base de datos — los complementa,
+cubriendo lo que pasa en el navegador, que `php -l`/PHPStan no pueden ver.
 
 ## Primera vez
 
@@ -17,8 +17,9 @@ Edita `.env.test` con una cuenta real de tu SIGEBI **local** (no de producción)
 - `TEST_USER_EMAIL` / `TEST_USER_PASSWORD`: necesarias para todas las pruebas del
   proyecto `authenticated`. Sin ellas, fallan con un mensaje explicando qué falta.
 - Esa cuenta tiene que ser **superusuario** — `papelera.spec.js`, `instituciones.spec.js`
-  y la creación de usuarios/espacios en otras instituciones lo requieren (`/papelera`
-  y `/auditoria` están protegidas por `SuperusuarioMiddleware`).
+  y varias otras lo requieren (`/papelera` y `/auditoria` están protegidas por
+  `SuperusuarioMiddleware`, y varios formularios piden elegir institución solo para
+  superusuario).
 - `login.spec.js` corre completo sin necesidad de `.env.test` (usa credenciales
   inválidas a propósito para tres de sus cuatro pruebas).
 
@@ -51,32 +52,59 @@ corriendo una vez por archivo en vez de una vez para toda la suite).
 | `espacios.spec.js` | Crear (con responsable vía Tom Select), editar y eliminar un espacio. |
 | `usuarios.spec.js` | Crear, editar, desactivar y eliminar un usuario (rol "Docente" a propósito). |
 | `instituciones.spec.js` | El listado carga; editar una institución **existente** guardando los mismos datos (no crea una nueva — ver advertencia abajo). |
-| `carga_masiva.spec.js` | Sube un `.xlsx` con una fila válida y una inválida a propósito, confirma que el mensaje final diga *"aplicada parcialmente"* en rojo — regresión directa de un bug corregido en esta misma sesión. |
+| `facturas.spec.js` | Registrar (con PDF), editar y eliminar una factura. |
+| `formatos_reintegro.spec.js` | Igual, para `/formatos-reintegro`. |
+| `formatos_plaqueteo.spec.js` | Igual, para `/formatos-plaqueteo` (incluye "Funcionario que asistió"). |
+| `cartera.spec.js` | Igual, para `/cartera` (adjunto en Excel en vez de PDF). |
+| `carga_masiva.spec.js` | Sube un `.xlsx` de bienes con una fila válida y una inválida a propósito, confirma que el mensaje final diga *"aplicada parcialmente"* en rojo — regresión directa de un bug corregido en esta misma sesión. |
+| `espacios_carga_masiva.spec.js` | Igual, para la carga masiva de `/espacios`. |
+| `bienes_ciclo_vida.spec.js` | Un bien recorre crear → asignar a un espacio → trasladar a otro → reintegrar, de punta a punta. |
+| `reportes.spec.js` | La pantalla carga y descarga de verdad el reporte de cartera de bienes (.xlsx). |
 | `papelera.spec.js` | `/papelera` y `/auditoria` cargan con sus elementos esperados para un superusuario. |
 
 `tests/helpers/tomSelect.js` tiene el helper para interactuar con los `<select>`
 que SIGEBI convierte en Tom Select (buscador con menú) — reutilízalo en cualquier
-prueba nueva que necesite elegir una opción de uno de esos campos.
+prueba nueva que necesite elegir una opción de uno de esos campos. Documenta un bug
+real que encontramos armando estas pruebas (ver más abajo).
+
+## Dos bugs reales que salieron de armar esta suite (no de la app en sí, pero vale la pena conocerlos)
+
+- **El input de búsqueda de un Tom Select "single" con valor ya elegido se saca de
+  la pantalla** (coordenada X negativa) hasta que se clickea el control visible —
+  intentar escribirle directo falla con "element is outside of the viewport" aunque
+  el elemento "exista". El helper ya lo resuelve clickeando el contenedor visible
+  primero, nunca el input directo.
+- **Un bien necesita categoría asignada para poder reintegrarse** — SIGEBI lo
+  bloquea con el mensaje "Este bien no tiene categoría asignada; asígnele una antes
+  de reintegrarlo." si no la tiene. No es un bug, es una regla real que
+  `bienes_ciclo_vida.spec.js` tuvo que aprender a respetar (por eso ese test elige
+  una categoría al crear el bien, aunque el formulario no la marque obligatoria).
 
 ## Advertencias de este arranque (léelas antes de confiar ciegamente en la suite)
 
 - **No hay base de datos de pruebas aislada.** Las pruebas escriben de verdad en tu
-  BD de desarrollo. La mayoría se limpia sola (categorías/cargos/espacios/usuarios
-  terminan en la papelera, igual que si lo hicieras a mano); `carga_masiva.spec.js`
-  deja un bien (`PW-TEST-BIEN-001`) y una fila en `cargas_masivas` que no se
-  autolimpian (bienes nunca se borran en SIGEBI, ni siquiera a mano) — bórralos de
-  vez en cuando si te molesta el ruido en `/bienes`. Nunca corras esto contra producción.
+  BD de desarrollo. La mayoría se limpia sola:
+  - categorías/cargos/espacios/usuarios terminan en la papelera, igual que si lo
+    hicieras a mano;
+  - `bienes_ciclo_vida.spec.js` desactiva (no elimina) sus dos espacios de apoyo al
+    final, porque para entonces ya tienen historial de asignación/traslado y SIGEBI
+    rechaza borrarlos igual que se lo rechazaría a una persona;
+  - `carga_masiva.spec.js`, `espacios_carga_masiva.spec.js` y `bienes_ciclo_vida.spec.js`
+    sí dejan rastro que **no** se autolimpia: un bien (`PW-TEST-BIEN-001` y
+    `PW-TEST-CICLO-*`) y filas en `cargas_masivas`, porque SIGEBI nunca borra un bien
+    ni siquiera a mano. Bórralos de vez en cuando si te molesta el ruido en `/bienes`.
+
+  Nunca corras esto contra producción.
 - **`instituciones.spec.js` no crea una institución nueva a propósito**: a diferencia
   de los demás catálogos, una institución no se puede enviar a la papelera ni borrar,
   solo desactivar — cualquiera que creáramos quedaría para siempre. En su lugar edita
   una existente guardando los mismos datos, para probar el formulario sin ensuciar nada.
 - **El escaneo de QR con cámara no está cubierto.** Simular una cámara en Playwright
   exige configuración adicional (dispositivo de video falso); quedó fuera a propósito.
-- **Quedó pendiente para un próximo lote** (más complejo, ver conversación): ciclo de
-  vida completo de un bien (crear→asignar→trasladar→reintegrar), asignaciones,
-  reintegros por lote, bajas y verificación física (estas últimas dos necesitan más
-  de una cuenta de prueba para probar la aprobación entre roles), reportes, cartera,
-  formatos de reintegro/plaqueteo, facturas, carga masiva de espacios y de fotos.
+- **Quedó pendiente para un próximo lote**: asignaciones/reintegros individuales fuera
+  del flujo de ciclo de vida ya cubierto, reintegros por lote, bajas y verificación
+  física (estas dos últimas necesitan más de una cuenta de prueba para probar la
+  aprobación entre roles distintos), carga masiva de fotos (`.zip`).
 - **Solo se instaló el navegador Chromium**, no Firefox/WebKit, para mantener el
   arranque liviano — `npx playwright install` (sin argumento) los agrega si más
   adelante quieres probar en los tres.

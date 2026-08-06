@@ -83,8 +83,8 @@ $v = static fn (string $campo, mixed $porDefecto = '') => $viejo[$campo] ?? $bie
                value="<?= htmlspecialchars($v('codigo_identificacion'), ENT_QUOTES) ?>">
     </div>
     <div class="col-md-4">
-        <label class="form-label small">Categoría</label>
-        <select name="categoria_id" class="form-select selector-buscable" <?= $puedeEditar ? '' : 'disabled' ?>>
+        <label class="form-label small" for="categoriaBien">Categoría</label>
+        <select name="categoria_id" id="categoriaBien" class="form-select selector-buscable" <?= $puedeEditar ? '' : 'disabled' ?>>
             <option value="">-- Selecciona --</option>
             <?php foreach ($categorias as $c): ?>
                 <option value="<?= $c['id'] ?>" <?= (int) $v('categoria_id', 0) === (int) $c['id'] ? 'selected' : '' ?>>
@@ -236,8 +236,8 @@ $v = static fn (string $campo, mixed $porDefecto = '') => $viejo[$campo] ?? $bie
                         <input type="hidden" name="verificacion_id" value="<?= (int) $verificacionId ?>">
                     <?php endif; ?>
                     <div>
-                        <label class="form-label small">Espacio / ubicación (define el responsable)</label>
-                        <select name="espacio_id" class="form-select form-select-sm selector-buscable" required>
+                        <label class="form-label small" for="espacioAsignar">Espacio / ubicación (define el responsable)</label>
+                        <select name="espacio_id" id="espacioAsignar" class="form-select form-select-sm selector-buscable" required>
                             <option value="">-- Selecciona --</option>
                             <?php foreach ($espaciosInstitucion as $e): ?>
                                 <option value="<?= $e['id'] ?>"><?= htmlspecialchars($e['codigo'] . ' - ' . $e['nombre'], ENT_QUOTES) ?></option>
@@ -278,8 +278,8 @@ $v = static fn (string $campo, mixed $porDefecto = '') => $viejo[$campo] ?? $bie
                         <input type="hidden" name="verificacion_id" value="<?= (int) $verificacionId ?>">
                     <?php endif; ?>
                     <div>
-                        <label class="form-label small">Nuevo espacio</label>
-                        <select name="espacio_destino_id" class="form-select form-select-sm selector-buscable" required>
+                        <label class="form-label small" for="espacioTrasladar">Nuevo espacio</label>
+                        <select name="espacio_destino_id" id="espacioTrasladar" class="form-select form-select-sm selector-buscable" required>
                             <?php foreach ($espaciosInstitucion as $e): ?>
                                 <option value="<?= $e['id'] ?>"><?= htmlspecialchars($e['codigo'] . ' - ' . $e['nombre'], ENT_QUOTES) ?></option>
                             <?php endforeach; ?>
@@ -297,7 +297,7 @@ $v = static fn (string $campo, mixed $porDefecto = '') => $viejo[$campo] ?? $bie
                 </form>
             </details>
 
-            <details class="border rounded p-3 bg-white panel-accion">
+            <details id="panelReintegrar" class="border rounded p-3 bg-white panel-accion">
                 <summary class="fw-semibold" style="cursor:pointer;">Reintegrar</summary>
                 <form method="post" action="<?= Url::to('/bienes/' . $bien['id'] . '/reintegrar') ?>" class="mt-3 d-flex flex-column gap-2">
                     <?= Csrf::field() ?>
