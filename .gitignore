@@ -3,6 +3,13 @@
 
 # Configuración local / credenciales de entorno
 .env
+.env.test
+
+# Playwright (pruebas de navegador) — ver .env.test.example para configurar
+/node_modules/
+/playwright-report/
+/test-results/
+/playwright/.auth/
 
 # Archivos subidos por los usuarios (fotos, PDFs, Excel de cargas masivas) y logs
 /storage/uploads/*
