@@ -21,6 +21,10 @@
 /storage/backups/*
 !/storage/backups/.gitkeep
 
+# Registros de auditoría archivados por database/archivar_auditoria.php
+/storage/archivo_auditoria/*
+!/storage/archivo_auditoria/.gitkeep
+
 # Herramientas locales
 /.claude/
 /build/

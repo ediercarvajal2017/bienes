@@ -12,6 +12,7 @@ $etiquetasAccion = [
     'eliminar' => 'Eliminar',
     'restaurar' => 'Restaurar',
     'purgar' => 'Purgar',
+    'archivar' => 'Archivar',
 ];
 $coloresAccion = [
     'crear' => 'text-bg-primary',
@@ -21,6 +22,7 @@ $coloresAccion = [
     'eliminar' => 'text-bg-danger',
     'restaurar' => 'text-bg-success',
     'purgar' => 'text-bg-dark',
+    'archivar' => 'text-bg-secondary',
 ];
 $etiquetasEntidad = [
     'usuario' => 'Usuario',
@@ -33,6 +35,7 @@ $etiquetasEntidad = [
     'formato_reintegro' => 'Formato de reintegro',
     'formato_plaqueteo' => 'Formato de plaqueteo',
     'cartera_envio' => 'Cartera',
+    'auditoria' => 'Auditoría (archivado)',
 ];
 ?>
 <div class="mb-3">
