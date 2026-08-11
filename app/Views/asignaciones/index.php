@@ -95,8 +95,8 @@ $bienesSeleccionados = $viejo['bienes'] ?? [];
                        placeholder="Buscar por código, descripción, responsable, ubicación, estado o valor..."
                        value="<?= htmlspecialchars($q, ENT_QUOTES) ?>">
             </div>
-            <button type="submit" class="btn btn-primary btn-sm boton-asignar" disabled title="0 seleccionados">
-                <i class="bi bi-person-check me-1"></i>Asignar
+            <button type="submit" class="btn btn-primary btn-sm boton-asignar" disabled>
+                <i class="bi bi-person-check me-1"></i>Asignar <span class="badge bg-white text-primary contador-seleccionados">0</span>
             </button>
         </div>
 
@@ -148,8 +148,8 @@ $bienesSeleccionados = $viejo['bienes'] ?? [];
             'urlBase' => $urlBasePaginacion,
         ]); ?>
 
-        <button type="submit" class="btn btn-primary mt-2 boton-asignar" disabled title="0 seleccionados">
-            <i class="bi bi-person-check me-1"></i>Asignar
+        <button type="submit" class="btn btn-primary mt-2 boton-asignar" disabled>
+            <i class="bi bi-person-check me-1"></i>Asignar <span class="badge bg-white text-primary contador-seleccionados">0</span>
         </button>
     </form>
 
@@ -163,7 +163,7 @@ $bienesSeleccionados = $viejo['bienes'] ?? [];
             const seleccionadas = Array.from(casillas).filter(function (c) { return c.checked; });
             botones.forEach(function (boton) {
                 boton.disabled = seleccionadas.length === 0;
-                boton.title = seleccionadas.length + ' seleccionado(s)';
+                boton.querySelector('.contador-seleccionados').textContent = seleccionadas.length;
             });
             todos.checked = casillas.length > 0 && seleccionadas.length === casillas.length;
         }
