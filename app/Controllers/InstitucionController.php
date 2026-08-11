@@ -166,7 +166,6 @@ final class InstitucionController
             'tipo_sede' => $tipoSede,
             'institucion_padre_id' => ($tipoSede === 'seccion' && $padreId) ? (int) $padreId : null,
             'email_institucional' => trim((string) $request->input('email_institucional')) ?: null,
-            'sitio_web' => trim((string) $request->input('sitio_web')) ?: null,
         ];
     }
 

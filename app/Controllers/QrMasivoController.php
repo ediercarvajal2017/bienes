@@ -96,7 +96,6 @@ final class QrMasivoController
             'bienes' => $bienes,
             'formato' => $formato,
             'institucionNombre' => $institucion['nombre'] ?? '',
-            'institucionSitioWeb' => $institucion['sitio_web'] ?? '',
         ]);
     }
 

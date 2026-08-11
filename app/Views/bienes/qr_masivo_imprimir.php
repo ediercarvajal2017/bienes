@@ -63,15 +63,6 @@ $esEtiqueta = $formato === 'etiqueta';
             min-width: 0;
             overflow: hidden;
         }
-        .etiqueta-termica .texto .sitio-web {
-            font-family: Arial, Helvetica, sans-serif;
-            font-size: 5pt;
-            line-height: 1.1;
-            color: #000;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
         .etiqueta-termica .texto .institucion {
             font-family: Arial, Helvetica, sans-serif;
             font-size: 5.5pt;
@@ -130,9 +121,6 @@ $esEtiqueta = $formato === 'etiqueta';
             <div class="etiqueta-termica">
                 <img src="<?= Url::to('/qr/' . $b['qr_token'] . '/imagen') ?>" alt="QR <?= htmlspecialchars($b['codigo_identificacion'], ENT_QUOTES) ?>">
                 <div class="texto">
-                    <?php if ($institucionSitioWeb !== ''): ?>
-                        <div class="sitio-web"><?= htmlspecialchars($institucionSitioWeb, ENT_QUOTES) ?></div>
-                    <?php endif; ?>
                     <div class="institucion"><?= htmlspecialchars($institucionNombre, ENT_QUOTES) ?></div>
                     <div class="codigo"><?= htmlspecialchars($b['codigo_identificacion'], ENT_QUOTES) ?></div>
                 </div>
