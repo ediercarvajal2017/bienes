@@ -101,17 +101,22 @@ $viejo ??= [];
             <p class="text-muted small">No tienes ningún bien seleccionado todavía.</p>
         <?php endif; ?>
 
-        <div class="mb-3">
-            <button type="button" id="botonEscanear" class="btn btn-sm btn-outline-primary">
-                <i class="bi bi-qr-code-scan me-1"></i>Escanear QR para agregar bienes
-            </button>
-            <div id="panelEscaner" class="d-none mt-2" style="max-width: 360px;">
-                <div id="lectorQrReintegro" class="rounded border overflow-hidden bg-dark"></div>
-                <div class="d-flex gap-2 mt-2 flex-wrap">
-                    <button type="button" id="botonDetenerEscaneo" class="btn btn-sm btn-outline-secondary">Detener escaneo</button>
+        <div class="mb-3 d-flex flex-wrap gap-2 align-items-start">
+            <div>
+                <button type="button" id="botonEscanear" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-qr-code-scan me-1"></i>Escanear QR para agregar bienes
+                </button>
+                <div id="panelEscaner" class="d-none mt-2" style="max-width: 360px;">
+                    <div id="lectorQrReintegro" class="rounded border overflow-hidden bg-dark"></div>
+                    <div class="d-flex gap-2 mt-2 flex-wrap">
+                        <button type="button" id="botonDetenerEscaneo" class="btn btn-sm btn-outline-secondary">Detener escaneo</button>
+                    </div>
+                    <p id="mensajeEscaneo" class="small mt-2 mb-0"></p>
                 </div>
-                <p id="mensajeEscaneo" class="small mt-2 mb-0"></p>
             </div>
+            <button type="submit" class="btn btn-primary btn-sm boton-reintegrar" disabled>
+                <i class="bi bi-box-arrow-in-left me-1"></i>Reintegro (<span class="contador-seleccionados">0</span>)
+            </button>
         </div>
 
         <?php View::render('partials/paginacion', [
@@ -155,8 +160,8 @@ $viejo ??= [];
             'urlBase' => $urlBasePaginacion,
         ]); ?>
 
-        <button type="submit" class="btn btn-primary mt-2" id="botonReintegrar" disabled>
-            <i class="bi bi-box-arrow-in-left me-1"></i>Reintegrar seleccionados (<span id="contadorSeleccionados">0</span>)
+        <button type="submit" class="btn btn-primary mt-2 boton-reintegrar" disabled>
+            <i class="bi bi-box-arrow-in-left me-1"></i>Reintegro (<span class="contador-seleccionados">0</span>)
         </button>
     </form>
 
@@ -164,8 +169,7 @@ $viejo ??= [];
     <script>
     (function () {
         const todos = document.getElementById('seleccionarTodos');
-        const boton = document.getElementById('botonReintegrar');
-        const contador = document.getElementById('contadorSeleccionados');
+        const botones = document.querySelectorAll('.boton-reintegrar');
         const casillas = document.querySelectorAll('.casilla-bien');
         const form = document.getElementById('formReintegro');
 
@@ -208,8 +212,10 @@ $viejo ??= [];
         }
 
         function actualizarContador() {
-            contador.textContent = totalSeleccionado();
-            boton.disabled = totalSeleccionado() === 0;
+            botones.forEach(function (boton) {
+                boton.querySelector('.contador-seleccionados').textContent = totalSeleccionado();
+                boton.disabled = totalSeleccionado() === 0;
+            });
             const marcadasEnPagina = Array.from(casillas).filter(function (c) { return c.checked; });
             todos.checked = casillas.length > 0 && marcadasEnPagina.length === casillas.length;
         }
