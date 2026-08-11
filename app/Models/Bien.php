@@ -307,15 +307,14 @@ final class Bien
 
     /**
      * Confirma que la etiqueta física fue escaneada y coincide con este bien (botón
-     * "Confirmar etiquetado" en /qr/{token}). Si por alguna razón nunca se marcó como
-     * impreso (ej. bienes de antes de este cambio), esta confirmación también deja
-     * constancia de que sí existe una etiqueta física en circulación.
+     * "Confirmar etiquetado" en /qr/{token}). El llamador (QrController::confirmarEtiqueta)
+     * ya garantizó que qr_impreso_en no es null antes de llegar aquí — no se puede
+     * confirmar una etiqueta que el sistema no registra como impresa.
      */
     public static function confirmarEtiqueta(int $id, int $usuarioId): void
     {
         Database::connection()->prepare(
-            'UPDATE bienes SET qr_impreso_en = COALESCE(qr_impreso_en, NOW()), qr_confirmado_en = NOW(), qr_confirmado_por = ?
-             WHERE id = ?'
+            'UPDATE bienes SET qr_confirmado_en = NOW(), qr_confirmado_por = ? WHERE id = ?'
         )->execute([$usuarioId, $id]);
     }
 

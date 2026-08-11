@@ -114,7 +114,14 @@ $qrImpreso = !empty($bien['qr_impreso_en']);
                 <?php endif; ?>
             </div>
 
-            <?php if (!$qrConfirmado): ?>
+            <?php if (!$qrImpreso): ?>
+                <p class="text-muted small mt-2 mb-0">
+                    <i class="bi bi-printer me-1"></i>
+                    Todavía no se ha generado la etiqueta de este bien. Ve a
+                    <a href="<?= Url::to('/bienes/qr-masivo') ?>">Generar QR masivo</a> para imprimirla —
+                    una vez impresa, podrás confirmarla aquí.
+                </p>
+            <?php elseif (!$qrConfirmado): ?>
                 <form method="post" action="<?= Url::to('/qr/' . $token . '/confirmar-etiqueta') ?>" class="mt-2">
                     <?= \App\Core\Csrf::field() ?>
                     <button type="submit" class="btn btn-outline-primary btn-sm w-100">

@@ -87,6 +87,12 @@ final class QrController
             exit;
         }
 
+        if ($bien['qr_impreso_en'] === null) {
+            Session::flash('error', 'Todavía no se ha generado la etiqueta de este bien — imprímela primero desde "Generar QR masivo".');
+            header('Location: ' . Url::to("/qr/{$token}"));
+            exit;
+        }
+
         if ($bien['qr_confirmado_en'] === null) {
             Bien::confirmarEtiqueta((int) $bien['id'], (int) Auth::id());
             Auditoria::registrar(Auth::id(), $institucionId, 'confirmar_qr', 'bien', (int) $bien['id'], null, [
