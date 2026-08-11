@@ -18,6 +18,7 @@ final class QrMasivoController
 {
     private const POR_PAGINA_DEFECTO = 50;
     private const OPCIONES_POR_PAGINA = [10, 25, 50, 100, 0];
+    private const FORMATOS_VALIDOS = ['hoja', 'etiqueta'];
 
     public function formulario(): void
     {
@@ -82,8 +83,14 @@ final class QrMasivoController
             exit;
         }
 
+        $formato = (string) $request->input('formato', 'hoja');
+        if (!in_array($formato, self::FORMATOS_VALIDOS, true)) {
+            $formato = 'hoja';
+        }
+
         View::render('bienes/qr_masivo_imprimir', [
             'bienes' => $bienes,
+            'formato' => $formato,
         ]);
     }
 

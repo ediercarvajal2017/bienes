@@ -2,6 +2,8 @@
 
 use App\Core\Url;
 
+$esEtiqueta = $formato === 'etiqueta';
+
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -30,6 +32,38 @@ use App\Core\Url;
         }
         .etiqueta img { width: 120px; height: 120px; }
         .etiqueta .codigo { font-family: ui-monospace, "Cascadia Code", "SF Mono", Consolas, monospace; font-weight: 700; font-size: 13px; margin-top: 4px; color: #000; }
+
+        <?php if ($esEtiqueta): ?>
+        /* Etiqueta térmica: cada etiqueta es una página física de 50x25mm en el rollo
+           continuo. El tamaño de página real lo decide el diálogo de impresión (hay
+           que elegir la impresora de etiquetas, papel 50x25mm y escala 100% ahí) —
+           este @page es solo lo que el navegador usa para paginar en la vista previa. */
+        @page { size: 50mm 25mm; margin: 0; }
+        body { padding: 0; }
+        .hoja-etiquetas { display: block; }
+        .etiqueta-termica {
+            width: 50mm;
+            height: 25mm;
+            box-sizing: border-box;
+            padding: 1.5mm 2mm;
+            display: flex;
+            align-items: center;
+            gap: 2mm;
+            page-break-after: always;
+            break-after: page;
+        }
+        .etiqueta-termica:last-child { page-break-after: auto; break-after: auto; }
+        .etiqueta-termica img { width: 20mm; height: 20mm; flex-shrink: 0; }
+        .etiqueta-termica .texto {
+            font-family: ui-monospace, "Cascadia Code", "SF Mono", Consolas, monospace;
+            font-weight: 700;
+            font-size: 8.5pt;
+            line-height: 1.15;
+            color: #000;
+            overflow-wrap: break-word;
+        }
+        <?php endif; ?>
+
         @media print {
             .no-imprimir { display: none !important; }
             body { padding: 0; }
@@ -43,20 +77,39 @@ use App\Core\Url;
     <div>
         <h1 class="h5 mb-1">Códigos QR para imprimir</h1>
         <p class="text-muted small mb-0"><?= count($bienes) ?> bien(es) — cierra esta pestaña para volver a la selección.</p>
+        <?php if ($esEtiqueta): ?>
+            <p class="text-muted small mb-0">
+                Formato etiqueta térmica 50x25mm: una etiqueta por página. En el diálogo de impresión elige la
+                impresora de etiquetas, tamaño de papel <strong>50 x 25 mm</strong> (o "administrado por la
+                impresora") y escala <strong>100%</strong> — no "ajustar a la página", o el QR va a salir
+                descuadrado.
+            </p>
+        <?php endif; ?>
     </div>
     <button type="button" class="btn btn-primary" onclick="window.print()">
         <i class="bi bi-printer me-1"></i>Imprimir
     </button>
 </div>
 
-<div class="hoja">
-    <?php foreach ($bienes as $b): ?>
-        <div class="etiqueta">
-            <img src="<?= Url::to('/qr/' . $b['qr_token'] . '/imagen') ?>" alt="QR <?= htmlspecialchars($b['codigo_identificacion'], ENT_QUOTES) ?>">
-            <div class="codigo"><?= htmlspecialchars($b['codigo_identificacion'], ENT_QUOTES) ?></div>
-        </div>
-    <?php endforeach; ?>
-</div>
+<?php if ($esEtiqueta): ?>
+    <div class="hoja-etiquetas">
+        <?php foreach ($bienes as $b): ?>
+            <div class="etiqueta-termica">
+                <img src="<?= Url::to('/qr/' . $b['qr_token'] . '/imagen') ?>" alt="QR <?= htmlspecialchars($b['codigo_identificacion'], ENT_QUOTES) ?>">
+                <div class="texto"><?= htmlspecialchars($b['codigo_identificacion'], ENT_QUOTES) ?></div>
+            </div>
+        <?php endforeach; ?>
+    </div>
+<?php else: ?>
+    <div class="hoja">
+        <?php foreach ($bienes as $b): ?>
+            <div class="etiqueta">
+                <img src="<?= Url::to('/qr/' . $b['qr_token'] . '/imagen') ?>" alt="QR <?= htmlspecialchars($b['codigo_identificacion'], ENT_QUOTES) ?>">
+                <div class="codigo"><?= htmlspecialchars($b['codigo_identificacion'], ENT_QUOTES) ?></div>
+            </div>
+        <?php endforeach; ?>
+    </div>
+<?php endif; ?>
 
 </body>
 </html>

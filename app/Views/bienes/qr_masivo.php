@@ -90,6 +90,14 @@ use App\Core\View;
                 'urlBase' => $urlBasePaginacion,
             ]); ?>
 
+            <div class="mb-2" style="max-width: 360px;">
+                <label class="form-label small mb-1">Formato de impresión</label>
+                <select name="formato" class="form-select form-select-sm">
+                    <option value="hoja">Hoja para recortar (varios QR por página, papel normal)</option>
+                    <option value="etiqueta">Etiqueta térmica 50x25mm (una por etiqueta, rollo continuo)</option>
+                </select>
+            </div>
+
             <div class="d-flex flex-wrap gap-2 align-items-center mt-3">
                 <button type="submit" class="btn btn-primary" id="botonGenerar" disabled>
                     <i class="bi bi-qr-code me-1"></i>Generar QR (<span id="contadorSeleccionados">0</span>)
