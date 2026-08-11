@@ -73,6 +73,13 @@ $v = static fn (string $campo, mixed $porDefecto = '') => $viejo[$campo] ?? $ins
     </div>
 
     <div class="col-12">
+        <label class="form-label small">Sitio web</label>
+        <input type="text" name="sitio_web" class="form-control" placeholder="ejemplo.edu.co" <?= $puedeEditar ? '' : 'disabled' ?>
+               value="<?= htmlspecialchars($v('sitio_web'), ENT_QUOTES) ?>">
+        <div class="form-text small">Opcional — si lo llenas, aparece en las etiquetas QR térmicas de esta institución.</div>
+    </div>
+
+    <div class="col-12">
         <label class="form-label small d-block">Logo institucional (JPG o PNG)</label>
         <?php if (!empty($institucion['logo_path'])): ?>
             <img src="<?= Url::to('/archivos/' . $institucion['logo_path']) ?>" alt="Logo actual" class="mb-2 d-block" style="height:56px;">

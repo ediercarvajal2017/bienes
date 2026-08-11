@@ -55,8 +55,8 @@ final class Institucion
     public static function create(array $datos): int
     {
         $stmt = Database::connection()->prepare(
-            'INSERT INTO instituciones (codigo_dane, nombre, direccion, tipo_sede, institucion_padre_id, email_institucional)
-             VALUES (:codigo_dane, :nombre, :direccion, :tipo_sede, :institucion_padre_id, :email_institucional)'
+            'INSERT INTO instituciones (codigo_dane, nombre, direccion, tipo_sede, institucion_padre_id, email_institucional, sitio_web)
+             VALUES (:codigo_dane, :nombre, :direccion, :tipo_sede, :institucion_padre_id, :email_institucional, :sitio_web)'
         );
         $stmt->execute($datos);
 
@@ -67,7 +67,8 @@ final class Institucion
     {
         $stmt = Database::connection()->prepare(
             'UPDATE instituciones SET codigo_dane = :codigo_dane, nombre = :nombre, direccion = :direccion,
-             tipo_sede = :tipo_sede, institucion_padre_id = :institucion_padre_id, email_institucional = :email_institucional
+             tipo_sede = :tipo_sede, institucion_padre_id = :institucion_padre_id, email_institucional = :email_institucional,
+             sitio_web = :sitio_web
              WHERE id = :id'
         );
         $stmt->execute([
@@ -77,6 +78,7 @@ final class Institucion
             'tipo_sede' => $datos['tipo_sede'],
             'institucion_padre_id' => $datos['institucion_padre_id'],
             'email_institucional' => $datos['email_institucional'],
+            'sitio_web' => $datos['sitio_web'],
             'id' => $id,
         ]);
     }
