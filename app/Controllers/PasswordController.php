@@ -180,12 +180,26 @@ final class PasswordController
             return mb_substr($texto, 0, 1) . str_repeat('*', $longitud - 1);
         };
 
+        // La parte antes del "@" deja ver 2 letras al inicio y 1 al final (en vez de
+        // solo 1 al inicio) — con textos tan cortos como "sofia" ocultar casi todo
+        // dejaba muy pocas pistas para que la persona reconociera SU correo entre
+        // varios parecidos. Con 3 letras o menos no hay margen para tapar nada sin
+        // mostrarlo completo, así que se deja tal cual.
+        $ocultarUsuario = static function (string $texto): string {
+            $longitud = mb_strlen($texto);
+            if ($longitud <= 3) {
+                return $texto;
+            }
+
+            return mb_substr($texto, 0, 2) . str_repeat('*', $longitud - 3) . mb_substr($texto, -1);
+        };
+
         $partesDominio = explode('.', $dominio);
         $primeraParteDominio = array_shift($partesDominio);
 
         $dominioMascarado = $ocultar($primeraParteDominio) . (count($partesDominio) ? '.' . implode('.', $partesDominio) : '');
 
-        return $ocultar($usuarioCorreo) . '@' . $dominioMascarado;
+        return $ocultarUsuario($usuarioCorreo) . '@' . $dominioMascarado;
     }
 
     private function plantillaCorreoReset(string $nombre, string $enlace): string
