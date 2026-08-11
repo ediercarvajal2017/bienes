@@ -88,9 +88,14 @@ final class QrMasivoController
             $formato = 'hoja';
         }
 
+        // El nombre se trae una sola vez por lote (no por bien): esta pantalla siempre
+        // trabaja con una única institución a la vez.
+        $institucion = $formato === 'etiqueta' ? Institucion::find($institucionId) : null;
+
         View::render('bienes/qr_masivo_imprimir', [
             'bienes' => $bienes,
             'formato' => $formato,
+            'institucionNombre' => $institucion['nombre'] ?? '',
         ]);
     }
 

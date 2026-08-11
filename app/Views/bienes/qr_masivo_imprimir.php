@@ -53,13 +53,37 @@ $esEtiqueta = $formato === 'etiqueta';
             break-after: page;
         }
         .etiqueta-termica:last-child { page-break-after: auto; break-after: auto; }
-        .etiqueta-termica img { width: 20mm; height: 20mm; flex-shrink: 0; }
+        .etiqueta-termica img {
+            width: 21mm;
+            height: 21mm;
+            flex-shrink: 0;
+        }
         .etiqueta-termica .texto {
+            flex: 1;
+            min-width: 0;
+            overflow: hidden;
+        }
+        .etiqueta-termica .texto .institucion {
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 5.5pt;
+            line-height: 1.1;
+            color: #000;
+            overflow-wrap: break-word;
+            /* Nombres largos se truncan a 3 líneas con "…" — sin este límite, un nombre
+               institucional largo desborda la altura fija de la etiqueta (25mm) y se
+               monta sobre la etiqueta siguiente al imprimir. */
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .etiqueta-termica .texto .codigo {
             font-family: ui-monospace, "Cascadia Code", "SF Mono", Consolas, monospace;
             font-weight: 700;
-            font-size: 8.5pt;
+            font-size: 8pt;
             line-height: 1.15;
             color: #000;
+            margin-top: 1mm;
             overflow-wrap: break-word;
         }
         <?php endif; ?>
@@ -96,7 +120,10 @@ $esEtiqueta = $formato === 'etiqueta';
         <?php foreach ($bienes as $b): ?>
             <div class="etiqueta-termica">
                 <img src="<?= Url::to('/qr/' . $b['qr_token'] . '/imagen') ?>" alt="QR <?= htmlspecialchars($b['codigo_identificacion'], ENT_QUOTES) ?>">
-                <div class="texto"><?= htmlspecialchars($b['codigo_identificacion'], ENT_QUOTES) ?></div>
+                <div class="texto">
+                    <div class="institucion"><?= htmlspecialchars($institucionNombre, ENT_QUOTES) ?></div>
+                    <div class="codigo"><?= htmlspecialchars($b['codigo_identificacion'], ENT_QUOTES) ?></div>
+                </div>
             </div>
         <?php endforeach; ?>
     </div>
