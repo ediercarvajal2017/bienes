@@ -89,10 +89,15 @@ $bienesSeleccionados = $viejo['bienes'] ?? [];
         ?>
 
         <h2 class="h6 mb-2">Bienes (<?= $total ?>)</h2>
-        <div class="mb-2" style="max-width: 420px;">
-            <input type="search" id="buscador" class="form-control form-control-sm"
-                   placeholder="Buscar por código, descripción, responsable, ubicación, estado o valor..."
-                   value="<?= htmlspecialchars($q, ENT_QUOTES) ?>">
+        <div class="d-flex flex-wrap justify-content-between align-items-end gap-2 mb-2">
+            <div style="max-width: 420px; flex: 1 1 260px;">
+                <input type="search" id="buscador" class="form-control form-control-sm"
+                       placeholder="Buscar por código, descripción, responsable, ubicación, estado o valor..."
+                       value="<?= htmlspecialchars($q, ENT_QUOTES) ?>">
+            </div>
+            <button type="submit" class="btn btn-primary btn-sm boton-asignar" disabled title="0 seleccionados">
+                <i class="bi bi-person-check me-1"></i>Asignar
+            </button>
         </div>
 
         <?php View::render('partials/paginacion', [
@@ -143,22 +148,23 @@ $bienesSeleccionados = $viejo['bienes'] ?? [];
             'urlBase' => $urlBasePaginacion,
         ]); ?>
 
-        <button type="submit" class="btn btn-primary mt-2" id="botonAsignar" disabled>
-            <i class="bi bi-person-check me-1"></i>Asignar seleccionados (<span id="contadorSeleccionados">0</span>)
+        <button type="submit" class="btn btn-primary mt-2 boton-asignar" disabled title="0 seleccionados">
+            <i class="bi bi-person-check me-1"></i>Asignar
         </button>
     </form>
 
     <script>
     (function () {
         const todos = document.getElementById('seleccionarTodos');
-        const boton = document.getElementById('botonAsignar');
-        const contador = document.getElementById('contadorSeleccionados');
+        const botones = document.querySelectorAll('.boton-asignar');
         const casillas = document.querySelectorAll('.casilla-bien');
 
         function actualizarContador() {
             const seleccionadas = Array.from(casillas).filter(function (c) { return c.checked; });
-            contador.textContent = seleccionadas.length;
-            boton.disabled = seleccionadas.length === 0;
+            botones.forEach(function (boton) {
+                boton.disabled = seleccionadas.length === 0;
+                boton.title = seleccionadas.length + ' seleccionado(s)';
+            });
             todos.checked = casillas.length > 0 && seleccionadas.length === casillas.length;
         }
 
