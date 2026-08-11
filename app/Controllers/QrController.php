@@ -5,9 +5,13 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Core\Auth;
+use App\Core\Csrf;
+use App\Core\Request;
+use App\Core\Session;
 use App\Core\Url;
 use App\Core\View;
 use App\Models\Asignacion;
+use App\Models\Auditoria;
 use App\Models\Bien;
 use App\Models\JornadaVerificacion;
 use App\Models\Verificacion;
@@ -46,7 +50,53 @@ final class QrController
             'jornadaActiva' => $jornadaActiva,
             'puedeVerificar' => $puedeVerificar,
             'verificacionActual' => $verificacionActual,
+            'mensaje' => Session::pullFlash('ok'),
+            'error' => Session::pullFlash('error'),
         ]);
+    }
+
+    /**
+     * Botón "Confirmar etiquetado" en /qr/{token}: quien acaba de pegar la etiqueta
+     * física la escanea y, si lo que ve en pantalla coincide con lo que tiene enfrente,
+     * confirma — deja constancia de que ESA etiqueta específica quedó pegada en el bien
+     * correcto (no solo que el QR fue generado). Ver Bien::confirmarEtiqueta().
+     */
+    public function confirmarEtiqueta(string $token): void
+    {
+        $bien = Bien::findPorToken($token);
+
+        if (!$bien) {
+            http_response_code(404);
+            View::render('errors/404');
+            exit;
+        }
+
+        $institucionId = (int) $bien['institucion_id'];
+
+        if (!Auth::esSuperusuario() && $institucionId !== Auth::institucionId()) {
+            http_response_code(403);
+            View::render('errors/403');
+            exit;
+        }
+
+        $request = new Request();
+
+        if (!Csrf::verify((string) $request->input('_csrf'))) {
+            Session::flash('error', 'Tu sesión expiró, intenta de nuevo.');
+            header('Location: ' . Url::to("/qr/{$token}"));
+            exit;
+        }
+
+        if ($bien['qr_confirmado_en'] === null) {
+            Bien::confirmarEtiqueta((int) $bien['id'], (int) Auth::id());
+            Auditoria::registrar(Auth::id(), $institucionId, 'confirmar_qr', 'bien', (int) $bien['id'], null, [
+                'codigo_identificacion' => $bien['codigo_identificacion'],
+            ]);
+        }
+
+        Session::flash('ok', 'Etiqueta confirmada: coincide con este bien.');
+        header('Location: ' . Url::to("/qr/{$token}"));
+        exit;
     }
 
     public function imagen(string $token): void

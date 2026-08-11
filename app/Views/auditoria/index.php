@@ -13,6 +13,7 @@ $etiquetasAccion = [
     'restaurar' => 'Restaurar',
     'purgar' => 'Purgar',
     'archivar' => 'Archivar',
+    'confirmar_qr' => 'Confirmar etiqueta QR',
 ];
 $coloresAccion = [
     'crear' => 'text-bg-primary',
@@ -23,6 +24,7 @@ $coloresAccion = [
     'restaurar' => 'text-bg-success',
     'purgar' => 'text-bg-dark',
     'archivar' => 'text-bg-secondary',
+    'confirmar_qr' => 'text-bg-success',
 ];
 $etiquetasEntidad = [
     'usuario' => 'Usuario',

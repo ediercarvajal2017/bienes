@@ -274,15 +274,49 @@ final class Bien
     public static function findPorToken(string $token): ?array
     {
         $stmt = Database::connection()->prepare(
-            'SELECT b.*, c.nombre AS categoria_nombre, i.nombre AS institucion_nombre
+            'SELECT b.*, c.nombre AS categoria_nombre, i.nombre AS institucion_nombre,
+                    CONCAT(u.nombres, " ", u.apellidos) AS qr_confirmado_por_nombre
              FROM bienes b
              LEFT JOIN categorias_bienes c ON c.id = b.categoria_id
              JOIN instituciones i ON i.id = b.institucion_id
+             LEFT JOIN usuarios u ON u.id = b.qr_confirmado_por
              WHERE b.qr_token = ?'
         );
         $stmt->execute([$token]);
 
         return $stmt->fetch() ?: null;
+    }
+
+    /**
+     * Marca la fecha de "impreso" para un lote de bienes recién incluidos en una hoja/
+     * etiqueta de /bienes/qr-masivo. Solo escribe sobre los que todavía no tenían fecha
+     * (no pisa la primera impresión real si alguien vuelve a generar el mismo lote).
+     */
+    public static function marcarQrImpreso(array $ids): void
+    {
+        $ids = array_values(array_unique(array_map('intval', $ids)));
+        if (empty($ids)) {
+            return;
+        }
+
+        $marcadores = implode(',', array_fill(0, count($ids), '?'));
+        Database::connection()->prepare(
+            "UPDATE bienes SET qr_impreso_en = NOW() WHERE id IN ({$marcadores}) AND qr_impreso_en IS NULL"
+        )->execute($ids);
+    }
+
+    /**
+     * Confirma que la etiqueta física fue escaneada y coincide con este bien (botón
+     * "Confirmar etiquetado" en /qr/{token}). Si por alguna razón nunca se marcó como
+     * impreso (ej. bienes de antes de este cambio), esta confirmación también deja
+     * constancia de que sí existe una etiqueta física en circulación.
+     */
+    public static function confirmarEtiqueta(int $id, int $usuarioId): void
+    {
+        Database::connection()->prepare(
+            'UPDATE bienes SET qr_impreso_en = COALESCE(qr_impreso_en, NOW()), qr_confirmado_en = NOW(), qr_confirmado_por = ?
+             WHERE id = ?'
+        )->execute([$usuarioId, $id]);
     }
 
     public static function marcarDadoDeBaja(int $id): void

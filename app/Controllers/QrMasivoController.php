@@ -92,6 +92,10 @@ final class QrMasivoController
         // trabaja con una única institución a la vez.
         $institucion = $formato === 'etiqueta' ? Institucion::find($institucionId) : null;
 
+        // Generar la hoja/etiqueta es lo que cuenta como "impreso" — no pisa la fecha si
+        // ya se había marcado antes (ver Bien::marcarQrImpreso).
+        Bien::marcarQrImpreso(array_column($bienes, 'id'));
+
         View::render('bienes/qr_masivo_imprimir', [
             'bienes' => $bienes,
             'formato' => $formato,

@@ -292,6 +292,10 @@ $router->post('/qr/{token}/verificar', [VerificacionController::class, 'verifica
     AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':bienes.ver',
 ]);
 
+$router->post('/qr/{token}/confirmar-etiqueta', [QrController::class, 'confirmarEtiqueta'], [
+    AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':bienes.ver',
+]);
+
 $router->get('/verificaciones', [VerificacionController::class, 'index'], [
     AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':verificaciones.gestionar',
 ]);

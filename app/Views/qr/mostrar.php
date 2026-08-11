@@ -9,6 +9,9 @@ $etiquetasEstado = [
     'en_reparacion' => 'En reparación',
     'dado_de_baja' => 'Dado de baja',
 ];
+
+$qrConfirmado = !empty($bien['qr_confirmado_en']);
+$qrImpreso = !empty($bien['qr_impreso_en']);
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -39,6 +42,13 @@ $etiquetasEstado = [
         </button>
         <div class="brand mb-3"><i class="bi bi-tag-fill me-1"></i>SIGEBI</div>
 
+        <?php if (!empty($mensaje)): ?>
+            <div class="alert alert-success py-2 small"><?= htmlspecialchars($mensaje, ENT_QUOTES) ?></div>
+        <?php endif; ?>
+        <?php if (!empty($error)): ?>
+            <div class="alert alert-danger py-2 small"><?= htmlspecialchars($error, ENT_QUOTES) ?></div>
+        <?php endif; ?>
+
         <?php if (!empty($bien['foto_path'])): ?>
             <img src="<?= Url::to('/archivos/' . $bien['foto_path']) ?>" class="d-block w-100 mb-3" style="border-radius:8px; max-height:220px; object-fit:cover;">
         <?php else: ?>
@@ -53,6 +63,22 @@ $etiquetasEstado = [
         <span class="badge badge-estado-<?= htmlspecialchars($bien['estado'], ENT_QUOTES) ?> mb-3">
             <?= $etiquetasEstado[$bien['estado']] ?? $bien['estado'] ?>
         </span>
+
+        <?php if ($puedeGestionar): ?>
+            <?php if ($qrConfirmado): ?>
+                <span class="badge text-bg-success mb-3">
+                    <i class="bi bi-patch-check-fill me-1"></i>Etiqueta confirmada
+                </span>
+            <?php elseif ($qrImpreso): ?>
+                <span class="badge text-bg-warning mb-3">
+                    <i class="bi bi-exclamation-triangle me-1"></i>Etiqueta impresa, sin confirmar
+                </span>
+            <?php else: ?>
+                <span class="badge text-bg-secondary mb-3">
+                    <i class="bi bi-printer me-1"></i>QR sin imprimir todavía
+                </span>
+            <?php endif; ?>
+        <?php endif; ?>
 
         <dl class="row small mb-0">
             <?php if (!empty($bien['marca'])): ?>
@@ -87,6 +113,25 @@ $etiquetasEstado = [
                     </a>
                 <?php endif; ?>
             </div>
+
+            <?php if (!$qrConfirmado): ?>
+                <form method="post" action="<?= Url::to('/qr/' . $token . '/confirmar-etiqueta') ?>" class="mt-2">
+                    <?= \App\Core\Csrf::field() ?>
+                    <button type="submit" class="btn btn-outline-primary btn-sm w-100">
+                        <i class="bi bi-patch-check me-1"></i>Confirmar: esta etiqueta corresponde a este bien
+                    </button>
+                </form>
+                <p class="text-muted small mt-1 mb-0">
+                    ¿Acabas de pegar esta etiqueta? Si lo que ves aquí coincide con el bien que tienes
+                    enfrente, confírmalo — así queda registrado que quedó en el lugar correcto.
+                </p>
+            <?php else: ?>
+                <p class="text-muted small mt-2 mb-0">
+                    <i class="bi bi-patch-check-fill text-success me-1"></i>
+                    Confirmada por <?= htmlspecialchars(trim((string) ($bien['qr_confirmado_por_nombre'] ?? '')) ?: '—', ENT_QUOTES) ?>
+                    el <?= htmlspecialchars((string) $bien['qr_confirmado_en'], ENT_QUOTES) ?>
+                </p>
+            <?php endif; ?>
 
             <?php if (!empty($puedeVerificar)): ?>
                 <hr>

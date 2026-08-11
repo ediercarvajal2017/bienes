@@ -105,6 +105,7 @@ $etiquetasEstado = [
             <th>Responsable / ubicación</th>
             <th>Valor</th>
             <th>Estado</th>
+            <th>QR</th>
             <th></th>
         </tr>
         </thead>
@@ -130,6 +131,7 @@ $etiquetasEstado = [
                     <?php if ((int) $l['en_reparacion'] > 0): ?> · <?= (int) $l['en_reparacion'] ?> en reparación<?php endif; ?>
                     <?php if ((int) $l['dados_de_baja'] > 0): ?> · <?= (int) $l['dados_de_baja'] ?> dadas de baja<?php endif; ?>
                 </td>
+                <td class="text-muted small" data-label="QR">—</td>
                 <td class="text-end">
                     <a href="<?= Url::to('/bienes') ?>?q=<?= urlencode($l['lote']) ?>" class="btn btn-sm btn-outline-secondary">
                         <i class="bi bi-eye me-1"></i>Ver detalles
@@ -169,6 +171,15 @@ $etiquetasEstado = [
                 </td>
                 <td class="mono" data-label="Valor">$<?= number_format((float) $b['valor'], 0, ',', '.') ?></td>
                 <td data-label="Estado"><span class="badge badge-estado-<?= htmlspecialchars($b['estado'], ENT_QUOTES) ?>"><?= $etiquetasEstado[$b['estado']] ?? $b['estado'] ?></span></td>
+                <td data-label="QR">
+                    <?php if (!empty($b['qr_confirmado_en'])): ?>
+                        <span class="badge text-bg-success" title="Confirmada">Confirmada</span>
+                    <?php elseif (!empty($b['qr_impreso_en'])): ?>
+                        <span class="badge text-bg-warning" title="Impresa, sin confirmar">Sin confirmar</span>
+                    <?php else: ?>
+                        <span class="badge text-bg-secondary" title="QR sin imprimir todavía">Sin imprimir</span>
+                    <?php endif; ?>
+                </td>
                 <td class="text-end">
                     <a href="<?= Url::to('/bienes/' . $b['id'] . '/editar') ?>" class="btn btn-sm btn-outline-secondary">
                         <?= Auth::esSuperusuario() || Auth::tienePermiso('bienes.editar') ? 'Editar' : 'Ver' ?>
