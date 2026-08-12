@@ -80,7 +80,7 @@ $v = static fn (string $campo, mixed $porDefecto = '') => $viejo[$campo] ?? $bie
 
     <div class="col-md-4">
         <label class="form-label small requerido" for="codigoIdentificacion">Código de identificación</label>
-        <input type="text" name="codigo_identificacion" id="codigoIdentificacion" class="form-control" required <?= $puedeEditar ? '' : 'disabled' ?>
+        <input type="text" name="codigo_identificacion" id="codigoIdentificacion" class="form-control" required autocomplete="off" <?= $puedeEditar ? '' : 'disabled' ?>
                value="<?= htmlspecialchars($v('codigo_identificacion'), ENT_QUOTES) ?>">
         <?php if (!$esEdicion): ?>
             <div class="form-text">Si eliges la categoría "Sin cartera", se sugiere el siguiente código automáticamente (puedes cambiarlo).</div>
@@ -235,7 +235,13 @@ document.addEventListener('DOMContentLoaded', function () {
 <?php if (!$esEdicion): ?>
 // Al registrar un bien nuevo: si la categoría elegida es "Sin cartera", se sugiere el
 // siguiente código de 10 dígitos (ver Bien::siguienteCodigoSinCartera) — solo si el
-// campo de código todavía está vacío, para nunca pisar algo que el usuario ya escribió.
+// usuario mismo no ha escrito nada todavía en este campo, para nunca pisar lo que
+// escribió a mano. Ojo: esto NO es lo mismo que "el campo está vacío" — el navegador
+// puede restaurar un valor viejo ahí solo (autocompletado por nombre de campo) sin que
+// el usuario haya tocado nada en esta visita, y eso hacía que la sugerencia se saltara
+// en silencio (el campo "no estaba vacío" aunque el usuario nunca escribió nada). Por
+// eso el código de abajo también apaga el autocompletado del navegador para este campo,
+// y usa una bandera propia en vez de mirar el valor actual del campo.
 document.addEventListener('DOMContentLoaded', function () {
     const categoriaSelect = document.getElementById('categoriaBien');
     const codigoInput = document.getElementById('codigoIdentificacion');
@@ -243,6 +249,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const nombreProtegida = <?= json_encode(\App\Models\Categoria::NOMBRE_CATEGORIA_PROTEGIDA) ?>;
     const institucionFija = <?= json_encode(Auth::institucionId()) ?>;
+
+    let editadoPorUsuario = codigoInput.value.trim() !== '';
+    codigoInput.addEventListener('input', function () {
+        editadoPorUsuario = true;
+    });
 
     function institucionActual() {
         const institucionSelect = document.getElementById('institucionBien');
@@ -257,7 +268,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const opcion = tomCategoria ? tomCategoria.options[valor] : null;
         const nombreElegido = opcion ? opcion.text : (categoriaSelect.options[categoriaSelect.selectedIndex] || {}).text;
         if (nombreElegido !== nombreProtegida) { return; }
-        if (codigoInput.value.trim() !== '') { return; }
+        if (editadoPorUsuario) { return; }
 
         const institucionId = institucionActual();
         if (!institucionId) { return; }
@@ -265,7 +276,7 @@ document.addEventListener('DOMContentLoaded', function () {
         fetch(<?= json_encode(Url::to('/bienes/siguiente-codigo-sin-cartera')) ?> + '?institucion_id=' + encodeURIComponent(institucionId))
             .then(function (respuesta) { return respuesta.json(); })
             .then(function (datos) {
-                if (datos.codigo && codigoInput.value.trim() === '') {
+                if (datos.codigo && !editadoPorUsuario) {
                     codigoInput.value = datos.codigo;
                 }
             });
