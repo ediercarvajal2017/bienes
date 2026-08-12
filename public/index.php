@@ -197,6 +197,9 @@ $router->get('/bienes', [BienController::class, 'index'], [
 $router->get('/bienes/crear', [BienController::class, 'crear'], [
     AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':bienes.crear',
 ]);
+$router->get('/bienes/siguiente-codigo-sin-cartera', [BienController::class, 'siguienteCodigoSinCartera'], [
+    AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':bienes.crear',
+]);
 $router->post('/bienes', [BienController::class, 'guardar'], [
     AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':bienes.crear',
 ]);

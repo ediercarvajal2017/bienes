@@ -79,9 +79,12 @@ $v = static fn (string $campo, mixed $porDefecto = '') => $viejo[$campo] ?? $bie
     <?php endif; ?>
 
     <div class="col-md-4">
-        <label class="form-label small requerido">Código de identificación</label>
-        <input type="text" name="codigo_identificacion" class="form-control" required <?= $puedeEditar ? '' : 'disabled' ?>
+        <label class="form-label small requerido" for="codigoIdentificacion">Código de identificación</label>
+        <input type="text" name="codigo_identificacion" id="codigoIdentificacion" class="form-control" required <?= $puedeEditar ? '' : 'disabled' ?>
                value="<?= htmlspecialchars($v('codigo_identificacion'), ENT_QUOTES) ?>">
+        <?php if (!$esEdicion): ?>
+            <div class="form-text">Si eliges la categoría "Sin cartera", se sugiere el siguiente código automáticamente (puedes cambiarlo).</div>
+        <?php endif; ?>
     </div>
     <div class="col-md-4">
         <label class="form-label small" for="categoriaBien">Categoría</label>
@@ -228,6 +231,47 @@ document.addEventListener('DOMContentLoaded', function () {
         actualizarCategorias(institucionSelect.value);
     }
 });
+
+<?php if (!$esEdicion): ?>
+// Al registrar un bien nuevo: si la categoría elegida es "Sin cartera", se sugiere el
+// siguiente código de 10 dígitos (ver Bien::siguienteCodigoSinCartera) — solo si el
+// campo de código todavía está vacío, para nunca pisar algo que el usuario ya escribió.
+document.addEventListener('DOMContentLoaded', function () {
+    const categoriaSelect = document.getElementById('categoriaBien');
+    const codigoInput = document.getElementById('codigoIdentificacion');
+    if (!categoriaSelect || !codigoInput) { return; }
+
+    const nombreProtegida = <?= json_encode(\App\Models\Categoria::NOMBRE_CATEGORIA_PROTEGIDA) ?>;
+    const institucionFija = <?= json_encode(Auth::institucionId()) ?>;
+
+    function institucionActual() {
+        const institucionSelect = document.getElementById('institucionBien');
+        return institucionSelect ? (institucionSelect.value || null) : institucionFija;
+    }
+
+    categoriaSelect.addEventListener('change', function () {
+        const tomCategoria = categoriaSelect.tomselect;
+        const valor = tomCategoria ? tomCategoria.getValue() : categoriaSelect.value;
+        if (!valor) { return; }
+
+        const opcion = tomCategoria ? tomCategoria.options[valor] : null;
+        const nombreElegido = opcion ? opcion.text : (categoriaSelect.options[categoriaSelect.selectedIndex] || {}).text;
+        if (nombreElegido !== nombreProtegida) { return; }
+        if (codigoInput.value.trim() !== '') { return; }
+
+        const institucionId = institucionActual();
+        if (!institucionId) { return; }
+
+        fetch(<?= json_encode(Url::to('/bienes/siguiente-codigo-sin-cartera')) ?> + '?institucion_id=' + encodeURIComponent(institucionId))
+            .then(function (respuesta) { return respuesta.json(); })
+            .then(function (datos) {
+                if (datos.codigo && codigoInput.value.trim() === '') {
+                    codigoInput.value = datos.codigo;
+                }
+            });
+    });
+});
+<?php endif; ?>
 </script>
 <?php endif; ?>
 

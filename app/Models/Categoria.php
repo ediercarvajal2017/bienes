@@ -30,6 +30,22 @@ final class Categoria
     }
 
     /**
+     * El id de "Sin cartera" para una institución — null si por algún motivo no existe
+     * todavía ahí (no debería pasar tras Fase 1, pero el llamador debe poder manejarlo
+     * sin romperse).
+     */
+    public static function idDeProtegida(int $institucionId): ?int
+    {
+        $stmt = Database::connection()->prepare(
+            'SELECT id FROM categorias_bienes WHERE institucion_id = ? AND nombre = ? AND eliminado_en IS NULL'
+        );
+        $stmt->execute([$institucionId, self::NOMBRE_CATEGORIA_PROTEGIDA]);
+        $id = $stmt->fetchColumn();
+
+        return $id !== false ? (int) $id : null;
+    }
+
+    /**
      * Idempotente a propósito (se salta las que ya existan) — así se puede llamar tanto al
      * crear una institución nueva como desde database/seeders/seed.php, que se espera que
      * se pueda correr más de una vez sin duplicar nada.

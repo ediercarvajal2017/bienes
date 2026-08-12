@@ -258,6 +258,29 @@ final class Bien
         return (int) $stmt->fetchColumn();
     }
 
+    /**
+     * Siguiente código de 10 dígitos para un bien nuevo en la categoría "Sin cartera" de
+     * esta institución: busca, solo entre los bienes de esa institución+categoría, el
+     * código más alto que sea puramente numérico de 10 dígitos, y sugiere el consecutivo
+     * — comparando como número, no como texto (para que "9" no "gane" sobre "10").
+     * Si todavía no hay ninguno, sugiere "0000000001".
+     */
+    public static function siguienteCodigoSinCartera(int $institucionId, int $categoriaId): string
+    {
+        $stmt = Database::connection()->prepare(
+            "SELECT codigo_identificacion FROM bienes
+             WHERE institucion_id = ? AND categoria_id = ? AND codigo_identificacion REGEXP '^[0-9]{10}$'
+             ORDER BY CAST(codigo_identificacion AS UNSIGNED) DESC
+             LIMIT 1"
+        );
+        $stmt->execute([$institucionId, $categoriaId]);
+        $ultimo = $stmt->fetchColumn();
+
+        $siguiente = $ultimo !== false ? ((int) $ultimo + 1) : 1;
+
+        return str_pad((string) $siguiente, 10, '0', STR_PAD_LEFT);
+    }
+
     public static function find(int $id): ?array
     {
         $stmt = Database::connection()->prepare(

@@ -117,6 +117,33 @@ final class BienController
         ]);
     }
 
+    /**
+     * Usado por JavaScript en "Registrar bien" cuando el usuario elige la categoría
+     * "Sin cartera" — sugiere el siguiente código de 10 dígitos sin recargar la página
+     * (ver Bien::siguienteCodigoSinCartera). Con cualquier otra categoría, el campo de
+     * código no llama a esto y se queda libre como siempre.
+     */
+    public function siguienteCodigoSinCartera(): void
+    {
+        $institucionId = (int) ($_GET['institucion_id'] ?? 0);
+
+        header('Content-Type: application/json');
+
+        if ($institucionId <= 0 || (!Auth::esSuperusuario() && $institucionId !== Auth::institucionId())) {
+            echo json_encode(['codigo' => null]);
+            exit;
+        }
+
+        $categoriaId = Categoria::idDeProtegida($institucionId);
+        if ($categoriaId === null) {
+            echo json_encode(['codigo' => null]);
+            exit;
+        }
+
+        echo json_encode(['codigo' => Bien::siguienteCodigoSinCartera($institucionId, $categoriaId)]);
+        exit;
+    }
+
     public function guardar(): void
     {
         $request = new Request();
@@ -417,6 +444,15 @@ final class BienController
             $categoria = Categoria::find((int) $datos['categoria_id']);
             if (!$categoria || (int) $categoria['institucion_id'] !== (int) $datos['institucion_id']) {
                 return 'La categoría seleccionada no pertenece a esta institución.';
+            }
+
+            // Mientras el bien esté en "Sin cartera", el código es obligatoriamente de 10
+            // dígitos numéricos (ver Bien::siguienteCodigoSinCartera) — al cambiarlo a
+            // cualquier otra categoría esta regla deja de aplicar. No aplica a la alta
+            // masiva (validarLote()): ahí el código sigue el formato "{lote}-001", que
+            // nunca puede ser de 10 dígitos puros.
+            if (Categoria::esProtegida($categoria) && !preg_match('/^[0-9]{10}$/', $datos['codigo_identificacion'])) {
+                return 'El código debe tener exactamente 10 dígitos numéricos para bienes en la categoría "' . Categoria::NOMBRE_CATEGORIA_PROTEGIDA . '".';
             }
         }
 
