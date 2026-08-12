@@ -101,6 +101,22 @@ final class Auth
         Session::put('institucion_nombre', $institucion['nombre'] ?? Session::get('institucion_nombre'));
     }
 
+    /**
+     * Filtro opcional de institución para el superusuario, usado SOLO por pantallas de
+     * listado/conteo (ver FiltroInstitucionController) — a diferencia de sedeActivaId(),
+     * nunca decide en cuál institución se crea o edita algo; esos formularios le siguen
+     * pidiendo elegirla de forma explícita, sin cambios. null = sin filtro, ver todo.
+     */
+    public static function filtroInstitucionId(): ?int
+    {
+        return Session::get('filtro_institucion_id');
+    }
+
+    public static function establecerFiltroInstitucion(?int $institucionId): void
+    {
+        Session::put('filtro_institucion_id', $institucionId);
+    }
+
     public static function nombreCompleto(): ?string
     {
         return Session::get('nombre_completo');

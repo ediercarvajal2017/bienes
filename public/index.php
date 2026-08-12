@@ -37,6 +37,7 @@ use App\Controllers\EscaneoController;
 use App\Controllers\EspacioCargaMasivaController;
 use App\Controllers\EspacioController;
 use App\Controllers\FacturaAdministrativaController;
+use App\Controllers\FiltroInstitucionController;
 use App\Controllers\FormatoPlaqueteoController;
 use App\Controllers\FormatoReintegroController;
 use App\Controllers\HallazgoController;
@@ -85,6 +86,7 @@ $router->get('/dashboard', [DashboardController::class, 'index'], [
 $router->get('/archivos/{tipo}/{archivo}', [ArchivoController::class, 'mostrar'], [AuthMiddleware::class]);
 
 $router->post('/sede-activa', [SedeActivaController::class, 'cambiar'], [AuthMiddleware::class, InstitucionScopeMiddleware::class]);
+$router->post('/filtro-institucion', [FiltroInstitucionController::class, 'establecer'], [AuthMiddleware::class]);
 
 $router->get('/instituciones', [InstitucionController::class, 'index'], [
     AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':instituciones.ver',

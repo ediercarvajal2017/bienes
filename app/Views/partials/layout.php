@@ -93,6 +93,7 @@ foreach ($gruposBreadcrumb as $g) {
     if (Auth::rol() === 'rector' && Auth::institucionId()) {
         $familiaSedes = Institucion::familiaDe((int) Auth::institucionId());
     }
+    $institucionesFiltro = Auth::esSuperusuario() ? Institucion::listadoParaSelect() : [];
     ?>
     <div class="ms-auto d-flex align-items-center gap-2 gap-sm-3">
         <div class="usuario-navbar d-none d-md-flex align-items-center gap-2">
@@ -117,6 +118,24 @@ foreach ($gruposBreadcrumb as $g) {
                 <select id="sedeActivaSelect" name="institucion_id" class="form-select form-select-sm sede-activa-select" onchange="this.form.submit()" title="Cambiar de sede">
                     <?php foreach ($familiaSedes as $sede): ?>
                         <option value="<?= (int) $sede['id'] ?>" <?= (int) $sede['id'] === Auth::sedeActivaId() ? 'selected' : '' ?>><?= htmlspecialchars($sede['nombre'], ENT_QUOTES) ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </form>
+        <?php endif; ?>
+        <?php if (Auth::esSuperusuario()): ?>
+            <form method="post" action="<?= Url::to('/filtro-institucion') ?>"
+                  class="d-flex align-items-center filtro-institucion-form<?= Auth::filtroInstitucionId() !== null ? ' filtro-institucion-form--activo' : '' ?>">
+                <?= \App\Core\Csrf::field() ?>
+                <input type="hidden" name="volver" value="<?= htmlspecialchars($rutaActual, ENT_QUOTES) ?>">
+                <label for="filtroInstitucionSelect" class="visually-hidden">Filtrar por institución</label>
+                <select id="filtroInstitucionSelect" name="institucion_id"
+                        class="form-select form-select-sm selector-buscable filtro-institucion-select"
+                        onchange="this.form.submit()" title="Filtrar listados por institución">
+                    <option value="">Ver todas las instituciones</option>
+                    <?php foreach ($institucionesFiltro as $i): ?>
+                        <option value="<?= (int) $i['id'] ?>" <?= Auth::filtroInstitucionId() === (int) $i['id'] ? 'selected' : '' ?>>
+                            <?= htmlspecialchars($i['nombre'], ENT_QUOTES) ?>
+                        </option>
                     <?php endforeach; ?>
                 </select>
             </form>

@@ -141,6 +141,29 @@ img {
   }
 }
 
+.filtro-institucion-select {
+  max-width: 200px;
+  font-size: 0.78rem;
+}
+
+@media (max-width: 1200px) {
+  .filtro-institucion-select {
+    max-width: 140px;
+  }
+}
+
+/*
+ * Cuando hay un filtro puesto, se resalta con el color de acento para que nunca quede
+ * ambiguo que una lista se esta mostrando incompleta a proposito — Tom Select reemplaza
+ * el <select> original por un .ts-wrapper propio, por eso el resaltado se aplica sobre
+ * el <form> (que si sigue en el DOM) y no sobre el <select>, que queda oculto.
+ */
+.filtro-institucion-form--activo .ts-wrapper .ts-control,
+.filtro-institucion-form--activo select.filtro-institucion-select {
+  border-color: var(--sigebi-accent);
+  box-shadow: 0 0 0 1px var(--sigebi-accent);
+}
+
 .navbar-logo {
   height: 34px;
   width: auto;
