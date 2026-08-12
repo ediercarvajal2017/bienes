@@ -118,24 +118,34 @@ final class BienController
     }
 
     /**
-     * Usado por JavaScript en "Registrar bien" cuando el usuario elige la categoría
-     * "Sin cartera" — sugiere el siguiente código de 10 dígitos sin recargar la página
-     * (ver Bien::siguienteCodigoSinCartera). Con cualquier otra categoría, el campo de
-     * código no llama a esto y se queda libre como siempre.
+     * Usado por JavaScript en "Registrar bien" cada vez que se elige una categoría:
+     * devuelve el siguiente código de 10 dígitos si esa categoría es "Sin cartera", o
+     * null para cualquier otra (ver Bien::siguienteCodigoSinCartera).
+     *
+     * Quien decide si la categoría es la protegida es el SERVIDOR, a partir del id que
+     * llega — no el navegador comparando el texto de la opción. Antes se comparaba en
+     * JavaScript contra el nombre "Sin cartera", pero Tom Select guarda el texto de un
+     * <option> renderizado por el servidor con los saltos de línea e indentación del
+     * HTML alrededor ("\n    Sin cartera\n  "), así que esa comparación nunca daba
+     * verdadera y la consulta ni siquiera se disparaba — el bug que reportó el usuario.
      */
     public function siguienteCodigoSinCartera(): void
     {
-        $institucionId = (int) ($_GET['institucion_id'] ?? 0);
+        $categoriaId = (int) ($_GET['categoria_id'] ?? 0);
 
         header('Content-Type: application/json');
+        header('Cache-Control: no-store');
 
-        if ($institucionId <= 0 || (!Auth::esSuperusuario() && $institucionId !== Auth::institucionId())) {
+        $categoria = $categoriaId > 0 ? Categoria::find($categoriaId) : null;
+
+        if (!$categoria || !Categoria::esProtegida($categoria)) {
             echo json_encode(['codigo' => null]);
             exit;
         }
 
-        $categoriaId = Categoria::idDeProtegida($institucionId);
-        if ($categoriaId === null) {
+        $institucionId = (int) $categoria['institucion_id'];
+
+        if (!Auth::esSuperusuario() && $institucionId !== Auth::institucionId()) {
             echo json_encode(['codigo' => null]);
             exit;
         }

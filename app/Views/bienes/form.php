@@ -233,47 +233,32 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 <?php if (!$esEdicion): ?>
-// Al registrar un bien nuevo: si la categoría elegida es "Sin cartera", se sugiere el
-// siguiente código de 10 dígitos (ver Bien::siguienteCodigoSinCartera) — solo si el
-// usuario mismo no ha escrito nada todavía en este campo, para nunca pisar lo que
-// escribió a mano. Ojo: esto NO es lo mismo que "el campo está vacío" — el navegador
-// puede restaurar un valor viejo ahí solo (autocompletado por nombre de campo) sin que
-// el usuario haya tocado nada en esta visita, y eso hacía que la sugerencia se saltara
-// en silencio (el campo "no estaba vacío" aunque el usuario nunca escribió nada). Por
-// eso el código de abajo también apaga el autocompletado del navegador para este campo,
-// y usa una bandera propia en vez de mirar el valor actual del campo.
+// Al registrar un bien nuevo se le pregunta al SERVIDOR, por el id de la categoría
+// elegida, si corresponde sugerir un código (solo lo hace para "Sin cartera"). A
+// propósito no se compara aquí el nombre de la categoría: Tom Select guarda el texto de
+// un <option> renderizado por el servidor junto con los saltos de línea e indentación
+// del HTML, así que esa comparación fallaba siempre y la consulta ni se disparaba.
+//
+// La sugerencia solo se aplica si el usuario todavía no escribió nada en el campo — y
+// eso se sigue con una bandera propia, no mirando si el campo está vacío, porque el
+// navegador puede restaurar ahí un valor viejo por su cuenta (de ahí también el
+// autocomplete="off" del campo).
 document.addEventListener('DOMContentLoaded', function () {
     const categoriaSelect = document.getElementById('categoriaBien');
     const codigoInput = document.getElementById('codigoIdentificacion');
     if (!categoriaSelect || !codigoInput) { return; }
-
-    const nombreProtegida = <?= json_encode(\App\Models\Categoria::NOMBRE_CATEGORIA_PROTEGIDA) ?>;
-    const institucionFija = <?= json_encode(Auth::institucionId()) ?>;
 
     let editadoPorUsuario = codigoInput.value.trim() !== '';
     codigoInput.addEventListener('input', function () {
         editadoPorUsuario = true;
     });
 
-    function institucionActual() {
-        const institucionSelect = document.getElementById('institucionBien');
-        return institucionSelect ? (institucionSelect.value || null) : institucionFija;
-    }
-
     categoriaSelect.addEventListener('change', function () {
         const tomCategoria = categoriaSelect.tomselect;
-        const valor = tomCategoria ? tomCategoria.getValue() : categoriaSelect.value;
-        if (!valor) { return; }
+        const categoriaId = tomCategoria ? tomCategoria.getValue() : categoriaSelect.value;
+        if (!categoriaId || editadoPorUsuario) { return; }
 
-        const opcion = tomCategoria ? tomCategoria.options[valor] : null;
-        const nombreElegido = opcion ? opcion.text : (categoriaSelect.options[categoriaSelect.selectedIndex] || {}).text;
-        if (nombreElegido !== nombreProtegida) { return; }
-        if (editadoPorUsuario) { return; }
-
-        const institucionId = institucionActual();
-        if (!institucionId) { return; }
-
-        fetch(<?= json_encode(Url::to('/bienes/siguiente-codigo-sin-cartera')) ?> + '?institucion_id=' + encodeURIComponent(institucionId))
+        fetch(<?= json_encode(Url::to('/bienes/siguiente-codigo-sin-cartera')) ?> + '?categoria_id=' + encodeURIComponent(categoriaId))
             .then(function (respuesta) { return respuesta.json(); })
             .then(function (datos) {
                 if (datos.codigo && !editadoPorUsuario) {
