@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { seleccionarPrimeraOpcionTomSelect } from './helpers/tomSelect.js';
 
 function filaConValor(page, valor) {
     // CSS por atributo: matchea el "value" del HTML tal como lo renderizó el servidor
@@ -11,6 +12,13 @@ test('crear, editar, desactivar/activar y eliminar una categoría', async ({ pag
     const nombreEditado = `${nombre}-editada`;
 
     await page.goto('categorias');
+
+    // Como superusuario, las categorías ahora son propias de cada institución — la
+    // pantalla exige elegir una antes de mostrar el catálogo (cualquiera real sirve).
+    await Promise.all([
+        page.waitForURL(/institucion=\d+/),
+        seleccionarPrimeraOpcionTomSelect(page, 'selectorInstitucion'),
+    ]);
 
     await page.locator('form[action$="/categorias"] input[name="nombre"]').fill(nombre);
     await page.locator('form[action$="/categorias"] button[type="submit"]').click();

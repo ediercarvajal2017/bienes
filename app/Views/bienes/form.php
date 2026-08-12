@@ -68,12 +68,13 @@ $v = static fn (string $campo, mixed $porDefecto = '') => $viejo[$campo] ?? $bie
 
     <?php if (!$esEdicion && Auth::esSuperusuario()): ?>
         <div class="col-12">
-            <label class="form-label small requerido">Institución</label>
-            <select name="institucion_id" class="form-select selector-buscable" required>
+            <label class="form-label small requerido" for="institucionBien">Institución</label>
+            <select name="institucion_id" id="institucionBien" class="form-select selector-buscable" required>
                 <?php foreach ($instituciones as $i): ?>
                     <option value="<?= $i['id'] ?>" <?= (string) $v('institucion_id') === (string) $i['id'] ? 'selected' : '' ?>><?= htmlspecialchars($i['nombre'], ENT_QUOTES) ?></option>
                 <?php endforeach; ?>
             </select>
+            <div class="form-text">La categoría se llena según la institución que elijas aquí.</div>
         </div>
     <?php endif; ?>
 
@@ -185,6 +186,48 @@ $v = static fn (string $campo, mixed $porDefecto = '') => $viejo[$campo] ?? $bie
         });
     }
 })();
+
+// Las categorías ahora son propias de cada institución — cuando el superusuario elige
+// (o cambia) la institución en este mismo formulario, el combo de categoría se llena
+// por AJAX en vez de quedar fijo desde que cargó la página.
+document.addEventListener('DOMContentLoaded', function () {
+    const institucionSelect = document.getElementById('institucionBien');
+    const categoriaSelect = document.getElementById('categoriaBien');
+    if (!institucionSelect || !categoriaSelect) { return; }
+
+    const categoriaIdPrevio = <?= json_encode((string) $v('categoria_id', '')) ?>;
+
+    function actualizarCategorias(institucionId) {
+        const tomCategoria = categoriaSelect.tomselect;
+        if (!tomCategoria) { return; }
+
+        tomCategoria.clear();
+        tomCategoria.clearOptions();
+
+        if (!institucionId) { return; }
+
+        fetch(<?= json_encode(Url::to('/categorias/por-institucion')) ?> + '?institucion_id=' + encodeURIComponent(institucionId))
+            .then(function (respuesta) { return respuesta.json(); })
+            .then(function (datos) {
+                (datos.categorias || []).forEach(function (c) {
+                    tomCategoria.addOption({ value: String(c.id), text: c.nombre });
+                });
+                tomCategoria.refreshOptions(false);
+
+                if (categoriaIdPrevio && (datos.categorias || []).some(function (c) { return String(c.id) === categoriaIdPrevio; })) {
+                    tomCategoria.setValue(categoriaIdPrevio);
+                }
+            });
+    }
+
+    institucionSelect.addEventListener('change', function () {
+        actualizarCategorias(institucionSelect.value);
+    });
+
+    if (institucionSelect.value) {
+        actualizarCategorias(institucionSelect.value);
+    }
+});
 </script>
 <?php endif; ?>
 

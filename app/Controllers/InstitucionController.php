@@ -12,6 +12,7 @@ use App\Core\Url;
 use App\Core\View;
 use App\Helpers\Uploader;
 use App\Models\Auditoria;
+use App\Models\Categoria;
 use App\Models\Institucion;
 
 final class InstitucionController
@@ -62,6 +63,10 @@ final class InstitucionController
 
         $id = Institucion::create($datos);
         Auditoria::registrar(Auth::id(), $id, 'crear', 'institucion', $id, null, $datos);
+
+        // Cada institución nueva arranca con su propio set base de categorías (ver
+        // Categoria::sembrarPorDefecto) — así no empieza con el catálogo vacío.
+        Categoria::sembrarPorDefecto($id);
 
         if ($archivo = $request->file('logo')) {
             $this->subirLogo($id, $archivo);

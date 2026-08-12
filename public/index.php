@@ -272,6 +272,7 @@ $router->get('/reintegros/lotes/{id}/formato.xlsx', [ReintegroController::class,
 ]);
 
 $router->get('/categorias', [CategoriaController::class, 'index'], [AuthMiddleware::class, PermissionMiddleware::class . ':categorias.gestionar']);
+$router->get('/categorias/por-institucion', [CategoriaController::class, 'porInstitucion'], [AuthMiddleware::class, PermissionMiddleware::class . ':bienes.crear']);
 $router->post('/categorias', [CategoriaController::class, 'guardar'], [AuthMiddleware::class, PermissionMiddleware::class . ':categorias.gestionar']);
 $router->post('/categorias/{id}', [CategoriaController::class, 'actualizar'], [AuthMiddleware::class, PermissionMiddleware::class . ':categorias.gestionar']);
 $router->post('/categorias/{id}/estado', [CategoriaController::class, 'cambiarEstado'], [AuthMiddleware::class, PermissionMiddleware::class . ':categorias.gestionar']);

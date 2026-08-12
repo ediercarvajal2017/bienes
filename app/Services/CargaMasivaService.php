@@ -35,8 +35,8 @@ final class CargaMasivaService
         $filas = [];
         $codigosVistos = [];
         $espaciosPorCodigo = self::mapaEspaciosPorCodigo($institucionId);
-        $categoriasPorNombre = self::mapaCategoriasPorNombre();
-        $categoriasPorId = Categoria::mapaIdNombre();
+        $categoriasPorNombre = self::mapaCategoriasPorNombre($institucionId);
+        $categoriasPorId = array_column(Categoria::all($institucionId), 'nombre', 'id');
 
         $ultimaFila = $sheet->getHighestDataRow();
 
@@ -322,10 +322,10 @@ final class CargaMasivaService
      * misma regla). Comparación normalizada igual que mapaEspaciosPorCodigo(), por el mismo
      * motivo: tolerar espacios de más o un NBSP pegado desde Word/PDF.
      */
-    private static function mapaCategoriasPorNombre(): array
+    private static function mapaCategoriasPorNombre(int $institucionId): array
     {
         $mapa = [];
-        foreach (Categoria::activas() as $categoria) {
+        foreach (Categoria::activas($institucionId) as $categoria) {
             $mapa[self::normalizarNombreCategoria($categoria['nombre'])] = (int) $categoria['id'];
         }
 

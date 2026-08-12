@@ -51,9 +51,10 @@ final class Papelera
                           JOIN instituciones i ON i.id = es.institucion_id
                           LEFT JOIN usuarios e ON e.id = es.eliminado_por
                           WHERE es.eliminado_en IS NOT NULL',
-            'categoria' => 'SELECT c.id, c.nombre AS titulo, NULL AS institucion_nombre, c.eliminado_en,
+            'categoria' => 'SELECT c.id, c.nombre AS titulo, i.nombre AS institucion_nombre, c.eliminado_en,
                                    CONCAT(e.nombres, " ", e.apellidos) AS eliminado_por_nombre
                             FROM categorias_bienes c
+                            JOIN instituciones i ON i.id = c.institucion_id
                             LEFT JOIN usuarios e ON e.id = c.eliminado_por
                             WHERE c.eliminado_en IS NOT NULL',
             'cargo' => 'SELECT c.id, c.nombre AS titulo, NULL AS institucion_nombre, c.eliminado_en,

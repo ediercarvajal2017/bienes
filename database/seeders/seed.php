@@ -104,15 +104,6 @@ foreach ($cargos as $nombre) {
     $cargoIds[$nombre] = insertIfMissing($pdo, 'cargos', 'nombre', $nombre, ['nombre' => $nombre]);
 }
 
-// --- Categorías de bienes ---
-$categorias = [
-    'Sillas', 'Mesas', 'Tableros', 'Proyectores', 'Computadores',
-    'Impresoras', 'Escritorios', 'Archivadores', 'Aires Acondicionados', 'Otros',
-];
-foreach ($categorias as $nombre) {
-    insertIfMissing($pdo, 'categorias_bienes', 'nombre', $nombre, ['nombre' => $nombre]);
-}
-
 // --- Institución demo ---
 $institucionId = insertIfMissing($pdo, 'instituciones', 'codigo_dane', '000000000000', [
     'codigo_dane' => '000000000000',
@@ -123,6 +114,10 @@ $institucionId = insertIfMissing($pdo, 'instituciones', 'codigo_dane', '00000000
     'email_institucional' => 'contacto@iedemo.edu.co',
     'logo_path' => null,
 ]);
+
+// --- Categorías de bienes: propias de cada institución, mismo set base con el que
+// arranca cualquier institución nueva creada desde la UI (ver Categoria::sembrarPorDefecto) ---
+App\Models\Categoria::sembrarPorDefecto($institucionId);
 
 // --- Superusuario inicial ---
 $superEmail = 'ediercarvajal@gmail.com';

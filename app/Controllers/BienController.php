@@ -78,7 +78,7 @@ final class BienController
             'lotes' => $lotes,
             'soloPropios' => $soloPropios,
             'busqueda' => $busqueda,
-            'categorias' => Categoria::activas(),
+            'categorias' => $institucionId !== null ? Categoria::activas($institucionId) : [],
             'categoriaId' => $categoriaId,
             'estado' => $estado,
             'espacioId' => $espacioId,
@@ -109,7 +109,7 @@ final class BienController
         View::layout('partials/layout', 'bienes/form', [
             'title' => 'Registrar bien',
             'bien' => null,
-            'categorias' => Categoria::activas(),
+            'categorias' => Auth::esSuperusuario() ? [] : Categoria::activas((int) Auth::institucionId()),
             'instituciones' => Auth::esSuperusuario() ? Institucion::listadoParaSelect() : [],
             'error' => Session::pullFlash('error'),
             'viejo' => $viejo,
@@ -169,7 +169,7 @@ final class BienController
     {
         View::layout('partials/layout', 'bienes/form_lote', [
             'title' => 'Alta masiva de bienes idénticos',
-            'categorias' => Categoria::activas(),
+            'categorias' => Auth::esSuperusuario() ? [] : Categoria::activas((int) Auth::institucionId()),
             'instituciones' => Auth::esSuperusuario() ? Institucion::listadoParaSelect() : [],
             'error' => Session::pullFlash('error'),
             'viejo' => Session::pullOld(),
@@ -241,6 +241,13 @@ final class BienController
 
         if (Bien::existeLote($datos['institucion_id'], $datos['lote'])) {
             return 'Ya existe un lote con ese código en esta institución.';
+        }
+
+        if ($datos['categoria_id'] !== null) {
+            $categoria = Categoria::find((int) $datos['categoria_id']);
+            if (!$categoria || (int) $categoria['institucion_id'] !== (int) $datos['institucion_id']) {
+                return 'La categoría seleccionada no pertenece a esta institución.';
+            }
         }
 
         return null;
@@ -406,6 +413,13 @@ final class BienController
             return 'Ya existe un bien con ese código en la institución.';
         }
 
+        if ($datos['categoria_id'] !== null) {
+            $categoria = Categoria::find((int) $datos['categoria_id']);
+            if (!$categoria || (int) $categoria['institucion_id'] !== (int) $datos['institucion_id']) {
+                return 'La categoría seleccionada no pertenece a esta institución.';
+            }
+        }
+
         return null;
     }
 
@@ -449,7 +463,7 @@ final class BienController
      */
     private function categoriasParaFormulario(array $bien): array
     {
-        $categorias = Categoria::activas();
+        $categorias = Categoria::activas((int) $bien['institucion_id']);
 
         if ($bien['categoria_id'] === null) {
             return $categorias;
