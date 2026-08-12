@@ -124,7 +124,7 @@ use App\Core\View;
             }
             url.searchParams.set('pagina', '1');
             window.location = url.toString();
-        }, 450);
+        }, 600);
     });
 })();
 </script>

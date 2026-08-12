@@ -109,7 +109,7 @@ $urlBasePaginacion = Url::to('/espacios') . ($busqueda !== '' ? '?q=' . urlencod
             }
             url.searchParams.set('pagina', '1');
             window.location = url.toString();
-        }, 450);
+        }, 600);
     });
 })();
 </script>

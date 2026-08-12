@@ -121,7 +121,7 @@ use App\Core\View;
                 if (valor !== '') { url.searchParams.set('q', valor); } else { url.searchParams.delete('q'); }
                 url.searchParams.set('pagina', '1');
                 window.location = url.toString();
-            }, 450);
+            }, 600);
         });
     })();
 

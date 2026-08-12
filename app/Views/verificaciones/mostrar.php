@@ -353,7 +353,7 @@ $tabPorDefecto = !empty($hallazgos) ? 'hallazgos' : 'discrepancia';
                 url.searchParams.set(paramPagina, '1');
                 url.hash = ancla;
                 window.location = url.toString();
-            }, 450);
+            }, 600);
         });
     }
 
