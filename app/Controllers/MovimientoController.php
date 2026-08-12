@@ -56,7 +56,16 @@ final class MovimientoController
         }
 
         Session::flash('ok', 'Bien asignado correctamente.');
-        header('Location: ' . Url::to("/bienes/{$id}/editar"));
+
+        // Si el bien pertenece a un lote de alta masiva idéntica, se vuelve al listado
+        // filtrado por ese lote (la misma pantalla de "Ver detalles" en /bienes) en vez
+        // de quedarse en este bien puntual — así se puede seguir asignando el resto de
+        // los idénticos sin tener que volver a buscar el código cada vez.
+        if (!empty($bien['lote'])) {
+            header('Location: ' . Url::to('/bienes?q=' . urlencode($bien['lote'])));
+        } else {
+            header('Location: ' . Url::to("/bienes/{$id}/editar"));
+        }
         exit;
     }
 
