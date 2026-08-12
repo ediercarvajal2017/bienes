@@ -216,6 +216,7 @@ foreach ($gruposBreadcrumb as $g) {
 <script src="<?= Url::asset('/assets/js/camara.js') ?>"></script>
 <script src="<?= Url::asset('/assets/js/lightbox.js') ?>"></script>
 <script src="<?= Url::asset('/assets/js/cargando.js') ?>"></script>
+<script src="<?= Url::asset('/assets/js/buscador-vivo.js') ?>"></script>
 <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
 <script src="<?= Url::asset('/assets/js/selector-buscable.js') ?>"></script>
 <script>
