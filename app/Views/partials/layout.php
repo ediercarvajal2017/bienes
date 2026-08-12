@@ -78,13 +78,32 @@ foreach ($gruposBreadcrumb as $g) {
     <a class="navbar-brand d-flex align-items-center" href="<?= Url::to('/dashboard') ?>">
         <img src="<?= Url::asset('/assets/img/logo.png') ?>" alt="SIGEBI" class="navbar-logo">
     </a>
+    <?php
+    $nombreUsuarioNavbar = Auth::nombreCompleto() ?? '';
+    $palabrasNombre = preg_split('/\s+/', trim($nombreUsuarioNavbar), -1, PREG_SPLIT_NO_EMPTY);
+    $inicialesUsuario = '';
+    if (!empty($palabrasNombre)) {
+        $inicialesUsuario = mb_strtoupper(mb_substr($palabrasNombre[0], 0, 1));
+        if (count($palabrasNombre) > 1) {
+            $inicialesUsuario .= mb_strtoupper(mb_substr(end($palabrasNombre), 0, 1));
+        }
+    }
+    ?>
     <div class="ms-auto d-flex align-items-center gap-2 gap-sm-3">
-        <span class="text-white small d-none d-md-inline">
-            <?= htmlspecialchars(Auth::nombreCompleto() ?? '', ENT_QUOTES) ?> · <?= htmlspecialchars(Auth::rol() ?? '', ENT_QUOTES) ?>
-            <?php if (!Auth::esSuperusuario() && Auth::institucionNombre() !== null): ?>
-                · <?= htmlspecialchars(Auth::institucionNombre(), ENT_QUOTES) ?>
-            <?php endif; ?>
-        </span>
+        <div class="usuario-navbar d-none d-md-flex align-items-center gap-2">
+            <span class="usuario-navbar-avatar" aria-hidden="true"><?= htmlspecialchars($inicialesUsuario, ENT_QUOTES) ?></span>
+            <div class="usuario-navbar-info">
+                <div class="usuario-navbar-nombre"><?= htmlspecialchars($nombreUsuarioNavbar, ENT_QUOTES) ?></div>
+                <div class="usuario-navbar-detalle">
+                    <span class="usuario-navbar-rol"><?= htmlspecialchars(Auth::rol() ?? '', ENT_QUOTES) ?></span>
+                    <?php if (!Auth::esSuperusuario() && Auth::institucionNombre() !== null): ?>
+                        <span class="usuario-navbar-institucion" title="<?= htmlspecialchars(Auth::institucionNombre(), ENT_QUOTES) ?>">
+                            <i class="bi bi-building"></i><?= htmlspecialchars(Auth::institucionNombre(), ENT_QUOTES) ?>
+                        </span>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
         <button type="button" id="btnTema" class="theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
             <i class="bi bi-moon-stars"></i>
         </button>

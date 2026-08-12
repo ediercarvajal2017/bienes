@@ -50,6 +50,86 @@ img {
   letter-spacing: 0.02em;
 }
 
+.usuario-navbar-avatar {
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.usuario-navbar-info {
+  line-height: 1.2;
+  min-width: 0;
+}
+
+.usuario-navbar-nombre {
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.82rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 260px;
+}
+
+.usuario-navbar-detalle {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.1rem;
+}
+
+.usuario-navbar-rol {
+  background: var(--sigebi-accent);
+  color: #3a2c05;
+  font-size: 0.66rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 0.08rem 0.5rem;
+  border-radius: 999px;
+  line-height: 1.4;
+  flex: 0 0 auto;
+}
+
+.usuario-navbar-institucion {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 0.72rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 340px;
+}
+
+.usuario-navbar-institucion .bi {
+  font-size: 0.75rem;
+  flex: 0 0 auto;
+}
+
+@media (max-width: 1400px) {
+  .usuario-navbar-institucion {
+    max-width: 220px;
+  }
+}
+
+@media (max-width: 1200px) {
+  .usuario-navbar-institucion {
+    max-width: 140px;
+  }
+}
+
 .navbar-logo {
   height: 34px;
   width: auto;
