@@ -38,6 +38,7 @@ final class Auth
         Session::put('usuario_id', (int) $usuario['id']);
         Session::put('rol', $usuario['rol_nombre']);
         Session::put('institucion_id', (int) $usuario['institucion_id']);
+        Session::put('institucion_nombre', $usuario['institucion_nombre']);
         Session::put('nombre_completo', trim($usuario['nombres'] . ' ' . $usuario['apellidos']));
 
         return true;
@@ -66,6 +67,11 @@ final class Auth
     public static function institucionId(): ?int
     {
         return Session::get('institucion_id');
+    }
+
+    public static function institucionNombre(): ?string
+    {
+        return Session::get('institucion_nombre');
     }
 
     public static function nombreCompleto(): ?string

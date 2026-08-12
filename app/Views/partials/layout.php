@@ -79,7 +79,12 @@ foreach ($gruposBreadcrumb as $g) {
         <img src="<?= Url::asset('/assets/img/logo.png') ?>" alt="SIGEBI" class="navbar-logo">
     </a>
     <div class="ms-auto d-flex align-items-center gap-2 gap-sm-3">
-        <span class="text-white small d-none d-md-inline"><?= htmlspecialchars(Auth::nombreCompleto() ?? '', ENT_QUOTES) ?> · <?= htmlspecialchars(Auth::rol() ?? '', ENT_QUOTES) ?></span>
+        <span class="text-white small d-none d-md-inline">
+            <?= htmlspecialchars(Auth::nombreCompleto() ?? '', ENT_QUOTES) ?> · <?= htmlspecialchars(Auth::rol() ?? '', ENT_QUOTES) ?>
+            <?php if (!Auth::esSuperusuario() && Auth::institucionNombre() !== null): ?>
+                · <?= htmlspecialchars(Auth::institucionNombre(), ENT_QUOTES) ?>
+            <?php endif; ?>
+        </span>
         <button type="button" id="btnTema" class="theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
             <i class="bi bi-moon-stars"></i>
         </button>

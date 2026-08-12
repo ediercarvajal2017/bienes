@@ -13,7 +13,7 @@ final class Usuario
     public static function findByEmail(string $email): ?array
     {
         $stmt = Database::connection()->prepare(
-            'SELECT u.*, r.nombre AS rol_nombre, i.activo AS institucion_activa
+            'SELECT u.*, r.nombre AS rol_nombre, i.activo AS institucion_activa, i.nombre AS institucion_nombre
              FROM usuarios u
              JOIN roles r ON r.id = u.rol_id
              JOIN instituciones i ON i.id = u.institucion_id
