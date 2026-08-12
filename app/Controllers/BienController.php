@@ -32,7 +32,7 @@ final class BienController
 
     public function index(): void
     {
-        $institucionId = Auth::esSuperusuario() ? null : Auth::institucionId();
+        $institucionId = Auth::esSuperusuario() ? Auth::filtroInstitucionId() : Auth::institucionId();
         $busqueda = trim((string) ($_GET['q'] ?? ''));
         $terminoBusqueda = $busqueda !== '' ? $busqueda : null;
         $categoriaId = ((int) ($_GET['categoria'] ?? 0)) ?: null;

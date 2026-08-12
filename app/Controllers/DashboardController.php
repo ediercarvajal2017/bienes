@@ -29,7 +29,7 @@ final class DashboardController
      */
     private function indicadores(): array
     {
-        $institucionId = Auth::esSuperusuario() ? null : Auth::institucionId();
+        $institucionId = Auth::esSuperusuario() ? Auth::filtroInstitucionId() : Auth::institucionId();
         $indicadores = [];
 
         if (Auth::esSuperusuario() || Auth::tienePermiso('bajas.aprobar')) {

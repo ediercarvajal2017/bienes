@@ -83,7 +83,7 @@ final class FacturaAdministrativaController
 
     public function historial(): void
     {
-        $institucionId = Auth::esSuperusuario() ? null : Auth::institucionId();
+        $institucionId = Auth::esSuperusuario() ? Auth::filtroInstitucionId() : Auth::institucionId();
         $pagina = max(1, (int) ($_GET['pagina'] ?? 1));
         $porPagina = (int) ($_GET['porPagina'] ?? self::POR_PAGINA_DEFECTO);
         if (!in_array($porPagina, self::OPCIONES_POR_PAGINA, true)) {

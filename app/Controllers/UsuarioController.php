@@ -24,7 +24,7 @@ final class UsuarioController
 
     public function index(): void
     {
-        $institucionId = Auth::esSuperusuario() ? null : Auth::institucionId();
+        $institucionId = Auth::esSuperusuario() ? Auth::filtroInstitucionId() : Auth::institucionId();
         $busqueda = trim((string) ($_GET['q'] ?? ''));
         $terminoBusqueda = $busqueda !== '' ? $busqueda : null;
         $pagina = max(1, (int) ($_GET['pagina'] ?? 1));

@@ -406,7 +406,7 @@ final class ReintegroController
 
     private function institucionAListar(): ?int
     {
-        return Auth::esSuperusuario() ? null : Auth::institucionId();
+        return Auth::esSuperusuario() ? Auth::filtroInstitucionId() : Auth::institucionId();
     }
 
     /**
