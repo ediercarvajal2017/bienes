@@ -3,6 +3,7 @@
 use App\Core\Auth;
 use App\Core\Csrf;
 use App\Core\Url;
+use App\Models\Categoria;
 
 ?>
 <div class="mb-3">
@@ -55,14 +56,22 @@ use App\Core\Url;
                 <tr><td colspan="3" class="text-muted">Esta institución todavía no tiene categorías.</td></tr>
             <?php endif; ?>
             <?php foreach ($categorias as $c): ?>
+                <?php $protegida = Categoria::esProtegida($c); ?>
                 <tr>
                     <td data-label="Nombre">
-                        <form method="post" action="<?= Url::to('/categorias/' . $c['id']) ?>" class="d-flex gap-2">
-                            <?= Csrf::field() ?>
-                            <input type="text" name="nombre" class="form-control form-control-sm"
-                                   value="<?= htmlspecialchars($c['nombre'], ENT_QUOTES) ?>" required>
-                            <button type="submit" class="btn btn-sm btn-outline-primary text-nowrap">Guardar</button>
-                        </form>
+                        <?php if ($protegida): ?>
+                            <span class="fw-semibold"><?= htmlspecialchars($c['nombre'], ENT_QUOTES) ?></span>
+                            <span class="badge text-bg-secondary ms-1" title="Esta categoría la usa el sistema para el código automático de bienes nuevos — no se puede renombrar ni eliminar.">
+                                <i class="bi bi-lock-fill"></i> Protegida
+                            </span>
+                        <?php else: ?>
+                            <form method="post" action="<?= Url::to('/categorias/' . $c['id']) ?>" class="d-flex gap-2">
+                                <?= Csrf::field() ?>
+                                <input type="text" name="nombre" class="form-control form-control-sm"
+                                       value="<?= htmlspecialchars($c['nombre'], ENT_QUOTES) ?>" required>
+                                <button type="submit" class="btn btn-sm btn-outline-primary text-nowrap">Guardar</button>
+                            </form>
+                        <?php endif; ?>
                     </td>
                     <td data-label="Estado">
                         <?php if ((int) $c['activo'] === 1): ?>
@@ -72,17 +81,19 @@ use App\Core\Url;
                         <?php endif; ?>
                     </td>
                     <td class="text-end text-nowrap">
-                        <form method="post" action="<?= Url::to('/categorias/' . $c['id'] . '/estado') ?>" class="d-inline">
-                            <?= Csrf::field() ?>
-                            <button type="submit" class="btn btn-sm btn-outline-<?= (int) $c['activo'] === 1 ? 'danger' : 'success' ?>">
-                                <?= (int) $c['activo'] === 1 ? 'Desactivar' : 'Activar' ?>
-                            </button>
-                        </form>
-                        <form method="post" action="<?= Url::to('/categorias/' . $c['id'] . '/eliminar') ?>" class="d-inline"
-                              onsubmit="return confirm('¿Eliminar esta categoría? Solo es posible si ningún bien la usa. Un superusuario podrá restaurarla desde la papelera si fue un error.');">
-                            <?= Csrf::field() ?>
-                            <button type="submit" class="btn btn-sm btn-outline-danger">Eliminar</button>
-                        </form>
+                        <?php if (!$protegida): ?>
+                            <form method="post" action="<?= Url::to('/categorias/' . $c['id'] . '/estado') ?>" class="d-inline">
+                                <?= Csrf::field() ?>
+                                <button type="submit" class="btn btn-sm btn-outline-<?= (int) $c['activo'] === 1 ? 'danger' : 'success' ?>">
+                                    <?= (int) $c['activo'] === 1 ? 'Desactivar' : 'Activar' ?>
+                                </button>
+                            </form>
+                            <form method="post" action="<?= Url::to('/categorias/' . $c['id'] . '/eliminar') ?>" class="d-inline"
+                                  onsubmit="return confirm('¿Eliminar esta categoría? Solo es posible si ningún bien la usa. Un superusuario podrá restaurarla desde la papelera si fue un error.');">
+                                <?= Csrf::field() ?>
+                                <button type="submit" class="btn btn-sm btn-outline-danger">Eliminar</button>
+                            </form>
+                        <?php endif; ?>
                     </td>
                 </tr>
             <?php endforeach; ?>

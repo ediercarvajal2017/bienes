@@ -63,6 +63,7 @@ final class CategoriaController
         $id = (int) $id;
         $categoria = Categoria::find($id);
         $this->verificarPertenencia($categoria);
+        $this->verificarNoProtegida($categoria);
 
         $request = new Request();
         $this->verificarCsrf($request, (int) $categoria['institucion_id']);
@@ -89,6 +90,7 @@ final class CategoriaController
         $id = (int) $id;
         $categoria = Categoria::find($id);
         $this->verificarPertenencia($categoria);
+        $this->verificarNoProtegida($categoria);
 
         $request = new Request();
         $this->verificarCsrf($request, (int) $categoria['institucion_id']);
@@ -105,6 +107,7 @@ final class CategoriaController
         $id = (int) $id;
         $categoria = Categoria::find($id);
         $this->verificarPertenencia($categoria);
+        $this->verificarNoProtegida($categoria);
 
         $request = new Request();
         $this->verificarCsrf($request, (int) $categoria['institucion_id']);
@@ -181,6 +184,23 @@ final class CategoriaController
         if (!Auth::esSuperusuario() && (int) $categoria['institucion_id'] !== Auth::institucionId()) {
             http_response_code(403);
             View::render('errors/403');
+            exit;
+        }
+    }
+
+    /**
+     * "Sin cartera" no se puede renombrar, desactivar ni eliminar desde aquí — ni
+     * siquiera el superusuario —, sin excepción: es la categoría de la que depende el
+     * código automático al registrar un bien nuevo, y romperla por accidente (un
+     * renombre, una desactivación) rompería esa función en silencio para toda la
+     * institución. Si alguna vez hace falta tocarla de verdad, es un cambio de código
+     * puntual, no algo disponible en la pantalla normal.
+     */
+    private function verificarNoProtegida(array $categoria): void
+    {
+        if (Categoria::esProtegida($categoria)) {
+            Session::flash('error', 'La categoría "' . Categoria::NOMBRE_CATEGORIA_PROTEGIDA . '" no se puede modificar ni eliminar.');
+            header('Location: ' . Url::to($this->volverA((int) $categoria['institucion_id'])));
             exit;
         }
     }

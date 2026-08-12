@@ -18,6 +18,18 @@ final class Categoria
     public const CATEGORIAS_POR_DEFECTO = ['Muebles', 'Sin cartera', 'Otra IE', 'Tecnología'];
 
     /**
+     * Nombre exacto de la categoría protegida (ver esProtegida()) — sin excepción,
+     * ni siquiera para el superusuario: nadie puede renombrarla, desactivarla ni
+     * eliminarla desde la pantalla normal de categorías, en ninguna institución.
+     */
+    public const NOMBRE_CATEGORIA_PROTEGIDA = 'Sin cartera';
+
+    public static function esProtegida(array $categoria): bool
+    {
+        return $categoria['nombre'] === self::NOMBRE_CATEGORIA_PROTEGIDA;
+    }
+
+    /**
      * Idempotente a propósito (se salta las que ya existan) — así se puede llamar tanto al
      * crear una institución nueva como desde database/seeders/seed.php, que se espera que
      * se pueda correr más de una vez sin duplicar nada.
