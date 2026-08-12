@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Core;
 
+use App\Models\Institucion;
 use App\Models\Usuario;
 
 final class Auth
@@ -39,7 +40,6 @@ final class Auth
         Session::put('rol', $usuario['rol_nombre']);
         Session::put('institucion_id', (int) $usuario['institucion_id']);
         Session::put('institucion_nombre', $usuario['institucion_nombre']);
-        Session::put('sede_activa_id', (int) $usuario['institucion_id']);
         Session::put('nombre_completo', trim($usuario['nombres'] . ' ' . $usuario['apellidos']));
 
         return true;
@@ -76,19 +76,29 @@ final class Auth
     }
 
     /**
-     * La sede sobre la que se debe filtrar/crear en este momento. Para la mayoría de
-     * usuarios es igual a institucionId(); solo cambia para un rector que usó el
-     * selector "cambiar de sede" para operar temporalmente en otra sede de su familia
-     * (ver SedeActivaController).
+     * Alias de institucionId() para los sitios donde importa dejar explícito que se
+     * está leyendo la sede que el usuario tiene activa en este momento (el selector del
+     * encabezado), no "su institución" en abstracto — son el mismo valor.
      */
     public static function sedeActivaId(): ?int
     {
-        return Session::get('sede_activa_id') ?? self::institucionId();
+        return self::institucionId();
     }
 
+    /**
+     * Usado por SedeActivaController cuando un rector cambia de sede: institucionId()
+     * pasa a ser la sede elegida para el resto de la sesión (así TODAS las pantallas que
+     * ya filtran por institucionId() — Bienes, Usuarios, Categorías, etc. — quedan
+     * automáticamente ancladas a la nueva sede, sin tener que tocar cada controlador).
+     * Se refresca institucion_nombre junto con el id para que el encabezado no muestre
+     * el nombre de la sede vieja.
+     */
     public static function cambiarSedeActiva(int $institucionId): void
     {
-        Session::put('sede_activa_id', $institucionId);
+        $institucion = Institucion::find($institucionId);
+
+        Session::put('institucion_id', $institucionId);
+        Session::put('institucion_nombre', $institucion['nombre'] ?? Session::get('institucion_nombre'));
     }
 
     public static function nombreCompleto(): ?string

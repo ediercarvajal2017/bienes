@@ -101,7 +101,7 @@ foreach ($gruposBreadcrumb as $g) {
                 <div class="usuario-navbar-nombre"><?= htmlspecialchars($nombreUsuarioNavbar, ENT_QUOTES) ?></div>
                 <div class="usuario-navbar-detalle">
                     <span class="usuario-navbar-rol"><?= htmlspecialchars(Auth::rol() ?? '', ENT_QUOTES) ?></span>
-                    <?php if (!Auth::esSuperusuario() && Auth::institucionNombre() !== null): ?>
+                    <?php if (!Auth::esSuperusuario() && Auth::institucionNombre() !== null && count($familiaSedes) <= 1): ?>
                         <span class="usuario-navbar-institucion" title="<?= htmlspecialchars(Auth::institucionNombre(), ENT_QUOTES) ?>">
                             <i class="bi bi-building"></i><?= htmlspecialchars(Auth::institucionNombre(), ENT_QUOTES) ?>
                         </span>
