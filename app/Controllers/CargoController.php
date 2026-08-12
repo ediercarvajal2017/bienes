@@ -17,6 +17,8 @@ final class CargoController
 {
     public function index(): void
     {
+        $this->verificarSuperusuario();
+
         View::layout('partials/layout', 'cargos/index', [
             'title' => 'Cargos',
             'cargos' => Cargo::all(),
@@ -27,6 +29,8 @@ final class CargoController
 
     public function guardar(): void
     {
+        $this->verificarSuperusuario();
+
         $request = new Request();
         $this->verificarCsrf($request);
 
@@ -48,6 +52,8 @@ final class CargoController
 
     public function actualizar(string $id): void
     {
+        $this->verificarSuperusuario();
+
         $id = (int) $id;
         $request = new Request();
         $this->verificarCsrf($request);
@@ -73,6 +79,8 @@ final class CargoController
 
     public function cambiarEstado(string $id): void
     {
+        $this->verificarSuperusuario();
+
         $request = new Request();
         $this->verificarCsrf($request);
 
@@ -89,6 +97,8 @@ final class CargoController
 
     public function eliminar(string $id): void
     {
+        $this->verificarSuperusuario();
+
         $id = (int) $id;
         $request = new Request();
         $this->verificarCsrf($request);
@@ -114,6 +124,23 @@ final class CargoController
         if (!Csrf::verify((string) $request->input('_csrf'))) {
             Session::flash('error', 'Tu sesión expiró, intenta de nuevo.');
             header('Location: ' . Url::to('/cargos'));
+            exit;
+        }
+    }
+
+    /**
+     * Segunda capa, independiente de la ruta: /cargos ya está protegida en
+     * public/index.php con SuperusuarioMiddleware, pero el catálogo de cargos es
+     * compartido por todas las instituciones (a propósito, ver decisión del usuario) —
+     * así que este controlador no depende únicamente de que las rutas queden bien
+     * configuradas para siempre. Si algún día alguien agrega una ruta nueva aquí y
+     * olvida el middleware, esto sigue bloqueando el acceso.
+     */
+    private function verificarSuperusuario(): void
+    {
+        if (!Auth::esSuperusuario()) {
+            http_response_code(403);
+            View::render('errors/403');
             exit;
         }
     }
