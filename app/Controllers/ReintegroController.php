@@ -153,7 +153,10 @@ final class ReintegroController
 
     public function lotes(): void
     {
-        $institucionId = $this->institucionAListar();
+        // A diferencia de institucionAListar() (ver más abajo), aquí sí se puede aplicar
+        // el filtro del superusuario: esta pantalla solo LISTA lotes ya creados, no
+        // alimenta la creación de uno nuevo.
+        $institucionId = Auth::esSuperusuario() ? Auth::filtroInstitucionId() : Auth::institucionId();
         $pagina = max(1, (int) ($_GET['pagina'] ?? 1));
         $porPagina = (int) ($_GET['porPagina'] ?? self::POR_PAGINA_DEFECTO);
         if (!in_array($porPagina, self::OPCIONES_POR_PAGINA, true)) {
@@ -404,9 +407,16 @@ final class ReintegroController
         }
     }
 
+    /**
+     * Usada por pendientesDeLote() y crearLotesDesdeMovimientos() — a diferencia de
+     * lotes() (arriba), estas alimentan la CREACIÓN de un lote nuevo, así que
+     * deliberadamente no respetan el filtro del superusuario: si lo hicieran, un
+     * movimiento fuera del filtro activo podría quedar descartado en silencio de la
+     * agrupación en vez de agruparse, en vez de solo dejar de mostrarse.
+     */
     private function institucionAListar(): ?int
     {
-        return Auth::esSuperusuario() ? Auth::filtroInstitucionId() : Auth::institucionId();
+        return Auth::esSuperusuario() ? null : Auth::institucionId();
     }
 
     /**
