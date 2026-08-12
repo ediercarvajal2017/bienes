@@ -380,6 +380,68 @@ document.addEventListener('DOMContentLoaded', function () {
                 </form>
             </details>
 
+            <?php if (!empty($familiaSedesDestino)): ?>
+                <details id="panelTrasladarSede" class="border rounded p-3 bg-white panel-accion">
+                    <summary class="fw-semibold" style="cursor:pointer;">Trasladar a otra sede</summary>
+                    <form method="post" action="<?= Url::to('/bienes/' . $bien['id'] . '/trasladar-sede') ?>" class="mt-3 d-flex flex-column gap-2">
+                        <?= Csrf::field() ?>
+                        <div>
+                            <label class="form-label small" for="sedeDestinoTraslado">Sede destino</label>
+                            <select id="sedeDestinoTraslado" name="institucion_destino_id" class="form-select form-select-sm" required>
+                                <option value="">-- Selecciona una sede --</option>
+                                <?php foreach ($familiaSedesDestino as $sede): ?>
+                                    <option value="<?= (int) $sede['id'] ?>"><?= htmlspecialchars($sede['nombre'], ENT_QUOTES) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="form-label small" for="espacioDestinoTraslado">Espacio en la sede destino</label>
+                            <select id="espacioDestinoTraslado" name="espacio_destino_id" class="form-select form-select-sm" required disabled>
+                                <option value="">-- Primero selecciona una sede --</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="form-label small">Fecha del traslado</label>
+                            <input type="date" name="fecha" class="form-control form-control-sm" required value="<?= date('Y-m-d') ?>">
+                        </div>
+                        <div>
+                            <label class="form-label small">Observaciones</label>
+                            <textarea name="observaciones" class="form-control form-control-sm" rows="2"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-sm btn-outline-primary">Trasladar a otra sede</button>
+                    </form>
+                </details>
+                <script>
+                (function () {
+                    var espaciosPorSede = <?= json_encode($espaciosPorSedeDestino) ?>;
+                    var selectSede = document.getElementById('sedeDestinoTraslado');
+                    var selectEspacio = document.getElementById('espacioDestinoTraslado');
+
+                    selectSede.addEventListener('change', function () {
+                        var espacios = espaciosPorSede[this.value] || [];
+                        selectEspacio.innerHTML = '';
+
+                        if (!this.value || espacios.length === 0) {
+                            var vacio = document.createElement('option');
+                            vacio.value = '';
+                            vacio.textContent = this.value ? 'Esa sede no tiene espacios activos' : '-- Primero selecciona una sede --';
+                            selectEspacio.appendChild(vacio);
+                            selectEspacio.disabled = true;
+                            return;
+                        }
+
+                        espacios.forEach(function (espacio) {
+                            var opcion = document.createElement('option');
+                            opcion.value = espacio.id;
+                            opcion.textContent = espacio.codigo + ' - ' + espacio.nombre;
+                            selectEspacio.appendChild(opcion);
+                        });
+                        selectEspacio.disabled = false;
+                    });
+                })();
+                </script>
+            <?php endif; ?>
+
             <details id="panelReintegrar" class="border rounded p-3 bg-white panel-accion">
                 <summary class="fw-semibold" style="cursor:pointer;">Reintegrar</summary>
                 <form method="post" action="<?= Url::to('/bienes/' . $bien['id'] . '/reintegrar') ?>" class="mt-3 d-flex flex-column gap-2">

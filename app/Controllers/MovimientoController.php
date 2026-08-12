@@ -12,6 +12,8 @@ use App\Core\Url;
 use App\Core\View;
 use App\Models\Asignacion;
 use App\Models\Bien;
+use App\Models\Espacio;
+use App\Models\Institucion;
 use App\Models\Movimiento;
 use App\Models\Verificacion;
 
@@ -117,6 +119,91 @@ final class MovimientoController
 
         Session::flash('ok', 'Traslado registrado.');
         header('Location: ' . Url::to("/bienes/{$id}/editar"));
+        exit;
+    }
+
+    /**
+     * Traslado entre sedes de una misma familia (principal + secciones) — a diferencia
+     * de trasladar(), aquí también cambia el "dueño" del bien (institucion_id), porque
+     * el espacio destino pertenece a OTRA institución. Solo rectores llegan aquí: la
+     * ruta exige asignaciones.crear, pero el rol adicional se valida igual porque un
+     * secretario nunca tiene más de una sede en su familia para elegir.
+     */
+    public function trasladarSede(string $id): void
+    {
+        $id = (int) $id;
+        $bien = $this->bienDeLaInstitucion($id);
+        $asignacionActiva = $this->verificarAutoridadSobreMovimiento($id);
+
+        $request = new Request();
+        $this->verificarCsrf($request, $id);
+
+        $fecha = (string) $request->input('fecha');
+        $institucionDestinoId = (int) $request->input('institucion_destino_id');
+        $espacioId = (string) $request->input('espacio_destino_id');
+        $observaciones = trim((string) $request->input('observaciones')) ?: null;
+
+        if ($fecha === '' || !strtotime($fecha) || $institucionDestinoId <= 0 || $espacioId === '') {
+            Session::flash('error', 'Selecciona una fecha, una sede destino y un espacio válidos.');
+            header('Location: ' . Url::to("/bienes/{$id}/editar"));
+            exit;
+        }
+
+        $familia = Institucion::familiaDe((int) $bien['institucion_id']);
+        $sedeDestino = null;
+        foreach ($familia as $sede) {
+            if ((int) $sede['id'] === $institucionDestinoId) {
+                $sedeDestino = $sede;
+                break;
+            }
+        }
+
+        if ($sedeDestino === null || $institucionDestinoId === (int) $bien['institucion_id']) {
+            Session::flash('error', 'Esa sede no pertenece a la familia de tu institución.');
+            header('Location: ' . Url::to("/bienes/{$id}/editar"));
+            exit;
+        }
+
+        $espacio = Espacio::find((int) $espacioId);
+        if (!$espacio || (int) $espacio['institucion_id'] !== $institucionDestinoId) {
+            Session::flash('error', 'Ese espacio no pertenece a la sede destino seleccionada.');
+            header('Location: ' . Url::to("/bienes/{$id}/editar"));
+            exit;
+        }
+
+        if (Bien::existeCodigo($institucionDestinoId, $bien['codigo_identificacion'], $id)) {
+            Session::flash('error', 'Ya existe un bien con ese código de identificación en la sede destino.');
+            header('Location: ' . Url::to("/bienes/{$id}/editar"));
+            exit;
+        }
+
+        $nota = 'Traslado entre sedes: ' . $sedeDestino['nombre'] . '.';
+        $observacionesFinal = $observaciones !== null ? $nota . ' ' . $observaciones : $nota;
+
+        Movimiento::crear([
+            'bien_id' => $id,
+            'tipo' => 'traslado',
+            'fecha' => $fecha,
+            'responsable_id' => Auth::id(),
+            'espacio_origen_id' => $asignacionActiva['espacio_id'] ?? null,
+            'espacio_destino_id' => (int) $espacioId,
+            'destino_texto' => null,
+            'observaciones' => $observacionesFinal,
+        ]);
+
+        Asignacion::cerrarActivasDe($id);
+        Asignacion::crear([
+            'bien_id' => $id,
+            'espacio_id' => (int) $espacioId,
+            'fecha_asignacion' => $fecha,
+            'observaciones' => $observacionesFinal,
+            'asignado_por' => Auth::id(),
+        ]);
+
+        Bien::cambiarInstitucion($id, $institucionDestinoId);
+
+        Session::flash('ok', 'Bien trasladado a ' . $sedeDestino['nombre'] . '.');
+        header('Location: ' . Url::to('/bienes'));
         exit;
     }
 

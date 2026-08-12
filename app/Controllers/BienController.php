@@ -337,6 +337,18 @@ final class BienController
         $bien = Bien::find($id);
         $this->verificarAcceso($bien);
 
+        $familiaSedesDestino = [];
+        $espaciosPorSedeDestino = [];
+        if (Auth::rol() === 'rector') {
+            foreach (Institucion::familiaDe((int) $bien['institucion_id']) as $sede) {
+                if ((int) $sede['id'] === (int) $bien['institucion_id']) {
+                    continue;
+                }
+                $familiaSedesDestino[] = $sede;
+                $espaciosPorSedeDestino[(int) $sede['id']] = Espacio::listadoParaSelect((int) $sede['id']);
+            }
+        }
+
         View::layout('partials/layout', 'bienes/form', [
             'title' => 'Editar bien',
             'bien' => $bien,
@@ -344,6 +356,8 @@ final class BienController
             'asignacionActiva' => Asignacion::activaDe($id),
             'historialMovimientos' => Movimiento::historialDe($id),
             'espaciosInstitucion' => Espacio::listadoParaSelect((int) $bien['institucion_id']),
+            'familiaSedesDestino' => $familiaSedesDestino,
+            'espaciosPorSedeDestino' => $espaciosPorSedeDestino,
             'verificacionId' => Verificacion::idValidoParaBien($id, (string) ($_GET['verificacion_id'] ?? '')),
             'error' => Session::pullFlash('error'),
             'mensaje' => Session::pullFlash('ok'),

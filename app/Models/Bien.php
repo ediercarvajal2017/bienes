@@ -401,6 +401,18 @@ final class Bien
         ]);
     }
 
+    /**
+     * Cambia el dueño (institucion_id) de un bien — usado solo por el traslado entre
+     * sedes de una misma familia (MovimientoController::trasladarSede()), nunca por el
+     * formulario normal de edición.
+     */
+    public static function cambiarInstitucion(int $id, int $institucionId): void
+    {
+        Database::connection()
+            ->prepare('UPDATE bienes SET institucion_id = ? WHERE id = ?')
+            ->execute([$institucionId, $id]);
+    }
+
     public static function updateFoto(int $id, string $path): void
     {
         Database::connection()->prepare('UPDATE bienes SET foto_path = ? WHERE id = ?')->execute([$path, $id]);
