@@ -50,7 +50,7 @@ test('reintegrar un bien y agruparlo en un lote', async ({ page }) => {
     await page.locator('.casilla-bien').first().check();
 
     page.once('dialog', (dialog) => dialog.accept());
-    await page.locator('#botonReintegrar').click();
+    await page.locator('.boton-reintegrar').first().click();
 
     await expect(page.locator('.alert-success')).toBeVisible();
 
