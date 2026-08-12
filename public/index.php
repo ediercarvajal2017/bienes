@@ -49,6 +49,7 @@ use App\Controllers\QrController;
 use App\Controllers\QrMasivoController;
 use App\Controllers\ReintegroController;
 use App\Controllers\ReporteController;
+use App\Controllers\SedeActivaController;
 use App\Controllers\UsuarioCargaMasivaController;
 use App\Controllers\UsuarioController;
 use App\Controllers\VerificacionController;
@@ -82,6 +83,8 @@ $router->get('/dashboard', [DashboardController::class, 'index'], [
 ]);
 
 $router->get('/archivos/{tipo}/{archivo}', [ArchivoController::class, 'mostrar'], [AuthMiddleware::class]);
+
+$router->post('/sede-activa', [SedeActivaController::class, 'cambiar'], [AuthMiddleware::class, InstitucionScopeMiddleware::class]);
 
 $router->get('/instituciones', [InstitucionController::class, 'index'], [
     AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':instituciones.ver',

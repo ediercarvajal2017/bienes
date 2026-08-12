@@ -130,6 +130,17 @@ img {
   }
 }
 
+.sede-activa-select {
+  max-width: 170px;
+  font-size: 0.78rem;
+}
+
+@media (max-width: 1200px) {
+  .sede-activa-select {
+    max-width: 120px;
+  }
+}
+
 .navbar-logo {
   height: 34px;
   width: auto;

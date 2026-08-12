@@ -47,6 +47,31 @@ final class Institucion
         return Database::connection()->query($sql)->fetchAll();
     }
 
+    /**
+     * La sede principal de $institucionId (ella misma si ya es la principal) más todas
+     * sus secciones — el conjunto de sedes que un rector puede tener activas a la vez.
+     * La principal siempre queda primero, luego el resto por nombre.
+     */
+    public static function familiaDe(int $institucionId): array
+    {
+        $actual = self::find($institucionId);
+        if (!$actual) {
+            return [];
+        }
+
+        $raizId = ($actual['tipo_sede'] === 'seccion' && $actual['institucion_padre_id'])
+            ? (int) $actual['institucion_padre_id']
+            : (int) $actual['id'];
+
+        $stmt = Database::connection()->prepare(
+            "SELECT * FROM instituciones WHERE id = ? OR institucion_padre_id = ?
+             ORDER BY (tipo_sede = 'principal') DESC, nombre"
+        );
+        $stmt->execute([$raizId, $raizId]);
+
+        return $stmt->fetchAll();
+    }
+
     public static function setActivo(int $id, bool $activo): void
     {
         Database::connection()->prepare('UPDATE instituciones SET activo = ? WHERE id = ?')->execute([(int) $activo, $id]);

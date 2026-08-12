@@ -3,6 +3,7 @@
 use App\Core\Auth;
 use App\Core\Request;
 use App\Core\Url;
+use App\Models\Institucion;
 
 $rutaActual = (new Request())->uri;
 $esActiva = static fn (string $prefijo): string => str_starts_with($rutaActual, $prefijo) ? ' active' : '';
@@ -88,6 +89,10 @@ foreach ($gruposBreadcrumb as $g) {
             $inicialesUsuario .= mb_strtoupper(mb_substr(end($palabrasNombre), 0, 1));
         }
     }
+    $familiaSedes = [];
+    if (Auth::rol() === 'rector' && Auth::institucionId()) {
+        $familiaSedes = Institucion::familiaDe((int) Auth::institucionId());
+    }
     ?>
     <div class="ms-auto d-flex align-items-center gap-2 gap-sm-3">
         <div class="usuario-navbar d-none d-md-flex align-items-center gap-2">
@@ -104,6 +109,18 @@ foreach ($gruposBreadcrumb as $g) {
                 </div>
             </div>
         </div>
+        <?php if (count($familiaSedes) > 1): ?>
+            <form method="post" action="<?= Url::to('/sede-activa') ?>" class="d-flex align-items-center">
+                <?= \App\Core\Csrf::field() ?>
+                <input type="hidden" name="volver" value="<?= htmlspecialchars($rutaActual, ENT_QUOTES) ?>">
+                <label for="sedeActivaSelect" class="visually-hidden">Sede activa</label>
+                <select id="sedeActivaSelect" name="institucion_id" class="form-select form-select-sm sede-activa-select" onchange="this.form.submit()" title="Cambiar de sede">
+                    <?php foreach ($familiaSedes as $sede): ?>
+                        <option value="<?= (int) $sede['id'] ?>" <?= (int) $sede['id'] === Auth::sedeActivaId() ? 'selected' : '' ?>><?= htmlspecialchars($sede['nombre'], ENT_QUOTES) ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </form>
+        <?php endif; ?>
         <button type="button" id="btnTema" class="theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
             <i class="bi bi-moon-stars"></i>
         </button>

@@ -39,6 +39,7 @@ final class Auth
         Session::put('rol', $usuario['rol_nombre']);
         Session::put('institucion_id', (int) $usuario['institucion_id']);
         Session::put('institucion_nombre', $usuario['institucion_nombre']);
+        Session::put('sede_activa_id', (int) $usuario['institucion_id']);
         Session::put('nombre_completo', trim($usuario['nombres'] . ' ' . $usuario['apellidos']));
 
         return true;
@@ -72,6 +73,22 @@ final class Auth
     public static function institucionNombre(): ?string
     {
         return Session::get('institucion_nombre');
+    }
+
+    /**
+     * La sede sobre la que se debe filtrar/crear en este momento. Para la mayoría de
+     * usuarios es igual a institucionId(); solo cambia para un rector que usó el
+     * selector "cambiar de sede" para operar temporalmente en otra sede de su familia
+     * (ver SedeActivaController).
+     */
+    public static function sedeActivaId(): ?int
+    {
+        return Session::get('sede_activa_id') ?? self::institucionId();
+    }
+
+    public static function cambiarSedeActiva(int $institucionId): void
+    {
+        Session::put('sede_activa_id', $institucionId);
     }
 
     public static function nombreCompleto(): ?string
