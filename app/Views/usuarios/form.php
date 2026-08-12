@@ -80,6 +80,17 @@ $v = static fn (string $campo, mixed $porDefecto = '') => $viejo[$campo] ?? $usu
                 <?php endforeach; ?>
             </select>
         </div>
+    <?php elseif (count($familiaSedes) > 1): ?>
+        <div class="col-12">
+            <label class="form-label small requerido" for="sedeUsuarioSelect">Sede</label>
+            <select name="institucion_id" id="sedeUsuarioSelect" class="form-select" required>
+                <?php foreach ($familiaSedes as $sede): ?>
+                    <option value="<?= $sede['id'] ?>" <?= (int) $v('institucion_id', Auth::institucionId()) === (int) $sede['id'] ? 'selected' : '' ?>>
+                        <?= htmlspecialchars($sede['nombre'], ENT_QUOTES) ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+        </div>
     <?php endif; ?>
 
     <div class="col-md-6">

@@ -56,6 +56,7 @@ final class UsuarioController
             'cargos' => Cargo::activos(),
             'roles' => Usuario::rolesParaSelect(Auth::esSuperusuario()),
             'instituciones' => Auth::esSuperusuario() ? Institucion::listadoParaSelect(true) : [],
+            'familiaSedes' => $this->familiaSedesDelRector(),
             'error' => Session::pullFlash('error'),
             'viejo' => Session::pullOld(),
         ]);
@@ -101,6 +102,7 @@ final class UsuarioController
             'cargos' => $this->cargosParaFormulario($usuario),
             'roles' => Usuario::rolesParaSelect(Auth::esSuperusuario()),
             'instituciones' => Auth::esSuperusuario() ? $this->institucionesParaFormulario($usuario) : [],
+            'familiaSedes' => $this->familiaSedesDelRector(),
             'error' => Session::pullFlash('error'),
             'viejo' => Session::pullOld(),
         ]);
@@ -208,9 +210,7 @@ final class UsuarioController
 
     private function datosDesdeFormulario(Request $request): array
     {
-        $institucionId = Auth::esSuperusuario()
-            ? (int) $request->input('institucion_id')
-            : Auth::institucionId();
+        $institucionId = $this->institucionIdDesdeFormulario($request);
 
         return [
             'documento' => trim((string) $request->input('documento')),
@@ -221,6 +221,45 @@ final class UsuarioController
             'institucion_id' => $institucionId,
             'rol_id' => (int) $request->input('rol_id'),
         ];
+    }
+
+    /**
+     * El superusuario elige libremente. Un rector con más de una sede en su familia
+     * también puede elegir, pero limitado a esa familia (nunca a una institución ajena) —
+     * así puede crear o mover un usuario a cualquiera de sus sedes sin necesitar una
+     * cuenta de superusuario. Cualquier otro caso (secretario, docente, o un valor que no
+     * pertenece a la familia) se queda fijo en la sede activa, igual que antes.
+     */
+    private function institucionIdDesdeFormulario(Request $request): int
+    {
+        if (Auth::esSuperusuario()) {
+            return (int) $request->input('institucion_id');
+        }
+
+        if (Auth::rol() === 'rector') {
+            $solicitada = (int) $request->input('institucion_id');
+            foreach ($this->familiaSedesDelRector() as $sede) {
+                if ((int) $sede['id'] === $solicitada) {
+                    return $solicitada;
+                }
+            }
+        }
+
+        return (int) Auth::institucionId();
+    }
+
+    /**
+     * La familia (principal + secciones) de la sede activa del rector, o un arreglo
+     * vacío para cualquier otro rol — usado tanto para armar el selector de sede en el
+     * formulario como para validar lo que llegue en institucionIdDesdeFormulario().
+     */
+    private function familiaSedesDelRector(): array
+    {
+        if (Auth::rol() !== 'rector' || !Auth::institucionId()) {
+            return [];
+        }
+
+        return Institucion::familiaDe((int) Auth::institucionId());
     }
 
     private function validar(array $datos, string $password, ?int $exceptId, bool $esEdicion): ?string
