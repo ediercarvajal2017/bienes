@@ -49,6 +49,18 @@ if ($nulos > 0) {
     }
 }
 
+echo "\n=== 4b. Filas de categorias_bienes cuyo institucion_id NO existe en instituciones (huerfanas) ===\n\n";
+$huerfanas = $pdo->query(
+    "SELECT c.id, c.nombre, c.institucion_id
+     FROM categorias_bienes c
+     LEFT JOIN instituciones i ON i.id = c.institucion_id
+     WHERE i.id IS NULL"
+)->fetchAll();
+echo '  Total huerfanas: ' . count($huerfanas) . "\n";
+foreach ($huerfanas as $h) {
+    echo "    #{$h['id']}: \"{$h['nombre']}\" -> institucion_id={$h['institucion_id']} (no existe)\n";
+}
+
 echo "\n=== 5. ¿Incluye movimientos.tipo el valor 'reactivacion' (migracion 023)? ===\n\n";
 $tipo = $pdo->query(
     "SELECT COLUMN_TYPE FROM INFORMATION_SCHEMA.COLUMNS
