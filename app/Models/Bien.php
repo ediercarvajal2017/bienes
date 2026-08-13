@@ -485,9 +485,12 @@ final class Bien
     }
 
     /**
-     * Bienes operables desde /asignaciones: todo bien no dado de baja puede Asignarse o
-     * Reasignarse a un espacio, tenga ya uno o no. (Los candidatos a Reintegrar se listan
-     * aparte, ver reintegrables(), en la pantalla dedicada /reintegros.)
+     * Bienes operables desde /asignaciones: un bien que no esté dado de baja ni
+     * reintegrado puede Asignarse o Reasignarse a un espacio, tenga ya uno o no. Ninguno
+     * de los dos ya está físicamente en la institución (ver
+     * MovimientoController::verificarAsignable()), así que tampoco tiene sentido que
+     * aparezcan aquí como candidatos. (Los candidatos a Reintegrar se listan aparte, ver
+     * reintegrables(), en la pantalla dedicada /reintegros.)
      */
     public static function operables(?int $institucionId = null, ?string $busqueda = null, int $pagina = 1, int $porPagina = 50): array
     {
@@ -534,11 +537,12 @@ final class Bien
 
     /**
      * Busca por código, descripción, espacio, responsables del espacio y valor — las
-     * columnas visibles en /asignaciones. Excluye solo los bienes dados de baja.
+     * columnas visibles en /asignaciones. Excluye los bienes dados de baja y los
+     * reintegrados (ver operables() arriba).
      */
     private static function condicionesOperables(?int $institucionId, ?string $busqueda): array
     {
-        $condiciones = ['b.estado != "dado_de_baja"'];
+        $condiciones = ['b.estado NOT IN ("dado_de_baja", "reintegrado")'];
         $params = [];
 
         if ($institucionId !== null) {
