@@ -23,6 +23,7 @@ final class MovimientoController
     {
         $id = (int) $id;
         $bien = $this->bienDeLaInstitucion($id);
+        $this->verificarAsignable($bien);
 
         $request = new Request();
         $this->verificarCsrf($request, $id);
@@ -46,10 +47,6 @@ final class MovimientoController
             'observaciones' => $observaciones,
             'asignado_por' => Auth::id(),
         ]);
-
-        if ($bien['estado'] === 'reintegrado') {
-            Bien::update($id, array_merge($this->camposSinCambiar($bien), ['estado' => 'activo']));
-        }
 
         // Si la asignacion viene de una discrepancia (el bien no tenia ubicacion y ahora se
         // le asigno una), esa discrepancia ya quedo atendida.
@@ -281,6 +278,23 @@ final class MovimientoController
         }
 
         return $bien;
+    }
+
+    /**
+     * Un bien dado de baja o reintegrado ya no está físicamente en la institución — no se
+     * puede volver a asignar por esta vía, sin importar si el envío viene del botón de la
+     * pantalla o de una petición directa. Reactivar un reintegro (el único de los dos casos
+     * con sentido de revertirse) requiere una acción explícita y restringida aparte, no
+     * este flujo normal de asignación.
+     */
+    private function verificarAsignable(array $bien): void
+    {
+        if (in_array($bien['estado'], ['dado_de_baja', 'reintegrado'], true)) {
+            $estado = str_replace('_', ' ', $bien['estado']);
+            Session::flash('error', "Este bien está {$estado} y no se puede asignar.");
+            header('Location: ' . Url::to("/bienes/{$bien['id']}/editar"));
+            exit;
+        }
     }
 
     /**
