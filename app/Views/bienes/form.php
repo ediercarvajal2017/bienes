@@ -373,7 +373,7 @@ document.addEventListener('DOMContentLoaded', function () {
             </details>
         <?php endif; ?>
 
-        <?php if ($bien['estado'] !== 'dado_de_baja' && (Auth::esSuperusuario() || Auth::tienePermiso('bajas.crear'))): ?>
+        <?php if ($bien['estado'] !== 'dado_de_baja' && $bienEsSinCartera && (Auth::esSuperusuario() || Auth::tienePermiso('bajas.crear'))): ?>
             <details class="border rounded p-3 bg-white panel-accion">
                 <summary class="fw-semibold" style="cursor:pointer;">Dar de baja</summary>
                 <p class="small text-muted mt-3 mb-2">
