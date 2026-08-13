@@ -249,6 +249,9 @@ $router->post('/bienes/{id}/trasladar-sede', [MovimientoController::class, 'tras
 $router->post('/bienes/{id}/reintegrar', [MovimientoController::class, 'reintegrar'], [
     AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':asignaciones.crear',
 ]);
+$router->post('/bienes/{id}/reactivar', [MovimientoController::class, 'reactivar'], [
+    AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':asignaciones.crear',
+]);
 
 $router->get('/asignaciones', [AsignacionController::class, 'index'], [
     AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':asignaciones.crear',

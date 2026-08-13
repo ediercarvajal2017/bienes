@@ -402,6 +402,19 @@ final class Bien
     }
 
     /**
+     * Reactiva un bien reintegrado — usado solo por la acción restringida
+     * MovimientoController::reactivar() (rector/superusuario, con motivo obligatorio),
+     * nunca por el formulario normal de edición: estadoPermitidoDesdeFormulario() bloquea
+     * a propósito cualquier cambio de estado ahí para un bien reintegrado.
+     */
+    public static function reactivarDesdeReintegro(int $id): void
+    {
+        Database::connection()
+            ->prepare("UPDATE bienes SET estado = 'activo' WHERE id = ? AND estado = 'reintegrado'")
+            ->execute([$id]);
+    }
+
+    /**
      * Cambia el dueño (institucion_id) de un bien — usado solo por el traslado entre
      * sedes de una misma familia (MovimientoController::trasladarSede()), nunca por el
      * formulario normal de edición.

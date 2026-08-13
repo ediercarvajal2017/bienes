@@ -348,6 +348,27 @@ document.addEventListener('DOMContentLoaded', function () {
             </details>
         <?php endif; ?>
 
+        <?php if ($bien['estado'] === 'reintegrado' && (Auth::esSuperusuario() || Auth::rol() === 'rector')): ?>
+            <details id="panelReactivar" class="border rounded p-3 bg-white panel-accion">
+                <summary class="fw-semibold" style="cursor:pointer;">Reactivar</summary>
+                <p class="small text-muted mt-3 mb-2">
+                    Este bien está reintegrado. Úsalo solo si de verdad volvió a la institución (por ejemplo, la Alcaldía lo devolvió) o si el reintegro fue un error — queda registrado en el historial con el motivo que escribas.
+                </p>
+                <form method="post" action="<?= Url::to('/bienes/' . $bien['id'] . '/reactivar') ?>" class="d-flex flex-column gap-2">
+                    <?= Csrf::field() ?>
+                    <div>
+                        <label class="form-label small">Fecha</label>
+                        <input type="date" name="fecha" class="form-control form-control-sm" required value="<?= date('Y-m-d') ?>">
+                    </div>
+                    <div>
+                        <label class="form-label small requerido">Motivo</label>
+                        <textarea name="motivo" class="form-control form-control-sm" rows="2" required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-sm btn-outline-primary">Reactivar bien</button>
+                </form>
+            </details>
+        <?php endif; ?>
+
         <?php if ($bien['estado'] !== 'dado_de_baja' && (Auth::esSuperusuario() || Auth::tienePermiso('bajas.crear'))): ?>
             <details class="border rounded p-3 bg-white panel-accion">
                 <summary class="fw-semibold" style="cursor:pointer;">Dar de baja</summary>

@@ -248,6 +248,69 @@ final class MovimientoController
         exit;
     }
 
+    /**
+     * Reactiva un bien reintegrado, para el caso legítimo pero excepcional (la Alcaldía
+     * lo devolvió, o el reintegro original fue un error). A diferencia de "Asignar",
+     * queda restringido a rector/superusuario y exige un motivo — nunca es un clic
+     * accidental dentro del flujo normal de trabajo (ver verificarAsignable() y
+     * Bien::condicionesOperables(), que ya excluyen los reintegrados de ese flujo).
+     */
+    public function reactivar(string $id): void
+    {
+        $id = (int) $id;
+        $bien = $this->bienDeLaInstitucion($id);
+        $this->verificarPuedeReactivar();
+
+        if ($bien['estado'] !== 'reintegrado') {
+            Session::flash('error', 'Solo se puede reactivar un bien reintegrado.');
+            header('Location: ' . Url::to("/bienes/{$id}/editar"));
+            exit;
+        }
+
+        $request = new Request();
+        $this->verificarCsrf($request, $id);
+
+        $fecha = (string) $request->input('fecha');
+        $motivo = trim((string) $request->input('motivo'));
+
+        if ($fecha === '' || !strtotime($fecha) || $motivo === '') {
+            Session::flash('error', 'Indica la fecha y el motivo de la reactivación.');
+            header('Location: ' . Url::to("/bienes/{$id}/editar"));
+            exit;
+        }
+
+        Movimiento::crear([
+            'bien_id' => $id,
+            'tipo' => 'reactivacion',
+            'fecha' => $fecha,
+            'responsable_id' => Auth::id(),
+            'espacio_origen_id' => null,
+            'espacio_destino_id' => null,
+            'destino_texto' => null,
+            'observaciones' => $motivo,
+        ]);
+
+        Bien::reactivarDesdeReintegro($id);
+
+        Session::flash('ok', 'Bien reactivado. Ahora puedes asignarlo a un espacio.');
+        header('Location: ' . Url::to("/bienes/{$id}/editar"));
+        exit;
+    }
+
+    /**
+     * Solo rector o superusuario pueden reactivar un reintegro — la ruta ya exige
+     * asignaciones.crear, pero ese permiso también lo puede tener un secretario, así que
+     * el rol se valida aparte, igual que CargoController::verificarSuperusuario().
+     */
+    private function verificarPuedeReactivar(): void
+    {
+        if (!Auth::esSuperusuario() && Auth::rol() !== 'rector') {
+            http_response_code(403);
+            View::render('errors/403');
+            exit;
+        }
+    }
+
     private function camposSinCambiar(array $bien): array
     {
         return [
