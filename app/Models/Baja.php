@@ -16,9 +16,10 @@ final class Baja
     public static function listar(?int $institucionId = null, int $pagina = 1, int $porPagina = 50): array
     {
         $sql = 'SELECT bb.*, b.descripcion AS bien_descripcion, b.codigo_identificacion, b.institucion_id,
-                       u.nombres, u.apellidos
+                       c.nombre AS categoria_nombre, u.nombres, u.apellidos
                 FROM bajas_bienes bb
                 JOIN bienes b ON b.id = bb.bien_id
+                LEFT JOIN categorias_bienes c ON c.id = b.categoria_id
                 JOIN usuarios u ON u.id = bb.responsable_id';
         $params = [];
 

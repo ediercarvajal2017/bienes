@@ -4,6 +4,7 @@ use App\Core\Auth;
 use App\Core\Csrf;
 use App\Core\Url;
 use App\Core\View;
+use App\Models\Categoria;
 
 ?>
 <div class="mb-3">
@@ -41,6 +42,7 @@ use App\Core\View;
         </thead>
         <tbody>
         <?php foreach ($bajas as $b): ?>
+            <?php $admiteBaja = $b['categoria_nombre'] === Categoria::NOMBRE_CATEGORIA_PROTEGIDA; ?>
             <tr>
                 <td>
                     <?php if (!empty($b['foto_path'])): ?>
@@ -50,6 +52,12 @@ use App\Core\View;
                 <td data-label="Bien">
                     <?= htmlspecialchars($b['bien_descripcion'], ENT_QUOTES) ?>
                     <div class="small text-muted mono"><?= htmlspecialchars($b['codigo_identificacion'], ENT_QUOTES) ?></div>
+                    <?php if ((int) $b['aprobada'] === 0 && !$admiteBaja): ?>
+                        <div class="small text-danger mt-1">
+                            <i class="bi bi-exclamation-triangle me-1"></i>No admite baja (categoría "<?= htmlspecialchars($b['categoria_nombre'] ?? 'sin categoría', ENT_QUOTES) ?>") —
+                            <a href="<?= Url::to('/bienes/' . $b['bien_id'] . '/editar') ?>">recategorice a "<?= htmlspecialchars(Categoria::NOMBRE_CATEGORIA_PROTEGIDA, ENT_QUOTES) ?>"</a> o rechace el reporte.
+                        </div>
+                    <?php endif; ?>
                 </td>
                 <td data-label="Estado reportado"><?= htmlspecialchars($b['estado_reportado'], ENT_QUOTES) ?></td>
                 <td class="text-muted" data-label="Ubicación"><?= htmlspecialchars($b['ubicacion'] ?? '—', ENT_QUOTES) ?></td>
@@ -64,10 +72,12 @@ use App\Core\View;
                 </td>
                 <td class="text-end text-nowrap">
                     <?php if ((int) $b['aprobada'] === 0 && (Auth::esSuperusuario() || Auth::tienePermiso('bajas.aprobar'))): ?>
-                        <form method="post" action="<?= Url::to('/bajas/' . $b['id'] . '/aprobar') ?>" class="d-inline">
-                            <?= Csrf::field() ?>
-                            <button type="submit" class="btn btn-sm btn-outline-success">Aprobar</button>
-                        </form>
+                        <?php if ($admiteBaja): ?>
+                            <form method="post" action="<?= Url::to('/bajas/' . $b['id'] . '/aprobar') ?>" class="d-inline">
+                                <?= Csrf::field() ?>
+                                <button type="submit" class="btn btn-sm btn-outline-success">Aprobar</button>
+                            </form>
+                        <?php endif; ?>
                         <form method="post" action="<?= Url::to('/bajas/' . $b['id'] . '/rechazar') ?>" class="d-inline">
                             <?= Csrf::field() ?>
                             <button type="submit" class="btn btn-sm btn-outline-secondary">Rechazar</button>
