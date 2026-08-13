@@ -61,6 +61,24 @@ foreach ($huerfanas as $h) {
     echo "    #{$h['id']}: \"{$h['nombre']}\" -> institucion_id={$h['institucion_id']} (no existe)\n";
 }
 
+echo "\n=== 4c. ¿Algún bien usa esas categorías huérfanas? ===\n\n";
+if (empty($huerfanas)) {
+    echo "  (no aplica, no hay huerfanas)\n";
+} else {
+    $ids = array_column($huerfanas, 'id');
+    $marcadores = implode(',', array_fill(0, count($ids), '?'));
+    $bienes = $pdo->prepare(
+        "SELECT b.id, b.codigo_identificacion, b.institucion_id, b.categoria_id
+         FROM bienes b WHERE b.categoria_id IN ({$marcadores})"
+    );
+    $bienes->execute($ids);
+    $filas = $bienes->fetchAll();
+    echo '  Total de bienes que las usan: ' . count($filas) . "\n";
+    foreach ($filas as $b) {
+        echo "    Bien #{$b['id']} (\"{$b['codigo_identificacion']}\", institucion_id={$b['institucion_id']}) -> categoria_id={$b['categoria_id']}\n";
+    }
+}
+
 echo "\n=== 5. ¿Incluye movimientos.tipo el valor 'reactivacion' (migracion 023)? ===\n\n";
 $tipo = $pdo->query(
     "SELECT COLUMN_TYPE FROM INFORMATION_SCHEMA.COLUMNS
