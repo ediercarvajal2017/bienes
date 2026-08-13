@@ -381,7 +381,7 @@ document.addEventListener('DOMContentLoaded', function () {
             </details>
         <?php endif; ?>
 
-        <?php if ($asignacionActiva && (Auth::esSuperusuario() || Auth::tienePermiso('asignaciones.crear'))): ?>
+        <?php if ($asignacionActiva && !$bienFueraDeCirculacion && (Auth::esSuperusuario() || Auth::tienePermiso('asignaciones.crear'))): ?>
             <details id="panelTrasladar" class="border rounded p-3 bg-white panel-accion" <?= $verificacionId !== null ? 'open' : '' ?>>
                 <summary class="fw-semibold" style="cursor:pointer;">Trasladar</summary>
                 <form method="post" action="<?= Url::to('/bienes/' . $bien['id'] . '/trasladar') ?>" class="mt-3 d-flex flex-column gap-2">

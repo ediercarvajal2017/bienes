@@ -71,7 +71,8 @@ final class MovimientoController
     public function trasladar(string $id): void
     {
         $id = (int) $id;
-        $this->bienDeLaInstitucion($id);
+        $bien = $this->bienDeLaInstitucion($id);
+        $this->verificarAsignable($bien);
         $asignacionActiva = $this->verificarAutoridadSobreMovimiento($id);
 
         $request = new Request();
@@ -130,6 +131,7 @@ final class MovimientoController
     {
         $id = (int) $id;
         $bien = $this->bienDeLaInstitucion($id);
+        $this->verificarAsignable($bien);
         $asignacionActiva = $this->verificarAutoridadSobreMovimiento($id);
 
         $request = new Request();
@@ -208,6 +210,7 @@ final class MovimientoController
     {
         $id = (int) $id;
         $bien = $this->bienDeLaInstitucion($id);
+        $this->verificarAsignable($bien);
         $asignacionActiva = $this->verificarAutoridadSobreMovimiento($id);
 
         if ($bien['categoria_id'] === null) {
@@ -344,17 +347,20 @@ final class MovimientoController
     }
 
     /**
-     * Un bien dado de baja o reintegrado ya no está físicamente en la institución — no se
-     * puede volver a asignar por esta vía, sin importar si el envío viene del botón de la
-     * pantalla o de una petición directa. Reactivar un reintegro (el único de los dos casos
-     * con sentido de revertirse) requiere una acción explícita y restringida aparte, no
-     * este flujo normal de asignación.
+     * Un bien dado de baja o reintegrado ya no está físicamente en la institución — no
+     * admite ningún movimiento por el flujo normal (asignar, trasladar, trasladar a otra
+     * sede, reintegrar), sin importar si el envío viene del botón de la pantalla o de una
+     * petición directa. Se llama al inicio de las cuatro acciones, antes de cualquier otra
+     * validación, para que ninguna reviva por accidente un bien retirado — ni siquiera un
+     * bien que haya quedado con una asignación activa contradictoria de antes de este
+     * candado. Reactivar un reintegro (el único de los dos casos con sentido de
+     * revertirse) requiere la acción explícita y restringida reactivar(), no estas.
      */
     private function verificarAsignable(array $bien): void
     {
         if (in_array($bien['estado'], ['dado_de_baja', 'reintegrado'], true)) {
             $estado = str_replace('_', ' ', $bien['estado']);
-            Session::flash('error', "Este bien está {$estado} y no se puede asignar.");
+            Session::flash('error', "Este bien está {$estado} y no admite movimientos.");
             header('Location: ' . Url::to("/bienes/{$bien['id']}/editar"));
             exit;
         }
