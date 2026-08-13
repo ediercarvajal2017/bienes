@@ -15,7 +15,7 @@ final class EscaneoController
 {
     public function index(): void
     {
-        $institucionId = Auth::institucionId();
+        $institucionId = Auth::esSuperusuario() ? Auth::filtroInstitucionId() : Auth::institucionId();
 
         View::layout('partials/layout', 'escanear/index', [
             'title' => 'Escanear código QR',
@@ -33,7 +33,7 @@ final class EscaneoController
     public function buscar(): void
     {
         $codigo = trim((string) ($_GET['codigo'] ?? ''));
-        $institucionId = Auth::institucionId();
+        $institucionId = Auth::esSuperusuario() ? Auth::filtroInstitucionId() : Auth::institucionId();
 
         if ($codigo === '') {
             header('Location: ' . Url::to('/escanear'));
@@ -41,7 +41,10 @@ final class EscaneoController
         }
 
         if ($institucionId === null) {
-            Session::flash('error', 'Tu usuario no tiene una institución asignada para buscar por código.');
+            $mensaje = Auth::esSuperusuario()
+                ? 'Selecciona una institución en el filtro del encabezado para buscar por código.'
+                : 'Tu usuario no tiene una institución asignada para buscar por código.';
+            Session::flash('error', $mensaje);
             header('Location: ' . Url::to('/escanear'));
             exit;
         }
