@@ -15,6 +15,11 @@ final class Bien
      * separado (listarLotes()) y solo aparecen aquí individualmente si el usuario busca
      * algo. El resto de llamadores (reportes, exportaciones, selects) no la pasan y
      * siguen viendo el listado completo como siempre.
+     *
+     * La misma bandera también excluye los bienes reintegrados y dados de baja de esa
+     * vista sin filtrar — se muestran agrupados aparte como "Bodega Reintegro"/"Bodega
+     * de Baja" (ver BienController::index()), y siguen apareciendo aquí si el usuario
+     * busca algo o filtra por Estado explícitamente.
      */
     public static function listar(?int $institucionId = null, ?string $busqueda = null, int $pagina = 1, int $porPagina = 50, bool $excluirLotes = false, ?int $categoriaId = null, ?string $estado = null, ?int $espacioId = null): array
     {
@@ -70,6 +75,10 @@ final class Bien
 
         if ($excluirLotes) {
             $condiciones[] = 'b.lote IS NULL';
+        }
+
+        if ($excluirLotes && $estado === null) {
+            $condiciones[] = 'b.estado NOT IN ("reintegrado", "dado_de_baja")';
         }
 
         if ($categoriaId !== null) {
