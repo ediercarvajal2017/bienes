@@ -38,6 +38,21 @@ $etiquetasEstado = [
     </div>
 </div>
 
+<?php if ($bodegaReintegroTotal > 0 || $bodegaBajaTotal > 0): ?>
+    <div class="mb-3 d-flex flex-wrap gap-2">
+        <?php if ($bodegaReintegroTotal > 0): ?>
+            <a href="<?= Url::to('/bienes') ?>?estado=reintegrado" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-box-seam me-1"></i>Bodega Reintegro (<?= $bodegaReintegroTotal ?>)
+            </a>
+        <?php endif; ?>
+        <?php if ($bodegaBajaTotal > 0): ?>
+            <a href="<?= Url::to('/bienes') ?>?estado=dado_de_baja" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-trash3 me-1"></i>Bodega de Baja (<?= $bodegaBajaTotal ?>)
+            </a>
+        <?php endif; ?>
+    </div>
+<?php endif; ?>
+
 <?php if (!empty($mensaje)): ?>
     <div class="alert alert-success py-2 small"><?= htmlspecialchars($mensaje, ENT_QUOTES) ?></div>
 <?php endif; ?>

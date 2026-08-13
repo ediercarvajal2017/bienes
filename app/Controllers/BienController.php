@@ -68,14 +68,20 @@ final class BienController
         // mostrarlas en la vista sin filtrar de la primera pagina: en cuanto hay una
         // busqueda o filtro activo, "Ver detalles" ya te trae directamente los bienes reales
         // del lote (ver $excluirLotes arriba), asi que repetir el resumen ahi seria redundante.
-        $lotes = (!$soloPropios && $institucionId !== null && !$hayFiltroActivo && $pagina === 1)
-            ? Bien::listarLotes($institucionId, null, $categoriaId)
-            : [];
+        $vistaSinFiltrar = !$soloPropios && $institucionId !== null && !$hayFiltroActivo && $pagina === 1;
+        $lotes = $vistaSinFiltrar ? Bien::listarLotes($institucionId, null, $categoriaId) : [];
+
+        // "Bodega Reintegro"/"Bodega de Baja": mismo criterio que $lotes — solo se cuentan
+        // en la vista sin filtrar, y llevan al mismo filtro de Estado que ya existe.
+        $bodegaReintegroTotal = $vistaSinFiltrar ? Bien::contarListado($institucionId, null, false, null, 'reintegrado') : 0;
+        $bodegaBajaTotal = $vistaSinFiltrar ? Bien::contarListado($institucionId, null, false, null, 'dado_de_baja') : 0;
 
         View::layout('partials/layout', 'bienes/index', [
             'title' => 'Bienes',
             'bienes' => $bienes,
             'lotes' => $lotes,
+            'bodegaReintegroTotal' => $bodegaReintegroTotal,
+            'bodegaBajaTotal' => $bodegaBajaTotal,
             'soloPropios' => $soloPropios,
             'busqueda' => $busqueda,
             'categorias' => $institucionId !== null ? Categoria::activas($institucionId) : [],
