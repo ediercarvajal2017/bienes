@@ -12,6 +12,7 @@ use App\Core\Url;
 use App\Core\View;
 use App\Models\Asignacion;
 use App\Models\Bien;
+use App\Models\Categoria;
 use App\Models\Espacio;
 use App\Models\Institucion;
 use App\Models\Movimiento;
@@ -215,6 +216,12 @@ final class MovimientoController
 
         if ($bien['categoria_id'] === null) {
             Session::flash('error', 'Este bien no tiene categoría asignada; asígnale una antes de reintegrarlo.');
+            header('Location: ' . Url::to("/bienes/{$id}/editar"));
+            exit;
+        }
+
+        if ($bien['categoria_nombre'] === Categoria::NOMBRE_CATEGORIA_PROTEGIDA) {
+            Session::flash('error', "Los bienes de la categoría \"" . Categoria::NOMBRE_CATEGORIA_PROTEGIDA . "\" no admiten reintegro — solo pueden darse de baja.");
             header('Location: ' . Url::to("/bienes/{$id}/editar"));
             exit;
         }

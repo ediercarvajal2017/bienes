@@ -4,12 +4,16 @@ use App\Core\Auth;
 use App\Core\Csrf;
 use App\Core\Url;
 use App\Core\View;
+use App\Models\Categoria;
 
 $esEdicion = $bien !== null;
 $puedeEditar = Auth::esSuperusuario() || Auth::tienePermiso('bienes.editar') || (!$esEdicion && Auth::tienePermiso('bienes.crear'));
 // Un bien dado de baja o reintegrado ya no esta fisicamente en la institucion -- no tiene
 // sentido ofrecer "Asignar" para el (ver MovimientoController::verificarAsignable()).
 $bienFueraDeCirculacion = $esEdicion && in_array($bien['estado'], ['dado_de_baja', 'reintegrado'], true);
+// "Sin cartera" no admite reintegro, solo baja (ver MovimientoController::reintegrar()) --
+// Trasladar y Trasladar a otra sede siguen disponibles para esta categoria.
+$bienEsSinCartera = $esEdicion && ($bien['categoria_nombre'] ?? null) === Categoria::NOMBRE_CATEGORIA_PROTEGIDA;
 $viejo ??= [];
 $verificacionId ??= null;
 $hallazgo ??= null;
@@ -471,25 +475,27 @@ document.addEventListener('DOMContentLoaded', function () {
                 </script>
             <?php endif; ?>
 
-            <details id="panelReintegrar" class="border rounded p-3 bg-white panel-accion">
-                <summary class="fw-semibold" style="cursor:pointer;">Reintegrar</summary>
-                <form method="post" action="<?= Url::to('/bienes/' . $bien['id'] . '/reintegrar') ?>" class="mt-3 d-flex flex-column gap-2">
-                    <?= Csrf::field() ?>
-                    <div>
-                        <label class="form-label small">Destino del reintegro</label>
-                        <input type="text" name="destino_texto" class="form-control form-control-sm" required placeholder="Ej. Almacén institucional">
-                    </div>
-                    <div>
-                        <label class="form-label small">Fecha del reintegro</label>
-                        <input type="date" name="fecha" class="form-control form-control-sm" required value="<?= date('Y-m-d') ?>">
-                    </div>
-                    <div>
-                        <label class="form-label small">Observaciones</label>
-                        <textarea name="observaciones" class="form-control form-control-sm" rows="2"></textarea>
-                    </div>
-                    <button type="submit" class="btn btn-sm btn-outline-danger">Registrar reintegro</button>
-                </form>
-            </details>
+            <?php if (!$bienEsSinCartera): ?>
+                <details id="panelReintegrar" class="border rounded p-3 bg-white panel-accion">
+                    <summary class="fw-semibold" style="cursor:pointer;">Reintegrar</summary>
+                    <form method="post" action="<?= Url::to('/bienes/' . $bien['id'] . '/reintegrar') ?>" class="mt-3 d-flex flex-column gap-2">
+                        <?= Csrf::field() ?>
+                        <div>
+                            <label class="form-label small">Destino del reintegro</label>
+                            <input type="text" name="destino_texto" class="form-control form-control-sm" required placeholder="Ej. Almacén institucional">
+                        </div>
+                        <div>
+                            <label class="form-label small">Fecha del reintegro</label>
+                            <input type="date" name="fecha" class="form-control form-control-sm" required value="<?= date('Y-m-d') ?>">
+                        </div>
+                        <div>
+                            <label class="form-label small">Observaciones</label>
+                            <textarea name="observaciones" class="form-control form-control-sm" rows="2"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-sm btn-outline-danger">Registrar reintegro</button>
+                    </form>
+                </details>
+            <?php endif; ?>
         <?php endif; ?>
     </div>
 
