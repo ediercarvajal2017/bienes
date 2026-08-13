@@ -7,6 +7,9 @@ use App\Core\View;
 
 $esEdicion = $bien !== null;
 $puedeEditar = Auth::esSuperusuario() || Auth::tienePermiso('bienes.editar') || (!$esEdicion && Auth::tienePermiso('bienes.crear'));
+// Un bien dado de baja o reintegrado ya no esta fisicamente en la institucion -- no tiene
+// sentido ofrecer "Asignar" para el (ver MovimientoController::verificarAsignable()).
+$bienFueraDeCirculacion = $esEdicion && in_array($bien['estado'], ['dado_de_baja', 'reintegrado'], true);
 $viejo ??= [];
 $verificacionId ??= null;
 $hallazgo ??= null;
@@ -298,6 +301,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 </div>
             <?php else: ?>
                 <span class="text-muted">Este bien no tiene una asignación activa.</span>
+                <?php if ($bienFueraDeCirculacion): ?>
+                    <div class="small text-muted mt-1">
+                        <i class="bi bi-info-circle me-1"></i>Está <?= str_replace('_', ' ', $bien['estado']) ?>, ya no está físicamente en la institución — por eso no se puede asignar.
+                    </div>
+                <?php endif; ?>
             <?php endif; ?>
         </div>
     </div>
@@ -310,7 +318,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     <div class="d-flex flex-wrap gap-3 mb-4">
 
-        <?php if (!$asignacionActiva && (Auth::esSuperusuario() || Auth::tienePermiso('asignaciones.crear'))): ?>
+        <?php if (!$asignacionActiva && !$bienFueraDeCirculacion && (Auth::esSuperusuario() || Auth::tienePermiso('asignaciones.crear'))): ?>
             <details id="panelAsignar" class="border rounded p-3 bg-white panel-accion" <?= $verificacionId !== null ? 'open' : '' ?>>
                 <summary class="fw-semibold" style="cursor:pointer;">Asignar</summary>
                 <form method="post" action="<?= Url::to('/bienes/' . $bien['id'] . '/asignar') ?>" class="mt-3 d-flex flex-column gap-2">
