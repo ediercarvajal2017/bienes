@@ -15,6 +15,7 @@ use App\Helpers\Uploader;
 use App\Models\Asignacion;
 use App\Models\Baja;
 use App\Models\Bien;
+use App\Models\Categoria;
 use App\Models\Verificacion;
 
 final class BajaController
@@ -22,6 +23,7 @@ final class BajaController
     public function formulario(string $token): void
     {
         $bien = $this->bienAccesible($token);
+        $this->verificarAdmiteBaja($bien);
         $verificacion = $this->verificacionDelBienDesdeQuery($bien);
 
         View::layout('partials/layout', 'bajas/form', [
@@ -38,6 +40,7 @@ final class BajaController
     public function guardar(string $token): void
     {
         $bien = $this->bienAccesible($token);
+        $this->verificarAdmiteBaja($bien);
 
         $request = new Request();
 
@@ -128,6 +131,7 @@ final class BajaController
             'total' => $total,
             'totalPaginas' => Paginador::totalPaginas($total, $porPagina),
             'mensaje' => Session::pullFlash('ok'),
+            'error' => Session::pullFlash('error'),
         ]);
     }
 
@@ -135,6 +139,11 @@ final class BajaController
     {
         $baja = $this->bajaAccesible((int) $id);
         $this->verificarCsrf();
+
+        $bien = Bien::find((int) $baja['bien_id']);
+        if ($bien !== null) {
+            $this->verificarAdmiteBaja($bien, redirigirA: '/bajas');
+        }
 
         Baja::aprobar((int) $id);
         Bien::marcarDadoDeBaja((int) $baja['bien_id']);
@@ -165,6 +174,28 @@ final class BajaController
             header('Location: ' . Url::to('/bajas'));
             exit;
         }
+    }
+
+    /**
+     * Solo los bienes de la categoría "Sin cartera" admiten baja directa -- las demás
+     * categorías pasan por el proceso formal de reintegro (ver MovimientoController::
+     * reintegrar()). Se valida tanto al reportar (para no hacer perder tiempo llenando
+     * un formulario que nunca se podrá aprobar) como al aprobar (para cubrir también los
+     * reportes que ya estaban pendientes antes de esta regla).
+     */
+    private function verificarAdmiteBaja(array $bien, string $redirigirA = ''): void
+    {
+        if ($bien['categoria_nombre'] === Categoria::NOMBRE_CATEGORIA_PROTEGIDA) {
+            return;
+        }
+
+        $mensaje = 'Este bien no admite baja directa — solo bienes en la categoría "'
+            . Categoria::NOMBRE_CATEGORIA_PROTEGIDA
+            . '" pueden darse de baja. Use Traslado, Reintegro o marque "En reparación".';
+
+        Session::flash('error', $mensaje);
+        header('Location: ' . Url::to($redirigirA !== '' ? $redirigirA : "/qr/{$bien['qr_token']}"));
+        exit;
     }
 
     private function bienAccesible(string $token): array

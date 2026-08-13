@@ -13,6 +13,7 @@ use App\Core\View;
 use App\Models\Asignacion;
 use App\Models\Auditoria;
 use App\Models\Bien;
+use App\Models\Categoria;
 use App\Models\JornadaVerificacion;
 use App\Models\Verificacion;
 use Endroid\QrCode\Builder\Builder;
@@ -46,7 +47,9 @@ final class QrController
             'token' => $token,
             'asignacion' => Asignacion::activaDe((int) $bien['id']),
             'puedeGestionar' => $puedeGestionar,
-            'puedeReportarBaja' => Auth::check() && (Auth::esSuperusuario() || Auth::tienePermiso('bajas.crear')),
+            'puedeReportarBaja' => Auth::check()
+                && (Auth::esSuperusuario() || Auth::tienePermiso('bajas.crear'))
+                && $bien['categoria_nombre'] === Categoria::NOMBRE_CATEGORIA_PROTEGIDA,
             'jornadaActiva' => $jornadaActiva,
             'puedeVerificar' => $puedeVerificar,
             'verificacionActual' => $verificacionActual,
