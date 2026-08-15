@@ -21,9 +21,9 @@ final class Bien
      * de Baja" (ver BienController::index()), y siguen apareciendo aquí si el usuario
      * busca algo o filtra por Estado explícitamente.
      */
-    public static function listar(?int $institucionId = null, ?string $busqueda = null, int $pagina = 1, int $porPagina = 50, bool $excluirLotes = false, ?int $categoriaId = null, ?string $estado = null, ?int $espacioId = null): array
+    public static function listar(?int $institucionId = null, ?string $busqueda = null, int $pagina = 1, int $porPagina = 50, bool $excluirLotes = false, ?int $categoriaId = null, ?string $estado = null, ?int $espacioId = null, bool $soloPendientesQr = false, ?array $idsFiltro = null): array
     {
-        [$whereSql, $params] = self::condicionesListado($institucionId, $busqueda, $excluirLotes, $categoriaId, $estado, $espacioId);
+        [$whereSql, $params] = self::condicionesListado($institucionId, $busqueda, $excluirLotes, $categoriaId, $estado, $espacioId, $soloPendientesQr, $idsFiltro);
 
         $sql = 'SELECT b.*, c.nombre AS categoria_nombre, CONCAT(e.codigo, " - ", e.nombre) AS espacio_nombre,
                        ' . self::sqlResponsablesEspacio('e.id') . ' AS responsables_nombres
@@ -41,9 +41,9 @@ final class Bien
         return $stmt->fetchAll();
     }
 
-    public static function contarListado(?int $institucionId = null, ?string $busqueda = null, bool $excluirLotes = false, ?int $categoriaId = null, ?string $estado = null, ?int $espacioId = null): int
+    public static function contarListado(?int $institucionId = null, ?string $busqueda = null, bool $excluirLotes = false, ?int $categoriaId = null, ?string $estado = null, ?int $espacioId = null, bool $soloPendientesQr = false, ?array $idsFiltro = null): int
     {
-        [$whereSql, $params] = self::condicionesListado($institucionId, $busqueda, $excluirLotes, $categoriaId, $estado, $espacioId);
+        [$whereSql, $params] = self::condicionesListado($institucionId, $busqueda, $excluirLotes, $categoriaId, $estado, $espacioId, $soloPendientesQr, $idsFiltro);
 
         $sql = 'SELECT COUNT(*)
                 FROM bienes b
@@ -62,8 +62,14 @@ final class Bien
      * con o sin guion bajo), valor y lote — las mismas columnas visibles en /bienes. El
      * responsable ahora es el espacio (y sus responsables), no una persona asignada
      * directamente al bien.
+     *
+     * $soloPendientesQr: solo bienes cuyo QR nunca se ha generado (qr_impreso_en NULL) —
+     * usado por el filtro "Pendientes de imprimir" de /bienes/qr-masivo.
+     * $idsFiltro: si viene una lista (aunque sea vacía), el listado se restringe a
+     * exactamente esos ids — usado por el enlace "Imprimir QR ahora" que llega con los
+     * bienes recién creados/editados ya elegidos, sin tener que buscarlos a mano.
      */
-    private static function condicionesListado(?int $institucionId, ?string $busqueda, bool $excluirLotes = false, ?int $categoriaId = null, ?string $estado = null, ?int $espacioId = null): array
+    private static function condicionesListado(?int $institucionId, ?string $busqueda, bool $excluirLotes = false, ?int $categoriaId = null, ?string $estado = null, ?int $espacioId = null, bool $soloPendientesQr = false, ?array $idsFiltro = null): array
     {
         $condiciones = [];
         $params = [];
@@ -94,6 +100,19 @@ final class Bien
         if ($espacioId !== null) {
             $condiciones[] = 'e.id = ?';
             $params[] = $espacioId;
+        }
+
+        if ($soloPendientesQr) {
+            $condiciones[] = 'b.qr_impreso_en IS NULL';
+        }
+
+        if ($idsFiltro !== null) {
+            if (empty($idsFiltro)) {
+                $condiciones[] = '1 = 0';
+            } else {
+                $condiciones[] = 'b.id IN (' . implode(',', array_fill(0, count($idsFiltro), '?')) . ')';
+                array_push($params, ...$idsFiltro);
+            }
         }
 
         if ($busqueda !== null && $busqueda !== '') {

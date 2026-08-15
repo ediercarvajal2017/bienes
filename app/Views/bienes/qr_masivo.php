@@ -44,7 +44,26 @@ use App\Core\View;
                value="<?= htmlspecialchars($busqueda, ENT_QUOTES) ?>">
     </div>
 
-    <?php $urlBasePaginacion = Url::to('/bienes/qr-masivo') . '?' . http_build_query(['institucion' => $institucionId, 'q' => $busqueda]); ?>
+    <div class="mb-3">
+        <?php if ($soloPendientes): ?>
+            <a href="<?= Url::to('/bienes/qr-masivo') . '?' . http_build_query(['institucion' => $institucionId]) ?>" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-list-ul me-1"></i>Ver todos
+            </a>
+            <span class="text-muted small ms-2">Mostrando solo bienes pendientes de imprimir</span>
+        <?php elseif (empty($idsSeleccionados)): ?>
+            <a href="<?= Url::to('/bienes/qr-masivo') . '?' . http_build_query(['institucion' => $institucionId, 'pendientes' => 1]) ?>" class="btn btn-sm btn-outline-primary">
+                <i class="bi bi-exclamation-circle me-1"></i>Ver solo pendientes de imprimir (<?= $totalPendientes ?>)
+            </a>
+        <?php endif; ?>
+    </div>
+
+    <?php
+    $queryBase = ['institucion' => $institucionId, 'q' => $busqueda];
+    if ($soloPendientes) {
+        $queryBase['pendientes'] = 1;
+    }
+    $urlBasePaginacion = Url::to('/bienes/qr-masivo') . '?' . http_build_query($queryBase);
+    ?>
 
     <form method="post" action="<?= Url::to('/bienes/qr-masivo') ?>" id="formQrMasivo" target="_blank">
         <?= Csrf::field() ?>
@@ -74,7 +93,7 @@ use App\Core\View;
                     <tbody>
                     <?php foreach ($bienes as $b): ?>
                         <tr>
-                            <td data-label="Seleccionar"><input type="checkbox" name="bienes[]" value="<?= $b['id'] ?>" class="form-check-input casilla-bien"></td>
+                            <td data-label="Seleccionar"><input type="checkbox" name="bienes[]" value="<?= $b['id'] ?>" class="form-check-input casilla-bien" <?= in_array((int) $b['id'], $idsSeleccionados, true) ? 'checked' : '' ?>></td>
                             <td class="mono" data-label="Código"><?= htmlspecialchars($b['codigo_identificacion'], ENT_QUOTES) ?></td>
                             <td data-label="Descripción"><?= htmlspecialchars($b['descripcion'], ENT_QUOTES) ?></td>
                             <td class="small text-muted" data-label="Ubicación"><?= !empty($b['espacio_nombre']) ? htmlspecialchars($b['espacio_nombre'], ENT_QUOTES) : 'Sin asignar' ?></td>
@@ -153,6 +172,10 @@ use App\Core\View;
         boton.addEventListener('click', function () {
             inputTodosFiltrados.value = '0';
         });
+
+        // Si se llegó con bienes ya premarcados (ej. desde "Imprimir QR ahora"), el
+        // contador y el botón deben reflejarlo desde ya, no solo tras el primer clic.
+        actualizar();
     })();
     </script>
 <?php endif; ?>
