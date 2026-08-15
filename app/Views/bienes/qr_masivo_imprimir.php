@@ -38,9 +38,10 @@ $esEtiqueta = $formato === 'etiqueta';
            continuo. El tamaño de página real lo decide el diálogo de impresión (hay
            que elegir la impresora de etiquetas, papel 50x25mm y escala 100% ahí) —
            este @page es solo lo que el navegador usa para paginar en la vista previa.
-           Diseño: texto a la izquierda (marca fija, institución e código dinámicos) y
-           QR a la derecha, con marco redondeado y divisor vertical entre ambos — letra
-           bastante más grande que antes, que era ilegible a tamaño real impreso. */
+           Diseño (según referencia gráfica del cliente): título fijo arriba, a todo el
+           ancho; abajo, el QR a la izquierda y a la derecha la institución (dinámica)
+           con el código (dinámico) debajo — letra bastante más grande que antes, que
+           era ilegible a tamaño real impreso. */
         @page { size: 50mm 25mm; margin: 0; }
         body { padding: 0; }
         .hoja-etiquetas { display: block; }
@@ -52,12 +53,34 @@ $esEtiqueta = $formato === 'etiqueta';
             border: 0.3mm solid #000;
             border-radius: 1.5mm;
             display: flex;
-            align-items: center;
-            gap: 1.5mm;
+            flex-direction: column;
+            gap: 0.5mm;
             page-break-after: always;
             break-after: page;
         }
         .etiqueta-termica:last-child { page-break-after: auto; break-after: auto; }
+        .etiqueta-termica .marca {
+            font-family: Arial, Helvetica, sans-serif;
+            font-weight: 700;
+            font-size: 6pt;
+            line-height: 1.1;
+            color: #000;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .etiqueta-termica .fila-inferior {
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            align-items: center;
+            gap: 1.5mm;
+        }
+        .etiqueta-termica img {
+            width: 18mm;
+            height: 18mm;
+            flex-shrink: 0;
+        }
         .etiqueta-termica .texto {
             flex: 1;
             min-width: 0;
@@ -67,15 +90,6 @@ $esEtiqueta = $formato === 'etiqueta';
             justify-content: center;
             overflow: hidden;
         }
-        .etiqueta-termica .texto .marca {
-            font-family: Arial, Helvetica, sans-serif;
-            font-size: 5.5pt;
-            line-height: 1.1;
-            color: #000;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
         .etiqueta-termica .texto .institucion {
             font-family: Arial, Helvetica, sans-serif;
             font-size: 7pt;
@@ -83,7 +97,6 @@ $esEtiqueta = $formato === 'etiqueta';
             line-height: 1.05;
             color: #000;
             overflow-wrap: break-word;
-            margin-top: 0.8mm;
             /* Nombres largos se truncan a 3 líneas con "…" — sin este límite, un nombre
                institucional largo desborda la altura fija de la etiqueta (25mm) y se
                monta sobre la etiqueta siguiente al imprimir. */
@@ -95,22 +108,11 @@ $esEtiqueta = $formato === 'etiqueta';
         .etiqueta-termica .texto .codigo {
             font-family: Arial, Helvetica, sans-serif;
             font-weight: 700;
-            font-size: 11pt;
+            font-size: 10pt;
             line-height: 1.1;
             color: #000;
             margin-top: 1mm;
             overflow-wrap: break-word;
-        }
-        .etiqueta-termica .divisor {
-            align-self: stretch;
-            width: 0.3mm;
-            background: #000;
-            flex-shrink: 0;
-        }
-        .etiqueta-termica img {
-            width: 20mm;
-            height: 20mm;
-            flex-shrink: 0;
         }
         <?php endif; ?>
 
@@ -145,13 +147,14 @@ $esEtiqueta = $formato === 'etiqueta';
     <div class="hoja-etiquetas">
         <?php foreach ($bienes as $b): ?>
             <div class="etiqueta-termica">
-                <div class="texto">
-                    <div class="marca">jlcserviciosintegrales.com</div>
-                    <div class="institucion"><?= htmlspecialchars($institucionNombre, ENT_QUOTES) ?></div>
-                    <div class="codigo"><?= htmlspecialchars($b['codigo_identificacion'], ENT_QUOTES) ?></div>
+                <div class="marca">jlcserviciosintegrales.com</div>
+                <div class="fila-inferior">
+                    <img src="<?= Url::to('/qr/' . $b['qr_token'] . '/imagen') ?>" alt="QR <?= htmlspecialchars($b['codigo_identificacion'], ENT_QUOTES) ?>">
+                    <div class="texto">
+                        <div class="institucion"><?= htmlspecialchars($institucionNombre, ENT_QUOTES) ?></div>
+                        <div class="codigo"><?= htmlspecialchars($b['codigo_identificacion'], ENT_QUOTES) ?></div>
+                    </div>
                 </div>
-                <div class="divisor"></div>
-                <img src="<?= Url::to('/qr/' . $b['qr_token'] . '/imagen') ?>" alt="QR <?= htmlspecialchars($b['codigo_identificacion'], ENT_QUOTES) ?>">
             </div>
         <?php endforeach; ?>
     </div>
