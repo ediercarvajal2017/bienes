@@ -236,16 +236,18 @@ final class BienController
             exit;
         }
 
-        $creados = $this->crearBienesEnLote($datos);
+        $ids = $this->crearBienesEnLote($datos);
 
-        if ($creados === null) {
+        if ($ids === null) {
             Session::flash('error', 'Ocurrió un error al crear los bienes del lote. No se aplicó ningún cambio.');
             Session::flashOld($datos);
             header('Location: ' . Url::to('/bienes/alta-masiva'));
             exit;
         }
 
-        Session::flash('ok', "{$creados} bienes creados correctamente en el lote \"{$datos['lote']}\".");
+        Session::flash('ok', count($ids) . " bienes creados correctamente en el lote \"{$datos['lote']}\".");
+        $this->flashQrPendiente((int) $datos['institucion_id'], $ids);
+
         header('Location: ' . Url::to('/bienes'));
         exit;
     }
@@ -303,12 +305,15 @@ final class BienController
     /**
      * Todo o nada dentro de una única transacción: si algún código consecutivo ya
      * existiera a mitad de camino, se revierte por completo (no deja el lote a medias).
+     * Devuelve los ids creados (no solo la cantidad) para poder ofrecer el atajo
+     * "Imprimir QR ahora" con todo el lote ya preseleccionado.
      */
-    private function crearBienesEnLote(array $datos): ?int
+    private function crearBienesEnLote(array $datos): ?array
     {
         $pdo = Database::connection();
         $pdo->beginTransaction();
         try {
+            $ids = [];
             for ($i = 1; $i <= $datos['cantidad']; $i++) {
                 $codigo = $datos['lote'] . '-' . str_pad((string) $i, 3, '0', STR_PAD_LEFT);
 
@@ -316,7 +321,7 @@ final class BienController
                     throw new \RuntimeException("El código {$codigo} ya existe.");
                 }
 
-                Bien::create([
+                $ids[] = Bien::create([
                     'institucion_id' => $datos['institucion_id'],
                     'codigo_identificacion' => $codigo,
                     'descripcion' => $datos['descripcion'],
@@ -333,7 +338,7 @@ final class BienController
 
             $pdo->commit();
 
-            return $datos['cantidad'];
+            return $ids;
         } catch (\Throwable $e) {
             $pdo->rollBack();
 
