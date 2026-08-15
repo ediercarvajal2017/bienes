@@ -39,7 +39,13 @@ export async function seleccionarTomSelect(page, selectId, textoBusqueda) {
     const control = page.locator(`#${selectId}-ts-control`);
     await control.fill(textoBusqueda);
     const dropdown = page.locator(`#${selectId}-ts-dropdown`);
-    await dropdown.locator('[role="option"]').first().click();
+    // Tom Select filtra el menú de forma asíncrona (con su propio debounce) -- clickear
+    // ".first()" apenas se llena el campo puede caer sobre la lista todavía sin filtrar
+    // (la opción que estaba en foco antes de escribir), eligiendo la opción equivocada
+    // sin que el test lo note. En cambio, esperar la opción que de verdad contiene el
+    // texto buscado usa el auto-wait de Playwright en vez de un timeout a ciegas.
+    const opcion = dropdown.locator('[role="option"]').filter({ hasText: textoBusqueda }).first();
+    await opcion.click();
     await cerrarMenu(page, selectId);
 }
 
