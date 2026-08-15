@@ -97,6 +97,8 @@ final class BienController
             'total' => $total,
             'totalPaginas' => Paginador::totalPaginas($total, $porPagina),
             'mensaje' => Session::pullFlash('ok'),
+            'qrPendienteInstitucion' => Session::pullFlash('qr_pendiente_institucion'),
+            'qrPendienteIds' => Session::pullFlash('qr_pendiente_ids'),
         ]);
     }
 
@@ -198,6 +200,8 @@ final class BienController
         } else {
             Session::flash('ok', 'Bien registrado correctamente.');
         }
+
+        $this->flashQrPendiente((int) $datos['institucion_id'], [$id]);
 
         header('Location: ' . Url::to('/bienes'));
         exit;
@@ -395,8 +399,28 @@ final class BienController
         $this->procesarArchivos($id, $request, $datos['codigo_identificacion']);
 
         Session::flash('ok', 'Bien actualizado.');
+
+        // Solo se ofrece el atajo de impresión si el QR de este bien todavía no se ha
+        // generado — si ya se imprimió antes, no tiene sentido ofrecerlo en cada edición
+        // menor (para eso está el filtro "Pendientes de imprimir" en /bienes/qr-masivo).
+        if ($bien['qr_impreso_en'] === null) {
+            $this->flashQrPendiente((int) $datos['institucion_id'], [$id]);
+        }
+
         header('Location: ' . Url::to('/bienes'));
         exit;
+    }
+
+    /**
+     * Deja lista la información para que /bienes ofrezca el atajo "Imprimir QR ahora"
+     * junto al mensaje de éxito (ver partials/aviso_qr_pendiente.php) — evita que el
+     * usuario tenga que ir a buscar a mano, en /bienes/qr-masivo, los bienes que recién
+     * creó o editó.
+     */
+    private function flashQrPendiente(int $institucionId, array $ids): void
+    {
+        Session::flash('qr_pendiente_institucion', (string) $institucionId);
+        Session::flash('qr_pendiente_ids', implode(',', $ids));
     }
 
     private function procesarArchivos(int $bienId, Request $request, string $codigoIdentificacion): void
