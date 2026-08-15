@@ -111,6 +111,8 @@ final class CargaMasivaController
             'filas' => json_decode($carga['resultado_diff_json'], true) ?? [],
             'mensaje' => Session::pullFlash('ok'),
             'error' => Session::pullFlash('error'),
+            'qrPendienteInstitucion' => Session::pullFlash('qr_pendiente_institucion'),
+            'qrPendienteIds' => Session::pullFlash('qr_pendiente_ids'),
         ]);
     }
 
@@ -133,11 +135,16 @@ final class CargaMasivaController
         }
 
         $filas = json_decode($carga['resultado_diff_json'], true) ?? [];
-        $omitidas = CargaMasivaService::aplicar($filas, (int) $carga['institucion_id'], Auth::id());
+        $resultado = CargaMasivaService::aplicar($filas, (int) $carga['institucion_id'], Auth::id());
         CargaMasiva::marcarAplicada($id);
 
         $invalidas = count(array_filter($filas, static fn (array $f): bool => $f['tipo'] === 'invalido'));
-        $this->flashResultado($invalidas, $omitidas, 'código');
+        $this->flashResultado($invalidas, $resultado['omitidas'], 'código');
+
+        if (!empty($resultado['idsNuevos'])) {
+            Session::flash('qr_pendiente_institucion', (string) $carga['institucion_id']);
+            Session::flash('qr_pendiente_ids', implode(',', $resultado['idsNuevos']));
+        }
 
         header('Location: ' . Url::to("/cargas-masivas/{$id}"));
         exit;
