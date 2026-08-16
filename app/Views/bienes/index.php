@@ -18,19 +18,41 @@ $etiquetasEstado = [
     'en_reparacion' => 'En reparación',
     'dado_de_baja' => 'Dado de baja',
 ];
+
+$puedeQr = Auth::rol() !== 'docente' && (Auth::esSuperusuario() || Auth::tienePermiso('bienes.ver'));
+$puedeCrear = Auth::esSuperusuario() || Auth::tienePermiso('bienes.crear');
+$puedeCargaMasiva = Auth::esSuperusuario() || Auth::tienePermiso('cargas.masivas');
+$mostrarAccionesMasivas = $puedeQr || $puedeCrear || $puedeCargaMasiva;
 ?>
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
     <h1 class="h4 mb-0">Bienes</h1>
     <div class="d-flex gap-2">
-        <?php if (Auth::rol() !== 'docente' && (Auth::esSuperusuario() || Auth::tienePermiso('bienes.ver'))): ?>
-            <a href="<?= Url::to('/bienes/qr-masivo') ?>" class="btn btn-outline-secondary btn-sm">
-                <i class="bi bi-qr-code me-1"></i>Generar QR masivo
-            </a>
+        <?php if ($mostrarAccionesMasivas): ?>
+            <div class="dropdown">
+                <button type="button" class="btn btn-outline-secondary btn-sm dropdown-toggle"
+                        id="botonAccionesMasivas" aria-haspopup="true" aria-expanded="false">
+                    <i class="bi bi-stack me-1"></i>Acciones masivas
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="botonAccionesMasivas">
+                    <?php if ($puedeQr): ?>
+                        <li><a class="dropdown-item" href="<?= Url::to('/bienes/qr-masivo') ?>">
+                            <i class="bi bi-qr-code me-1"></i>Generar QR masivo
+                        </a></li>
+                    <?php endif; ?>
+                    <?php if ($puedeCrear): ?>
+                        <li><a class="dropdown-item" href="<?= Url::to('/bienes/alta-masiva') ?>">
+                            <i class="bi bi-boxes me-1"></i>Alta masiva idéntica
+                        </a></li>
+                    <?php endif; ?>
+                    <?php if ($puedeCargaMasiva): ?>
+                        <li><a class="dropdown-item" href="<?= Url::to('/cargas-masivas') ?>">
+                            <i class="bi bi-upload me-1"></i>Carga masiva de bienes
+                        </a></li>
+                    <?php endif; ?>
+                </ul>
+            </div>
         <?php endif; ?>
-        <?php if (Auth::esSuperusuario() || Auth::tienePermiso('bienes.crear')): ?>
-            <a href="<?= Url::to('/bienes/alta-masiva') ?>" class="btn btn-outline-secondary btn-sm">
-                <i class="bi bi-boxes me-1"></i>Alta masiva idéntica
-            </a>
+        <?php if ($puedeCrear): ?>
             <a href="<?= Url::to('/bienes/crear') ?>" class="btn btn-primary btn-sm">
                 <i class="bi bi-plus-lg me-1"></i>Registrar bien
             </a>
@@ -213,6 +235,29 @@ $etiquetasEstado = [
 ]); ?>
 
 <script>
+(function () {
+    const boton = document.getElementById('botonAccionesMasivas');
+    if (!boton) { return; }
+    const menu = boton.nextElementSibling;
+
+    function cerrar() {
+        menu.classList.remove('show');
+        boton.setAttribute('aria-expanded', 'false');
+    }
+
+    boton.addEventListener('click', function (e) {
+        e.stopPropagation();
+        const abierto = menu.classList.toggle('show');
+        boton.setAttribute('aria-expanded', abierto ? 'true' : 'false');
+    });
+    document.addEventListener('click', function (e) {
+        if (!menu.contains(e.target) && e.target !== boton) { cerrar(); }
+    });
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') { cerrar(); }
+    });
+})();
+
 (function () {
     const input = document.getElementById('buscador');
     let temporizador = null;
