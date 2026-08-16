@@ -11,7 +11,14 @@ use App\Core\View;
         <h1 class="h4 mb-0">Generar QR masivo</h1>
         <p class="text-muted small mb-0">Selecciona los bienes y genera una hoja lista para imprimir, con el código QR en negro y el código del bien debajo.</p>
     </div>
-    <a href="<?= Url::to('/bienes') ?>" class="btn btn-sm btn-outline-secondary">Volver</a>
+    <div class="d-flex gap-2">
+        <?php if (!empty($totalSolicitados)): ?>
+            <a href="<?= Url::to('/bienes/qr-masivo/bodega') . ($institucionId !== null ? '?' . http_build_query(['institucion' => $institucionId]) : '') ?>" class="btn btn-sm btn-primary">
+                <i class="bi bi-box-seam me-1"></i>Bodega de impresión (<?= $totalSolicitados ?>)
+            </a>
+        <?php endif; ?>
+        <a href="<?= Url::to('/bienes') ?>" class="btn btn-sm btn-outline-secondary">Volver</a>
+    </div>
 </div>
 
 <?php if (!empty($error)): ?><div class="alert alert-danger py-2 small"><?= htmlspecialchars($error, ENT_QUOTES) ?></div><?php endif; ?>

@@ -222,6 +222,9 @@ $router->get('/bienes/qr-masivo', [QrMasivoController::class, 'formulario'], [
 $router->post('/bienes/qr-masivo', [QrMasivoController::class, 'generar'], [
     AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':bienes.ver',
 ]);
+$router->get('/bienes/qr-masivo/bodega', [QrMasivoController::class, 'bodega'], [
+    AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':bienes.ver',
+]);
 
 $router->get('/bienes/carga-masiva-fotos', [BienFotoCargaMasivaController::class, 'index'], [
     AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':cargas.masivas',

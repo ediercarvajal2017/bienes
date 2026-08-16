@@ -47,6 +47,27 @@ final class QrMasivoController
             'total' => $total,
             'totalPaginas' => Paginador::totalPaginas($total, $porPagina),
             'error' => Session::pullFlash('error'),
+            'totalSolicitados' => $institucionId !== null ? Bien::contarSolicitadosQr($institucionId) : 0,
+        ]);
+    }
+
+    /**
+     * Bodega de impresión de QR: bienes que alguien marcó con la casilla "Imprimir QR"
+     * en el formulario de crear/editar (ver BienController::procesarSolicitudQr()), sin
+     * importar quién los creó ni cuándo — así nadie tiene que buscarlos a mano.
+     */
+    public function bodega(): void
+    {
+        $this->verificarAcceso();
+
+        $institucionId = $this->institucionSeleccionada();
+
+        View::layout('partials/layout', 'bienes/qr_masivo_bodega', [
+            'title' => 'Bodega de impresión de QR',
+            'instituciones' => Auth::esSuperusuario() ? Institucion::listadoParaSelect(true) : [],
+            'institucionId' => $institucionId,
+            'bienes' => $institucionId !== null ? Bien::solicitadosQr($institucionId) : [],
+            'error' => Session::pullFlash('error'),
         ]);
     }
 
