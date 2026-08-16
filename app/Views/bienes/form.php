@@ -164,7 +164,9 @@ $v = static fn (string $campo, mixed $porDefecto = '') => $viejo[$campo] ?? $bie
                    <?= !empty($v('imprimir_qr', $imprimirQrPorDefecto ? '1' : '0')) ? 'checked' : '' ?>
                    <?= $puedeEditar ? '' : 'disabled' ?>>
             <label class="form-check-label small" for="imprimirQr">Imprimir QR</label>
-            <div class="form-text">Agrega este bien a la Bodega de impresión de QR (en "Generar QR masivo") para imprimirlo de una vez con los demás.</div>
+            <i class="bi bi-question-circle text-muted small ms-1"
+               style="cursor: help;"
+               title="Agrega este bien a la Bodega de impresión de QR (en &quot;Generar QR masivo&quot;) para imprimirlo de una vez con los demás."></i>
         </div>
     </div>
 
