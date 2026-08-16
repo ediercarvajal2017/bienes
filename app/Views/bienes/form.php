@@ -166,7 +166,7 @@ $v = static fn (string $campo, mixed $porDefecto = '') => $viejo[$campo] ?? $bie
             <label class="form-check-label small" for="imprimirQr">Imprimir QR</label>
             <i class="bi bi-question-circle text-muted small ms-1"
                style="cursor: help;"
-               title="Agrega este bien a la Bodega de impresión de QR (en &quot;Generar QR masivo&quot;) para imprimirlo de una vez con los demás."></i>
+               title="Agrega este bien a la Bodega de impresión de QR (en &quot;Generar QR masivo&quot;) para imprimirlo."></i>
         </div>
     </div>
 
