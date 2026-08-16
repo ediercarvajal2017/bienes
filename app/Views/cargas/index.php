@@ -53,6 +53,17 @@ $urlBasePaginacion = Url::to('/cargas-masivas') . ($busqueda !== '' ? '?' . http
         <tr><th>Fecha</th><th>Subido por</th><th>Filas</th><th>Nuevos</th><th>Modificados</th><th>Sin cambios</th><th>Estado</th><th></th></tr>
         </thead>
         <tbody>
+        <?php if (empty($cargas)): ?>
+            <?php View::render('partials/tabla_vacia', [
+                'colspan' => 8,
+                'icono' => 'file-earmark-excel',
+                'mensaje' => $busqueda !== ''
+                    ? 'Ninguna carga coincide con la búsqueda.'
+                    : 'Todavía no se ha subido ninguna carga masiva.',
+                'ctaTexto' => $busqueda !== '' ? 'Quitar búsqueda' : null,
+                'ctaUrl' => $busqueda !== '' ? Url::to('/cargas-masivas') : null,
+            ]); ?>
+        <?php endif; ?>
         <?php foreach ($cargas as $c): ?>
             <tr>
                 <td class="mono small" data-label="Fecha"><?= htmlspecialchars(substr($c['created_at'], 0, 16), ENT_QUOTES) ?></td>

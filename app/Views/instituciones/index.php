@@ -15,6 +15,10 @@ use App\Core\Url;
     <div class="alert alert-success py-2 small"><?= htmlspecialchars($mensaje, ENT_QUOTES) ?></div>
 <?php endif; ?>
 
+<?php if (!empty($error)): ?>
+    <div class="alert alert-danger py-2 small"><?= htmlspecialchars($error, ENT_QUOTES) ?></div>
+<?php endif; ?>
+
 <div class="table-responsive">
     <table class="table table-sm table-hover align-middle bg-white tabla-cards">
         <thead>

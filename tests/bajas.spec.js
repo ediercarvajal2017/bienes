@@ -47,6 +47,7 @@ test('reportar una baja y aprobarla', async ({ page }) => {
     await expect(filaBaja).toBeVisible();
     await expect(filaBaja.locator('.badge')).toHaveText('Pendiente');
 
+    page.once('dialog', (dialog) => dialog.accept());
     await filaBaja.getByRole('button', { name: 'Aprobar' }).click();
 
     await expect(page.locator('.alert-success')).toBeVisible();

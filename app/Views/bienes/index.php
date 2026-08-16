@@ -23,6 +23,8 @@ $puedeQr = Auth::rol() !== 'docente' && (Auth::esSuperusuario() || Auth::tienePe
 $puedeCrear = Auth::esSuperusuario() || Auth::tienePermiso('bienes.crear');
 $puedeCargaMasiva = Auth::esSuperusuario() || Auth::tienePermiso('cargas.masivas');
 $mostrarAccionesMasivas = $puedeQr || $puedeCrear || $puedeCargaMasiva;
+
+$algunFiltroActivo = $busqueda !== '' || $categoriaId !== null || $estado !== null || $espacioId !== null;
 ?>
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
     <h1 class="h4 mb-0">Bienes</h1>
@@ -147,6 +149,17 @@ $mostrarAccionesMasivas = $puedeQr || $puedeCrear || $puedeCargaMasiva;
         </tr>
         </thead>
         <tbody>
+        <?php if (empty($lotes) && empty($bienes)): ?>
+            <?php View::render('partials/tabla_vacia', [
+                'colspan' => 9,
+                'icono' => 'box-seam',
+                'mensaje' => $algunFiltroActivo
+                    ? 'Ningún bien coincide con los filtros aplicados.'
+                    : 'Todavía no hay bienes registrados.',
+                'ctaTexto' => $algunFiltroActivo ? 'Quitar filtros' : ($puedeCrear ? 'Registrar bien' : null),
+                'ctaUrl' => $algunFiltroActivo ? Url::to('/bienes') : ($puedeCrear ? Url::to('/bienes/crear') : null),
+            ]); ?>
+        <?php endif; ?>
         <?php foreach ($lotes as $l): ?>
             <tr>
                 <td>

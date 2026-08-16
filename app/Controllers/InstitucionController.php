@@ -28,6 +28,7 @@ final class InstitucionController
             'title' => 'Instituciones',
             'instituciones' => Institucion::all(),
             'mensaje' => Session::pullFlash('ok'),
+            'error' => Session::pullFlash('error'),
         ]);
     }
 

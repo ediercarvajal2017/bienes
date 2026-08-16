@@ -73,12 +73,14 @@ use App\Models\Categoria;
                 <td class="text-end text-nowrap">
                     <?php if ((int) $b['aprobada'] === 0 && (Auth::esSuperusuario() || Auth::tienePermiso('bajas.aprobar'))): ?>
                         <?php if ($admiteBaja): ?>
-                            <form method="post" action="<?= Url::to('/bajas/' . $b['id'] . '/aprobar') ?>" class="d-inline">
+                            <form method="post" action="<?= Url::to('/bajas/' . $b['id'] . '/aprobar') ?>" class="d-inline"
+                                  onsubmit="return confirm('¿Aprobar esta baja? El bien pasará a estado \'Dado de baja\'.');">
                                 <?= Csrf::field() ?>
                                 <button type="submit" class="btn btn-sm btn-outline-success">Aprobar</button>
                             </form>
                         <?php endif; ?>
-                        <form method="post" action="<?= Url::to('/bajas/' . $b['id'] . '/rechazar') ?>" class="d-inline">
+                        <form method="post" action="<?= Url::to('/bajas/' . $b['id'] . '/rechazar') ?>" class="d-inline"
+                              onsubmit="return confirm('¿Rechazar este reporte de baja? El bien continuará activo.');">
                             <?= Csrf::field() ?>
                             <button type="submit" class="btn btn-sm btn-outline-secondary">Rechazar</button>
                         </form>

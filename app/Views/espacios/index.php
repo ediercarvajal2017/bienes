@@ -6,6 +6,7 @@ use App\Core\Url;
 use App\Core\View;
 
 $urlBasePaginacion = Url::to('/espacios') . ($busqueda !== '' ? '?q=' . urlencode($busqueda) : '');
+$puedeCrearEspacio = Auth::esSuperusuario() || Auth::tienePermiso('espacios.crear');
 ?>
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
     <h1 class="h4 mb-0">Espacios</h1>
@@ -50,6 +51,17 @@ $urlBasePaginacion = Url::to('/espacios') . ($busqueda !== '' ? '?q=' . urlencod
         </tr>
         </thead>
         <tbody>
+        <?php if (empty($espacios)): ?>
+            <?php View::render('partials/tabla_vacia', [
+                'colspan' => 5,
+                'icono' => 'signpost-2',
+                'mensaje' => $busqueda !== ''
+                    ? 'Ningún espacio coincide con la búsqueda.'
+                    : 'Todavía no hay espacios registrados.',
+                'ctaTexto' => $busqueda !== '' ? 'Quitar búsqueda' : ($puedeCrearEspacio ? 'Nuevo espacio' : null),
+                'ctaUrl' => $busqueda !== '' ? Url::to('/espacios') : ($puedeCrearEspacio ? Url::to('/espacios/crear') : null),
+            ]); ?>
+        <?php endif; ?>
         <?php foreach ($espacios as $e): ?>
             <tr>
                 <td class="text-muted mono" data-label="N.º"><?= htmlspecialchars($e['codigo'], ENT_QUOTES) ?></td>
