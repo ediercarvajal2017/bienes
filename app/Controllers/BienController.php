@@ -179,11 +179,19 @@ final class BienController
             exit;
         }
 
+        // No es una columna de bienes: se saca aquí (después del flashOld() de más arriba,
+        // que sí necesita conservarla) para que Bien::create() no reciba una clave sin su
+        // ":imprimir_qr" en la consulta -- con PDO::ATTR_EMULATE_PREPARES en false eso
+        // revienta con "Invalid parameter number", no se ignora en silencio.
+        $imprimirQr = $datos['imprimir_qr'] === '1';
+        unset($datos['imprimir_qr']);
+
         $datos['created_by'] = Auth::id();
         $id = Bien::create($datos);
         Auditoria::registrar(Auth::id(), (int) $datos['institucion_id'], 'crear', 'bien', $id, null, $datos);
 
         $this->procesarArchivos($id, $request, $datos['codigo_identificacion']);
+        $this->procesarSolicitudQr($id, $imprimirQr);
 
         if ($hallazgo !== null) {
             Asignacion::crear([
@@ -389,10 +397,14 @@ final class BienController
             exit;
         }
 
+        $imprimirQr = $datos['imprimir_qr'] === '1';
+        unset($datos['imprimir_qr']);
+
         Bien::update($id, $datos);
         Auditoria::registrar(Auth::id(), (int) $datos['institucion_id'], 'editar', 'bien', $id, $bien, $datos);
 
         $this->procesarArchivos($id, $request, $datos['codigo_identificacion']);
+        $this->procesarSolicitudQr($id, $imprimirQr);
 
         Session::flash('ok', 'Bien actualizado.');
         header('Location: ' . Url::to('/bienes'));
@@ -420,6 +432,20 @@ final class BienController
         }
     }
 
+    /**
+     * Casilla "Imprimir QR" del formulario: marcada agrega el bien a la Bodega de
+     * impresión de QR (/bienes/qr-masivo); desmarcada lo retira si estaba ahí. No hace
+     * nada si el bien no tenía autorización de edición (formulario deshabilitado).
+     */
+    private function procesarSolicitudQr(int $bienId, bool $solicitado): void
+    {
+        if ($solicitado) {
+            Bien::solicitarQr($bienId, (int) Auth::id());
+        } else {
+            Bien::cancelarSolicitudQr($bienId);
+        }
+    }
+
     private function datosDesdeFormulario(Request $request, ?int $institucionIdExistente = null): array
     {
         $institucionId = $institucionIdExistente
@@ -439,6 +465,11 @@ final class BienController
             'valor' => is_numeric($valor) ? (float) $valor : 0,
             'tiene_factura' => $request->input('tiene_factura') ? 1 : 0,
             'estado' => in_array($estado, self::ESTADOS, true) ? $estado : 'activo',
+            // No es una columna de bienes -- viaja en $datos solo para que
+            // Session::flashOld() la conserve si falla la validación; Bien::create()/
+            // update() la ignoran (usan placeholders con nombre, no todo el arreglo).
+            // Ver procesarSolicitudQr().
+            'imprimir_qr' => $request->input('imprimir_qr') ? '1' : '0',
         ];
     }
 

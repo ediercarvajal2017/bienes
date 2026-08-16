@@ -245,6 +245,38 @@ final class Bien
         return $stmt->fetchAll();
     }
 
+    /**
+     * Bodega de impresión de QR: bienes que alguien marcó con la casilla "Imprimir QR" en
+     * el formulario y todavía no se confirmó su etiquetado (ver confirmarEtiqueta(), que
+     * limpia qr_solicitado_en al confirmar). Sigue apareciendo aquí después de imprimirse
+     * -solo con qr_impreso_en distinto de null, para el ícono atenuado- por si hay que
+     * reimprimir.
+     */
+    public static function solicitadosQr(int $institucionId): array
+    {
+        $stmt = Database::connection()->prepare(
+            'SELECT b.id, b.codigo_identificacion, b.descripcion, b.qr_token, b.qr_impreso_en, b.qr_solicitado_en,
+                    CONCAT(u.nombres, " ", u.apellidos) AS solicitado_por_nombre
+             FROM bienes b
+             LEFT JOIN usuarios u ON u.id = b.qr_solicitado_por
+             WHERE b.institucion_id = ? AND b.qr_solicitado_en IS NOT NULL
+             ORDER BY b.qr_solicitado_en DESC'
+        );
+        $stmt->execute([$institucionId]);
+
+        return $stmt->fetchAll();
+    }
+
+    public static function contarSolicitadosQr(int $institucionId): int
+    {
+        $stmt = Database::connection()->prepare(
+            'SELECT COUNT(*) FROM bienes WHERE institucion_id = ? AND qr_solicitado_en IS NOT NULL'
+        );
+        $stmt->execute([$institucionId]);
+
+        return (int) $stmt->fetchColumn();
+    }
+
     /** Para el indicador del panel principal: bienes activos que hoy no están asignados a ningún espacio. */
     public static function contarSinAsignar(?int $institucionId = null): int
     {
@@ -342,12 +374,41 @@ final class Bien
      * "Confirmar etiquetado" en /qr/{token}). El llamador (QrController::confirmarEtiqueta)
      * ya garantizó que qr_impreso_en no es null antes de llegar aquí — no se puede
      * confirmar una etiqueta que el sistema no registra como impresa.
+     *
+     * También cancela la solicitud de impresión (si la había): confirmar el etiquetado es
+     * la señal de que ya se resolvió del todo, así que el bien sale solo de la "Bodega de
+     * impresión de QR" sin que nadie tenga que ir a limpiarla a mano.
      */
     public static function confirmarEtiqueta(int $id, int $usuarioId): void
     {
         Database::connection()->prepare(
-            'UPDATE bienes SET qr_confirmado_en = NOW(), qr_confirmado_por = ? WHERE id = ?'
+            'UPDATE bienes SET qr_confirmado_en = NOW(), qr_confirmado_por = ?, qr_solicitado_en = NULL, qr_solicitado_por = NULL WHERE id = ?'
         )->execute([$usuarioId, $id]);
+    }
+
+    /**
+     * Marca el bien como "pedido para imprimir" (casilla "Imprimir QR" en el formulario de
+     * crear/editar) — lo agrega a la Bodega de impresión de QR. Se sobreescribe sin
+     * problema si ya estaba solicitado (ej. otro usuario lo vuelve a marcar): siempre
+     * queda la fecha y el solicitante más recientes.
+     */
+    public static function solicitarQr(int $id, int $usuarioId): void
+    {
+        Database::connection()->prepare(
+            'UPDATE bienes SET qr_solicitado_en = NOW(), qr_solicitado_por = ? WHERE id = ?'
+        )->execute([$usuarioId, $id]);
+    }
+
+    /**
+     * Quita el bien de la Bodega de impresión de QR (casilla "Imprimir QR" desmarcada al
+     * guardar el formulario) — no borra qr_impreso_en/qr_confirmado_en, solo retira la
+     * solicitud activa.
+     */
+    public static function cancelarSolicitudQr(int $id): void
+    {
+        Database::connection()->prepare(
+            'UPDATE bienes SET qr_solicitado_en = NULL, qr_solicitado_por = NULL WHERE id = ?'
+        )->execute([$id]);
     }
 
     public static function marcarDadoDeBaja(int $id): void

@@ -152,6 +152,22 @@ $v = static fn (string $campo, mixed $porDefecto = '') => $viejo[$campo] ?? $bie
         </div>
     </div>
 
+    <?php
+    // Por defecto va marcada al crear (lo normal es querer imprimir un bien nuevo) y
+    // refleja si el bien ya está en la Bodega de impresión al editar -- no "si el QR ya
+    // se imprimió", sino "si sigue con una solicitud activa" (ver Bien::solicitarQr()).
+    $imprimirQrPorDefecto = $esEdicion ? !empty($bien['qr_solicitado_en']) : true;
+    ?>
+    <div class="col-12">
+        <div class="form-check">
+            <input type="checkbox" name="imprimir_qr" value="1" id="imprimirQr" class="form-check-input"
+                   <?= !empty($v('imprimir_qr', $imprimirQrPorDefecto ? '1' : '0')) ? 'checked' : '' ?>
+                   <?= $puedeEditar ? '' : 'disabled' ?>>
+            <label class="form-check-label small" for="imprimirQr">Imprimir QR</label>
+            <div class="form-text">Agrega este bien a la Bodega de impresión de QR (en "Generar QR masivo") para imprimirlo de una vez con los demás.</div>
+        </div>
+    </div>
+
     <div class="col-md-6">
         <?php if ($puedeEditar): ?>
             <?php View::render('partials/campo_foto', [
