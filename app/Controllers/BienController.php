@@ -97,8 +97,6 @@ final class BienController
             'total' => $total,
             'totalPaginas' => Paginador::totalPaginas($total, $porPagina),
             'mensaje' => Session::pullFlash('ok'),
-            'qrPendienteInstitucion' => Session::pullFlash('qr_pendiente_institucion'),
-            'qrPendienteIds' => Session::pullFlash('qr_pendiente_ids'),
         ]);
     }
 
@@ -201,8 +199,6 @@ final class BienController
             Session::flash('ok', 'Bien registrado correctamente.');
         }
 
-        $this->flashQrPendiente((int) $datos['institucion_id'], [$id]);
-
         header('Location: ' . Url::to('/bienes'));
         exit;
     }
@@ -236,18 +232,16 @@ final class BienController
             exit;
         }
 
-        $ids = $this->crearBienesEnLote($datos);
+        $creados = $this->crearBienesEnLote($datos);
 
-        if ($ids === null) {
+        if ($creados === null) {
             Session::flash('error', 'Ocurrió un error al crear los bienes del lote. No se aplicó ningún cambio.');
             Session::flashOld($datos);
             header('Location: ' . Url::to('/bienes/alta-masiva'));
             exit;
         }
 
-        Session::flash('ok', count($ids) . " bienes creados correctamente en el lote \"{$datos['lote']}\".");
-        $this->flashQrPendiente((int) $datos['institucion_id'], $ids);
-
+        Session::flash('ok', "{$creados} bienes creados correctamente en el lote \"{$datos['lote']}\".");
         header('Location: ' . Url::to('/bienes'));
         exit;
     }
@@ -305,15 +299,12 @@ final class BienController
     /**
      * Todo o nada dentro de una única transacción: si algún código consecutivo ya
      * existiera a mitad de camino, se revierte por completo (no deja el lote a medias).
-     * Devuelve los ids creados (no solo la cantidad) para poder ofrecer el atajo
-     * "Imprimir QR ahora" con todo el lote ya preseleccionado.
      */
-    private function crearBienesEnLote(array $datos): ?array
+    private function crearBienesEnLote(array $datos): ?int
     {
         $pdo = Database::connection();
         $pdo->beginTransaction();
         try {
-            $ids = [];
             for ($i = 1; $i <= $datos['cantidad']; $i++) {
                 $codigo = $datos['lote'] . '-' . str_pad((string) $i, 3, '0', STR_PAD_LEFT);
 
@@ -321,7 +312,7 @@ final class BienController
                     throw new \RuntimeException("El código {$codigo} ya existe.");
                 }
 
-                $ids[] = Bien::create([
+                Bien::create([
                     'institucion_id' => $datos['institucion_id'],
                     'codigo_identificacion' => $codigo,
                     'descripcion' => $datos['descripcion'],
@@ -338,7 +329,7 @@ final class BienController
 
             $pdo->commit();
 
-            return $ids;
+            return $datos['cantidad'];
         } catch (\Throwable $e) {
             $pdo->rollBack();
 
@@ -404,28 +395,8 @@ final class BienController
         $this->procesarArchivos($id, $request, $datos['codigo_identificacion']);
 
         Session::flash('ok', 'Bien actualizado.');
-
-        // Solo se ofrece el atajo de impresión si el QR de este bien todavía no se ha
-        // generado — si ya se imprimió antes, no tiene sentido ofrecerlo en cada edición
-        // menor (para eso está el filtro "Pendientes de imprimir" en /bienes/qr-masivo).
-        if ($bien['qr_impreso_en'] === null) {
-            $this->flashQrPendiente((int) $datos['institucion_id'], [$id]);
-        }
-
         header('Location: ' . Url::to('/bienes'));
         exit;
-    }
-
-    /**
-     * Deja lista la información para que /bienes ofrezca el atajo "Imprimir QR ahora"
-     * junto al mensaje de éxito (ver partials/aviso_qr_pendiente.php) — evita que el
-     * usuario tenga que ir a buscar a mano, en /bienes/qr-masivo, los bienes que recién
-     * creó o editó.
-     */
-    private function flashQrPendiente(int $institucionId, array $ids): void
-    {
-        Session::flash('qr_pendiente_institucion', (string) $institucionId);
-        Session::flash('qr_pendiente_ids', implode(',', $ids));
     }
 
     private function procesarArchivos(int $bienId, Request $request, string $codigoIdentificacion): void

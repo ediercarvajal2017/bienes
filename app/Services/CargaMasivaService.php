@@ -154,16 +154,11 @@ final class CargaMasivaService
      * Aplica los cambios a la BD. Devuelve cuántas filas se omitieron por un choque de
      * código detectado justo al escribir (p. ej. si alguien creó ese mismo código por otra
      * vía entre que se analizó el archivo y se confirmó la carga) — para que ninguna fila
-     * conflictiva tumbe el resto de la operación con un error fatal — junto con los ids de
-     * los bienes que sí se crearon (para el atajo "Imprimir QR ahora" de la pantalla de
-     * resultado).
-     *
-     * @return array{omitidas: int, idsNuevos: int[]}
+     * conflictiva tumbe el resto de la operación con un error fatal.
      */
-    public static function aplicar(array $filas, int $institucionId, int $usuarioId): array
+    public static function aplicar(array $filas, int $institucionId, int $usuarioId): int
     {
         $omitidas = 0;
-        $idsNuevos = [];
 
         foreach ($filas as $fila) {
             try {
@@ -180,7 +175,6 @@ final class CargaMasivaService
                         'estado' => 'activo',
                         'created_by' => $usuarioId,
                     ]);
-                    $idsNuevos[] = $bienId;
 
                     if ($fila['datos']['espacio_id'] !== null) {
                         Asignacion::crear([
@@ -226,7 +220,7 @@ final class CargaMasivaService
             }
         }
 
-        return ['omitidas' => $omitidas, 'idsNuevos' => $idsNuevos];
+        return $omitidas;
     }
 
     public static function enviarPlantilla(): void

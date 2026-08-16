@@ -2,7 +2,6 @@
 
 use App\Core\Csrf;
 use App\Core\Url;
-use App\Core\View;
 
 $etiquetas = ['nuevo' => 'Nuevo', 'modificado' => 'Modificado', 'sin_cambios' => 'Sin cambios', 'invalido' => 'Inválido'];
 $clases = [
@@ -17,11 +16,9 @@ $clases = [
     <a href="<?= Url::to('/cargas-masivas') ?>" class="btn btn-sm btn-outline-secondary">Volver</a>
 </div>
 
-<?php View::render('partials/aviso_qr_pendiente', [
-    'mensaje' => $mensaje,
-    'qrPendienteInstitucion' => $qrPendienteInstitucion ?? null,
-    'qrPendienteIds' => $qrPendienteIds ?? null,
-]); ?>
+<?php if (!empty($mensaje)): ?>
+    <div class="alert alert-success py-2 small"><?= htmlspecialchars($mensaje, ENT_QUOTES) ?></div>
+<?php endif; ?>
 <?php if (!empty($error)): ?>
     <div class="alert alert-danger py-2 small"><?= htmlspecialchars($error, ENT_QUOTES) ?></div>
 <?php endif; ?>

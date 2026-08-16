@@ -53,11 +53,9 @@ $etiquetasEstado = [
     </div>
 <?php endif; ?>
 
-<?php View::render('partials/aviso_qr_pendiente', [
-    'mensaje' => $mensaje,
-    'qrPendienteInstitucion' => $qrPendienteInstitucion,
-    'qrPendienteIds' => $qrPendienteIds,
-]); ?>
+<?php if (!empty($mensaje)): ?>
+    <div class="alert alert-success py-2 small"><?= htmlspecialchars($mensaje, ENT_QUOTES) ?></div>
+<?php endif; ?>
 
 <?php if (!empty($soloPropios)): ?>
     <p class="text-muted small">Mostrando solo los bienes de los espacios donde eres responsable.</p>

@@ -33,25 +33,13 @@ final class QrMasivoController
             $porPagina = self::POR_PAGINA_DEFECTO;
         }
 
-        // "Imprimir QR ahora" (ver BienController) llega con los bienes recién
-        // creados/editados ya elegidos en la URL, para no tener que buscarlos a mano.
-        $idsSeleccionados = isset($_GET['seleccionados'])
-            ? array_values(array_unique(array_filter(array_map('intval', explode(',', (string) $_GET['seleccionados'])))))
-            : null;
-        $soloPendientes = isset($_GET['pendientes']);
-
-        $total = $institucionId !== null
-            ? Bien::contarListado($institucionId, $terminoBusqueda, false, null, null, null, $soloPendientes, $idsSeleccionados)
-            : 0;
-        $totalPendientes = $institucionId !== null ? Bien::contarListado($institucionId, null, false, null, null, null, true) : 0;
+        $total = $institucionId !== null ? Bien::contarListado($institucionId, $terminoBusqueda) : 0;
 
         View::layout('partials/layout', 'bienes/qr_masivo', [
             'title' => 'Generar QR masivo',
             'instituciones' => Auth::esSuperusuario() ? Institucion::listadoParaSelect(true) : [],
             'institucionId' => $institucionId,
-            'bienes' => $institucionId !== null
-                ? Bien::listar($institucionId, $terminoBusqueda, $pagina, $porPagina, false, null, null, null, $soloPendientes, $idsSeleccionados)
-                : [],
+            'bienes' => $institucionId !== null ? Bien::listar($institucionId, $terminoBusqueda, $pagina, $porPagina) : [],
             'busqueda' => $busqueda,
             'pagina' => $pagina,
             'porPagina' => $porPagina,
@@ -59,9 +47,6 @@ final class QrMasivoController
             'total' => $total,
             'totalPaginas' => Paginador::totalPaginas($total, $porPagina),
             'error' => Session::pullFlash('error'),
-            'idsSeleccionados' => $idsSeleccionados ?? [],
-            'soloPendientes' => $soloPendientes,
-            'totalPendientes' => $totalPendientes,
         ]);
     }
 
