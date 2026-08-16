@@ -139,18 +139,20 @@ $etiquetasEntidad = [
                         <?php if (!empty($resumen)): ?>
                             <details>
                                 <summary class="small text-muted" style="cursor:pointer;">Ver detalle</summary>
-                                <table class="table table-sm mb-0 mt-1" style="min-width: 260px;">
-                                    <?php foreach ($resumen as $fila): ?>
-                                        <tr>
-                                            <td class="small text-muted text-nowrap"><?= htmlspecialchars($fila['etiqueta'], ENT_QUOTES) ?></td>
-                                            <?php if ($antes !== null && $despues !== null): ?>
-                                                <td class="small"><?= htmlspecialchars((string) $fila['antes'], ENT_QUOTES) ?> → <?= htmlspecialchars((string) $fila['despues'], ENT_QUOTES) ?></td>
-                                            <?php else: ?>
-                                                <td class="small"><?= htmlspecialchars((string) ($fila['antes'] ?? $fila['despues']), ENT_QUOTES) ?></td>
-                                            <?php endif; ?>
-                                        </tr>
-                                    <?php endforeach; ?>
-                                </table>
+                                <div class="table-responsive">
+                                    <table class="table table-sm mb-0 mt-1" style="min-width: 260px;">
+                                        <?php foreach ($resumen as $fila): ?>
+                                            <tr>
+                                                <td class="small text-muted text-nowrap"><?= htmlspecialchars($fila['etiqueta'], ENT_QUOTES) ?></td>
+                                                <?php if ($antes !== null && $despues !== null): ?>
+                                                    <td class="small"><?= htmlspecialchars((string) $fila['antes'], ENT_QUOTES) ?> → <?= htmlspecialchars((string) $fila['despues'], ENT_QUOTES) ?></td>
+                                                <?php else: ?>
+                                                    <td class="small"><?= htmlspecialchars((string) ($fila['antes'] ?? $fila['despues']), ENT_QUOTES) ?></td>
+                                                <?php endif; ?>
+                                            </tr>
+                                        <?php endforeach; ?>
+                                    </table>
+                                </div>
                             </details>
                         <?php endif; ?>
                     </td>

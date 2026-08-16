@@ -27,10 +27,10 @@ $instituciones = Auth::esSuperusuario() ? Institucion::listadoParaSelect() : [];
                 <h2 class="h6">Cartera de bienes</h2>
                 <p class="small text-muted mb-3">Código, descripción, ubicación, responsable, valor y fecha de ingreso de todos los bienes.</p>
                 <div class="d-flex gap-2">
-                    <a class="btn btn-sm btn-primary enlace-reporte" data-base="<?= Url::to('/reportes/cartera.xlsx') ?>" href="<?= Url::to('/reportes/cartera.xlsx') ?>">
+                    <a class="btn btn-sm btn-primary enlace-reporte" data-base="<?= Url::to('/reportes/cartera.xlsx') ?>" data-descarga="Generando…" href="<?= Url::to('/reportes/cartera.xlsx') ?>">
                         <i class="bi bi-file-earmark-excel me-1"></i>.xlsx
                     </a>
-                    <a class="btn btn-sm btn-outline-secondary enlace-reporte" data-base="<?= Url::to('/reportes/cartera.csv') ?>" href="<?= Url::to('/reportes/cartera.csv') ?>">.csv</a>
+                    <a class="btn btn-sm btn-outline-secondary enlace-reporte" data-base="<?= Url::to('/reportes/cartera.csv') ?>" data-descarga="Generando…" href="<?= Url::to('/reportes/cartera.csv') ?>">.csv</a>
                 </div>
             </div>
         </div>
@@ -42,7 +42,7 @@ $instituciones = Auth::esSuperusuario() ? Institucion::listadoParaSelect() : [];
                 <span class="badge text-bg-warning mb-2">AÚN NO SE HAN DEVUELTO</span>
                 <h2 class="h6">Bienes asignados pendientes de devolver</h2>
                 <p class="small text-muted mb-3">Bienes que alguien tiene actualmente en su poder y todavía <strong>no</strong> han sido reintegrados. Antes se llamaba "Planilla de reintegros pendientes".</p>
-                <a class="btn btn-sm btn-primary enlace-reporte" data-base="<?= Url::to('/reportes/reintegros.xlsx') ?>" href="<?= Url::to('/reportes/reintegros.xlsx') ?>">
+                <a class="btn btn-sm btn-primary enlace-reporte" data-base="<?= Url::to('/reportes/reintegros.xlsx') ?>" data-descarga="Generando…" href="<?= Url::to('/reportes/reintegros.xlsx') ?>">
                     <i class="bi bi-file-earmark-excel me-1"></i>.xlsx
                 </a>
             </div>
@@ -55,7 +55,7 @@ $instituciones = Auth::esSuperusuario() ? Institucion::listadoParaSelect() : [];
                 <span class="badge text-bg-success mb-2">YA REINTEGRADOS</span>
                 <h2 class="h6">Historial de bienes reintegrados</h2>
                 <p class="small text-muted mb-3">Bienes que <strong>ya fueron devueltos</strong>, con la fecha exacta del reintegro, el destino y quién lo registró.</p>
-                <a class="btn btn-sm btn-primary enlace-reporte" data-base="<?= Url::to('/reportes/reintegros-historial.xlsx') ?>" href="<?= Url::to('/reportes/reintegros-historial.xlsx') ?>">
+                <a class="btn btn-sm btn-primary enlace-reporte" data-base="<?= Url::to('/reportes/reintegros-historial.xlsx') ?>" data-descarga="Generando…" href="<?= Url::to('/reportes/reintegros-historial.xlsx') ?>">
                     <i class="bi bi-file-earmark-excel me-1"></i>.xlsx
                 </a>
             </div>
