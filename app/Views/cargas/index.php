@@ -24,13 +24,12 @@ $urlBasePaginacion = Url::to('/cargas-masivas') . ($busqueda !== '' ? '?' . http
             <input type="file" name="archivo" accept=".xlsx" class="form-control form-control-sm" required>
             <button type="submit" class="btn btn-sm btn-primary text-nowrap">Analizar archivo</button>
         </form>
+        <hr>
+        <p class="small text-muted mb-2">¿Ya subiste los bienes y quieres emparejar sus fotos por código?</p>
+        <a href="<?= Url::to('/bienes/carga-masiva-fotos') ?>" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-images me-1"></i>Carga masiva de fotos (.zip)
+        </a>
     </div>
-</div>
-
-<div class="mb-4">
-    <a href="<?= Url::to('/bienes/carga-masiva-fotos') ?>" class="btn btn-sm btn-outline-secondary">
-        <i class="bi bi-images me-1"></i>Carga masiva de fotos (.zip)
-    </a>
 </div>
 
 <h2 class="h6">Cargas anteriores</h2>

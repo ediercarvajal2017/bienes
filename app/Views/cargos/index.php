@@ -21,7 +21,14 @@ use App\Core\Url;
 <div class="table-responsive" style="max-width: 640px;">
     <table class="table table-sm bg-white align-middle tabla-cards">
         <thead>
-        <tr><th>Nombre</th><th>Estado</th><th></th></tr>
+        <tr>
+            <th>Nombre</th>
+            <th>Estado
+                <i class="bi bi-question-circle text-muted small ms-1" style="cursor: help;"
+                   title="Desactivar un cargo lo oculta al registrar usuarios nuevos, pero conserva los usuarios que ya lo tienen."></i>
+            </th>
+            <th></th>
+        </tr>
         </thead>
         <tbody>
         <?php foreach ($cargos as $c): ?>
@@ -59,4 +66,3 @@ use App\Core\Url;
         </tbody>
     </table>
 </div>
-<p class="text-muted small">Desactivar un cargo lo oculta al registrar usuarios nuevos, pero conserva los usuarios que ya lo tienen.</p>

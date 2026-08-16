@@ -80,11 +80,12 @@ $viejo ??= [];
         $urlBasePaginacion = Url::to('/reintegros') . '?' . http_build_query($queryBase);
         ?>
 
-        <h2 class="h6 mb-2"><?= $soloSeleccionados ? 'Bienes seleccionados' : 'Bienes asignados' ?> (<?= $total ?>)</h2>
-        <p class="text-muted small mb-2">
-            La selección se mantiene al buscar o cambiar de página — puedes ir marcando bienes en varias páginas antes de reintegrar.
-            <button type="button" id="botonVaciarSeleccion" class="btn btn-link btn-sm p-0 align-baseline">Vaciar selección</button>
-        </p>
+        <h2 class="h6 mb-2 d-flex align-items-center gap-1 flex-wrap">
+            <?= $soloSeleccionados ? 'Bienes seleccionados' : 'Bienes asignados' ?> (<?= $total ?>)
+            <i class="bi bi-question-circle text-muted small" style="cursor: help;"
+               title="La selección se mantiene al buscar o cambiar de página — puedes ir marcando bienes en varias páginas antes de reintegrar."></i>
+            <button type="button" id="botonVaciarSeleccion" class="btn btn-link btn-sm p-0 align-baseline ms-2">Vaciar selección</button>
+        </h2>
         <div class="mb-2 d-flex flex-wrap gap-3 align-items-center">
             <div style="max-width: 420px; flex: 1 1 260px;">
                 <input type="search" id="buscador" class="form-control form-control-sm"
