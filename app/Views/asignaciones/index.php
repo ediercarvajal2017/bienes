@@ -13,9 +13,7 @@ $bienesSeleccionados = $viejo['bienes'] ?? [];
         <h1 class="h4 mb-0">Asignar bienes</h1>
         <p class="text-muted small mb-0">Selecciona uno o varios bienes y asígnalos (o reasígnalos) a un espacio.</p>
     </div>
-    <a href="<?= Url::to('/reintegros') ?>" class="btn btn-sm btn-outline-secondary">
-        <i class="bi bi-box-arrow-in-left me-1"></i>Ir a Reintegrar
-    </a>
+    <a href="<?= Url::to('/bienes') ?>" class="btn btn-sm btn-outline-secondary">Volver</a>
 </div>
 
 <?php if (!empty($mensaje)): ?><div class="alert alert-success py-2 small"><?= htmlspecialchars($mensaje, ENT_QUOTES) ?></div><?php endif; ?>
