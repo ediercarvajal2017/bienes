@@ -121,11 +121,7 @@ final class CargoController
 
     private function verificarCsrf(Request $request): void
     {
-        if (!Csrf::verify((string) $request->input('_csrf'))) {
-            Session::flash('error', 'Tu sesión expiró, intenta de nuevo.');
-            header('Location: ' . Url::to('/cargos'));
-            exit;
-        }
+        Csrf::verificarORedirigir($request, '/cargos');
     }
 
     /**

@@ -64,12 +64,7 @@ final class VerificacionController
     public function guardar(): void
     {
         $request = new Request();
-
-        if (!Csrf::verify((string) $request->input('_csrf'))) {
-            Session::flash('error', 'Tu sesión expiró, intenta de nuevo.');
-            header('Location: ' . Url::to('/verificaciones/crear'));
-            exit;
-        }
+        $this->verificarCsrf($request, '/verificaciones/crear');
 
         $institucionId = Auth::institucionId();
         if ($institucionId === null) {
@@ -214,11 +209,7 @@ final class VerificacionController
         $jornada = $this->jornadaAccesible($id);
 
         $request = new Request();
-        if (!Csrf::verify((string) $request->input('_csrf'))) {
-            Session::flash('error', 'Tu sesión expiró, intenta de nuevo.');
-            header('Location: ' . Url::to("/verificaciones/{$id}"));
-            exit;
-        }
+        $this->verificarCsrf($request, "/verificaciones/{$id}");
 
         if ($jornada['estado'] === 'cerrada') {
             Session::flash('error', 'Esta jornada ya estaba cerrada.');
@@ -245,11 +236,7 @@ final class VerificacionController
         $jornada = $this->jornadaAccesible((int) $jornadaId);
 
         $request = new Request();
-        if (!Csrf::verify((string) $request->input('_csrf'))) {
-            Session::flash('error', 'Tu sesión expiró, intenta de nuevo.');
-            header('Location: ' . Url::to("/verificaciones/{$jornadaId}#seccion-discrepancia"));
-            exit;
-        }
+        $this->verificarCsrf($request, "/verificaciones/{$jornadaId}#seccion-discrepancia");
 
         $verificacion = Verificacion::find((int) $verificacionId);
         if (!$verificacion || (int) $verificacion['jornada_id'] !== (int) $jornada['id']) {
@@ -296,12 +283,7 @@ final class VerificacionController
         }
 
         $request = new Request();
-
-        if (!Csrf::verify((string) $request->input('_csrf'))) {
-            Session::flash('error', 'Tu sesión expiró, intenta de nuevo.');
-            header('Location: ' . Url::to("/qr/{$token}"));
-            exit;
-        }
+        $this->verificarCsrf($request, "/qr/{$token}");
 
         $jornada = JornadaVerificacion::activaPara($institucionId);
         if (!$jornada) {
@@ -378,5 +360,10 @@ final class VerificacionController
         }
 
         return $jornada;
+    }
+
+    private function verificarCsrf(Request $request, string $volverA): void
+    {
+        Csrf::verificarORedirigir($request, $volverA);
     }
 }

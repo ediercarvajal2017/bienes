@@ -192,10 +192,6 @@ final class CarteraController
 
     private function verificarCsrf(Request $request): void
     {
-        if (!Csrf::verify((string) $request->input('_csrf'))) {
-            Session::flash('error', 'Tu sesión expiró, intenta de nuevo.');
-            header('Location: ' . Url::to('/cartera/enviar'));
-            exit;
-        }
+        Csrf::verificarORedirigir($request, '/cartera/enviar');
     }
 }

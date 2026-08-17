@@ -184,13 +184,6 @@ final class AsignacionController
      */
     private function verificarCsrf(Request $request, array $datosAConservar = []): void
     {
-        if (!Csrf::verify((string) $request->input('_csrf'))) {
-            Session::flash('error', 'Tu sesión expiró, intenta de nuevo.');
-            if (!empty($datosAConservar)) {
-                Session::flashOld($datosAConservar);
-            }
-            header('Location: ' . Url::to('/asignaciones'));
-            exit;
-        }
+        Csrf::verificarORedirigir($request, '/asignaciones', $datosAConservar);
     }
 }

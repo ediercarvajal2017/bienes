@@ -392,10 +392,6 @@ final class MovimientoController
 
     private function verificarCsrf(Request $request, int $bienId): void
     {
-        if (!Csrf::verify((string) $request->input('_csrf'))) {
-            Session::flash('error', 'Tu sesión expiró, intenta de nuevo.');
-            header('Location: ' . Url::to("/bienes/{$bienId}/editar"));
-            exit;
-        }
+        Csrf::verificarORedirigir($request, "/bienes/{$bienId}/editar");
     }
 }

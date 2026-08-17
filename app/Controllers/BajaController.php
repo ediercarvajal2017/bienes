@@ -167,13 +167,7 @@ final class BajaController
 
     private function verificarCsrf(): void
     {
-        $request = new Request();
-
-        if (!Csrf::verify((string) $request->input('_csrf'))) {
-            Session::flash('error', 'Tu sesión expiró, intenta de nuevo.');
-            header('Location: ' . Url::to('/bajas'));
-            exit;
-        }
+        Csrf::verificarORedirigir(new Request(), '/bajas');
     }
 
     /**

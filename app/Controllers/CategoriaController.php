@@ -207,10 +207,6 @@ final class CategoriaController
 
     private function verificarCsrf(Request $request, ?int $institucionId): void
     {
-        if (!Csrf::verify((string) $request->input('_csrf'))) {
-            Session::flash('error', 'Tu sesión expiró, intenta de nuevo.');
-            header('Location: ' . Url::to($this->volverA($institucionId)));
-            exit;
-        }
+        Csrf::verificarORedirigir($request, $this->volverA($institucionId));
     }
 }

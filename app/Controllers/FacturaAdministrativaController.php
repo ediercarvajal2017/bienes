@@ -187,10 +187,6 @@ final class FacturaAdministrativaController
 
     private function verificarCsrf(Request $request): void
     {
-        if (!Csrf::verify((string) $request->input('_csrf'))) {
-            Session::flash('error', 'Tu sesión expiró, intenta de nuevo.');
-            header('Location: ' . Url::to('/facturas'));
-            exit;
-        }
+        Csrf::verificarORedirigir($request, '/facturas');
     }
 }

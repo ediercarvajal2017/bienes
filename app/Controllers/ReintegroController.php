@@ -461,13 +461,6 @@ final class ReintegroController
      */
     private function verificarCsrf(Request $request, string $volverA = '/reintegros', array $datosAConservar = []): void
     {
-        if (!Csrf::verify((string) $request->input('_csrf'))) {
-            Session::flash('error', 'Tu sesión expiró, intenta de nuevo.');
-            if (!empty($datosAConservar)) {
-                Session::flashOld($datosAConservar);
-            }
-            header('Location: ' . Url::to($volverA));
-            exit;
-        }
+        Csrf::verificarORedirigir($request, $volverA, $datosAConservar);
     }
 }

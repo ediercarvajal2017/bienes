@@ -191,10 +191,6 @@ final class FormatoPlaqueteoController
 
     private function verificarCsrf(Request $request): void
     {
-        if (!Csrf::verify((string) $request->input('_csrf'))) {
-            Session::flash('error', 'Tu sesión expiró, intenta de nuevo.');
-            header('Location: ' . Url::to('/formatos-plaqueteo'));
-            exit;
-        }
+        Csrf::verificarORedirigir($request, '/formatos-plaqueteo');
     }
 }
