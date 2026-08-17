@@ -37,7 +37,10 @@ final class Session
      */
     public static function extender(int $dias): void
     {
-        setcookie(session_name(), session_id(), [
+        // session_name()/session_id() devuelven string|false por firma, aunque nunca
+        // pueden ser false aquí (se llama justo después de Session::start()) -- el
+        // fallback es solo para satisfacer el tipo, no un caso real esperado.
+        setcookie(session_name() ?: 'sigebi_session', session_id() ?: '', [
             'expires' => time() + $dias * 86400,
             'path' => '/',
             'httponly' => true,

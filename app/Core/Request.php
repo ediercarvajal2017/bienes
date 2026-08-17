@@ -22,7 +22,10 @@ final class Request
      */
     private function resolvePath(): string
     {
-        $requestUri = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?? '/';
+        // parse_url() devuelve false (no null) ante una URL malformada -- "??" no lo
+        // atrapa, así que una REQUEST_URI rara podía llegar a str_starts_with() como
+        // false y tumbar la petición entera con un TypeError.
+        $requestUri = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
         $scriptDir = Url::base();
 
         if ($scriptDir !== '' && str_starts_with($requestUri, $scriptDir)) {

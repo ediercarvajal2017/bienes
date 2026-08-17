@@ -137,8 +137,11 @@ $invalido = static fn (string $campo) => $errorCampo === $campo ? ' is-invalid' 
     </div>
     <div class="col-md-4">
         <label class="form-label small">Valor</label>
-        <input type="number" step="0.01" min="0" name="valor" class="form-control" <?= $puedeEditar ? '' : 'disabled' ?>
+        <input type="number" step="0.01" min="0" max="9999999999" name="valor" class="form-control<?= $invalido('valor') ?>" <?= $puedeEditar ? '' : 'disabled' ?>
                value="<?= htmlspecialchars((string) $v('valor', '0'), ENT_QUOTES) ?>">
+        <?php if ($errorCampo === 'valor'): ?>
+            <div class="invalid-feedback d-block"><?= htmlspecialchars($error, ENT_QUOTES) ?></div>
+        <?php endif; ?>
     </div>
     <?php $estadosEtiquetas = ['activo' => 'Activo', 'reintegrado' => 'Reintegrado', 'en_reparacion' => 'En reparación', 'dado_de_baja' => 'Dado de baja']; ?>
     <div class="col-md-4">

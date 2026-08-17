@@ -27,6 +27,11 @@ final class BienController
 {
     private const ESTADOS = ['activo', 'reintegrado', 'en_reparacion', 'dado_de_baja'];
 
+    // Tope de 10 dígitos para el valor de un bien -- suficiente para cualquier bien real
+    // y evita que un número desproporcionado (por error de tecleo o intencional) se cuele
+    // sin control del lado del servidor, más allá del min="0" del HTML, que es trivial de saltarse.
+    private const VALOR_MAXIMO = 10_000_000_000;
+
     private const POR_PAGINA_DEFECTO = 50;
     private const OPCIONES_POR_PAGINA = [10, 25, 50, 100, 0];
 
@@ -188,10 +193,30 @@ final class BienController
         // ":imprimir_qr" en la consulta -- con PDO::ATTR_EMULATE_PREPARES en false eso
         // revienta con "Invalid parameter number", no se ignora en silencio.
         $imprimirQr = $datos['imprimir_qr'] === '1';
+        $datosParaReintentar = $datos;
         unset($datos['imprimir_qr']);
 
         $datos['created_by'] = Auth::id();
-        $id = Bien::create($datos);
+
+        try {
+            $id = Bien::create($datos);
+        } catch (\PDOException $e) {
+            // La comprobación de Bien::existeCodigo() en validar() ya pasó, pero entre
+            // ese chequeo y este INSERT otra petición pudo registrar el mismo código
+            // (dos personas guardando casi al mismo tiempo) -- sin este catch, la
+            // restricción UNIQUE de la base de datos revienta como un error 500 crudo en
+            // vez de mostrar el mismo mensaje amigable que ya existe para este caso.
+            if (!$this->esViolacionCodigoDuplicado($e)) {
+                throw $e;
+            }
+
+            Session::flash('error', 'Ya existe un bien con ese código en la institución.');
+            Session::flash('error_campo', 'codigo_identificacion');
+            Session::flashOld($datosParaReintentar);
+            header('Location: ' . Url::to($volverA));
+            exit;
+        }
+
         Auditoria::registrar(Auth::id(), (int) $datos['institucion_id'], 'crear', 'bien', $id, null, $datos);
 
         $this->procesarArchivos($id, $request, $datos['codigo_identificacion']);
@@ -244,15 +269,26 @@ final class BienController
             exit;
         }
 
-        $creados = $this->crearBienesEnLote($datos);
+        // No es una columna de bienes: se saca aquí (después del flashOld() de más
+        // arriba) para que crearBienesEnLote() no la pase a Bien::create() -- mismo
+        // motivo que en guardar()/actualizar() para un bien individual.
+        $imprimirQr = $datos['imprimir_qr'] === '1';
+        unset($datos['imprimir_qr']);
 
-        if ($creados === null) {
+        $idsCreados = $this->crearBienesEnLote($datos);
+
+        if ($idsCreados === null) {
             Session::flash('error', 'Ocurrió un error al crear los bienes del lote. No se aplicó ningún cambio.');
             Session::flashOld($datos);
             header('Location: ' . Url::to('/bienes/alta-masiva'));
             exit;
         }
 
+        foreach ($idsCreados as $id) {
+            $this->procesarSolicitudQr($id, $imprimirQr);
+        }
+
+        $creados = count($idsCreados);
         Session::flash('ok', "{$creados} bienes creados correctamente en el lote \"{$datos['lote']}\".");
         header('Location: ' . Url::to('/bienes'));
         exit;
@@ -273,6 +309,7 @@ final class BienController
             'fecha_ingreso' => (string) $request->input('fecha_ingreso'),
             'valor' => (string) $request->input('valor'),
             'cantidad' => (int) $request->input('cantidad'),
+            'imprimir_qr' => $request->input('imprimir_qr') ? '1' : '0',
         ];
     }
 
@@ -290,8 +327,8 @@ final class BienController
             return 'La cantidad debe estar entre 2 y 500 (para un solo bien, usa "Registrar bien").';
         }
 
-        if (!is_numeric($datos['valor']) || (float) $datos['valor'] < 0) {
-            return 'Indica un valor unitario válido.';
+        if (!is_numeric($datos['valor']) || (float) $datos['valor'] < 0 || (float) $datos['valor'] >= self::VALOR_MAXIMO) {
+            return 'Indica un valor unitario válido (no puede ser negativo ni tener más de 10 dígitos).';
         }
 
         if (Bien::existeLote($datos['institucion_id'], $datos['lote'])) {
@@ -311,12 +348,16 @@ final class BienController
     /**
      * Todo o nada dentro de una única transacción: si algún código consecutivo ya
      * existiera a mitad de camino, se revierte por completo (no deja el lote a medias).
+     *
+     * @return int[]|null ids de los bienes creados (para poder solicitarles QR después),
+     * o null si la transacción se revirtió.
      */
-    private function crearBienesEnLote(array $datos): ?int
+    private function crearBienesEnLote(array $datos): ?array
     {
         $pdo = Database::connection();
         $pdo->beginTransaction();
         try {
+            $ids = [];
             for ($i = 1; $i <= $datos['cantidad']; $i++) {
                 $codigo = $datos['lote'] . '-' . str_pad((string) $i, 3, '0', STR_PAD_LEFT);
 
@@ -324,7 +365,7 @@ final class BienController
                     throw new \RuntimeException("El código {$codigo} ya existe.");
                 }
 
-                Bien::create([
+                $ids[] = Bien::create([
                     'institucion_id' => $datos['institucion_id'],
                     'codigo_identificacion' => $codigo,
                     'descripcion' => $datos['descripcion'],
@@ -341,7 +382,7 @@ final class BienController
 
             $pdo->commit();
 
-            return $datos['cantidad'];
+            return $ids;
         } catch (\Throwable $e) {
             $pdo->rollBack();
 
@@ -406,9 +447,23 @@ final class BienController
         }
 
         $imprimirQr = $datos['imprimir_qr'] === '1';
+        $datosParaReintentar = $datos;
         unset($datos['imprimir_qr']);
 
-        Bien::update($id, $datos);
+        try {
+            Bien::update($id, $datos);
+        } catch (\PDOException $e) {
+            if (!$this->esViolacionCodigoDuplicado($e)) {
+                throw $e;
+            }
+
+            Session::flash('error', 'Ya existe un bien con ese código en la institución.');
+            Session::flash('error_campo', 'codigo_identificacion');
+            Session::flashOld($datosParaReintentar);
+            header('Location: ' . Url::to("/bienes/{$id}/editar"));
+            exit;
+        }
+
         Auditoria::registrar(Auth::id(), (int) $datos['institucion_id'], 'editar', 'bien', $id, $bien, $datos);
 
         $this->procesarArchivos($id, $request, $datos['codigo_identificacion']);
@@ -417,6 +472,16 @@ final class BienController
         Session::flash('ok', 'Bien actualizado.');
         header('Location: ' . Url::to('/bienes'));
         exit;
+    }
+
+    /**
+     * Distingue la violación de la restricción UNIQUE de código duplicado (una carrera
+     * entre dos peticiones casi simultáneas) de cualquier otro error de base de datos,
+     * que sí debe seguir propagándose como un fallo real.
+     */
+    private function esViolacionCodigoDuplicado(\PDOException $e): bool
+    {
+        return $e->getCode() === '23000';
     }
 
     private function procesarArchivos(int $bienId, Request $request, string $codigoIdentificacion): void
@@ -512,6 +577,10 @@ final class BienController
 
         if ($datos['fecha_ingreso'] === '' || !strtotime($datos['fecha_ingreso'])) {
             return ['campo' => 'fecha_ingreso', 'mensaje' => 'La fecha de ingreso no es válida.'];
+        }
+
+        if ($datos['valor'] < 0 || $datos['valor'] >= self::VALOR_MAXIMO) {
+            return ['campo' => 'valor', 'mensaje' => 'El valor no puede ser negativo ni tener más de 10 dígitos.'];
         }
 
         if (Bien::existeCodigo($datos['institucion_id'], $datos['codigo_identificacion'], $exceptId)) {

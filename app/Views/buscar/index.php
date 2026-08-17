@@ -22,6 +22,8 @@ $sinResultados = $q !== ''
     <p class="text-muted">Escribe algo para buscar en bienes, espacios y usuarios a la vez.</p>
 <?php elseif ($institucionId === null): ?>
     <p class="text-muted">Selecciona una institución arriba para poder buscar.</p>
+<?php elseif ($sinPermisos): ?>
+    <p class="text-muted">No tienes permiso para ver bienes, espacios ni usuarios.</p>
 <?php elseif ($sinResultados): ?>
     <p class="text-muted">Nada coincide con "<?= htmlspecialchars($q, ENT_QUOTES) ?>".</p>
 <?php else: ?>

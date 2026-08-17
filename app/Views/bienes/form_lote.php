@@ -80,7 +80,18 @@ $v = static fn (string $campo, mixed $porDefecto = '') => $viejo[$campo] ?? $por
     </div>
     <div class="col-md-4">
         <label class="form-label small">Valor unitario</label>
-        <input type="number" step="0.01" min="0" name="valor" class="form-control" value="<?= htmlspecialchars((string) $v('valor', '0'), ENT_QUOTES) ?>">
+        <input type="number" step="0.01" min="0" max="9999999999" name="valor" class="form-control" value="<?= htmlspecialchars((string) $v('valor', '0'), ENT_QUOTES) ?>">
+    </div>
+
+    <div class="col-12">
+        <div class="form-check">
+            <input type="checkbox" name="imprimir_qr" value="1" id="imprimirQrLote" class="form-check-input"
+                   <?= !empty($v('imprimir_qr', '1')) ? 'checked' : '' ?>>
+            <label class="form-check-label small" for="imprimirQrLote">Imprimir QR de todo el lote</label>
+            <i class="bi bi-question-circle text-muted small ms-1"
+               style="cursor: help;"
+               title="Agrega los bienes del lote a la Bodega de impresión de QR (en &quot;Generar QR masivo&quot;) para imprimirlos de una vez."></i>
+        </div>
     </div>
 
     <div class="col-12">

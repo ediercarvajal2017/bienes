@@ -130,7 +130,10 @@ final class Uploader
             throw new \RuntimeException("El archivo supera el tamaño máximo permitido ({$maximoMb}MB).");
         }
 
-        return mime_content_type($file['tmp_name']);
+        // mime_content_type() devuelve false (no null) si no logra determinar el tipo --
+        // sin este ajuste, ese false se colaba como si fuera un mime válido, porque el
+        // llamador solo compara contra null.
+        return mime_content_type($file['tmp_name']) ?: null;
     }
 
     private static function mover(array $file, string $subdir, string $extension): string

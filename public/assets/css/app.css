@@ -164,6 +164,19 @@ img {
   box-shadow: 0 0 0 1px var(--sigebi-accent);
 }
 
+/*
+ * Mismo problema que el filtro de institución de arriba: un <select class="is-invalid">
+ * marcado por una validación del servidor no se ve en rojo porque Tom Select lo oculta y
+ * pone su propio .ts-wrapper justo al lado — el borde rojo se aplica ahí, apuntando al
+ * <select> original (que sigue en el DOM) con el selector de hermano adyacente "+".
+ */
+select.selector-buscable.is-invalid + .ts-wrapper .ts-control {
+  /* !important necesario: el tema de Tom Select (CDN) trae su propia regla para
+     ".ts-wrapper .ts-control" con especificidad suficiente para ganarle a esta si no. */
+  border-color: var(--sigebi-danger) !important;
+  box-shadow: 0 0 0 0.25rem rgba(var(--bs-danger-rgb), 0.25) !important;
+}
+
 .navbar-logo {
   height: 34px;
   width: auto;

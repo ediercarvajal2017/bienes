@@ -349,7 +349,11 @@ final class CargaMasivaService
         }
 
         if (is_numeric($valor) && FechaExcel::isDateTimeFormatCode($celda->getStyle()->getNumberFormat()->getFormatCode())) {
-            $fecha = FechaExcel::excelToDateTimeObject($valor);
+            // Con declare(strict_types=1), pasar una cadena numérica (una celda de
+            // fecha guardada como texto en el Excel) tal cual revienta con TypeError --
+            // excelToDateTimeObject() exige float|int, no string, aunque is_numeric()
+            // ya haya confirmado que es un número.
+            $fecha = FechaExcel::excelToDateTimeObject((float) $valor);
 
             return $fecha->format('Y-m-d');
         }

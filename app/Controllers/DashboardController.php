@@ -91,9 +91,17 @@ final class DashboardController
             return null;
         }
 
+        $totalBienes = Bien::contarListado($institucionId);
+
+        // Una vez que ya hay bienes, la tarjeta queda colapsada como simple referencia
+        // (ver dashboard/index.php) y ya no necesita el conteo exacto de espacios para
+        // decidir nada -- evita sumar una segunda consulta a esta pantalla, la más
+        // visitada del sistema, en cada carga para siempre.
+        $totalEspacios = $totalBienes === 0 ? Espacio::contarListado($institucionId) : null;
+
         return [
-            'totalEspacios' => Espacio::contarListado($institucionId),
-            'totalBienes' => Bien::contarListado($institucionId),
+            'totalEspacios' => $totalEspacios,
+            'totalBienes' => $totalBienes,
         ];
     }
 }

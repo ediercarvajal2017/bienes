@@ -1,5 +1,17 @@
 parameters:
-    level: 5
+    level: 7
+    ignoreErrors:
+        # El codigo no anota el tipo interno de cada array (@param array<string,mixed>...)
+        # en ningun lado -- exigirlo ahora es un proyecto de anotacion aparte, no deteccion
+        # de bugs.
+        - identifier: missingType.iterableValue
+        # Database.php fija PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, asi que
+        # query()/execute() nunca devuelven false en este proyecto: lanzan una excepcion
+        # en su lugar. Los stubs de PDO no reflejan esa garantia, por eso PHPStan sigue
+        # viendo PDOStatement|false y marcando cada fetchAll() como si pudiera fallar.
+        -
+            message: '#Cannot call method fetchAll\(\) on PDOStatement\|false#'
+            identifier: method.nonObject
     paths:
         - app/Controllers
         - app/Core
