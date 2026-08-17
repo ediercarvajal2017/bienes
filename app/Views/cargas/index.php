@@ -6,7 +6,10 @@ use App\Core\View;
 
 $urlBasePaginacion = Url::to('/cargas-masivas') . ($busqueda !== '' ? '?' . http_build_query(['q' => $busqueda]) : '');
 ?>
-<h1 class="h4 mb-3">Carga masiva de bienes</h1>
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <h1 class="h4 mb-0">Carga masiva de bienes</h1>
+    <a href="<?= Url::to('/bienes') ?>" class="btn btn-sm btn-outline-secondary">Volver</a>
+</div>
 
 <?php if (!empty($mensaje)): ?><div class="alert alert-success py-2 small" style="max-width:640px;"><?= htmlspecialchars($mensaje, ENT_QUOTES) ?></div><?php endif; ?>
 <?php if (!empty($error)): ?><div class="alert alert-danger py-2 small" style="max-width:640px;"><?= htmlspecialchars($error, ENT_QUOTES) ?></div><?php endif; ?>
