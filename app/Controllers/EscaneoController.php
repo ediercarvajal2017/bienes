@@ -19,6 +19,7 @@ final class EscaneoController
 
         View::layout('partials/layout', 'escanear/index', [
             'title' => 'Escanear código QR',
+            'mensaje' => Session::pullFlash('ok'),
             'error' => Session::pullFlash('error'),
             'jornadaActiva' => $institucionId !== null && JornadaVerificacion::activaPara($institucionId) !== null,
         ]);

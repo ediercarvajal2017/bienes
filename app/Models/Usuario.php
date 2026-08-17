@@ -33,7 +33,7 @@ final class Usuario
              FROM usuarios u
              JOIN cargos c ON c.id = u.cargo_id
              JOIN roles r ON r.id = u.rol_id
-             WHERE u.documento = ? AND u.institucion_id = ?'
+             WHERE u.documento = ? AND u.institucion_id = ? AND u.eliminado_en IS NULL'
         );
         $stmt->execute([$documento, $institucionId]);
 

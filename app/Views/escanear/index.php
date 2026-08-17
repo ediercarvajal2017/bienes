@@ -6,6 +6,7 @@ use App\Core\Url;
 <h1 class="h4 mb-3">Escanear código QR</h1>
 <p class="text-muted small">Apunta la cámara del celular al código QR pegado sobre el bien.</p>
 
+<?php if (!empty($mensaje)): ?><div class="alert alert-success py-2 small" style="max-width: 420px;"><?= htmlspecialchars($mensaje, ENT_QUOTES) ?></div><?php endif; ?>
 <?php if (!empty($error)): ?><div class="alert alert-danger py-2 small" style="max-width: 420px;"><?= htmlspecialchars($error, ENT_QUOTES) ?></div><?php endif; ?>
 
 <div style="max-width: 420px;">

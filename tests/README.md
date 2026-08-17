@@ -67,6 +67,15 @@ corriendo una vez por archivo en vez de una vez para toda la suite).
 | `reportes.spec.js` | La pantalla carga y descarga de verdad el reporte de cartera de bienes (.xlsx). |
 | `papelera.spec.js` | `/papelera` y `/auditoria` cargan con sus elementos esperados para un superusuario. |
 | `casos_limite.spec.js` | Regresiones puntuales de una auditoría de bugs (2026-08-17): valor de un bien limitado a 10 dígitos (individual y en lote), dos registros con el mismo código casi simultáneos sin dar 500, alta masiva conectada a la Bodega de impresión de QR, borde rojo de un `<select>` inválido convertido en Tom Select, búsqueda en carga masiva con palabras "pendiente"/"aplicada" (regresión de un error de colación de MySQL), buscador global, y que "Primeros pasos" no rompa con una institución que ya tiene bienes. |
+| `password_reset.spec.js` | Protección contra enumeración de correos en "olvidé mi contraseña" (mismo mensaje exista o no la cuenta), que un token inválido nunca muestre el formulario de nueva contraseña, y el flujo completo de "¿Cuál es mi correo?". No cubre el cambio de contraseña en sí (el enlace real solo llega por correo, no hay forma de leerlo desde el navegador). |
+| `usuarios_carga_masiva.spec.js` | Igual que `carga_masiva.spec.js`/`espacios_carga_masiva.spec.js`, pero para `/usuarios/carga-masiva` — a diferencia de esas dos, esta pantalla siempre confirma con mensaje de éxito (verde), nunca "aplicada parcialmente"; la prueba confirma ese comportamiento real y que la fila inválida no se crea. El fixture se genera en cada corrida (`fixtures/generar_carga_masiva_usuarios.php`), no es un `.xlsx` estático — ver la nota correspondiente más abajo. |
+| `dashboard.spec.js` | El panel principal carga con el saludo, el rol, y que los accesos (incluidos los exclusivos de superusuario) lleven a la pantalla correcta. |
+| `escaneo.spec.js` | Búsqueda manual de un bien por código desde `/escanear` (alternativa a la cámara): sin institución en el filtro avisa en vez de fallar en silencio, con institución encuentra el bien real y redirige a su ficha pública, y un código inexistente también avisa. |
+| `hallazgos.spec.js` | Reportar un "hallazgo" (bien físico sin código/QR) durante una jornada de verificación activa, verlo en la jornada y descartarlo. |
+| `manual.spec.js` | `/manual` carga con el aviso de repliegue a la guía de Docente para un rol sin guía propia (superusuario). |
+| `archivos.spec.js` | `/archivos/{tipo}/{archivo}` sirve un archivo real y rechaza carpeta o nombre inválidos (path traversal). |
+| `asignaciones.spec.js` | Asignar un bien desde la selección masiva de `/asignaciones` (distinto del panel individual, ya cubierto por `bienes_ciclo_vida.spec.js`). |
+| `sede_activa.spec.js` | `/sede-activa` exige rol "rector" — un rol distinto (aunque tenga sesión iniciada) recibe 403, no un error de servidor. |
 
 `tests/helpers/tomSelect.js` tiene el helper para interactuar con los `<select>`
 que SIGEBI convierte en Tom Select (buscador con menú) — reutilízalo en cualquier
@@ -89,6 +98,20 @@ real que encontramos armando estas pruebas (ver más abajo).
   corrida anterior de `verificaciones.spec.js` quedó a medias (falló antes de cerrar
   la jornada), la siguiente no podría crear una nueva. La prueba se protege sola:
   busca y cierra cualquier jornada activa antes de empezar.
+- **Un fixture `.xlsx` con documento/correo fijos no es reproducible entre corridas**:
+  se detectó porque `Usuario::findByDocumento()` no filtraba `eliminado_en IS NULL`
+  (ya corregido), así que un documento usado una vez, aunque el usuario terminara en
+  la papelera, se trataba como "ya existe" en la siguiente carga masiva en vez de
+  crear un usuario activo de verdad. `usuarios_carga_masiva.spec.js` sigue generando
+  su fixture en cada corrida (`fixtures/generar_carga_masiva_usuarios.php`) de todas
+  formas — es la práctica correcta para cualquier fixture con datos de usuarios, con
+  o sin ese bug.
+- **El filtro de institución del encabezado (superusuario) es sesión de servidor, no
+  estado de la página** — si una prueba lo cambia (`#filtroInstitucionSelect`) y no lo
+  regresa a "Ver todas las instituciones" al terminar, cualquier prueba que corra
+  después en la misma sesión lo hereda. `hallazgos.spec.js` y `escaneo.spec.js` ya lo
+  manejan (una lo resetea al final, la otra lo fuerza a blanco al empezar, por si
+  acaso) — sigue el mismo criterio en pruebas nuevas que lo toquen.
 
 ## Advertencias de este arranque (léelas antes de confiar ciegamente en la suite)
 
