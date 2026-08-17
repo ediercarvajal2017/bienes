@@ -365,6 +365,15 @@ document.addEventListener('DOMContentLoaded', function () {
                 } else {
                     categoriaSelect.value = categoriaAnterior;
                 }
+
+                // El confirm() nativo bloquea el hilo de JS mientras está abierto; al
+                // cerrarse, Tom Select puede quedar con el buscador visible/enfocado
+                // (clase "input-active") en vez de mostrar la opción elegida como
+                // pastilla, aunque el menú de opciones ya esté cerrado.
+                if (tom) {
+                    tom.close();
+                    tom.blur();
+                }
             });
     });
 });
