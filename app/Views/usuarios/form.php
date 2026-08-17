@@ -7,7 +7,9 @@ use App\Core\View;
 
 $esEdicion = $usuario !== null;
 $viejo ??= [];
+$errorCampo ??= null;
 $v = static fn (string $campo, mixed $porDefecto = '') => $viejo[$campo] ?? $usuario[$campo] ?? $porDefecto;
+$invalido = static fn (string $campo) => $errorCampo === $campo ? ' is-invalid' : '';
 ?>
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
     <h1 class="h4 mb-0"><?= $esEdicion ? 'Editar usuario' : 'Nuevo usuario' ?></h1>
@@ -27,24 +29,36 @@ $v = static fn (string $campo, mixed $porDefecto = '') => $viejo[$campo] ?? $usu
 
     <div class="col-md-6">
         <label class="form-label small requerido">Documento</label>
-        <input type="text" name="documento" class="form-control" required
+        <input type="text" name="documento" class="form-control<?= $invalido('documento') ?>" required
                value="<?= htmlspecialchars($v('documento'), ENT_QUOTES) ?>">
+        <?php if ($errorCampo === 'documento'): ?>
+            <div class="invalid-feedback d-block"><?= htmlspecialchars($error, ENT_QUOTES) ?></div>
+        <?php endif; ?>
     </div>
     <div class="col-md-6">
         <label class="form-label small requerido">Correo</label>
-        <input type="email" name="email" class="form-control" required
+        <input type="email" name="email" class="form-control<?= $invalido('email') ?>" required
                value="<?= htmlspecialchars($v('email'), ENT_QUOTES) ?>">
+        <?php if ($errorCampo === 'email'): ?>
+            <div class="invalid-feedback d-block"><?= htmlspecialchars($error, ENT_QUOTES) ?></div>
+        <?php endif; ?>
     </div>
 
     <div class="col-md-6">
         <label class="form-label small requerido">Nombres</label>
-        <input type="text" name="nombres" class="form-control" required
+        <input type="text" name="nombres" class="form-control<?= $invalido('nombres') ?>" required
                value="<?= htmlspecialchars($v('nombres'), ENT_QUOTES) ?>">
+        <?php if ($errorCampo === 'nombres'): ?>
+            <div class="invalid-feedback d-block"><?= htmlspecialchars($error, ENT_QUOTES) ?></div>
+        <?php endif; ?>
     </div>
     <div class="col-md-6">
         <label class="form-label small requerido">Apellidos</label>
-        <input type="text" name="apellidos" class="form-control" required
+        <input type="text" name="apellidos" class="form-control<?= $invalido('apellidos') ?>" required
                value="<?= htmlspecialchars($v('apellidos'), ENT_QUOTES) ?>">
+        <?php if ($errorCampo === 'apellidos'): ?>
+            <div class="invalid-feedback d-block"><?= htmlspecialchars($error, ENT_QUOTES) ?></div>
+        <?php endif; ?>
     </div>
 
     <div class="col-md-6">
@@ -60,13 +74,16 @@ $v = static fn (string $campo, mixed $porDefecto = '') => $viejo[$campo] ?? $usu
 
     <div class="col-md-6">
         <label class="form-label small requerido">Rol</label>
-        <select name="rol_id" class="form-select" required>
+        <select name="rol_id" class="form-select<?= $invalido('rol_id') ?>" required>
             <?php foreach ($roles as $r): ?>
                 <option value="<?= $r['id'] ?>" <?= (int) $v('rol_id', 0) === (int) $r['id'] ? 'selected' : '' ?>>
                     <?= htmlspecialchars(ucfirst($r['nombre']), ENT_QUOTES) ?>
                 </option>
             <?php endforeach; ?>
         </select>
+        <?php if ($errorCampo === 'rol_id'): ?>
+            <div class="invalid-feedback d-block"><?= htmlspecialchars($error, ENT_QUOTES) ?></div>
+        <?php endif; ?>
     </div>
 
     <?php if (Auth::esSuperusuario()): ?>
@@ -95,7 +112,10 @@ $v = static fn (string $campo, mixed $porDefecto = '') => $viejo[$campo] ?? $usu
 
     <div class="col-md-6">
         <label class="form-label small<?= $esEdicion ? '' : ' requerido' ?>" for="password"><?= $esEdicion ? 'Nueva contraseña (opcional)' : 'Contraseña' ?></label>
-        <input type="password" name="password" id="password" class="form-control" <?= $esEdicion ? '' : 'required' ?> minlength="8" autocomplete="new-password">
+        <input type="password" name="password" id="password" class="form-control<?= $invalido('password') ?>" <?= $esEdicion ? '' : 'required' ?> minlength="8" autocomplete="new-password">
+        <?php if ($errorCampo === 'password'): ?>
+            <div class="invalid-feedback d-block"><?= htmlspecialchars($error, ENT_QUOTES) ?></div>
+        <?php endif; ?>
     </div>
 
     <div class="col-12">

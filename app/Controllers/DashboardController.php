@@ -73,10 +73,11 @@ final class DashboardController
 
     /**
      * Checklist de arranque, solo para quien puede configurar la institución
-     * (rector/secretario/superusuario con institución) y solo mientras esa
-     * institución todavía no tiene ningún bien registrado — una vez que ya se
-     * usa el sistema con normalidad, esta guía deja de ser relevante y no
-     * vuelve a mostrarse.
+     * (rector/secretario/superusuario con institución). Se muestra expandida
+     * mientras la institución todavía no tiene ningún bien registrado; en cuanto
+     * ya tiene alguno, queda colapsada (no vuelve a interrumpir) pero sigue
+     * disponible con un clic — antes desaparecía del todo y no había forma de
+     * volver a consultarla.
      */
     private function primerosPasos(): ?array
     {
@@ -90,16 +91,9 @@ final class DashboardController
             return null;
         }
 
-        $totalBienes = Bien::contarListado($institucionId);
-        if ($totalBienes > 0) {
-            return null;
-        }
-
-        $totalEspacios = Espacio::contarListado($institucionId);
-
         return [
-            'totalEspacios' => $totalEspacios,
-            'totalBienes' => $totalBienes,
+            'totalEspacios' => Espacio::contarListado($institucionId),
+            'totalBienes' => Bien::contarListado($institucionId),
         ];
     }
 }

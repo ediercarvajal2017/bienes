@@ -118,6 +118,7 @@ final class BienController
             'categorias' => Auth::esSuperusuario() ? [] : Categoria::activas((int) Auth::institucionId()),
             'instituciones' => Auth::esSuperusuario() ? Institucion::listadoParaSelect() : [],
             'error' => Session::pullFlash('error'),
+            'errorCampo' => Session::pullFlash('error_campo'),
             'viejo' => $viejo,
             'hallazgo' => $hallazgo,
         ]);
@@ -172,8 +173,11 @@ final class BienController
         );
         $volverA = '/bienes/crear' . ($hallazgo !== null ? '?hallazgo_id=' . $hallazgo['id'] : '');
 
-        if ($error = $this->validar($datos, null)) {
-            Session::flash('error', $error);
+        if ($resultado = $this->validar($datos, null)) {
+            Session::flash('error', $resultado['mensaje']);
+            if ($resultado['campo'] !== null) {
+                Session::flash('error_campo', $resultado['campo']);
+            }
             Session::flashOld($datos);
             header('Location: ' . Url::to($volverA));
             exit;
@@ -374,6 +378,7 @@ final class BienController
             'espaciosPorSedeDestino' => $espaciosPorSedeDestino,
             'verificacionId' => Verificacion::idValidoParaBien($id, (string) ($_GET['verificacion_id'] ?? '')),
             'error' => Session::pullFlash('error'),
+            'errorCampo' => Session::pullFlash('error_campo'),
             'mensaje' => Session::pullFlash('ok'),
             'viejo' => Session::pullOld(),
         ]);
@@ -390,8 +395,11 @@ final class BienController
         $datos['estado'] = $this->estadoPermitidoDesdeFormulario($bien['estado'], $datos['estado']);
         $this->verificarCsrf($request, "/bienes/{$id}/editar", $datos);
 
-        if ($error = $this->validar($datos, $id)) {
-            Session::flash('error', $error);
+        if ($resultado = $this->validar($datos, $id)) {
+            Session::flash('error', $resultado['mensaje']);
+            if ($resultado['campo'] !== null) {
+                Session::flash('error_campo', $resultado['campo']);
+            }
             Session::flashOld($datos);
             header('Location: ' . Url::to("/bienes/{$id}/editar"));
             exit;
@@ -487,24 +495,33 @@ final class BienController
         return in_array($estadoSolicitado, ['activo', 'en_reparacion'], true) ? $estadoSolicitado : $estadoActual;
     }
 
-    private function validar(array $datos, ?int $exceptId): ?string
+    /**
+     * @return array{campo: ?string, mensaje: string}|null "campo" es el name del input a
+     * resaltar en el formulario (ver BienController::guardar()/actualizar() y
+     * bienes/form.php) — null cuando el error no corresponde a un campo puntual.
+     */
+    private function validar(array $datos, ?int $exceptId): ?array
     {
-        if ($datos['codigo_identificacion'] === '' || $datos['descripcion'] === '') {
-            return 'El código de identificación y la descripción son obligatorios.';
+        if ($datos['codigo_identificacion'] === '') {
+            return ['campo' => 'codigo_identificacion', 'mensaje' => 'El código de identificación es obligatorio.'];
+        }
+
+        if ($datos['descripcion'] === '') {
+            return ['campo' => 'descripcion', 'mensaje' => 'La descripción es obligatoria.'];
         }
 
         if ($datos['fecha_ingreso'] === '' || !strtotime($datos['fecha_ingreso'])) {
-            return 'La fecha de ingreso no es válida.';
+            return ['campo' => 'fecha_ingreso', 'mensaje' => 'La fecha de ingreso no es válida.'];
         }
 
         if (Bien::existeCodigo($datos['institucion_id'], $datos['codigo_identificacion'], $exceptId)) {
-            return 'Ya existe un bien con ese código en la institución.';
+            return ['campo' => 'codigo_identificacion', 'mensaje' => 'Ya existe un bien con ese código en la institución.'];
         }
 
         if ($datos['categoria_id'] !== null) {
             $categoria = Categoria::find((int) $datos['categoria_id']);
             if (!$categoria || (int) $categoria['institucion_id'] !== (int) $datos['institucion_id']) {
-                return 'La categoría seleccionada no pertenece a esta institución.';
+                return ['campo' => 'categoria_id', 'mensaje' => 'La categoría seleccionada no pertenece a esta institución.'];
             }
 
             // Mientras el bien esté en "Sin cartera", el código es obligatoriamente de 10
@@ -513,7 +530,10 @@ final class BienController
             // masiva (validarLote()): ahí el código sigue el formato "{lote}-001", que
             // nunca puede ser de 10 dígitos puros.
             if (Categoria::esProtegida($categoria) && !preg_match('/^[0-9]{10}$/', $datos['codigo_identificacion'])) {
-                return 'El código debe tener exactamente 10 dígitos numéricos para bienes en la categoría "' . Categoria::NOMBRE_CATEGORIA_PROTEGIDA . '".';
+                return [
+                    'campo' => 'codigo_identificacion',
+                    'mensaje' => 'El código debe tener exactamente 10 dígitos numéricos para bienes en la categoría "' . Categoria::NOMBRE_CATEGORIA_PROTEGIDA . '".',
+                ];
             }
         }
 

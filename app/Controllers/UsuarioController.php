@@ -58,6 +58,7 @@ final class UsuarioController
             'instituciones' => Auth::esSuperusuario() ? Institucion::listadoParaSelect(true) : [],
             'familiaSedes' => $this->familiaSedesDelRector(),
             'error' => Session::pullFlash('error'),
+            'errorCampo' => Session::pullFlash('error_campo'),
             'viejo' => Session::pullOld(),
         ]);
     }
@@ -70,8 +71,11 @@ final class UsuarioController
 
         $password = (string) $request->input('password');
 
-        if ($error = $this->validar($datos, $password, null, false)) {
-            Session::flash('error', $error);
+        if ($resultado = $this->validar($datos, $password, null, false)) {
+            Session::flash('error', $resultado['mensaje']);
+            if ($resultado['campo'] !== null) {
+                Session::flash('error_campo', $resultado['campo']);
+            }
             Session::flashOld($datos);
             header('Location: ' . Url::to('/usuarios/crear'));
             exit;
@@ -104,6 +108,7 @@ final class UsuarioController
             'instituciones' => Auth::esSuperusuario() ? $this->institucionesParaFormulario($usuario) : [],
             'familiaSedes' => $this->familiaSedesDelRector(),
             'error' => Session::pullFlash('error'),
+            'errorCampo' => Session::pullFlash('error_campo'),
             'viejo' => Session::pullOld(),
         ]);
     }
@@ -120,8 +125,11 @@ final class UsuarioController
 
         $password = (string) $request->input('password');
 
-        if ($error = $this->validar($datos, $password, $id, true)) {
-            Session::flash('error', $error);
+        if ($resultado = $this->validar($datos, $password, $id, true)) {
+            Session::flash('error', $resultado['mensaje']);
+            if ($resultado['campo'] !== null) {
+                Session::flash('error_campo', $resultado['campo']);
+            }
             Session::flashOld($datos);
             header('Location: ' . Url::to("/usuarios/{$id}/editar"));
             exit;
@@ -262,34 +270,51 @@ final class UsuarioController
         return Institucion::familiaDe((int) Auth::institucionId());
     }
 
-    private function validar(array $datos, string $password, ?int $exceptId, bool $esEdicion): ?string
+    /**
+     * @return array{campo: ?string, mensaje: string}|null "campo" es el name del input a
+     * resaltar en el formulario (ver UsuarioController::guardar()/actualizar() y
+     * usuarios/form.php) — null cuando el error no corresponde a un campo puntual.
+     */
+    private function validar(array $datos, string $password, ?int $exceptId, bool $esEdicion): ?array
     {
-        if ($datos['documento'] === '' || $datos['nombres'] === '' || $datos['apellidos'] === '' || $datos['email'] === '') {
-            return 'Documento, nombres, apellidos y correo son obligatorios.';
+        if ($datos['documento'] === '') {
+            return ['campo' => 'documento', 'mensaje' => 'El documento es obligatorio.'];
+        }
+
+        if ($datos['nombres'] === '') {
+            return ['campo' => 'nombres', 'mensaje' => 'Los nombres son obligatorios.'];
+        }
+
+        if ($datos['apellidos'] === '') {
+            return ['campo' => 'apellidos', 'mensaje' => 'Los apellidos son obligatorios.'];
+        }
+
+        if ($datos['email'] === '') {
+            return ['campo' => 'email', 'mensaje' => 'El correo es obligatorio.'];
         }
 
         if (!filter_var($datos['email'], FILTER_VALIDATE_EMAIL)) {
-            return 'El correo electrónico no es válido.';
+            return ['campo' => 'email', 'mensaje' => 'El correo electrónico no es válido.'];
         }
 
         if (!$esEdicion && strlen($password) < 8) {
-            return 'La contraseña debe tener al menos 8 caracteres.';
+            return ['campo' => 'password', 'mensaje' => 'La contraseña debe tener al menos 8 caracteres.'];
         }
 
         if ($esEdicion && $password !== '' && strlen($password) < 8) {
-            return 'La nueva contraseña debe tener al menos 8 caracteres.';
+            return ['campo' => 'password', 'mensaje' => 'La nueva contraseña debe tener al menos 8 caracteres.'];
         }
 
         if (!$this->rolPermitido($datos['rol_id'])) {
-            return 'No tienes permiso para asignar ese rol.';
+            return ['campo' => 'rol_id', 'mensaje' => 'No tienes permiso para asignar ese rol.'];
         }
 
         if (Usuario::existeDocumento($datos['documento'], $exceptId)) {
-            return 'Ya existe un usuario con ese número de documento.';
+            return ['campo' => 'documento', 'mensaje' => 'Ya existe un usuario con ese número de documento.'];
         }
 
         if (Usuario::existeEmail($datos['email'], $exceptId)) {
-            return 'Ya existe un usuario con ese correo electrónico.';
+            return ['campo' => 'email', 'mensaje' => 'Ya existe un usuario con ese correo electrónico.'];
         }
 
         return null;

@@ -63,11 +63,18 @@ $puedeVer = static function (array $item): bool {
 <?php endif; ?>
 
 <?php if ($primerosPasos !== null): ?>
-    <div class="card mb-4" style="max-width: 640px;">
-        <div class="card-body">
-            <h2 class="h6 mb-1"><i class="bi bi-flag me-1"></i>Primeros pasos</h2>
+    <details class="card mb-4" style="max-width: 640px;"<?= $primerosPasos['totalBienes'] === 0 ? ' open' : '' ?>>
+        <summary class="card-body py-3" style="cursor: pointer;">
+            <span class="h6 mb-0"><i class="bi bi-flag me-1"></i>Primeros pasos</span>
+            <?php if ($primerosPasos['totalBienes'] > 0): ?>
+                <span class="text-muted small">— guía inicial, haz clic para volver a verla</span>
+            <?php endif; ?>
+        </summary>
+        <div class="card-body pt-0">
             <p class="text-muted small mb-3">
-                Tu institución todavía no tiene bienes registrados. Este es el orden recomendado para empezar:
+                <?= $primerosPasos['totalBienes'] === 0
+                    ? 'Tu institución todavía no tiene bienes registrados. Este es el orden recomendado para empezar:'
+                    : 'Referencia rápida del orden recomendado al empezar con una institución nueva:' ?>
             </p>
             <ol class="list-unstyled mb-0">
                 <li class="d-flex align-items-start gap-2 mb-2">
@@ -89,12 +96,18 @@ $puedeVer = static function (array $item): bool {
                     </div>
                 </li>
                 <li class="d-flex align-items-start gap-2 mb-2">
-                    <i class="bi bi-circle text-muted mt-1"></i>
+                    <?php if ($primerosPasos['totalBienes'] > 0): ?>
+                        <i class="bi bi-check-circle-fill text-success mt-1"></i>
+                    <?php else: ?>
+                        <i class="bi bi-circle text-muted mt-1"></i>
+                    <?php endif; ?>
                     <div>
                         <div class="fw-semibold small">2. Registra tus bienes</div>
                         <div class="text-muted small">
                             Muebles, equipos, tecnología...
-                            <?php if (Auth::esSuperusuario() || Auth::tienePermiso('bienes.crear')): ?>
+                            <?php if ($primerosPasos['totalBienes'] > 0): ?>
+                                (<?= (int) $primerosPasos['totalBienes'] ?> ya registrado<?= $primerosPasos['totalBienes'] === 1 ? '' : 's' ?>)
+                            <?php elseif (Auth::esSuperusuario() || Auth::tienePermiso('bienes.crear')): ?>
                                 — <a href="<?= Url::to('/bienes/crear') ?>">Registrar bien</a>
                             <?php endif; ?>
                         </div>
@@ -109,7 +122,7 @@ $puedeVer = static function (array $item): bool {
                 </li>
             </ol>
         </div>
-    </div>
+    </details>
 <?php endif; ?>
 
 <div class="row g-3" style="max-width: 980px;">

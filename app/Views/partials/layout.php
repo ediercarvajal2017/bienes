@@ -95,7 +95,15 @@ foreach ($gruposBreadcrumb as $g) {
     }
     $institucionesFiltro = Auth::esSuperusuario() ? Institucion::listadoParaSelect() : [];
     ?>
+    <form method="get" action="<?= Url::to('/buscar') ?>" class="d-none d-lg-block ms-3" style="width: 220px;">
+        <label for="buscadorGlobal" class="visually-hidden">Buscar bienes, espacios o usuarios</label>
+        <input type="search" id="buscadorGlobal" name="q" class="form-control form-control-sm"
+               placeholder="Buscar en todo SIGEBI...">
+    </form>
     <div class="ms-auto d-flex align-items-center gap-2 gap-sm-3">
+        <a href="<?= Url::to('/buscar') ?>" class="theme-toggle d-lg-none" aria-label="Buscar" title="Buscar">
+            <i class="bi bi-search"></i>
+        </a>
         <div class="usuario-navbar d-none d-md-flex align-items-center gap-2">
             <span class="usuario-navbar-avatar" aria-hidden="true"><?= htmlspecialchars($inicialesUsuario, ENT_QUOTES) ?></span>
             <div class="usuario-navbar-info">
@@ -160,6 +168,7 @@ foreach ($gruposBreadcrumb as $g) {
         ?>
         <nav class="nav flex-column">
             <a class="nav-link<?= $esActiva('/dashboard') ?>" href="<?= Url::to('/dashboard') ?>"><i class="bi bi-grid-1x2 me-2"></i>Panel principal</a>
+            <a class="nav-link<?= $esActiva('/buscar') ?>" href="<?= Url::to('/buscar') ?>"><i class="bi bi-search me-2"></i>Buscar</a>
 
             <details class="nav-grupo"<?= $grupoAbierto(['/bienes', '/espacios', '/asignaciones', '/reintegros', '/escanear']) ?>>
                 <summary class="nav-grupo-titulo">Operación diaria<i class="bi bi-chevron-right nav-grupo-chevron"></i></summary>

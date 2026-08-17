@@ -17,7 +17,9 @@ $bienEsSinCartera = $esEdicion && ($bien['categoria_nombre'] ?? null) === Catego
 $viejo ??= [];
 $verificacionId ??= null;
 $hallazgo ??= null;
+$errorCampo ??= null;
 $v = static fn (string $campo, mixed $porDefecto = '') => $viejo[$campo] ?? $bien[$campo] ?? $porDefecto;
+$invalido = static fn (string $campo) => $errorCampo === $campo ? ' is-invalid' : '';
 ?>
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
     <h1 class="h4 mb-0"><?= $esEdicion ? 'Editar bien' : 'Registrar bien' ?></h1>
@@ -87,15 +89,17 @@ $v = static fn (string $campo, mixed $porDefecto = '') => $viejo[$campo] ?? $bie
 
     <div class="col-md-4">
         <label class="form-label small requerido" for="codigoIdentificacion">Código de identificación</label>
-        <input type="text" name="codigo_identificacion" id="codigoIdentificacion" class="form-control" required autocomplete="off" <?= $puedeEditar ? '' : 'disabled' ?>
+        <input type="text" name="codigo_identificacion" id="codigoIdentificacion" class="form-control<?= $invalido('codigo_identificacion') ?>" required autocomplete="off" <?= $puedeEditar ? '' : 'disabled' ?>
                value="<?= htmlspecialchars($v('codigo_identificacion'), ENT_QUOTES) ?>">
-        <?php if (!$esEdicion): ?>
+        <?php if ($errorCampo === 'codigo_identificacion'): ?>
+            <div class="invalid-feedback d-block"><?= htmlspecialchars($error, ENT_QUOTES) ?></div>
+        <?php elseif (!$esEdicion): ?>
             <div class="form-text">Si eliges la categoría "Sin cartera", se sugiere el siguiente código automáticamente (puedes cambiarlo).</div>
         <?php endif; ?>
     </div>
     <div class="col-md-4">
         <label class="form-label small" for="categoriaBien">Categoría</label>
-        <select name="categoria_id" id="categoriaBien" class="form-select selector-buscable" <?= $puedeEditar ? '' : 'disabled' ?>>
+        <select name="categoria_id" id="categoriaBien" class="form-select selector-buscable<?= $invalido('categoria_id') ?>" <?= $puedeEditar ? '' : 'disabled' ?>>
             <option value="">-- Selecciona --</option>
             <?php foreach ($categorias as $c): ?>
                 <option value="<?= $c['id'] ?>" <?= (int) $v('categoria_id', 0) === (int) $c['id'] ? 'selected' : '' ?>>
@@ -103,6 +107,9 @@ $v = static fn (string $campo, mixed $porDefecto = '') => $viejo[$campo] ?? $bie
                 </option>
             <?php endforeach; ?>
         </select>
+        <?php if ($errorCampo === 'categoria_id'): ?>
+            <div class="invalid-feedback d-block"><?= htmlspecialchars($error, ENT_QUOTES) ?></div>
+        <?php endif; ?>
     </div>
     <div class="col-md-4">
         <label class="form-label small">Marca (si aplica)</label>
@@ -112,15 +119,21 @@ $v = static fn (string $campo, mixed $porDefecto = '') => $viejo[$campo] ?? $bie
 
     <div class="col-12">
         <label class="form-label small requerido">Descripción</label>
-        <input type="text" name="descripcion" class="form-control" required <?= $puedeEditar ? '' : 'disabled' ?>
+        <input type="text" name="descripcion" class="form-control<?= $invalido('descripcion') ?>" required <?= $puedeEditar ? '' : 'disabled' ?>
                placeholder="Ej. Silla plástica azul, Proyector Epson X200..."
                value="<?= htmlspecialchars($v('descripcion'), ENT_QUOTES) ?>">
+        <?php if ($errorCampo === 'descripcion'): ?>
+            <div class="invalid-feedback d-block"><?= htmlspecialchars($error, ENT_QUOTES) ?></div>
+        <?php endif; ?>
     </div>
 
     <div class="col-md-4">
         <label class="form-label small requerido">Fecha de ingreso</label>
-        <input type="date" name="fecha_ingreso" class="form-control" required <?= $puedeEditar ? '' : 'disabled' ?>
+        <input type="date" name="fecha_ingreso" class="form-control<?= $invalido('fecha_ingreso') ?>" required <?= $puedeEditar ? '' : 'disabled' ?>
                value="<?= htmlspecialchars((string) $v('fecha_ingreso', date('Y-m-d')), ENT_QUOTES) ?>">
+        <?php if ($errorCampo === 'fecha_ingreso'): ?>
+            <div class="invalid-feedback d-block"><?= htmlspecialchars($error, ENT_QUOTES) ?></div>
+        <?php endif; ?>
     </div>
     <div class="col-md-4">
         <label class="form-label small">Valor</label>

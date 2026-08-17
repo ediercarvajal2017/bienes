@@ -28,6 +28,7 @@ use App\Controllers\AuthController;
 use App\Controllers\BajaController;
 use App\Controllers\BienController;
 use App\Controllers\BienFotoCargaMasivaController;
+use App\Controllers\BuscarController;
 use App\Controllers\CargaMasivaController;
 use App\Controllers\CargoController;
 use App\Controllers\CarteraController;
@@ -79,6 +80,11 @@ $router->get('/olvide-correo', [PasswordController::class, 'formularioOlvideCorr
 $router->post('/olvide-correo', [PasswordController::class, 'buscarCorreo']);
 
 $router->get('/dashboard', [DashboardController::class, 'index'], [
+    AuthMiddleware::class,
+    InstitucionScopeMiddleware::class,
+]);
+
+$router->get('/buscar', [BuscarController::class, 'index'], [
     AuthMiddleware::class,
     InstitucionScopeMiddleware::class,
 ]);
