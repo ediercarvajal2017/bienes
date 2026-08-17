@@ -73,7 +73,7 @@ $v = static fn (string $campo, mixed $porDefecto = '') => $viejo[$campo] ?? $esp
 
     <?php if ($puedeEditar): ?>
         <div class="col-12">
-            <button type="submit" class="btn btn-primary"><?= $esEdicion ? 'Guardar cambios' : 'Crear espacio' ?></button>
+            <button type="submit" class="btn btn-primary"><?= $esEdicion ? 'Guardar cambios' : 'Registrar espacio' ?></button>
         </div>
     <?php endif; ?>
 </form>

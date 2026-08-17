@@ -138,4 +138,6 @@
         </div>
     </details>
 
+    <?php require __DIR__ . '/_glosario.php'; ?>
+
 </div>

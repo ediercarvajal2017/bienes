@@ -19,7 +19,7 @@ test('crear, editar, desactivar y eliminar un usuario', async ({ page }) => {
     // El select de institución no tiene opción en blanco -queda la primera por defecto-.
     await page.locator('input[name="password"]').fill('ContraseñaPrueba123');
 
-    await page.getByRole('button', { name: 'Crear usuario' }).click();
+    await page.getByRole('button', { name: 'Registrar usuario' }).click();
 
     await expect(page).toHaveURL(/\/usuarios$/);
     let fila = page.locator('tr', { hasText: email });

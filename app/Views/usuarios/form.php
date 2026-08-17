@@ -127,6 +127,6 @@ $invalido = static fn (string $campo) => $errorCampo === $campo ? ' is-invalid' 
     </div>
 
     <div class="col-12">
-        <button type="submit" class="btn btn-primary"><?= $esEdicion ? 'Guardar cambios' : 'Crear usuario' ?></button>
+        <button type="submit" class="btn btn-primary"><?= $esEdicion ? 'Guardar cambios' : 'Registrar usuario' ?></button>
     </div>
 </form>

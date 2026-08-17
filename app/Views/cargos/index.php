@@ -17,7 +17,7 @@ use App\Core\Url;
     <label class="form-label small requerido" for="nombreCargo">Nombre del cargo</label>
     <div class="d-flex gap-2">
         <input type="text" id="nombreCargo" name="nombre" class="form-control" placeholder="Ej. Docente" required>
-        <button type="submit" class="btn btn-primary text-nowrap">Agregar</button>
+        <button type="submit" class="btn btn-primary text-nowrap">Registrar</button>
     </div>
 </form>
 

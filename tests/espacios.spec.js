@@ -13,7 +13,7 @@ test('crear, editar y eliminar un espacio', async ({ page }) => {
     // El select de institución no tiene opción en blanco -queda la primera seleccionada
     // por defecto- así que solo hace falta elegir el responsable.
     await seleccionarTomSelect(page, 'responsables', 'Edier');
-    await page.getByRole('button', { name: 'Crear espacio' }).click();
+    await page.getByRole('button', { name: 'Registrar espacio' }).click();
 
     await expect(page).toHaveURL(/\/espacios$/);
     let fila = page.locator('tr', { hasText: nombre });

@@ -45,7 +45,7 @@ use App\Models\Categoria;
         <label class="form-label small requerido" for="nombreCategoria">Nombre de la categoría</label>
         <div class="d-flex gap-2">
             <input type="text" id="nombreCategoria" name="nombre" class="form-control" placeholder="Ej. Sillas" required>
-            <button type="submit" class="btn btn-primary text-nowrap">Agregar</button>
+            <button type="submit" class="btn btn-primary text-nowrap">Registrar</button>
         </div>
     </form>
 

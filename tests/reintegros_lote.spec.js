@@ -19,7 +19,7 @@ test('reintegrar un bien y agruparlo en un lote', async ({ page }) => {
     await page.locator('input[name="codigo"]').fill(`PWTL-${sufijo}`);
     await page.locator('input[name="nombre"]').fill(nombreEspacio);
     await seleccionarTomSelect(page, 'responsables', 'Edier');
-    await page.getByRole('button', { name: 'Crear espacio' }).click();
+    await page.getByRole('button', { name: 'Registrar espacio' }).click();
     await expect(page).toHaveURL(/\/espacios$/);
 
     await page.goto('bienes/crear');

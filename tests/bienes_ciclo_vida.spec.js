@@ -19,7 +19,7 @@ test('un bien recorre crear → asignar → trasladar → reintegrar', async ({ 
         await page.locator('input[name="codigo"]').fill(codigo);
         await page.locator('input[name="nombre"]').fill(nombre);
         await seleccionarTomSelect(page, 'responsables', 'Edier');
-        await page.getByRole('button', { name: 'Crear espacio' }).click();
+        await page.getByRole('button', { name: 'Registrar espacio' }).click();
         await expect(page).toHaveURL(/\/espacios$/);
     }
 
