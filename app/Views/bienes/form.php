@@ -311,6 +311,54 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 });
 <?php endif; ?>
+
+<?php if ($esEdicion): ?>
+// Al editar, cambiar la categoría a "Sin cartera" descarta el código actual (que pudo
+// venir de otro esquema, ej. TEC-2024-045) y el servidor sugiere uno nuevo de 10 dígitos.
+// Se avisa antes de aplicarlo porque, a diferencia de crear, aquí sí había un código
+// previo con significado (posiblemente ya impreso en un QR físico).
+document.addEventListener('DOMContentLoaded', function () {
+    const categoriaSelect = document.getElementById('categoriaBien');
+    const codigoInput = document.getElementById('codigoIdentificacion');
+    if (!categoriaSelect || !codigoInput) { return; }
+
+    const tomCategoria = categoriaSelect.tomselect;
+    let categoriaAnterior = tomCategoria ? tomCategoria.getValue() : categoriaSelect.value;
+
+    categoriaSelect.addEventListener('change', function () {
+        const tom = categoriaSelect.tomselect;
+        const categoriaId = tom ? tom.getValue() : categoriaSelect.value;
+        if (!categoriaId) { categoriaAnterior = categoriaId; return; }
+
+        fetch(<?= json_encode(Url::to('/bienes/siguiente-codigo-sin-cartera')) ?> + '?categoria_id=' + encodeURIComponent(categoriaId))
+            .then(function (respuesta) { return respuesta.json(); })
+            .then(function (datos) {
+                if (!datos.codigo) {
+                    // No es "Sin cartera": no hay nada que confirmar.
+                    categoriaAnterior = categoriaId;
+                    return;
+                }
+
+                const codigoActual = codigoInput.value.trim();
+                const aceptar = confirm(
+                    'Vas a cambiar la categoría a "Sin cartera".\n\n' +
+                    'El código actual (' + (codigoActual || 'sin código') + ') se perderá y se asignará ' +
+                    'uno nuevo automáticamente: ' + datos.codigo + '.\n\n' +
+                    '¿Deseas continuar?'
+                );
+
+                if (aceptar) {
+                    codigoInput.value = datos.codigo;
+                    categoriaAnterior = categoriaId;
+                } else if (tom) {
+                    tom.setValue(categoriaAnterior, true);
+                } else {
+                    categoriaSelect.value = categoriaAnterior;
+                }
+            });
+    });
+});
+<?php endif; ?>
 </script>
 <?php endif; ?>
 
