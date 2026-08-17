@@ -40,6 +40,18 @@ final class CargaMasivaService
 
         $ultimaFila = $sheet->getHighestDataRow();
 
+        // Una sola consulta con todos los códigos del archivo, en vez de una por fila --
+        // con archivos de cientos/miles de filas, esto evita esa misma cantidad de
+        // viajes a la base de datos solo para saber si cada código ya existe.
+        $codigosDelArchivo = [];
+        for ($numeroFila = 2; $numeroFila <= $ultimaFila; $numeroFila++) {
+            $codigo = trim((string) $sheet->getCell("A{$numeroFila}")->getValue());
+            if ($codigo !== '') {
+                $codigosDelArchivo[] = $codigo;
+            }
+        }
+        $existentesPorCodigo = Bien::buscarPorCodigosInstitucion($institucionId, $codigosDelArchivo);
+
         for ($numeroFila = 2; $numeroFila <= $ultimaFila; $numeroFila++) {
             $codigo = trim((string) $sheet->getCell("A{$numeroFila}")->getValue());
             $descripcion = trim((string) $sheet->getCell("B{$numeroFila}")->getValue());
@@ -111,7 +123,7 @@ final class CargaMasivaService
                 }
             }
 
-            $existente = Bien::buscarPorCodigoInstitucion($institucionId, $codigo);
+            $existente = $existentesPorCodigo[$codigo] ?? null;
 
             if ($fecha === null) {
                 $fecha = $existente ? $existente['fecha_ingreso'] : date('Y-m-d');
@@ -132,6 +144,10 @@ final class CargaMasivaService
                 'espacio_id' => $espacioId,
                 'ubicacion_texto' => $ubicacion !== '' ? $ubicacion : null,
                 'categoria_id' => $categoriaId,
+                // Se llevan tal cual del bien existente (si lo hay) para que aplicar() no
+                // tenga que volver a leerlo de la base de datos solo por esto.
+                'tiene_factura' => $existente['tiene_factura'] ?? null,
+                'estado' => $existente['estado'] ?? null,
             ];
 
             if (!$existente) {
@@ -189,7 +205,6 @@ final class CargaMasivaService
                 }
 
                 if ($fila['tipo'] === 'modificado') {
-                    $bien = Bien::find($fila['bien_id']);
                     Bien::update($fila['bien_id'], [
                         'codigo_identificacion' => $fila['datos']['codigo_identificacion'],
                         'descripcion' => $fila['datos']['descripcion'],
@@ -197,8 +212,8 @@ final class CargaMasivaService
                         'categoria_id' => $fila['datos']['categoria_id'],
                         'fecha_ingreso' => $fila['datos']['fecha_ingreso'],
                         'valor' => $fila['datos']['valor'],
-                        'tiene_factura' => $bien['tiene_factura'],
-                        'estado' => $bien['estado'],
+                        'tiene_factura' => $fila['datos']['tiene_factura'],
+                        'estado' => $fila['datos']['estado'],
                     ]);
 
                     if ($fila['datos']['espacio_id'] !== null && isset($fila['cambios']['Ubicación'])) {

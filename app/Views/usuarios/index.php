@@ -57,7 +57,7 @@ use App\Core\View;
                     <?php if (!empty($u['foto_path'])): ?>
                         <img src="<?= Url::to('/archivos/' . $u['foto_path']) ?>"
                              alt="Foto de <?= htmlspecialchars($u['nombres'] . ' ' . $u['apellidos'], ENT_QUOTES) ?>"
-                             class="rounded-circle" style="width:32px;height:32px;object-fit:cover;">
+                             class="rounded-circle" style="width:32px;height:32px;object-fit:cover;" loading="lazy">
                     <?php else: ?>
                         <span class="rounded-circle bg-light d-inline-flex align-items-center justify-content-center text-muted" style="width:32px;height:32px;">
                             <i class="bi bi-person"></i>

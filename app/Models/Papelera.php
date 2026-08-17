@@ -26,11 +26,6 @@ final class Papelera
         'cartera_envio' => 'cartera_envios',
     ];
 
-    public static function tiposValidos(): array
-    {
-        return array_keys(self::TIPOS);
-    }
-
     public static function listar(): array
     {
         $pdo = Database::connection();
@@ -106,7 +101,14 @@ final class Papelera
 
     public static function contar(): int
     {
-        return count(self::listar());
+        $pdo = Database::connection();
+        $total = 0;
+
+        foreach (self::TIPOS as $tabla) {
+            $total += (int) $pdo->query("SELECT COUNT(*) FROM {$tabla} WHERE eliminado_en IS NOT NULL")->fetchColumn();
+        }
+
+        return $total;
     }
 
     /**

@@ -354,31 +354,41 @@ final class BienController
      */
     private function crearBienesEnLote(array $datos): ?array
     {
+        $codigos = [];
+        for ($i = 1; $i <= $datos['cantidad']; $i++) {
+            $codigos[] = $datos['lote'] . '-' . str_pad((string) $i, 3, '0', STR_PAD_LEFT);
+        }
+
         $pdo = Database::connection();
         $pdo->beginTransaction();
         try {
-            $ids = [];
-            for ($i = 1; $i <= $datos['cantidad']; $i++) {
-                $codigo = $datos['lote'] . '-' . str_pad((string) $i, 3, '0', STR_PAD_LEFT);
-
-                if (Bien::existeCodigo($datos['institucion_id'], $codigo)) {
-                    throw new \RuntimeException("El código {$codigo} ya existe.");
-                }
-
-                $ids[] = Bien::create([
-                    'institucion_id' => $datos['institucion_id'],
-                    'codigo_identificacion' => $codigo,
-                    'descripcion' => $datos['descripcion'],
-                    'lote' => $datos['lote'],
-                    'marca' => $datos['marca'],
-                    'categoria_id' => $datos['categoria_id'],
-                    'fecha_ingreso' => $datos['fecha_ingreso'],
-                    'valor' => $datos['valor'],
-                    'tiene_factura' => 0,
-                    'estado' => 'activo',
-                    'created_by' => Auth::id(),
-                ]);
+            // Un solo SELECT para los hasta 500 códigos del lote, y un solo INSERT
+            // multi-fila para crearlos -- antes eran hasta 1000 consultas secuenciales
+            // (un SELECT + un INSERT por unidad).
+            $choque = Bien::existeAlgunCodigo($datos['institucion_id'], $codigos);
+            if ($choque !== null) {
+                throw new \RuntimeException("El código {$choque} ya existe.");
             }
+
+            Bien::crearVarios(
+                $datos['institucion_id'],
+                $datos['lote'],
+                $codigos,
+                $datos['descripcion'],
+                $datos['marca'],
+                $datos['categoria_id'],
+                $datos['fecha_ingreso'],
+                (float) $datos['valor'],
+                Auth::id()
+            );
+
+            // Se leen de vuelta en vez de asumir ids consecutivos desde lastInsertId():
+            // el código de lote ya se validó como único antes de llegar aquí (existeLote()
+            // en validarLote()), así que esta consulta solo puede traer los que se acaban
+            // de crear.
+            $stmt = $pdo->prepare('SELECT id FROM bienes WHERE institucion_id = ? AND lote = ? ORDER BY id');
+            $stmt->execute([$datos['institucion_id'], $datos['lote']]);
+            $ids = array_map('intval', $stmt->fetchAll(\PDO::FETCH_COLUMN));
 
             $pdo->commit();
 

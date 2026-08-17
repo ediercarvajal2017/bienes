@@ -450,6 +450,56 @@ final class Bien
         return (int) Database::connection()->lastInsertId();
     }
 
+    /**
+     * Crea varios bienes con un único INSERT multi-fila, en vez de uno por unidad (usado
+     * por BienController::crearBienesEnLote() para el alta masiva de bienes idénticos,
+     * hasta 500 por lote). $codigos ya viene validado por el llamador (existeAlgunCodigo()
+     * antes de esto) -- aquí no se vuelve a comprobar.
+     *
+     * @param string[] $codigos
+     */
+    public static function crearVarios(int $institucionId, string $lote, array $codigos, string $descripcion, ?string $marca, ?int $categoriaId, string $fechaIngreso, float $valor, ?int $creadoPor): void
+    {
+        if ($codigos === []) {
+            return;
+        }
+
+        $filas = [];
+        $params = [];
+        foreach ($codigos as $codigo) {
+            $filas[] = '(?, ?, ?, ?, ?, ?, ?, ?, 0, "activo", ?, ?)';
+            array_push($params, $institucionId, $codigo, $descripcion, $lote, $marca, $categoriaId, $fechaIngreso, $valor, self::generarUuid(), $creadoPor);
+        }
+
+        $sql = 'INSERT INTO bienes (institucion_id, codigo_identificacion, descripcion, lote, marca, categoria_id, fecha_ingreso, valor, tiene_factura, estado, qr_token, created_by)
+                VALUES ' . implode(', ', $filas);
+
+        Database::connection()->prepare($sql)->execute($params);
+    }
+
+    /**
+     * Igual que existeCodigo(), pero comprueba una lista completa de códigos en una sola
+     * consulta -- devuelve el primero que ya exista, o null si ninguno choca.
+     *
+     * @param string[] $codigos
+     */
+    public static function existeAlgunCodigo(int $institucionId, array $codigos): ?string
+    {
+        if ($codigos === []) {
+            return null;
+        }
+
+        $marcadores = implode(',', array_fill(0, count($codigos), '?'));
+        $stmt = Database::connection()->prepare(
+            "SELECT codigo_identificacion FROM bienes WHERE institucion_id = ? AND codigo_identificacion IN ({$marcadores}) LIMIT 1"
+        );
+        $stmt->execute([$institucionId, ...$codigos]);
+
+        $resultado = $stmt->fetchColumn();
+
+        return is_string($resultado) ? $resultado : null;
+    }
+
     public static function update(int $id, array $datos): void
     {
         $stmt = Database::connection()->prepare(
@@ -514,6 +564,35 @@ final class Bien
         $stmt->execute([$institucionId, $codigo]);
 
         return $stmt->fetch() ?: null;
+    }
+
+    /**
+     * Igual que buscarPorCodigoInstitucion(), pero para varios códigos a la vez (usado por
+     * CargaMasivaService::analizar() para no hacer una consulta por fila del Excel).
+     *
+     * @param string[] $codigos
+     * @return array<string, array<string, mixed>> indexado por codigo_identificacion
+     */
+    public static function buscarPorCodigosInstitucion(int $institucionId, array $codigos): array
+    {
+        if ($codigos === []) {
+            return [];
+        }
+
+        $codigos = array_values(array_unique($codigos));
+        $marcadores = implode(',', array_fill(0, count($codigos), '?'));
+
+        $stmt = Database::connection()->prepare(
+            "SELECT * FROM bienes WHERE institucion_id = ? AND codigo_identificacion IN ({$marcadores})"
+        );
+        $stmt->execute([$institucionId, ...$codigos]);
+
+        $resultado = [];
+        foreach ($stmt->fetchAll() as $fila) {
+            $resultado[$fila['codigo_identificacion']] = $fila;
+        }
+
+        return $resultado;
     }
 
     public static function pendientesDeReintegro(

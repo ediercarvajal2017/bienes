@@ -203,7 +203,7 @@ $algunFiltroActivo = $busqueda !== '' || $categoriaId !== null || $estado !== nu
                              data-lightbox-src="<?= Url::to('/archivos/' . $b['foto_path']) ?>"
                              alt="Foto de <?= htmlspecialchars($b['descripcion'], ENT_QUOTES) ?>"
                              style="width:36px;height:36px;object-fit:cover;border-radius:4px;cursor:zoom-in;"
-                             title="Ver foto en grande">
+                             title="Ver foto en grande" loading="lazy">
                     <?php else: ?>
                         <span class="d-inline-flex align-items-center justify-content-center bg-light text-muted" style="width:36px;height:36px;border-radius:4px;">
                             <i class="bi bi-box-seam"></i>

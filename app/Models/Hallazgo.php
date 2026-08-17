@@ -38,14 +38,6 @@ final class Hallazgo
         return $stmt->fetchAll();
     }
 
-    public static function contarPendientesDeJornada(int $jornadaId): int
-    {
-        $stmt = Database::connection()->prepare('SELECT COUNT(*) FROM hallazgos_verificacion WHERE jornada_id = ? AND estado = "pendiente"');
-        $stmt->execute([$jornadaId]);
-
-        return (int) $stmt->fetchColumn();
-    }
-
     /** Para el indicador del panel principal: hallazgos pendientes en cualquier jornada de la institución. */
     public static function contarPendientesInstitucion(?int $institucionId = null): int
     {

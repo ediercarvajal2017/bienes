@@ -10,7 +10,7 @@ parameters:
         # en su lugar. Los stubs de PDO no reflejan esa garantia, por eso PHPStan sigue
         # viendo PDOStatement|false y marcando cada fetchAll() como si pudiera fallar.
         -
-            message: '#Cannot call method fetchAll\(\) on PDOStatement\|false#'
+            message: '#Cannot call method (fetchAll|fetchColumn)\(\) on PDOStatement\|false#'
             identifier: method.nonObject
     paths:
         - app/Controllers
