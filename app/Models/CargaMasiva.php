@@ -55,10 +55,16 @@ final class CargaMasiva
         }
 
         if ($busqueda !== null && $busqueda !== '') {
+            // COLLATE explícito en cada comparación: sin esto, comparar los literales
+            // 'aplicada'/'pendiente' contra el parámetro puede chocar con la colación de
+            // usuarios/cargas_masivas si difieren entre sí (error de MySQL 1267 "Illegal
+            // mix of collations"), algo que puede pasar aunque en el código nunca se haya
+            // fijado una colación distinta a propósito.
             $termino = '%' . $busqueda . '%';
-            $condiciones[] = "(u.nombres LIKE ? OR u.apellidos LIKE ?
-                OR DATE_FORMAT(cm.created_at, '%Y-%m-%d %H:%i') LIKE ?
-                OR (cm.aplicada = 1 AND 'aplicada' LIKE ?) OR (cm.aplicada = 0 AND 'pendiente' LIKE ?))";
+            $condiciones[] = "(u.nombres LIKE ? COLLATE utf8mb4_unicode_ci OR u.apellidos LIKE ? COLLATE utf8mb4_unicode_ci
+                OR DATE_FORMAT(cm.created_at, '%Y-%m-%d %H:%i') LIKE ? COLLATE utf8mb4_unicode_ci
+                OR (cm.aplicada = 1 AND 'aplicada' LIKE ? COLLATE utf8mb4_unicode_ci)
+                OR (cm.aplicada = 0 AND 'pendiente' LIKE ? COLLATE utf8mb4_unicode_ci))";
             array_push($params, $termino, $termino, $termino, $termino, $termino);
         }
 
