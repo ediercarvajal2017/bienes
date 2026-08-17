@@ -324,15 +324,25 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const tomCategoria = categoriaSelect.tomselect;
     let categoriaAnterior = tomCategoria ? tomCategoria.getValue() : categoriaSelect.value;
+    // Tom Select dispara "change" en el <select> oculto DOS VECES por cada elección real
+    // (una vez por su propio sync interno, otra por el redisparo manual de
+    // selector-buscable.js, que existe para que otras pantallas con su propio listener de
+    // "change" sigan funcionando). Sin este candado, el fetch de abajo -y el confirm()-
+    // se dispararían dos veces seguidas para la misma elección del usuario.
+    let idEnProceso = null;
 
     categoriaSelect.addEventListener('change', function () {
         const tom = categoriaSelect.tomselect;
         const categoriaId = tom ? tom.getValue() : categoriaSelect.value;
-        if (!categoriaId) { categoriaAnterior = categoriaId; return; }
+        if (!categoriaId) { categoriaAnterior = categoriaId; idEnProceso = null; return; }
+        if (categoriaId === idEnProceso) { return; }
+        idEnProceso = categoriaId;
 
         fetch(<?= json_encode(Url::to('/bienes/siguiente-codigo-sin-cartera')) ?> + '?categoria_id=' + encodeURIComponent(categoriaId))
             .then(function (respuesta) { return respuesta.json(); })
             .then(function (datos) {
+                idEnProceso = null;
+
                 if (!datos.codigo) {
                     // No es "Sin cartera": no hay nada que confirmar.
                     categoriaAnterior = categoriaId;
