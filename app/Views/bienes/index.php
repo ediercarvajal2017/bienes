@@ -201,6 +201,7 @@ $algunFiltroActivo = $busqueda !== '' || $categoriaId !== null || $estado !== nu
                     <?php if (!empty($b['foto_path'])): ?>
                         <img src="<?= Url::to('/archivos/' . $b['foto_path']) ?>"
                              data-lightbox-src="<?= Url::to('/archivos/' . $b['foto_path']) ?>"
+                             alt="Foto de <?= htmlspecialchars($b['descripcion'], ENT_QUOTES) ?>"
                              style="width:36px;height:36px;object-fit:cover;border-radius:4px;cursor:zoom-in;"
                              title="Ver foto en grande">
                     <?php else: ?>

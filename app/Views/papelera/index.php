@@ -28,8 +28,13 @@ $etiquetasTipo = [
 <?php if (empty($elementos)): ?>
     <p class="text-muted">La papelera está vacía.</p>
 <?php else: ?>
-    <div class="table-responsive">
-        <table class="table table-sm bg-white align-middle tabla-cards">
+    <div class="mb-3" style="max-width: 420px;">
+        <input type="search" id="buscadorPapelera" class="form-control form-control-sm"
+               placeholder="Buscar por tipo, elemento, institución o quién lo eliminó...">
+    </div>
+    <p id="papeleraSinResultados" class="text-muted" style="display:none;">Ningún elemento coincide con la búsqueda.</p>
+    <div class="table-responsive" id="envoltorioTablaPapelera">
+        <table class="table table-sm bg-white align-middle tabla-cards" id="tablaPapelera">
             <thead>
             <tr>
                 <th>Tipo</th>
@@ -61,4 +66,25 @@ $etiquetasTipo = [
             </tbody>
         </table>
     </div>
+
+    <script>
+    (function () {
+        const input = document.getElementById('buscadorPapelera');
+        const filas = document.querySelectorAll('#tablaPapelera tbody tr');
+        const sinResultados = document.getElementById('papeleraSinResultados');
+        const envoltorio = document.getElementById('envoltorioTablaPapelera');
+
+        input.addEventListener('input', function () {
+            const valor = input.value.trim().toLowerCase();
+            let visibles = 0;
+            filas.forEach(function (fila) {
+                const coincide = fila.textContent.toLowerCase().includes(valor);
+                fila.style.display = coincide ? '' : 'none';
+                if (coincide) { visibles++; }
+            });
+            sinResultados.style.display = visibles === 0 ? '' : 'none';
+            envoltorio.style.display = visibles === 0 ? 'none' : '';
+        });
+    })();
+    </script>
 <?php endif; ?>

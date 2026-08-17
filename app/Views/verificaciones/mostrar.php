@@ -119,6 +119,7 @@ $tabPorDefecto = !empty($hallazgos) ? 'hallazgos' : 'discrepancia';
                         <?php if (!empty($h['foto_path'])): ?>
                             <img src="<?= Url::to('/archivos/' . $h['foto_path']) ?>"
                                  data-lightbox-src="<?= Url::to('/archivos/' . $h['foto_path']) ?>"
+                                 alt="Foto del hallazgo: <?= htmlspecialchars($h['descripcion'], ENT_QUOTES) ?>"
                                  style="width:36px;height:36px;object-fit:cover;border-radius:4px;cursor:zoom-in;">
                         <?php else: ?>
                             <span class="text-muted small">—</span>

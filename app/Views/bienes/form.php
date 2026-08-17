@@ -181,7 +181,9 @@ $v = static fn (string $campo, mixed $porDefecto = '') => $viejo[$campo] ?? $bie
             ]); ?>
         <?php elseif (!empty($bien['foto_path'])): ?>
             <label class="form-label small d-block">Fotografía del bien</label>
-            <img src="<?= Url::to('/archivos/' . $bien['foto_path']) ?>" class="mb-2 d-block" style="height:72px;border-radius:4px;">
+            <img src="<?= Url::to('/archivos/' . $bien['foto_path']) ?>"
+                 alt="Foto de <?= htmlspecialchars($bien['descripcion'], ENT_QUOTES) ?>"
+                 class="mb-2 d-block" style="height:72px;border-radius:4px;">
         <?php endif; ?>
     </div>
     <div class="col-md-6<?= !empty($bien['tiene_factura']) ? '' : ' d-none' ?>" id="contenedorFactura">

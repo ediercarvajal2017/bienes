@@ -15,7 +15,9 @@ $descripcionSugerida ??= '';
 <div class="card mb-3" style="max-width: 640px;">
     <div class="card-body py-3 d-flex gap-3 align-items-center">
         <?php if (!empty($bien['foto_path'])): ?>
-            <img src="<?= Url::to('/archivos/' . $bien['foto_path']) ?>" style="width:52px;height:52px;object-fit:cover;border-radius:6px;">
+            <img src="<?= Url::to('/archivos/' . $bien['foto_path']) ?>"
+                 alt="Foto de <?= htmlspecialchars($bien['descripcion'], ENT_QUOTES) ?>"
+                 style="width:52px;height:52px;object-fit:cover;border-radius:6px;">
         <?php endif; ?>
         <div>
             <div class="fw-semibold"><?= htmlspecialchars($bien['descripcion'], ENT_QUOTES) ?></div>

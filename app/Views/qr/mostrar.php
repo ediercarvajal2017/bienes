@@ -50,7 +50,9 @@ $qrImpreso = !empty($bien['qr_impreso_en']);
         <?php endif; ?>
 
         <?php if (!empty($bien['foto_path'])): ?>
-            <img src="<?= Url::to('/archivos/' . $bien['foto_path']) ?>" class="d-block w-100 mb-3" style="border-radius:8px; max-height:220px; object-fit:cover;">
+            <img src="<?= Url::to('/archivos/' . $bien['foto_path']) ?>"
+                 alt="Foto de <?= htmlspecialchars($bien['descripcion'], ENT_QUOTES) ?>"
+                 class="d-block w-100 mb-3" style="border-radius:8px; max-height:220px; object-fit:cover;">
         <?php else: ?>
             <div class="d-flex align-items-center justify-content-center bg-light text-muted mb-3" style="height:140px;border-radius:8px;">
                 <i class="bi bi-image" style="font-size:2rem;"></i>

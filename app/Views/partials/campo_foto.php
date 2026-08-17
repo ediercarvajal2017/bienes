@@ -25,7 +25,9 @@ $soloImagen = !str_contains($accept, 'pdf');
     <label class="form-label small d-block<?= $requerido ? ' requerido' : '' ?>"><?= htmlspecialchars($etiqueta ?? 'Fotografía', ENT_QUOTES) ?></label>
 
     <?php if (!empty($fotoActualUrl)): ?>
-        <img src="<?= htmlspecialchars($fotoActualUrl, ENT_QUOTES) ?>" class="mb-2 d-block" style="height:72px;border-radius:4px;object-fit:cover;">
+        <img src="<?= htmlspecialchars($fotoActualUrl, ENT_QUOTES) ?>"
+             alt="<?= htmlspecialchars($etiqueta ?? 'Foto actual', ENT_QUOTES) ?>"
+             class="mb-2 d-block" style="height:72px;border-radius:4px;object-fit:cover;">
     <?php endif; ?>
 
     <div class="d-flex gap-2 flex-wrap align-items-center">

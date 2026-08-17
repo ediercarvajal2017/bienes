@@ -37,13 +37,16 @@ use App\Models\Categoria;
     <p class="text-muted">Selecciona una institución para continuar.</p>
 <?php else: ?>
 
-    <form method="post" action="<?= Url::to('/categorias') ?>" class="d-flex gap-2 mb-4" style="max-width: 560px;">
+    <form method="post" action="<?= Url::to('/categorias') ?>" class="mb-4" style="max-width: 560px;">
         <?= Csrf::field() ?>
         <?php if (Auth::esSuperusuario()): ?>
             <input type="hidden" name="institucion_id" value="<?= $institucionId ?>">
         <?php endif; ?>
-        <input type="text" name="nombre" class="form-control" placeholder="Nombre de la categoría" required>
-        <button type="submit" class="btn btn-primary text-nowrap">Agregar</button>
+        <label class="form-label small requerido" for="nombreCategoria">Nombre de la categoría</label>
+        <div class="d-flex gap-2">
+            <input type="text" id="nombreCategoria" name="nombre" class="form-control" placeholder="Ej. Sillas" required>
+            <button type="submit" class="btn btn-primary text-nowrap">Agregar</button>
+        </div>
     </form>
 
     <div class="table-responsive" style="max-width: 640px;">

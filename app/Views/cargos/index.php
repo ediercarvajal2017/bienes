@@ -12,10 +12,13 @@ use App\Core\Url;
 <?php if (!empty($mensaje)): ?><div class="alert alert-success py-2 small"><?= htmlspecialchars($mensaje, ENT_QUOTES) ?></div><?php endif; ?>
 <?php if (!empty($error)): ?><div class="alert alert-danger py-2 small"><?= htmlspecialchars($error, ENT_QUOTES) ?></div><?php endif; ?>
 
-<form method="post" action="<?= Url::to('/cargos') ?>" class="d-flex gap-2 mb-4" style="max-width: 560px;">
+<form method="post" action="<?= Url::to('/cargos') ?>" class="mb-4" style="max-width: 560px;">
     <?= Csrf::field() ?>
-    <input type="text" name="nombre" class="form-control" placeholder="Nombre del cargo" required>
-    <button type="submit" class="btn btn-primary text-nowrap">Agregar</button>
+    <label class="form-label small requerido" for="nombreCargo">Nombre del cargo</label>
+    <div class="d-flex gap-2">
+        <input type="text" id="nombreCargo" name="nombre" class="form-control" placeholder="Ej. Docente" required>
+        <button type="submit" class="btn btn-primary text-nowrap">Agregar</button>
+    </div>
 </form>
 
 <div class="table-responsive" style="max-width: 640px;">
