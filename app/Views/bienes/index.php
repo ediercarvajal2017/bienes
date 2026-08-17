@@ -22,7 +22,8 @@ $etiquetasEstado = [
 $puedeQr = Auth::rol() !== 'docente' && (Auth::esSuperusuario() || Auth::tienePermiso('bienes.ver'));
 $puedeCrear = Auth::esSuperusuario() || Auth::tienePermiso('bienes.crear');
 $puedeCargaMasiva = Auth::esSuperusuario() || Auth::tienePermiso('cargas.masivas');
-$mostrarAccionesMasivas = $puedeQr || $puedeCrear || $puedeCargaMasiva;
+$puedeAsignar = Auth::esSuperusuario() || Auth::tienePermiso('asignaciones.crear');
+$mostrarAccionesMasivas = $puedeQr || $puedeCrear || $puedeCargaMasiva || $puedeAsignar;
 
 $algunFiltroActivo = $busqueda !== '' || $categoriaId !== null || $estado !== null || $espacioId !== null;
 ?>
@@ -36,6 +37,11 @@ $algunFiltroActivo = $busqueda !== '' || $categoriaId !== null || $estado !== nu
                     <i class="bi bi-stack me-1"></i>Acciones masivas
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="botonAccionesMasivas">
+                    <?php if ($puedeAsignar): ?>
+                        <li><a class="dropdown-item" href="<?= Url::to('/asignaciones') ?>">
+                            <i class="bi bi-person-check me-1"></i>Asignar bienes
+                        </a></li>
+                    <?php endif; ?>
                     <?php if ($puedeQr): ?>
                         <li><a class="dropdown-item" href="<?= Url::to('/bienes/qr-masivo') ?>">
                             <i class="bi bi-qr-code me-1"></i>Generar QR masivo
