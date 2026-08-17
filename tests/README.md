@@ -66,6 +66,7 @@ corriendo una vez por archivo en vez de una vez para toda la suite).
 | `verificaciones.spec.js` | Crea una jornada de verificación, verifica un bien escaneando su ficha pública, y cierra la jornada. |
 | `reportes.spec.js` | La pantalla carga y descarga de verdad el reporte de cartera de bienes (.xlsx). |
 | `papelera.spec.js` | `/papelera` y `/auditoria` cargan con sus elementos esperados para un superusuario. |
+| `casos_limite.spec.js` | Regresiones puntuales de una auditoría de bugs (2026-08-17): valor de un bien limitado a 10 dígitos (individual y en lote), dos registros con el mismo código casi simultáneos sin dar 500, alta masiva conectada a la Bodega de impresión de QR, borde rojo de un `<select>` inválido convertido en Tom Select, búsqueda en carga masiva con palabras "pendiente"/"aplicada" (regresión de un error de colación de MySQL), buscador global, y que "Primeros pasos" no rompa con una institución que ya tiene bienes. |
 
 `tests/helpers/tomSelect.js` tiene el helper para interactuar con los `<select>`
 que SIGEBI convierte en Tom Select (buscador con menú) — reutilízalo en cualquier
