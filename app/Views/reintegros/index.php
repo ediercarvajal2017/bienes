@@ -74,6 +74,9 @@ $viejo ??= [];
 
         <?php
         $queryBase = ['institucion' => $institucionId, 'q' => $q];
+        if ($categoriaId !== null) {
+            $queryBase['categoria'] = $categoriaId;
+        }
         if ($soloSeleccionados) {
             $queryBase['seleccionados'] = implode(',', $idsSeleccionados);
         }
@@ -92,6 +95,18 @@ $viejo ??= [];
                        placeholder="Buscar por código, descripción, responsable, ubicación o valor..."
                        value="<?= htmlspecialchars($q, ENT_QUOTES) ?>">
             </div>
+            <?php if (!empty($categorias)): ?>
+                <div style="max-width: 260px;">
+                    <select id="filtroCategoria" class="form-select form-select-sm selector-buscable">
+                        <option value="">Todas las categorías</option>
+                        <?php foreach ($categorias as $c): ?>
+                            <option value="<?= $c['id'] ?>" <?= $categoriaId === (int) $c['id'] ? 'selected' : '' ?>>
+                                <?= htmlspecialchars($c['nombre'], ENT_QUOTES) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+            <?php endif; ?>
             <div class="form-check">
                 <input type="checkbox" id="verSoloSeleccionados" class="form-check-input" <?= $soloSeleccionados ? 'checked' : '' ?>>
                 <label class="form-check-label small" for="verSoloSeleccionados">Ver solo seleccionados</label>
@@ -131,6 +146,7 @@ $viejo ??= [];
                 <thead>
                 <tr>
                     <th style="width: 32px;"><input type="checkbox" id="seleccionarTodos" class="form-check-input"></th>
+                    <th></th>
                     <th>Código</th>
                     <th>Descripción</th>
                     <th>Responsable / ubicación</th>
@@ -141,8 +157,26 @@ $viejo ??= [];
                 <?php foreach ($bienes as $b): ?>
                     <tr class="fila-bien" style="cursor:pointer;">
                         <td data-label="Seleccionar"><input type="checkbox" name="bienes[]" value="<?= $b['id'] ?>" class="form-check-input casilla-bien"></td>
+                        <td data-label="Foto">
+                            <?php if (!empty($b['foto_path'])): ?>
+                                <img src="<?= Url::to('/archivos/' . $b['foto_path']) ?>"
+                                     data-lightbox-src="<?= Url::to('/archivos/' . $b['foto_path']) ?>"
+                                     alt="Foto de <?= htmlspecialchars($b['descripcion'], ENT_QUOTES) ?>"
+                                     style="width:36px;height:36px;object-fit:cover;border-radius:4px;cursor:zoom-in;"
+                                     title="Ver foto en grande" loading="lazy">
+                            <?php else: ?>
+                                <span class="d-inline-flex align-items-center justify-content-center bg-light text-muted" style="width:36px;height:36px;border-radius:4px;">
+                                    <i class="bi bi-box-seam"></i>
+                                </span>
+                            <?php endif; ?>
+                        </td>
                         <td class="mono" data-label="Código"><?= htmlspecialchars($b['codigo_identificacion'], ENT_QUOTES) ?></td>
-                        <td data-label="Descripción"><?= htmlspecialchars($b['descripcion'], ENT_QUOTES) ?></td>
+                        <td data-label="Descripción">
+                            <?= htmlspecialchars($b['descripcion'], ENT_QUOTES) ?>
+                            <?php if (!empty($b['categoria_nombre'])): ?>
+                                <div class="text-muted small"><?= htmlspecialchars($b['categoria_nombre'], ENT_QUOTES) ?></div>
+                            <?php endif; ?>
+                        </td>
                         <td class="small" data-label="Responsable / ubicación">
                             <?= htmlspecialchars($b['espacio_nombre'] ?? '—', ENT_QUOTES) ?>
                             <?php if (!empty($b['responsables_nombres'])): ?>
@@ -238,7 +272,7 @@ $viejo ??= [];
         // propio toggle nativo (ya dispara el listener 'change' de arriba).
         document.querySelectorAll('.fila-bien').forEach(function (fila) {
             fila.addEventListener('click', function (e) {
-                if (e.target.closest('input, a, button')) { return; }
+                if (e.target.closest('input, a, button, [data-lightbox-src]')) { return; }
                 const casilla = fila.querySelector('.casilla-bien');
                 if (!casilla) { return; }
                 casilla.checked = !casilla.checked;
@@ -429,6 +463,20 @@ $viejo ??= [];
                 window.location = url.toString();
             }, 600);
         });
+
+        const filtroCategoria = document.getElementById('filtroCategoria');
+        if (filtroCategoria) {
+            filtroCategoria.addEventListener('change', function () {
+                const url = new URL(window.location.href);
+                if (filtroCategoria.value !== '') {
+                    url.searchParams.set('categoria', filtroCategoria.value);
+                } else {
+                    url.searchParams.delete('categoria');
+                }
+                url.searchParams.set('pagina', '1');
+                window.location = url.toString();
+            });
+        }
     })();
     </script>
 <?php endif; ?>

@@ -14,6 +14,7 @@ use App\Core\View;
 use App\Helpers\Paginador;
 use App\Models\Asignacion;
 use App\Models\Bien;
+use App\Models\Categoria;
 use App\Models\Institucion;
 use App\Models\LoteReintegro;
 use App\Models\Movimiento;
@@ -31,6 +32,7 @@ final class ReintegroController
 
         $q = trim((string) ($_GET['q'] ?? ''));
         $termino = $q !== '' ? $q : null;
+        $categoriaId = isset($_GET['categoria']) && $_GET['categoria'] !== '' ? (int) $_GET['categoria'] : null;
         $pagina = max(1, (int) ($_GET['pagina'] ?? 1));
         $porPagina = (int) ($_GET['porPagina'] ?? self::POR_PAGINA_DEFECTO);
         if (!in_array($porPagina, self::OPCIONES_POR_PAGINA, true)) {
@@ -44,14 +46,16 @@ final class ReintegroController
             ? array_values(array_unique(array_filter(array_map('intval', explode(',', (string) $_GET['seleccionados'])))))
             : null;
 
-        $total = $institucionId !== null ? Bien::contarReintegrables($institucionId, $termino, $idsSeleccionados) : 0;
+        $total = $institucionId !== null ? Bien::contarReintegrables($institucionId, $termino, $idsSeleccionados, $categoriaId) : 0;
 
         View::layout('partials/layout', 'reintegros/index', [
             'title' => 'Reintegrar bienes',
             'instituciones' => Auth::esSuperusuario() ? Institucion::listadoParaSelect(true) : [],
             'institucionId' => $institucionId,
+            'categorias' => $institucionId !== null ? Categoria::activas($institucionId) : [],
+            'categoriaId' => $categoriaId,
 
-            'bienes' => $institucionId !== null ? Bien::reintegrables($institucionId, $termino, $pagina, $porPagina, $idsSeleccionados) : [],
+            'bienes' => $institucionId !== null ? Bien::reintegrables($institucionId, $termino, $pagina, $porPagina, $idsSeleccionados, $categoriaId) : [],
             'q' => $q,
             'pagina' => $pagina,
             'total' => $total,

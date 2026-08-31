@@ -1,5 +1,10 @@
 import { test, expect } from '@playwright/test';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { seleccionarTomSelect, seleccionarPrimeraOpcionTomSelect } from './helpers/tomSelect.js';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const fotoFixture = path.join(__dirname, 'fixtures', 'foto_busqueda.jpg');
 
 /**
  * Reintegrar un bien (con categoría e institución elegidas por defecto igual que en
@@ -26,6 +31,7 @@ test('reintegrar un bien y agruparlo en un lote', async ({ page }) => {
     await page.locator('input[name="codigo_identificacion"]').fill(codigoBien);
     await page.locator('input[name="descripcion"]').fill(descripcionBien);
     await seleccionarPrimeraOpcionTomSelect(page, 'categoriaBien');
+    await page.setInputFiles('input[name="foto"]', fotoFixture);
     await page.getByRole('button', { name: 'Registrar bien' }).click();
     await expect(page).toHaveURL(/\/bienes$/);
 
@@ -45,6 +51,12 @@ test('reintegrar un bien y agruparlo en un lote', async ({ page }) => {
 
     await page.locator('#buscador').fill(codigoBien);
     await page.waitForURL(/q=/);
+
+    // El filtro de categoría existe (la institución de prueba tiene al menos una) y la
+    // foto del bien se ve en la tabla -- las dos cosas que agrega esta pantalla.
+    await expect(page.locator('#filtroCategoria')).toBeVisible();
+    const filaReintegro = page.locator('tr.fila-bien', { hasText: codigoBien });
+    await expect(filaReintegro.locator('img[data-lightbox-src]')).toBeVisible();
 
     await page.locator('input[name="destino_texto"]').fill('PW-TEST Almacén institucional');
     await page.locator('.casilla-bien').first().check();

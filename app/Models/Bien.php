@@ -729,19 +729,21 @@ final class Bien
      * (a diferencia de operables(), aquí sí se filtra desde la BD — la pantalla de
      * reintegro solo debe listar lo que realmente se puede reintegrar).
      */
-    public static function reintegrables(?int $institucionId = null, ?string $busqueda = null, int $pagina = 1, int $porPagina = 50, ?array $soloIds = null): array
+    public static function reintegrables(?int $institucionId = null, ?string $busqueda = null, int $pagina = 1, int $porPagina = 50, ?array $soloIds = null, ?int $categoriaId = null): array
     {
         if ($soloIds !== null && empty($soloIds)) {
             return [];
         }
 
-        [$whereSql, $params] = self::condicionesReintegrables($institucionId, $busqueda, $soloIds);
+        [$whereSql, $params] = self::condicionesReintegrables($institucionId, $busqueda, $soloIds, $categoriaId);
 
-        $sql = 'SELECT b.id, b.codigo_identificacion, b.descripcion, b.valor,
+        $sql = 'SELECT b.id, b.codigo_identificacion, b.descripcion, b.valor, b.foto_path,
+                       c.nombre AS categoria_nombre,
                        CONCAT(e.codigo, " - ", e.nombre) AS espacio_nombre, ' . self::sqlResponsablesEspacio('e.id') . ' AS responsables_nombres
                 FROM bienes b
                 JOIN asignaciones a ON a.bien_id = b.id AND a.activa = 1
-                LEFT JOIN espacios e ON e.id = a.espacio_id'
+                LEFT JOIN espacios e ON e.id = a.espacio_id
+                LEFT JOIN categorias_bienes c ON c.id = b.categoria_id'
                . $whereSql
                . ' ORDER BY b.codigo_identificacion ASC, b.id ASC' . self::limitSql($pagina, $porPagina);
 
@@ -772,13 +774,13 @@ final class Bien
         return $stmt->fetch() ?: null;
     }
 
-    public static function contarReintegrables(?int $institucionId = null, ?string $busqueda = null, ?array $soloIds = null): int
+    public static function contarReintegrables(?int $institucionId = null, ?string $busqueda = null, ?array $soloIds = null, ?int $categoriaId = null): int
     {
         if ($soloIds !== null && empty($soloIds)) {
             return 0;
         }
 
-        [$whereSql, $params] = self::condicionesReintegrables($institucionId, $busqueda, $soloIds);
+        [$whereSql, $params] = self::condicionesReintegrables($institucionId, $busqueda, $soloIds, $categoriaId);
 
         $sql = 'SELECT COUNT(*)
                 FROM bienes b
@@ -797,7 +799,7 @@ final class Bien
      * seleccionados" en /reintegros, donde la selección vive en sessionStorage del
      * navegador y abarca varias páginas — el servidor no la conoce hasta que se le pasa).
      */
-    private static function condicionesReintegrables(?int $institucionId, ?string $busqueda, ?array $soloIds = null): array
+    private static function condicionesReintegrables(?int $institucionId, ?string $busqueda, ?array $soloIds = null, ?int $categoriaId = null): array
     {
         $condiciones = ['b.estado = "activo"'];
         $params = [];
@@ -805,6 +807,11 @@ final class Bien
         if ($institucionId !== null) {
             $condiciones[] = 'b.institucion_id = ?';
             $params[] = $institucionId;
+        }
+
+        if ($categoriaId !== null) {
+            $condiciones[] = 'b.categoria_id = ?';
+            $params[] = $categoriaId;
         }
 
         if ($soloIds !== null && !empty($soloIds)) {
