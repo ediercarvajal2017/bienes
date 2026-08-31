@@ -76,6 +76,9 @@ test('reintegrar un bien y agruparlo en un lote', async ({ page }) => {
     await expect(celdaResponsable).toBeVisible();
     await expect(celdaResponsable).not.toHaveText('—');
 
+    // La foto del bien (subida al crearlo, más arriba) también debe verse aquí.
+    await expect(filaPendiente.locator('img[data-lightbox-src]')).toBeVisible();
+
     await filaPendiente.locator('.casilla-bien').check();
 
     page.once('dialog', (dialog) => dialog.accept());

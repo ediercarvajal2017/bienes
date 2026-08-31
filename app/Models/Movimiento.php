@@ -104,7 +104,7 @@ final class Movimiento
     private static function sqlPendientesDeLote(?int $institucionId, bool $paraContar = false): array
     {
         $sql = 'SELECT ' . ($paraContar ? 'COUNT(*)' : 'm.id, m.fecha AS fecha_reintegro, m.destino_texto, m.observaciones,
-                       b.institucion_id, b.codigo_identificacion, b.descripcion, b.valor,
+                       b.institucion_id, b.codigo_identificacion, b.descripcion, b.valor, b.foto_path,
                        CONCAT(eo.codigo, " - ", eo.nombre) AS espacio_origen_nombre,
                        CONCAT(u.nombres, " ", u.apellidos) AS responsable_nombre') . '
                 FROM movimientos m
