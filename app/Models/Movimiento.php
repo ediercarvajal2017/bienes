@@ -105,10 +105,12 @@ final class Movimiento
     {
         $sql = 'SELECT ' . ($paraContar ? 'COUNT(*)' : 'm.id, m.fecha AS fecha_reintegro, m.destino_texto, m.observaciones,
                        b.institucion_id, b.codigo_identificacion, b.descripcion, b.valor,
-                       CONCAT(eo.codigo, " - ", eo.nombre) AS espacio_origen_nombre') . '
+                       CONCAT(eo.codigo, " - ", eo.nombre) AS espacio_origen_nombre,
+                       CONCAT(u.nombres, " ", u.apellidos) AS responsable_nombre') . '
                 FROM movimientos m
                 JOIN bienes b ON b.id = m.bien_id
                 LEFT JOIN espacios eo ON eo.id = m.espacio_origen_id
+                LEFT JOIN usuarios u ON u.id = m.responsable_id
                 WHERE m.tipo = "reintegro"
                   AND m.lote_reintegro_id IS NULL
                   AND b.estado = "reintegrado"

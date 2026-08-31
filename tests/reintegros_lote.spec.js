@@ -70,6 +70,12 @@ test('reintegrar un bien y agruparlo en un lote', async ({ page }) => {
     await page.goto('reintegros/lotes/generar');
     const filaPendiente = page.locator('tr', { hasText: codigoBien });
     await expect(filaPendiente).toBeVisible();
+
+    // Quién hizo el reintegro debe verse (no un "—" por falta del dato).
+    const celdaResponsable = filaPendiente.locator('td[data-label="Reintegrado por"]');
+    await expect(celdaResponsable).toBeVisible();
+    await expect(celdaResponsable).not.toHaveText('—');
+
     await filaPendiente.locator('.casilla-bien').check();
 
     page.once('dialog', (dialog) => dialog.accept());
