@@ -23,7 +23,10 @@ $puedeQr = Auth::rol() !== 'docente' && (Auth::esSuperusuario() || Auth::tienePe
 $puedeCrear = Auth::esSuperusuario() || Auth::tienePermiso('bienes.crear');
 $puedeCargaMasiva = Auth::esSuperusuario() || Auth::tienePermiso('cargas.masivas');
 $puedeAsignar = Auth::esSuperusuario() || Auth::tienePermiso('asignaciones.crear');
-$mostrarAccionesMasivas = $puedeQr || $puedeCrear || $puedeCargaMasiva || $puedeAsignar;
+// Esta vista ya exige el permiso bienes.ver para llegar aquí (ver rutas), así que
+// "Buscar por foto" siempre puede mostrarse -- por eso el dropdown ya no depende
+// solo de los otros permisos, que sí varían según el rol.
+$mostrarAccionesMasivas = true;
 
 $algunFiltroActivo = $busqueda !== '' || $categoriaId !== null || $estado !== null || $espacioId !== null;
 ?>
@@ -37,6 +40,9 @@ $algunFiltroActivo = $busqueda !== '' || $categoriaId !== null || $estado !== nu
                     <i class="bi bi-stack me-1"></i>Acciones masivas
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="botonAccionesMasivas">
+                    <li><a class="dropdown-item" href="<?= Url::to('/bienes/buscar-por-foto') ?>">
+                        <i class="bi bi-camera me-1"></i>Buscar por foto
+                    </a></li>
                     <?php if ($puedeAsignar): ?>
                         <li><a class="dropdown-item" href="<?= Url::to('/asignaciones') ?>">
                             <i class="bi bi-person-check me-1"></i>Asignar bienes
@@ -60,9 +66,6 @@ $algunFiltroActivo = $busqueda !== '' || $categoriaId !== null || $estado !== nu
                 </ul>
             </div>
         <?php endif; ?>
-        <a href="<?= Url::to('/bienes/buscar-por-foto') ?>" class="btn btn-outline-secondary btn-sm">
-            <i class="bi bi-camera me-1"></i>Buscar por foto
-        </a>
         <?php if ($puedeCrear): ?>
             <a href="<?= Url::to('/bienes/crear') ?>" class="btn btn-primary btn-sm">
                 <i class="bi bi-plus-lg me-1"></i>Registrar bien
