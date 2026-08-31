@@ -29,6 +29,7 @@ use App\Controllers\BajaController;
 use App\Controllers\BienController;
 use App\Controllers\BienFotoCargaMasivaController;
 use App\Controllers\BuscarController;
+use App\Controllers\BusquedaFotoController;
 use App\Controllers\CargaMasivaController;
 use App\Controllers\CargoController;
 use App\Controllers\CarteraController;
@@ -237,6 +238,19 @@ $router->get('/bienes/carga-masiva-fotos', [BienFotoCargaMasivaController::class
 ]);
 $router->post('/bienes/carga-masiva-fotos', [BienFotoCargaMasivaController::class, 'subir'], [
     AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':cargas.masivas',
+]);
+
+$router->get('/bienes/buscar-por-foto', [BusquedaFotoController::class, 'index'], [
+    AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':bienes.ver',
+]);
+$router->get('/bienes/buscar-por-foto/pendientes', [BusquedaFotoController::class, 'pendientes'], [
+    AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':bienes.ver',
+]);
+$router->post('/bienes/buscar-por-foto/vector', [BusquedaFotoController::class, 'guardarVector'], [
+    AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':bienes.ver',
+]);
+$router->post('/bienes/buscar-por-foto/buscar', [BusquedaFotoController::class, 'buscar'], [
+    AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':bienes.ver',
 ]);
 
 $router->get('/bienes/{id}/editar', [BienController::class, 'editar'], [

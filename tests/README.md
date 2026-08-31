@@ -76,6 +76,7 @@ corriendo una vez por archivo en vez de una vez para toda la suite).
 | `archivos.spec.js` | `/archivos/{tipo}/{archivo}` sirve un archivo real y rechaza carpeta o nombre inválidos (path traversal). |
 | `asignaciones.spec.js` | Asignar un bien desde la selección masiva de `/asignaciones` (distinto del panel individual, ya cubierto por `bienes_ciclo_vida.spec.js`). |
 | `sede_activa.spec.js` | `/sede-activa` exige rol "rector" — un rol distinto (aunque tenga sesión iniciada) recibe 403, no un error de servidor. |
+| `busqueda_por_foto.spec.js` | Sube la foto de un bien, espera a que el navegador la indexe en segundo plano (huella visual vía MobileNet/TensorFlow.js por CDN) y confirma que subir esa misma foto como consulta lo encuentra primero con ≥90% de similitud. |
 
 `tests/helpers/tomSelect.js` tiene el helper para interactuar con los `<select>`
 que SIGEBI convierte en Tom Select (buscador con menú) — reutilízalo en cualquier
@@ -112,6 +113,13 @@ real que encontramos armando estas pruebas (ver más abajo).
   después en la misma sesión lo hereda. `hallazgos.spec.js` y `escaneo.spec.js` ya lo
   manejan (una lo resetea al final, la otra lo fuerza a blanco al empezar, por si
   acaso) — sigue el mismo criterio en pruebas nuevas que lo toquen.
+- **Dos fixtures de imagen con el mismo contenido de bytes producen la misma huella
+  visual** (obvio en retrospectiva, mordió al armar `busqueda_por_foto.spec.js`): al
+  reutilizar el mismo `.jpg` que ya usa `bienes_carga_masiva_fotos.spec.js`, la
+  búsqueda por foto encontraba **ese** bien en vez del propio, porque ambos quedaban
+  con similitud 100% y el desempate no era el esperado. Cualquier prueba nueva de
+  búsqueda por foto necesita una imagen de fixture con contenido realmente distinto a
+  las demás (no basta con otro nombre de archivo).
 
 ## Advertencias de este arranque (léelas antes de confiar ciegamente en la suite)
 
@@ -126,6 +134,9 @@ real que encontramos armando estas pruebas (ver más abajo).
     (`PW-TEST-FOTO-001`, no con timestamp) para que coincida siempre con el nombre
     del archivo dentro de `fixtures/fotos_bienes.zip` — ese bien queda para siempre,
     es intencional, no hace falta limpiarlo.
+  - `busqueda_por_foto.spec.js` hace lo mismo con `PW-TEST-BUSQFOTO-001` y
+    `fixtures/foto_busqueda.jpg` (una imagen generada, no una foto real) — también
+    queda para siempre a propósito.
   - `carga_masiva.spec.js`, `espacios_carga_masiva.spec.js`, `bienes_ciclo_vida.spec.js`,
     `reintegros_lote.spec.js`, `bajas.spec.js` y `verificaciones.spec.js` dejan bienes
     y/o filas en `cargas_masivas` que **no** se autolimpian, porque SIGEBI nunca borra

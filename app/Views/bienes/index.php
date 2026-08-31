@@ -60,6 +60,9 @@ $algunFiltroActivo = $busqueda !== '' || $categoriaId !== null || $estado !== nu
                 </ul>
             </div>
         <?php endif; ?>
+        <a href="<?= Url::to('/bienes/buscar-por-foto') ?>" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-camera me-1"></i>Buscar por foto
+        </a>
         <?php if ($puedeCrear): ?>
             <a href="<?= Url::to('/bienes/crear') ?>" class="btn btn-primary btn-sm">
                 <i class="bi bi-plus-lg me-1"></i>Registrar bien

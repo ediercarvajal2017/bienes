@@ -18,6 +18,11 @@ $v = static fn (string $campo, mixed $porDefecto = '') => $viejo[$campo] ?? $por
     registrará formalmente en el sistema.
 </p>
 
+<p class="small mb-3" style="max-width: 640px;">
+    <a href="<?= Url::to('/bienes/buscar-por-foto') ?>"><i class="bi bi-camera me-1"></i>¿Ya existe con otra foto?
+    Búscalo antes de reportarlo</a>, para no duplicarlo.
+</p>
+
 <?php if (!empty($error)): ?>
     <div class="alert alert-danger py-2 small" style="max-width: 640px;"><?= htmlspecialchars($error, ENT_QUOTES) ?></div>
 <?php endif; ?>
