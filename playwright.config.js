@@ -18,6 +18,24 @@ if (!baseURL.endsWith('/')) {
     baseURL += '/';
 }
 
+// BLINDAJE: las pruebas crean, editan y eliminan datos a través de la web. SIGEBI está en
+// producción con información real, así que NUNCA deben correr contra el sitio real.
+// Solo se aceptan URLs locales. Un entorno remoto de ensayo/demo se permite únicamente si
+// su dominio lo dice (staging, ensayo o demo) Y se activa TEST_PERMITIR_REMOTO=1 a propósito.
+{
+    const host = new URL(baseURL).hostname;
+    const esLocal = ['localhost', '127.0.0.1', '::1'].includes(host) || /\.(test|local|localhost)$/.test(host);
+    const esEnsayoRemoto = /(^|[.-])(staging|ensayo|demo)([.-]|$)/i.test(host);
+
+    if (!esLocal && !(esEnsayoRemoto && process.env.TEST_PERMITIR_REMOTO === '1')) {
+        throw new Error(
+            `Pruebas bloqueadas: TEST_BASE_URL apunta a "${host}", que no es un entorno local. ` +
+            'Las pruebas modifican datos y no pueden correr contra producción. Para un entorno ' +
+            'remoto de ensayo/demo (su dominio debe contener staging, ensayo o demo) use TEST_PERMITIR_REMOTO=1.'
+        );
+    }
+}
+
 export default defineConfig({
     testDir: './tests',
     fullyParallel: false,
