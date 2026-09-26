@@ -60,9 +60,10 @@ $tabPorDefecto = !empty($hallazgos) ? 'hallazgos' : 'discrepancia';
 
 <?php if ($jornada['estado'] === 'en_progreso'): ?>
     <form method="post" action="<?= Url::to('/verificaciones/' . $jornada['id'] . '/cerrar') ?>" class="card mb-4" style="max-width: 480px;"
-          onsubmit="return confirm('¿Cerrar la jornada de verificación? Quedan <?= (int) $totalPendientes ?> bien(es) pendiente(s) por verificar.');">
+          onsubmit="<?php if (count($hallazgos) > 0): ?>if (!confirm('Hay <?= count($hallazgos) ?> hallazgo(s) sin registrar ni descartar. ¿Cerrar la jornada de todos modos?')) { return false; } this.confirmar_hallazgos.value = '1'; <?php endif; ?>return confirm('¿Cerrar la jornada de verificación? Quedan <?= (int) $totalPendientes ?> bien(es) pendiente(s) por verificar.');">
         <div class="card-body">
             <?= Csrf::field() ?>
+            <input type="hidden" name="confirmar_hallazgos" value="0">
             <label class="form-label small">Observaciones de cierre (opcional)</label>
             <textarea name="observaciones" class="form-control form-control-sm mb-2" rows="2"></textarea>
             <button type="submit" class="btn btn-outline-danger btn-sm">

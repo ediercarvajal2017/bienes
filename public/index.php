@@ -388,7 +388,7 @@ $router->post('/hallazgos', [HallazgoController::class, 'guardar'], [
     AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':bienes.ver',
 ]);
 $router->post('/hallazgos/{id}/descartar', [HallazgoController::class, 'descartar'], [
-    AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':bienes.crear',
+    AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':verificaciones.gestionar',
 ]);
 
 $router->get('/manual', [ManualController::class, 'index'], [AuthMiddleware::class]);
