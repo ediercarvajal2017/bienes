@@ -36,11 +36,25 @@ final class Session
             'path' => '/',
             'httponly' => true,
             'samesite' => 'Strict',
-            'secure' => (($_SERVER['HTTPS'] ?? '') === 'on'),
+            'secure' => self::esHttps(),
         ]);
 
         session_name('sigebi_session');
         session_start();
+    }
+
+    /**
+     * ¿La petición llegó por HTTPS? Además de $_SERVER['HTTPS'], se consideran el puerto
+     * 443 y la cabecera X-Forwarded-Proto: si el hosting termina el HTTPS en un proxy
+     * delante de PHP, $_SERVER['HTTPS'] puede venir vacío y la cookie de sesión quedaba sin
+     * la marca "secure". (Confiar en esa cabecera aquí es inofensivo: en el peor caso la
+     * cookie se marca secure en una conexión HTTP y simplemente no se envía.)
+     */
+    public static function esHttps(): bool
+    {
+        return strtolower((string) ($_SERVER['HTTPS'] ?? '')) === 'on'
+            || (string) ($_SERVER['SERVER_PORT'] ?? '') === '443'
+            || strtolower((string) ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '')) === 'https';
     }
 
     public static function regenerate(): void
@@ -64,7 +78,7 @@ final class Session
             'path' => '/',
             'httponly' => true,
             'samesite' => 'Strict',
-            'secure' => (($_SERVER['HTTPS'] ?? '') === 'on'),
+            'secure' => self::esHttps(),
         ]);
     }
 
@@ -126,7 +140,7 @@ final class Session
                 'path' => '/',
                 'httponly' => true,
                 'samesite' => 'Strict',
-                'secure' => (($_SERVER['HTTPS'] ?? '') === 'on'),
+                'secure' => self::esHttps(),
             ]);
         }
 

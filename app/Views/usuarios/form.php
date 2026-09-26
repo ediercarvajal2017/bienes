@@ -112,9 +112,11 @@ $invalido = static fn (string $campo) => $errorCampo === $campo ? ' is-invalid' 
 
     <div class="col-md-6">
         <label class="form-label small<?= $esEdicion ? '' : ' requerido' ?>" for="password"><?= $esEdicion ? 'Nueva contraseña (opcional)' : 'Contraseña' ?></label>
-        <input type="password" name="password" id="password" class="form-control<?= $invalido('password') ?>" <?= $esEdicion ? '' : 'required' ?> minlength="8" autocomplete="new-password">
+        <input type="password" name="password" id="password" class="form-control<?= $invalido('password') ?>" <?= $esEdicion ? '' : 'required' ?> minlength="10" autocomplete="new-password">
         <?php if ($errorCampo === 'password'): ?>
             <div class="invalid-feedback d-block"><?= htmlspecialchars($error, ENT_QUOTES) ?></div>
+        <?php else: ?>
+            <div class="form-text">Mínimo 10 caracteres, con letras y números. No use su nombre, documento ni correo.</div>
         <?php endif; ?>
     </div>
 

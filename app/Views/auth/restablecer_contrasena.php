@@ -41,11 +41,12 @@
                 <?= \App\Core\Csrf::field() ?>
                 <div class="mb-3">
                     <label class="form-label small" for="password">Nueva contraseña</label>
-                    <input type="password" name="password" id="password" class="form-control" required minlength="8" autofocus autocomplete="new-password">
+                    <input type="password" name="password" id="password" class="form-control" required minlength="10" autofocus autocomplete="new-password">
+                    <div class="form-text">Mínimo 10 caracteres, con letras y números. No use su nombre, documento ni correo.</div>
                 </div>
                 <div class="mb-3">
                     <label class="form-label small" for="password_confirmacion">Confirmar contraseña</label>
-                    <input type="password" name="password_confirmacion" id="password_confirmacion" class="form-control" required minlength="8" autocomplete="new-password">
+                    <input type="password" name="password_confirmacion" id="password_confirmacion" class="form-control" required minlength="10" autocomplete="new-password">
                 </div>
                 <button type="submit" class="btn btn-primary w-100">Guardar contraseña</button>
             </form>

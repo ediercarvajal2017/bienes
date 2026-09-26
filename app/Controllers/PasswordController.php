@@ -10,6 +10,7 @@ use App\Core\Session;
 use App\Core\Url;
 use App\Core\View;
 use App\Helpers\LimiteIntentos;
+use App\Helpers\PoliticaContrasena;
 use App\Models\Auditoria;
 use App\Models\Institucion;
 use App\Models\PasswordReset;
@@ -109,8 +110,12 @@ final class PasswordController
         $password = (string) $request->input('password');
         $confirmacion = (string) $request->input('password_confirmacion');
 
-        if (strlen($password) < 8) {
-            Session::flash('error', 'La contraseña debe tener al menos 8 caracteres.');
+        $errorContrasena = PoliticaContrasena::validar(
+            $password,
+            [$reset['email'], $reset['nombres'], $reset['apellidos']]
+        );
+        if ($errorContrasena !== null) {
+            Session::flash('error', $errorContrasena);
             header('Location: ' . Url::to("/restablecer-contrasena/{$token}"));
             exit;
         }

@@ -11,6 +11,7 @@ use App\Core\Session;
 use App\Core\Url;
 use App\Core\View;
 use App\Helpers\Paginador;
+use App\Helpers\PoliticaContrasena;
 use App\Helpers\Uploader;
 use App\Models\Auditoria;
 use App\Models\Cargo;
@@ -324,12 +325,15 @@ final class UsuarioController
             return ['campo' => 'email', 'mensaje' => 'El correo electrónico no es válido.'];
         }
 
-        if (!$esEdicion && strlen($password) < 8) {
-            return ['campo' => 'password', 'mensaje' => 'La contraseña debe tener al menos 8 caracteres.'];
-        }
-
-        if ($esEdicion && $password !== '' && strlen($password) < 8) {
-            return ['campo' => 'password', 'mensaje' => 'La nueva contraseña debe tener al menos 8 caracteres.'];
+        // Al crear es obligatoria; al editar solo se valida si se escribió una nueva.
+        if (!$esEdicion || $password !== '') {
+            $errorContrasena = PoliticaContrasena::validar(
+                $password,
+                [$datos['email'], $datos['documento'], $datos['nombres'], $datos['apellidos']]
+            );
+            if ($errorContrasena !== null) {
+                return ['campo' => 'password', 'mensaje' => $errorContrasena];
+            }
         }
 
         if (!$this->rolPermitido($datos['rol_id'])) {
