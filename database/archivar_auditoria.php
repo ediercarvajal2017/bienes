@@ -21,6 +21,11 @@ declare(strict_types=1);
  * registros más viejos que el período de retención.
  */
 
+if (PHP_SAPI !== 'cli') {
+    http_response_code(404);
+    exit;
+}
+
 require __DIR__ . '/../vendor/autoload.php';
 
 use App\Core\Database;

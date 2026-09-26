@@ -2,6 +2,11 @@
 // Datos base: roles, permisos, cargos, categorías, institución demo y superusuario inicial.
 // Uso: php database/seeders/seed.php
 
+if (PHP_SAPI !== 'cli') {
+    http_response_code(404);
+    exit;
+}
+
 require __DIR__ . '/../../vendor/autoload.php';
 
 App\Core\Env::cargar();
