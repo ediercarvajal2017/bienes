@@ -59,6 +59,9 @@ final class AuthController
     public function logout(): void
     {
         Auth::logout();
+        // Borra la caché del navegador para este sitio (incluida la del service worker),
+        // para que en un equipo compartido no quede ninguna pantalla del usuario guardada.
+        header('Clear-Site-Data: "cache"');
         header('Location: ' . Url::to('/login'));
         exit;
     }

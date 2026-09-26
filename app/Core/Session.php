@@ -98,6 +98,19 @@ final class Session
     public static function destroy(): void
     {
         $_SESSION = [];
+
+        // Expira también la cookie en el navegador (session_destroy() solo borra los datos
+        // del servidor y dejaba la cookie viva, incluida la de "Recordarme" a 30 días).
+        if (!headers_sent()) {
+            setcookie(session_name() ?: 'sigebi_session', '', [
+                'expires' => time() - 3600,
+                'path' => '/',
+                'httponly' => true,
+                'samesite' => 'Strict',
+                'secure' => (($_SERVER['HTTPS'] ?? '') === 'on'),
+            ]);
+        }
+
         session_destroy();
     }
 
