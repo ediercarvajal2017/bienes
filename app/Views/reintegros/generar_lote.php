@@ -84,7 +84,7 @@ $movimientosSeleccionados = $viejo['movimientos'] ?? [];
                         <td class="text-muted small" data-label="Reintegrado por">
                             <?= !empty($p['responsable_nombre']) ? htmlspecialchars($p['responsable_nombre'], ENT_QUOTES) : '—' ?>
                         </td>
-                        <td class="text-muted" data-label="Destino"><?= htmlspecialchars($p['destino_texto'], ENT_QUOTES) ?></td>
+                        <td class="text-muted" data-label="Destino"><?= !empty($p['destino_texto']) ? htmlspecialchars($p['destino_texto'], ENT_QUOTES) : '—' ?></td>
                         <td class="text-muted small" data-label="Espacio de origen">
                             <?= !empty($p['espacio_origen_nombre']) ? htmlspecialchars($p['espacio_origen_nombre'], ENT_QUOTES) : '—' ?>
                         </td>

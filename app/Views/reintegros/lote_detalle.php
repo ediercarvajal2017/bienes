@@ -49,7 +49,7 @@ use App\Core\Url;
                     <?= !empty($b['categoria_nombre']) ? htmlspecialchars($b['categoria_nombre'], ENT_QUOTES) : '—' ?>
                 </td>
                 <td class="text-muted mono" data-label="Fecha de reintegro"><?= htmlspecialchars($b['fecha_reintegro'], ENT_QUOTES) ?></td>
-                <td class="text-muted" data-label="Destino"><?= htmlspecialchars($b['destino_texto'], ENT_QUOTES) ?></td>
+                <td class="text-muted" data-label="Destino"><?= !empty($b['destino_texto']) ? htmlspecialchars($b['destino_texto'], ENT_QUOTES) : '—' ?></td>
                 <td class="text-muted" data-label="Espacio de origen">
                     <?= !empty($b['espacio_origen_nombre']) ? htmlspecialchars($b['espacio_origen_nombre'], ENT_QUOTES) : '—' ?>
                 </td>

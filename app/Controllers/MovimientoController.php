@@ -14,7 +14,6 @@ use App\Core\View;
 use App\Models\Asignacion;
 use App\Models\Auditoria;
 use App\Models\Bien;
-use App\Models\Categoria;
 use App\Models\Espacio;
 use App\Models\Institucion;
 use App\Models\Movimiento;
@@ -240,10 +239,11 @@ final class MovimientoController
         $id = (int) $id;
         $bien = $this->bienDeLaInstitucion($id);
         $this->verificarAsignable($bien);
+        // Si no hay asignación activa, verificarAutoridadSobreMovimiento ya redirigió.
         $asignacionActiva = $this->verificarAutoridadSobreMovimiento($id);
 
         // Misma regla que el reintegro masivo y el escáner (Bien::motivoNoReintegrable).
-        if ($motivo = Bien::motivoNoReintegrable($bien, $asignacionActiva !== null)) {
+        if ($motivo = Bien::motivoNoReintegrable($bien, true)) {
             Session::flash('error', 'No se puede reintegrar: ' . $motivo . '.');
             header('Location: ' . Url::to("/bienes/{$id}/editar"));
             exit;
