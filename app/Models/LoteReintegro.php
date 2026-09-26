@@ -75,17 +75,25 @@ final class LoteReintegro
         return (int) $stmt->fetchColumn();
     }
 
-    public static function asignarMovimientos(int $loteId, array $movimientoIds): void
+    /**
+     * Asigna al lote solo los movimientos que todavía NO tienen lote, y devuelve cuántos
+     * asignó. Antes reasignaba cualquiera: dos solicitudes simultáneas podían mover los
+     * mismos reintegros de un lote a otro. El llamador compara el resultado con lo pedido.
+     */
+    public static function asignarMovimientos(int $loteId, array $movimientoIds): int
     {
         if (empty($movimientoIds)) {
-            return;
+            return 0;
         }
 
         $placeholders = implode(',', array_fill(0, count($movimientoIds), '?'));
         $stmt = Database::connection()->prepare(
-            "UPDATE movimientos SET lote_reintegro_id = ? WHERE id IN ({$placeholders})"
+            "UPDATE movimientos SET lote_reintegro_id = ?
+             WHERE id IN ({$placeholders}) AND tipo = 'reintegro' AND lote_reintegro_id IS NULL"
         );
         $stmt->execute(array_merge([$loteId], $movimientoIds));
+
+        return $stmt->rowCount();
     }
 
     public static function bienesDe(int $loteId): array

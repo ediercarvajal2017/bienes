@@ -411,9 +411,83 @@ final class Bien
         )->execute([$id]);
     }
 
-    public static function marcarDadoDeBaja(int $id): void
+    /**
+     * Ciclo de vida del bien: a qué estados puede pasar desde cada estado.
+     *
+     *   activo ⇄ en_reparacion ──reintegro──→ reintegrado ──reactivar (rector)──→ activo
+     *     └──────────┴────────baja aprobada────→ dado_de_baja (estado final)
+     *
+     * Toda transición pasa por cambiarEstado(), que la valida contra esta tabla.
+     */
+    public const TRANSICIONES = [
+        'activo' => ['en_reparacion', 'reintegrado', 'dado_de_baja'],
+        'en_reparacion' => ['activo', 'reintegrado', 'dado_de_baja'],
+        'reintegrado' => ['activo'],
+        'dado_de_baja' => [],
+    ];
+
+    /** Estados desde los que un bien se puede reintegrar. */
+    public const ESTADOS_REINTEGRABLES = ['activo', 'en_reparacion'];
+
+    /**
+     * Cambia el estado del bien solo si la transición está permitida (TRANSICIONES). La
+     * condición va en el propio UPDATE, así que dos peticiones simultáneas no pueden
+     * aplicar dos transiciones incompatibles. Lanza DomainException si no se permite.
+     */
+    public static function cambiarEstado(int $id, string $nuevo): void
     {
-        Database::connection()->prepare("UPDATE bienes SET estado = 'dado_de_baja' WHERE id = ?")->execute([$id]);
+        $origenes = array_keys(array_filter(
+            self::TRANSICIONES,
+            static fn (array $destinos): bool => in_array($nuevo, $destinos, true)
+        ));
+        if ($origenes === []) {
+            throw new \DomainException("Estado de destino no válido: {$nuevo}.");
+        }
+
+        $marcadores = implode(', ', array_fill(0, count($origenes), '?'));
+        $stmt = Database::connection()->prepare("UPDATE bienes SET estado = ? WHERE id = ? AND estado IN ({$marcadores})");
+        $stmt->execute([$nuevo, $id, ...$origenes]);
+
+        if ($stmt->rowCount() === 0) {
+            $actual = self::find($id)['estado'] ?? 'inexistente';
+            throw new \DomainException(
+                'El bien está "' . self::etiquetaEstado($actual) . '" y no puede pasar a "' . self::etiquetaEstado($nuevo) . '".'
+            );
+        }
+    }
+
+    public static function etiquetaEstado(string $estado): string
+    {
+        return match ($estado) {
+            'activo' => 'Activo',
+            'reintegrado' => 'Reintegrado',
+            'en_reparacion' => 'En reparación',
+            'dado_de_baja' => 'Dado de baja',
+            default => $estado,
+        };
+    }
+
+    /**
+     * Regla ÚNICA de reintegro (individual, masivo y escáner): null si el bien se puede
+     * reintegrar, o el motivo si no. Antes el reintegro individual y el masivo aplicaban
+     * reglas distintas (estados aceptados y categoría "Sin cartera").
+     */
+    public static function motivoNoReintegrable(array $bien, bool $tieneAsignacionActiva): ?string
+    {
+        if (!in_array($bien['estado'], self::ESTADOS_REINTEGRABLES, true)) {
+            return 'el bien está "' . self::etiquetaEstado($bien['estado']) . '"';
+        }
+        if (!$tieneAsignacionActiva) {
+            return 'el bien no tiene una asignación activa';
+        }
+        if ($bien['categoria_id'] === null) {
+            return 'el bien no tiene categoría asignada';
+        }
+        if (($bien['categoria_nombre'] ?? null) === Categoria::NOMBRE_CATEGORIA_PROTEGIDA) {
+            return 'los bienes de la categoría "' . Categoria::NOMBRE_CATEGORIA_PROTEGIDA . '" no admiten reintegro, solo baja';
+        }
+
+        return null;
     }
 
     /**
@@ -527,12 +601,6 @@ final class Bien
      * nunca por el formulario normal de edición: estadoPermitidoDesdeFormulario() bloquea
      * a propósito cualquier cambio de estado ahí para un bien reintegrado.
      */
-    public static function reactivarDesdeReintegro(int $id): void
-    {
-        Database::connection()
-            ->prepare("UPDATE bienes SET estado = 'activo' WHERE id = ? AND estado = 'reintegrado'")
-            ->execute([$id]);
-    }
 
     /**
      * Cambia el dueño (institucion_id) de un bien — usado solo por el traslado entre
@@ -773,9 +841,9 @@ final class Bien
              FROM bienes b
              JOIN asignaciones a ON a.bien_id = b.id AND a.activa = 1
              LEFT JOIN espacios e ON e.id = a.espacio_id
-             WHERE b.qr_token = ? AND b.institucion_id = ? AND b.estado = "activo"'
+             WHERE b.qr_token = ? AND b.institucion_id = ?' . self::sqlReglaReintegrable()
         );
-        $stmt->execute([$token, $institucionId]);
+        $stmt->execute([$token, $institucionId, Categoria::NOMBRE_CATEGORIA_PROTEGIDA]);
 
         return $stmt->fetch() ?: null;
     }
@@ -807,8 +875,8 @@ final class Bien
      */
     private static function condicionesReintegrables(?int $institucionId, ?string $busqueda, ?array $soloIds = null, ?int $categoriaId = null): array
     {
-        $condiciones = ['b.estado = "activo"'];
-        $params = [];
+        $condiciones = ['1 = 1' . self::sqlReglaReintegrable()];
+        $params = [Categoria::NOMBRE_CATEGORIA_PROTEGIDA];
 
         if ($institucionId !== null) {
             $condiciones[] = 'b.institucion_id = ?';
@@ -910,5 +978,15 @@ final class Bien
         $data[8] = chr((ord($data[8]) & 0x3f) | 0x80);
 
         return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($data), 4));
+    }
+
+    /**
+     * Condición SQL de motivoNoReintegrable() (sin la asignación activa, que los listados
+     * ya exigen con su JOIN). Espera un parámetro: el nombre de la categoría protegida.
+     */
+    private static function sqlReglaReintegrable(): string
+    {
+        return " AND b.estado IN ('activo', 'en_reparacion') AND b.categoria_id IS NOT NULL"
+            . ' AND b.categoria_id NOT IN (SELECT id FROM categorias_bienes WHERE nombre = ?)';
     }
 }

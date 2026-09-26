@@ -6,6 +6,7 @@ namespace App\Controllers;
 
 use App\Core\Auth;
 use App\Core\Csrf;
+use App\Core\Database;
 use App\Core\Request;
 use App\Core\Session;
 use App\Core\Url;
@@ -13,6 +14,7 @@ use App\Core\View;
 use App\Helpers\Paginador;
 use App\Helpers\Uploader;
 use App\Models\Asignacion;
+use App\Models\Auditoria;
 use App\Models\Baja;
 use App\Models\Bien;
 use App\Models\Categoria;
@@ -50,6 +52,18 @@ final class BajaController
             exit;
         }
 
+        if ($bien['estado'] === 'dado_de_baja') {
+            Session::flash('error', 'Este bien ya está dado de baja.');
+            header('Location: ' . Url::to("/qr/{$token}"));
+            exit;
+        }
+
+        if (Baja::tienePendiente((int) $bien['id'])) {
+            Session::flash('error', 'Este bien ya tiene un reporte de baja pendiente de aprobación.');
+            header('Location: ' . Url::to("/qr/{$token}"));
+            exit;
+        }
+
         $estadoReportado = trim((string) $request->input('estado_reportado'));
         $ubicacion = trim((string) $request->input('ubicacion')) ?: null;
         $descripcion = trim((string) $request->input('descripcion'));
@@ -76,21 +90,29 @@ final class BajaController
             exit;
         }
 
-        Baja::crear([
-            'bien_id' => $bien['id'],
-            'verificacion_id' => $verificacionId,
-            'estado_reportado' => $estadoReportado,
-            'ubicacion' => $ubicacion,
-            'responsable_id' => Auth::id(),
-            'descripcion' => $descripcion,
-            'foto_path' => $fotoPath,
-        ]);
+        Database::transaccion(static function () use ($bien, $verificacionId, $estadoReportado, $ubicacion, $descripcion, $fotoPath): void {
+            $bajaId = Baja::crear([
+                'bien_id' => $bien['id'],
+                'verificacion_id' => $verificacionId,
+                'estado_reportado' => $estadoReportado,
+                'ubicacion' => $ubicacion,
+                'responsable_id' => Auth::id(),
+                'descripcion' => $descripcion,
+                'foto_path' => $fotoPath,
+            ]);
 
-        // Si la baja viene de una discrepancia reportada en una jornada, ya quedó atendida
-        // — se ahorra al administrador el paso extra de volver a la jornada a marcarla.
-        if ($verificacionId !== null) {
-            Verificacion::marcarRevisada($verificacionId, (int) Auth::id());
-        }
+            // Si la baja viene de una discrepancia reportada en una jornada, ya quedó atendida
+            // — se ahorra al administrador el paso extra de volver a la jornada a marcarla.
+            if ($verificacionId !== null) {
+                Verificacion::marcarRevisada($verificacionId, (int) Auth::id());
+            }
+
+            Auditoria::registrar(Auth::id(), (int) $bien['institucion_id'], 'reportar', 'baja', $bajaId, null, [
+                'bien_id' => (int) $bien['id'],
+                'estado_reportado' => $estadoReportado,
+                'descripcion' => $descripcion,
+            ]);
+        });
 
         Session::flash('ok', 'Reporte de baja enviado. Queda pendiente de aprobación.');
         header('Location: ' . Url::to("/qr/{$token}"));
@@ -120,11 +142,14 @@ final class BajaController
         if (!in_array($porPagina, self::OPCIONES_POR_PAGINA, true)) {
             $porPagina = self::POR_PAGINA_DEFECTO;
         }
-        $total = Baja::contarListado($institucionId);
+        // Quien solo reporta (p. ej. un docente) ve sus propios reportes; quien aprueba
+        // bajas ve todos los de la institución. Antes un docente veía todas las bajas.
+        $soloDe = (Auth::esSuperusuario() || Auth::tienePermiso('bajas.aprobar')) ? null : Auth::id();
+        $total = Baja::contarListado($institucionId, $soloDe);
 
         View::layout('partials/layout', 'bajas/index', [
             'title' => 'Bajas de bienes',
-            'bajas' => Baja::listar($institucionId, $pagina, $porPagina),
+            'bajas' => Baja::listar($institucionId, $pagina, $porPagina, $soloDe),
             'pagina' => $pagina,
             'porPagina' => $porPagina,
             'opcionesPorPagina' => self::OPCIONES_POR_PAGINA,
@@ -145,22 +170,60 @@ final class BajaController
             $this->verificarAdmiteBaja($bien, redirigirA: '/bajas');
         }
 
-        Baja::aprobar((int) $id);
-        Bien::marcarDadoDeBaja((int) $baja['bien_id']);
+        try {
+            Database::transaccion(static function () use ($id, $baja, $bien): void {
+                // La condición "sigue pendiente" va en el UPDATE: una baja no se aprueba dos veces.
+                if (!Baja::aprobarSiPendiente((int) $id, (int) Auth::id())) {
+                    throw new \DomainException('Esta baja ya había sido resuelta.');
+                }
 
-        Session::flash('ok', 'Baja aprobada. El bien quedó marcado como dado de baja.');
+                $bienId = (int) $baja['bien_id'];
+                // El bien deja de existir físicamente: ya no tiene ubicación ni responsable
+                // (antes quedaba dado de baja pero todavía asignado a un espacio).
+                Asignacion::cerrarActivasDe($bienId);
+                Bien::cambiarEstado($bienId, 'dado_de_baja');
+
+                Auditoria::registrar(Auth::id(), (int) $baja['institucion_id'], 'aprobar', 'baja', (int) $id,
+                    ['estado' => 'pendiente', 'estado_bien' => $bien['estado'] ?? null],
+                    ['estado' => 'aprobada', 'estado_bien' => 'dado_de_baja', 'bien_id' => $bienId]);
+            });
+        } catch (\DomainException $e) {
+            Session::flash('error', $e->getMessage());
+            header('Location: ' . Url::to('/bajas'));
+            exit;
+        }
+
+        Session::flash('ok', 'Baja aprobada. El bien quedó dado de baja y sin asignación.');
         header('Location: ' . Url::to('/bajas'));
         exit;
     }
 
+    /**
+     * Rechazar ya no borra el reporte (antes se perdía el historial): queda "rechazada",
+     * con el motivo, quién y cuándo. El bien sigue en su estado.
+     */
     public function rechazar(string $id): void
     {
-        $this->bajaAccesible((int) $id);
+        $baja = $this->bajaAccesible((int) $id);
         $this->verificarCsrf();
 
-        Baja::eliminar((int) $id);
+        $motivo = trim((string) (new Request())->input('motivo_rechazo'));
+        if ($motivo === '') {
+            Session::flash('error', 'Indique el motivo del rechazo.');
+            header('Location: ' . Url::to('/bajas'));
+            exit;
+        }
 
-        Session::flash('ok', 'Reporte de baja descartado.');
+        if (!Baja::rechazarSiPendiente((int) $id, (int) Auth::id(), mb_substr($motivo, 0, 500))) {
+            Session::flash('error', 'Esta baja ya había sido resuelta.');
+            header('Location: ' . Url::to('/bajas'));
+            exit;
+        }
+
+        Auditoria::registrar(Auth::id(), (int) $baja['institucion_id'], 'rechazar', 'baja', (int) $id,
+            ['estado' => 'pendiente'], ['estado' => 'rechazada', 'motivo' => $motivo]);
+
+        Session::flash('ok', 'Reporte de baja rechazado. El bien continúa en su estado actual.');
         header('Location: ' . Url::to('/bajas'));
         exit;
     }

@@ -14,6 +14,7 @@ use App\Core\Url;
 use App\Core\View;
 use App\Helpers\Paginador;
 use App\Models\Asignacion;
+use App\Models\Auditoria;
 use App\Models\Bien;
 use App\Models\Espacio;
 use App\Models\Institucion;
@@ -146,6 +147,7 @@ final class AsignacionController
                     continue;
                 }
 
+                $anterior = Asignacion::activaDe($bienId);
                 Asignacion::cerrarActivasDe($bienId);
                 Asignacion::crear([
                     'bien_id' => $bienId,
@@ -154,6 +156,9 @@ final class AsignacionController
                     'observaciones' => $observaciones,
                     'asignado_por' => Auth::id(),
                 ]);
+                Auditoria::registrar(Auth::id(), $institucionId, 'asignar', 'bien', $bienId,
+                    ['espacio_id' => $anterior['espacio_id'] ?? null],
+                    ['espacio_id' => $espacioId, 'fecha' => $fecha, 'masivo' => true]);
 
                 $asignados++;
             }

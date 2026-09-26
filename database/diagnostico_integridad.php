@@ -49,6 +49,14 @@ $pdo->exec('START TRANSACTION READ ONLY');
 
 $idRolSuper = (int) $pdo->query("SELECT id FROM roles WHERE nombre = 'superusuario'")->fetchColumn();
 
+// Desde la migración 031 las bajas tienen "estado" (pendiente/aprobada/rechazada); antes
+// solo "aprobada" (0/1). El diagnóstico debe funcionar con ambas versiones del esquema.
+$bajasConEstado = (bool) $pdo->query(
+    "SELECT COUNT(*) FROM information_schema.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'bajas_bienes' AND COLUMN_NAME = 'estado'"
+)->fetchColumn();
+$bajaPendiente = $bajasConEstado ? "bb.estado = 'pendiente'" : 'bb.aprobada = 0';
+
 /**
  * Cada revisión: [código, severidad, título, qué significa / qué hacer, SQL].
  * Severidad: ALTA = dato incorrecto o posible acceso indebido; MEDIA = inconsistencia
@@ -128,7 +136,7 @@ $revisiones = [
         'Reportes duplicados o que ya no tienen sentido; conviene resolverlos desde /bajas.',
         "SELECT bb.bien_id, b.codigo_identificacion, b.estado, COUNT(*) AS pendientes, GROUP_CONCAT(bb.id) AS ids_bajas
          FROM bajas_bienes bb JOIN bienes b ON b.id = bb.bien_id
-         WHERE bb.aprobada = 0
+         WHERE {$bajaPendiente}
          GROUP BY bb.bien_id, b.codigo_identificacion, b.estado
          HAVING COUNT(*) > 1 OR b.estado = 'dado_de_baja'",
     ],

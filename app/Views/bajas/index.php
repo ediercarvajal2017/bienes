@@ -36,13 +36,16 @@ use App\Models\Categoria;
             <th>Ubicación</th>
             <th>Reportado por</th>
             <th>Fecha</th>
-            <th></th>
+            <th>Estado</th>
             <th></th>
         </tr>
         </thead>
         <tbody>
         <?php foreach ($bajas as $b): ?>
-            <?php $admiteBaja = $b['categoria_nombre'] === Categoria::NOMBRE_CATEGORIA_PROTEGIDA; ?>
+            <?php
+            $admiteBaja = $b['categoria_nombre'] === Categoria::NOMBRE_CATEGORIA_PROTEGIDA;
+            $pendiente = $b['estado'] === 'pendiente';
+            ?>
             <tr>
                 <td>
                     <?php if (!empty($b['foto_path'])): ?>
@@ -54,7 +57,7 @@ use App\Models\Categoria;
                 <td data-label="Bien">
                     <?= htmlspecialchars($b['bien_descripcion'], ENT_QUOTES) ?>
                     <div class="small text-muted mono"><?= htmlspecialchars($b['codigo_identificacion'], ENT_QUOTES) ?></div>
-                    <?php if ((int) $b['aprobada'] === 0 && !$admiteBaja): ?>
+                    <?php if ($pendiente && !$admiteBaja): ?>
                         <div class="small text-danger mt-1">
                             <i class="bi bi-exclamation-triangle me-1"></i>No admite baja (categoría "<?= htmlspecialchars($b['categoria_nombre'] ?? 'sin categoría', ENT_QUOTES) ?>") —
                             <a href="<?= Url::to('/bienes/' . $b['bien_id'] . '/editar') ?>">recategorice a "<?= htmlspecialchars(Categoria::NOMBRE_CATEGORIA_PROTEGIDA, ENT_QUOTES) ?>"</a> o rechace el reporte.
@@ -66,14 +69,25 @@ use App\Models\Categoria;
                 <td class="text-muted" data-label="Reportado por"><?= htmlspecialchars($b['nombres'] . ' ' . $b['apellidos'], ENT_QUOTES) ?></td>
                 <td class="mono small" data-label="Fecha"><?= htmlspecialchars(substr($b['fecha_reporte'], 0, 10), ENT_QUOTES) ?></td>
                 <td data-label="Estado">
-                    <?php if ((int) $b['aprobada'] === 1): ?>
-                        <span class="badge badge-estado-dado_de_baja">Aprobada</span>
+                    <?php if ($b['estado'] === 'aprobada'): ?>
+                        <span class="badge text-bg-danger">Aprobada</span>
+                    <?php elseif ($b['estado'] === 'rechazada'): ?>
+                        <span class="badge text-bg-secondary">Rechazada</span>
                     <?php else: ?>
-                        <span class="badge badge-estado-en_reparacion">Pendiente</span>
+                        <span class="badge text-bg-warning">Pendiente</span>
+                    <?php endif; ?>
+                    <?php if (!$pendiente && !empty($b['resuelta_por_nombre'])): ?>
+                        <div class="small text-muted mt-1">
+                            por <?= htmlspecialchars($b['resuelta_por_nombre'], ENT_QUOTES) ?>
+                            <?php if (!empty($b['resuelta_en'])): ?>· <?= htmlspecialchars(substr($b['resuelta_en'], 0, 10), ENT_QUOTES) ?><?php endif; ?>
+                        </div>
+                    <?php endif; ?>
+                    <?php if ($b['estado'] === 'rechazada' && !empty($b['motivo_rechazo'])): ?>
+                        <div class="small text-muted">Motivo: <?= htmlspecialchars($b['motivo_rechazo'], ENT_QUOTES) ?></div>
                     <?php endif; ?>
                 </td>
                 <td class="text-end text-nowrap">
-                    <?php if ((int) $b['aprobada'] === 0 && (Auth::esSuperusuario() || Auth::tienePermiso('bajas.aprobar'))): ?>
+                    <?php if ($pendiente && (Auth::esSuperusuario() || Auth::tienePermiso('bajas.aprobar'))): ?>
                         <?php if ($admiteBaja): ?>
                             <form method="post" action="<?= Url::to('/bajas/' . $b['id'] . '/aprobar') ?>" class="d-inline"
                                   onsubmit="return confirm('¿Aprobar esta baja? El bien pasará a estado \'Dado de baja\'.');">
@@ -82,8 +96,9 @@ use App\Models\Categoria;
                             </form>
                         <?php endif; ?>
                         <form method="post" action="<?= Url::to('/bajas/' . $b['id'] . '/rechazar') ?>" class="d-inline"
-                              onsubmit="return confirm('¿Rechazar este reporte de baja? El bien continuará activo.');">
+                              onsubmit="var m = prompt('Motivo del rechazo (queda registrado en el historial):'); if (!m || !m.trim()) { return false; } this.motivo_rechazo.value = m.trim(); return true;">
                             <?= Csrf::field() ?>
+                            <input type="hidden" name="motivo_rechazo" value="">
                             <button type="submit" class="btn btn-sm btn-outline-secondary">Rechazar</button>
                         </form>
                     <?php endif; ?>
