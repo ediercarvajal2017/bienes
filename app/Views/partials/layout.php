@@ -187,6 +187,10 @@ foreach ($gruposBreadcrumb as $g) {
                     <a class="nav-link<?= $esActiva('/reintegros/lotes') ?>" href="<?= Url::to('/reintegros/lotes') ?>"><i class="bi bi-file-earmark-spreadsheet me-2"></i>Lotes de reintegro</a>
                 <?php endif; ?>
 
+                <?php if (Auth::esSuperusuario() || Auth::tienePermiso('asignaciones.crear') || Auth::tienePermiso('reintegros.solicitar')): ?>
+                    <a class="nav-link<?= $esActiva('/reintegros/solicitudes') ?>" href="<?= Url::to('/reintegros/solicitudes') ?>"><i class="bi bi-inbox me-2"></i>Solicitudes de reintegro</a>
+                <?php endif; ?>
+
                 <a class="nav-link<?= $esActiva('/escanear') ?>" href="<?= Url::to('/escanear') ?>"><i class="bi bi-qr-code-scan me-2"></i>Escanear QR</a>
             </details>
 

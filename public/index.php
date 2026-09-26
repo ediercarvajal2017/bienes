@@ -65,6 +65,7 @@ use App\Controllers\QrMasivoController;
 use App\Controllers\ReintegroController;
 use App\Controllers\ReporteController;
 use App\Controllers\SedeActivaController;
+use App\Controllers\SolicitudReintegroController;
 use App\Controllers\UsuarioCargaMasivaController;
 use App\Controllers\UsuarioController;
 use App\Controllers\VerificacionController;
@@ -309,6 +310,26 @@ $router->get('/reintegros/lotes/generar', [ReintegroController::class, 'pendient
 ]);
 $router->post('/reintegros/lotes/generar', [ReintegroController::class, 'generarLote'], [
     AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':asignaciones.crear',
+]);
+// Solicitudes de reintegro (docente solicita; rector/secretario aprueba o rechaza).
+$router->get('/qr/{token}/solicitar-reintegro', [SolicitudReintegroController::class, 'formulario'], [
+    AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':reintegros.solicitar',
+]);
+$router->post('/qr/{token}/solicitar-reintegro', [SolicitudReintegroController::class, 'guardar'], [
+    AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':reintegros.solicitar',
+]);
+// El listado lo ven quien solicita y quien aprueba (el controlador valida cualquiera de los dos permisos).
+$router->get('/reintegros/solicitudes', [SolicitudReintegroController::class, 'index'], [
+    AuthMiddleware::class, InstitucionScopeMiddleware::class,
+]);
+$router->post('/reintegros/solicitudes/{id}/aprobar', [SolicitudReintegroController::class, 'aprobar'], [
+    AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':asignaciones.crear',
+]);
+$router->post('/reintegros/solicitudes/{id}/rechazar', [SolicitudReintegroController::class, 'rechazar'], [
+    AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':asignaciones.crear',
+]);
+$router->post('/reintegros/solicitudes/{id}/cancelar', [SolicitudReintegroController::class, 'cancelar'], [
+    AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':reintegros.solicitar',
 ]);
 $router->get('/reintegros/lotes', [ReintegroController::class, 'lotes'], [
     AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':asignaciones.crear',

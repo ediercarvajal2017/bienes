@@ -10,6 +10,7 @@ use App\Models\Baja;
 use App\Models\Bien;
 use App\Models\Espacio;
 use App\Models\Hallazgo;
+use App\Models\SolicitudReintegro;
 
 final class DashboardController
 {
@@ -40,6 +41,18 @@ final class DashboardController
                     'texto' => $pendientes === 1 ? '1 baja pendiente de aprobar' : "{$pendientes} bajas pendientes de aprobar",
                     'ruta' => '/bajas',
                     'color' => 'warning',
+                ];
+            }
+        }
+
+        if (Auth::esSuperusuario() || Auth::tienePermiso('asignaciones.crear')) {
+            $solicitudes = SolicitudReintegro::contar($institucionId, null, 'pendiente');
+            if ($solicitudes > 0) {
+                $indicadores[] = [
+                    'icono' => 'box-arrow-in-left',
+                    'texto' => $solicitudes === 1 ? '1 solicitud de reintegro por revisar' : "{$solicitudes} solicitudes de reintegro por revisar",
+                    'ruta' => '/reintegros/solicitudes?estado=pendiente',
+                    'color' => 'primary',
                 ];
             }
         }

@@ -19,6 +19,7 @@ use App\Models\Espacio;
 use App\Models\Institucion;
 use App\Models\Movimiento;
 use App\Models\Verificacion;
+use App\Services\ReintegroService;
 
 final class MovimientoController
 {
@@ -262,24 +263,7 @@ final class MovimientoController
         }
 
         try {
-            Database::transaccion(static function () use ($id, $bien, $fecha, $destino, $observaciones, $asignacionActiva): void {
-                Movimiento::crear([
-                    'bien_id' => $id,
-                    'tipo' => 'reintegro',
-                    'fecha' => $fecha,
-                    'responsable_id' => Auth::id(),
-                    'espacio_origen_id' => $asignacionActiva['espacio_id'] ?? null,
-                    'espacio_destino_id' => null,
-                    'destino_texto' => $destino,
-                    'observaciones' => $observaciones,
-                ]);
-
-                Asignacion::cerrarActivasDe($id);
-                Bien::cambiarEstado($id, 'reintegrado');
-                Auditoria::registrar(Auth::id(), (int) $bien['institucion_id'], 'reintegrar', 'bien', $id,
-                    ['estado' => $bien['estado'], 'espacio_id' => $asignacionActiva['espacio_id'] ?? null],
-                    ['estado' => 'reintegrado', 'destino' => $destino, 'fecha' => $fecha]);
-            });
+            ReintegroService::reintegrar($bien, $asignacionActiva, $fecha, $destino, $observaciones);
         } catch (\DomainException $e) {
             Session::flash('error', $e->getMessage());
             header('Location: ' . Url::to("/bienes/{$id}/editar"));

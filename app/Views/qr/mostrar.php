@@ -114,6 +114,15 @@ $qrImpreso = !empty($bien['qr_impreso_en']);
                         <i class="bi bi-exclamation-triangle me-1"></i>Reportar baja
                     </a>
                 <?php endif; ?>
+                <?php if (!empty($puedeSolicitarReintegro)): ?>
+                    <a href="<?= Url::to('/qr/' . $token . '/solicitar-reintegro') ?>" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-box-arrow-in-left me-1" aria-hidden="true"></i>Solicitar reintegro
+                    </a>
+                <?php elseif (!empty($solicitudReintegroPendiente)): ?>
+                    <div class="small text-muted text-center">
+                        <i class="bi bi-hourglass-split me-1" aria-hidden="true"></i>Tiene una solicitud de reintegro pendiente.
+                    </div>
+                <?php endif; ?>
             </div>
 
             <?php if (!$qrImpreso): ?>
