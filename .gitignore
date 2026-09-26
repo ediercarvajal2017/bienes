@@ -21,6 +21,9 @@
 /storage/backups/*
 !/storage/backups/.gitkeep
 
+# Archivos de sesión de PHP (ver App\Core\Session::start)
+/storage/sesiones/
+
 # Informes de database/diagnostico_integridad.php y conteos de la prueba de humo:
 # contienen datos reales de producción, nunca se versionan.
 /storage/diagnosticos/

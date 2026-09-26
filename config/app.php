@@ -12,7 +12,12 @@ return [
     'debug' => Env::get('APP_DEBUG', '0') === '1',
     'timezone' => Env::get('APP_TIMEZONE', 'America/Bogota'),
     'base_path' => '/gestionbienes/public',
-    'session_lifetime_minutes' => 120,
+    // Minutos sin actividad tras los cuales se cierra la sesión (salvo "Recordarme").
+    'session_lifetime_minutes' => (int) Env::get('SESSION_INACTIVIDAD_MINUTOS', 120),
+    // Cada cuántos segundos se revalida la sesión contra la base de datos (cuenta activa,
+    // no eliminada, institución activa, versión de sesión). Es el máximo que tarda en
+    // salir del sistema un usuario recién desactivado.
+    'session_revalidacion_segundos' => (int) Env::get('SESSION_REVALIDACION_SEGUNDOS', 60),
     'login_max_attempts' => 5,
     'login_lockout_minutes' => 15,
     // Se puede sacar por completo de la carpeta que gestiona el despliegue (ej. un

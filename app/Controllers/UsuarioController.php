@@ -144,6 +144,19 @@ final class UsuarioController
             Usuario::updatePassword($id, password_hash($password, PASSWORD_BCRYPT));
         }
 
+        // Con otra contraseña, otro rol u otra institución, las sesiones abiertas de ese
+        // usuario ya no corresponden a la cuenta: se cierran (si es el propio usuario, la
+        // sesión actual sigue con la versión nueva).
+        $cambioSensible = $password !== ''
+            || (int) $datos['rol_id'] !== (int) $usuario['rol_id']
+            || (int) $datos['institucion_id'] !== (int) $usuario['institucion_id'];
+        if ($cambioSensible) {
+            $version = Usuario::invalidarSesiones($id);
+            if ($id === Auth::id()) {
+                Auth::actualizarVersionSesion($version);
+            }
+        }
+
         if ($archivo = $request->file('foto')) {
             $this->subirFoto($id, $archivo);
         }
@@ -168,9 +181,22 @@ final class UsuarioController
         $request = new Request();
         $this->verificarCsrf($request, '/usuarios');
 
-        Usuario::setActivo($id, !((bool) $usuario['activo']));
+        $activar = !((bool) $usuario['activo']);
+        Usuario::setActivo($id, $activar);
+        if (!$activar) {
+            Usuario::invalidarSesiones($id); // sale del sistema en máximo un minuto
+        }
+        Auditoria::registrar(
+            Auth::id(),
+            (int) $usuario['institucion_id'],
+            $activar ? 'activar' : 'desactivar',
+            'usuario',
+            $id,
+            ['activo' => (int) $usuario['activo']],
+            ['activo' => (int) $activar]
+        );
 
-        Session::flash('ok', 'Estado del usuario actualizado.');
+        Session::flash('ok', $activar ? 'Usuario activado.' : 'Usuario desactivado. Si tenía una sesión abierta, se cerrará en menos de un minuto.');
         header('Location: ' . Url::to('/usuarios'));
         exit;
     }
@@ -196,6 +222,7 @@ final class UsuarioController
             $snapshot = $usuario;
             unset($snapshot['password_hash']);
             Usuario::eliminar($id, Auth::id());
+            Usuario::invalidarSesiones($id);
             Auditoria::registrar(Auth::id(), (int) $usuario['institucion_id'], 'eliminar', 'usuario', $id, $snapshot);
             Session::flash('ok', 'Usuario enviado a la papelera. Un superusuario puede restaurarlo si fue un error.');
         }

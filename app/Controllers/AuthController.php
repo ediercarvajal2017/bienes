@@ -44,7 +44,10 @@ final class AuthController
 
         if ($email !== '' && $password !== '' && Auth::attempt($email, $password)) {
             if ($request->input('recordar')) {
-                Session::extender(30);
+                Session::extender(Session::DIAS_RECORDARME);
+                // Con "Recordarme" no aplica el cierre por inactividad (ver Auth::check);
+                // la revalidación contra la base de datos sí sigue aplicando.
+                Session::put('recordarme', true);
             }
 
             header('Location: ' . Url::to('/dashboard'));
@@ -58,6 +61,9 @@ final class AuthController
 
     public function logout(): void
     {
+        // Con token CSRF: otra página no puede cerrar la sesión del usuario a escondidas.
+        Csrf::verificarORedirigir(new Request(), '/dashboard');
+
         Auth::logout();
         // Borra la caché del navegador para este sitio (incluida la del service worker),
         // para que en un equipo compartido no quede ninguna pantalla del usuario guardada.

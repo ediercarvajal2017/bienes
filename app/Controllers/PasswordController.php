@@ -9,6 +9,7 @@ use App\Core\Request;
 use App\Core\Session;
 use App\Core\Url;
 use App\Core\View;
+use App\Models\Auditoria;
 use App\Models\Institucion;
 use App\Models\PasswordReset;
 use App\Models\Usuario;
@@ -108,8 +109,15 @@ final class PasswordController
             exit;
         }
 
-        Usuario::updatePassword((int) $reset['usuario_id'], password_hash($password, PASSWORD_BCRYPT));
+        $usuarioId = (int) $reset['usuario_id'];
+        Usuario::updatePassword($usuarioId, password_hash($password, PASSWORD_BCRYPT));
         PasswordReset::marcarUsado((int) $reset['id']);
+        // Quien restablece por correo demostró ser el dueño de la cuenta: se quita el
+        // bloqueo por intentos fallidos y se cierran las demás sesiones abiertas (por si
+        // la contraseña se cambió justamente porque alguien más la conocía).
+        Usuario::desbloquear($usuarioId);
+        Usuario::invalidarSesiones($usuarioId);
+        Auditoria::registrar($usuarioId, null, 'restablecer_contrasena', 'usuario', $usuarioId);
 
         Session::flash('ok', 'Contraseña actualizada. Ya puedes iniciar sesión.');
         header('Location: ' . Url::to('/login'));

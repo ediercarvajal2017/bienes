@@ -6,11 +6,30 @@ namespace App\Core;
 
 final class Session
 {
+    /** Duración de "Recordarme" (y vida máxima de un archivo de sesión en el servidor). */
+    public const DIAS_RECORDARME = 30;
+
     public static function start(): void
     {
         if (session_status() === PHP_SESSION_ACTIVE) {
             return;
         }
+
+        // Las sesiones se guardan en la carpeta propia de la app, con una vida máxima
+        // definida aquí. Con la configuración por defecto del hosting (carpeta compartida,
+        // gc_maxlifetime de 24 minutos) el servidor borraba la sesión mucho antes: ni
+        // "Recordarme" ni el límite de inactividad de config/app.php se cumplían. El
+        // cierre por inactividad lo aplica Auth::check().
+        $config = require dirname(__DIR__, 2) . '/config/app.php';
+        $dirSesiones = $config['storage_path'] . '/sesiones';
+        if ((is_dir($dirSesiones) || @mkdir($dirSesiones, 0700, true)) && is_writable($dirSesiones)) {
+            session_save_path($dirSesiones);
+        }
+        ini_set('session.gc_maxlifetime', (string) (self::DIAS_RECORDARME * 86400));
+        ini_set('session.gc_probability', '1');
+        ini_set('session.gc_divisor', '100');
+        // Rechaza ids de sesión que el servidor no creó (evita la fijación de sesión).
+        ini_set('session.use_strict_mode', '1');
 
         session_set_cookie_params([
             'lifetime' => 0,

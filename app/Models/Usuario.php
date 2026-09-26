@@ -86,6 +86,52 @@ final class Usuario
             ->execute([$usuarioId]);
     }
 
+    /**
+     * Lo mínimo para revalidar una sesión abierta (Auth::check): si la cuenta sigue
+     * activa, no está en la papelera, su institución sigue activa, su rol actual y la
+     * versión de sesión vigente. null si el usuario ya no existe.
+     */
+    public static function estadoSesion(int $usuarioId): ?array
+    {
+        $stmt = Database::connection()->prepare(
+            'SELECT u.activo, u.eliminado_en, u.sesion_version, r.nombre AS rol_nombre, i.activo AS institucion_activa
+             FROM usuarios u
+             JOIN roles r ON r.id = u.rol_id
+             JOIN instituciones i ON i.id = u.institucion_id
+             WHERE u.id = ?'
+        );
+        $stmt->execute([$usuarioId]);
+
+        return $stmt->fetch() ?: null;
+    }
+
+    /**
+     * Cierra todas las sesiones abiertas del usuario: sube su versión de sesión, y
+     * Auth::check() rechaza en la siguiente revalidación (máx. 1 minuto) cualquier sesión
+     * con la versión anterior. Devuelve la versión nueva.
+     */
+    public static function invalidarSesiones(int $usuarioId): int
+    {
+        $pdo = Database::connection();
+        $pdo->prepare('UPDATE usuarios SET sesion_version = sesion_version + 1 WHERE id = ?')->execute([$usuarioId]);
+
+        $stmt = $pdo->prepare('SELECT sesion_version FROM usuarios WHERE id = ?');
+        $stmt->execute([$usuarioId]);
+
+        return (int) $stmt->fetchColumn();
+    }
+
+    /**
+     * Quita el bloqueo por intentos fallidos (tras restablecer la contraseña por correo:
+     * quien la restablece demostró ser el dueño de la cuenta).
+     */
+    public static function desbloquear(int $usuarioId): void
+    {
+        Database::connection()
+            ->prepare('UPDATE usuarios SET intentos_fallidos = 0, bloqueado_hasta = NULL WHERE id = ?')
+            ->execute([$usuarioId]);
+    }
+
     public static function permisosDe(int $usuarioId): array
     {
         $stmt = Database::connection()->prepare(
