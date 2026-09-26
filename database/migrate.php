@@ -1,6 +1,16 @@
 <?php
 // Ejecuta, en orden, los .sql de database/migrations/ que aún no se hayan aplicado.
 // Uso: php database/migrate.php
+//
+// Cada archivo se registra en schema_migrations solo si TODAS sus sentencias corrieron
+// bien. Si una falla, el script se detiene con código de salida 1 e indica el archivo y
+// la sentencia (en MySQL/MariaDB los ALTER/CREATE no se pueden deshacer con una
+// transacción, por eso las migraciones deben escribirse idempotentes — ver 024).
+
+if (PHP_SAPI !== 'cli') {
+    http_response_code(404);
+    exit;
+}
 
 require __DIR__ . '/../vendor/autoload.php';
 
@@ -41,11 +51,18 @@ foreach ($files as $file) {
     $sql = file_get_contents($file);
     $statements = array_filter(array_map('trim', preg_split('/;\s*[\r\n]+/', $sql)));
 
-    foreach ($statements as $statement) {
+    foreach ($statements as $i => $statement) {
         if ($statement === '') {
             continue;
         }
-        $pdo->exec($statement);
+
+        try {
+            $pdo->exec($statement);
+        } catch (PDOException $e) {
+            fwrite(STDERR, "\nERROR en {$nombre}, sentencia #" . ($i + 1) . ":\n{$statement}\n\n{$e->getMessage()}\n");
+            fwrite(STDERR, "La migración NO quedó registrada. Corrija el problema y vuelva a ejecutar este script.\n");
+            exit(1);
+        }
     }
 
     $pdo->prepare('INSERT INTO schema_migrations (migracion) VALUES (?)')->execute([$nombre]);
