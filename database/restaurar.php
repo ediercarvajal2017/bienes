@@ -12,6 +12,8 @@ declare(strict_types=1);
  *   2. RECUPERAR producción tras un despliegue fallido (último recurso):
  *        php database/restaurar.php pre-deploy-....sql.gz --base=<base_de_produccion> --reemplazar
  *      Pide escribir a mano "RESTAURAR <base>" antes de tocar nada.
+ *   3. Un respaldo CIFRADO recibido por correo (.sql.gz.enc): se descifra primero con
+ *      BACKUP_PASSWORD del .env, o la pide si no está configurada.
  *
  * Si la base destino ya tiene tablas, exige --reemplazar y la confirmación escrita; el
  * respaldo borra y recrea cada tabla que contiene (DROP TABLE IF EXISTS + CREATE TABLE).
@@ -25,6 +27,7 @@ if (PHP_SAPI !== 'cli') {
 require __DIR__ . '/../vendor/autoload.php';
 
 use App\Core\Env;
+use App\Helpers\CifradoRespaldo;
 
 Env::cargar();
 
@@ -60,6 +63,29 @@ if (!preg_match('/^[A-Za-z0-9_]+$/', $base)) {
     exit(1);
 }
 
+$archivoOriginal = $archivo;
+
+// Respaldo cifrado (copia recibida por correo): se descifra a un .gz temporal ANTES de
+// tocar la base de datos, para que una contraseña incorrecta no deje nada creado.
+$temporalDescifrado = null;
+if (str_ends_with($archivo, '.enc')) {
+    $clave = (string) Env::get('BACKUP_PASSWORD', '');
+    if ($clave === '') {
+        echo 'El respaldo está cifrado. Escriba la contraseña de respaldos (BACKUP_PASSWORD): ';
+        $clave = trim((string) fgets(STDIN));
+    }
+    $temporalDescifrado = sys_get_temp_dir() . '/sigebi_restaurar_' . bin2hex(random_bytes(6)) . '.sql.gz';
+    try {
+        CifradoRespaldo::descifrar($archivo, $temporalDescifrado, $clave);
+    } catch (RuntimeException $e) {
+        fwrite(STDERR, $e->getMessage() . "\n");
+        exit(1);
+    }
+    register_shutdown_function(static fn () => @unlink($temporalDescifrado));
+    echo "Respaldo descifrado.\n";
+    $archivo = $temporalDescifrado;
+}
+
 $pdo = new PDO(
     "mysql:host={$dbConfig['host']};port={$dbConfig['port']};charset={$dbConfig['charset']}",
     $dbConfig['username'],
@@ -80,7 +106,7 @@ if ($tablasExistentes !== []) {
     }
 
     echo "ATENCIÓN: se van a REEMPLAZAR las tablas de la base `{$base}` ("
-        . count($tablasExistentes) . " tablas) con el contenido de:\n  {$archivo}\n";
+        . count($tablasExistentes) . " tablas) con el contenido de:\n  {$archivoOriginal}\n";
     echo "Escriba exactamente  RESTAURAR {$base}  para continuar: ";
     $respuesta = trim((string) fgets(STDIN));
     if ($respuesta !== "RESTAURAR {$base}") {

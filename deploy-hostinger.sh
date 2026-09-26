@@ -93,6 +93,12 @@ if [ ! -d ".git" ]; then
     read -rp "  URL pública del sitio, con https (ej. https://sigebi.midominio.com): " APP_URL
     read -rp "  Carpeta ABSOLUTA para archivos subidos, fuera de esta carpeta (ej. /home/usuario/storage_sigebi): " STORAGE_PATH
     read -rp "  Correo que recibe los respaldos diarios (opcional): " BACKUP_EMAIL
+    BACKUP_PASSWORD=""
+    if [ -n "$BACKUP_EMAIL" ]; then
+        echo "  La copia por correo se cifra. Escriba una contraseña larga y GUÁRDELA fuera del servidor:"
+        read -rsp "    BACKUP_PASSWORD: " BACKUP_PASSWORD
+        echo ""
+    fi
     echo "  Correo SMTP para 'olvidé mi contraseña' (hPanel > Correos). Deja vacío para configurarlo después."
     read -rp "    MAIL_HOST (ej. smtp.hostinger.com): " MAIL_HOST
     read -rp "    MAIL_USERNAME: " MAIL_USERNAME
@@ -121,6 +127,7 @@ MAIL_FROM_NAME=SIGEBI
 
 STORAGE_PATH=${STORAGE_PATH}
 BACKUP_EMAIL=${BACKUP_EMAIL}
+BACKUP_PASSWORD=${BACKUP_PASSWORD}
 BACKUP_RETENCION_DIAS=14
 EOF
     chmod 600 .env
@@ -165,6 +172,11 @@ fi
 if [ -z "$(leer_env APP_URL)" ]; then
     echo "ADVERTENCIA: falta APP_URL en el .env (el enlace de 'olvidé mi contraseña' se arma con el"
     echo "dominio que envía el navegador). Agrégalo, ej.: APP_URL=https://sigebi.midominio.com"
+fi
+
+if [ -n "$(leer_env BACKUP_EMAIL)" ] && [ -z "$(leer_env BACKUP_PASSWORD)" ]; then
+    echo "ADVERTENCIA: hay BACKUP_EMAIL pero falta BACKUP_PASSWORD en el .env: el respaldo diario"
+    echo "ya NO se enviará por correo (iría sin cifrar). Agréguelo para mantener la copia externa."
 fi
 
 if [ -n "$(git status --porcelain --untracked-files=no)" ]; then

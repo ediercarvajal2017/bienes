@@ -29,5 +29,10 @@ return [
     // por defecto: el respaldo igual se genera y se guarda en storage/backups/, pero
     // solo se envía por correo (la copia fuera del servidor) si se configura esto.
     'backup_email' => Env::get('BACKUP_EMAIL', ''),
+    // Contraseña con la que se cifra la copia del respaldo que se envía por correo
+    // (App\Helpers\CifradoRespaldo). Sin ella, el respaldo NO se envía por correo: viajaría
+    // sin cifrar con todos los datos personales. Guárdela también fuera del servidor:
+    // si se pierde, las copias recibidas por correo no se pueden abrir.
+    'backup_password' => Env::get('BACKUP_PASSWORD', ''),
     'backup_retencion_dias' => (int) Env::get('BACKUP_RETENCION_DIAS', 14),
 ];

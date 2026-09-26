@@ -13,6 +13,11 @@ declare(strict_types=1);
  * copia que queda fuera del propio servidor, así que sin esto configurado el
  * respaldo no protege contra una falla del servidor o del hosting en sí.
  *
+ * La copia que va por correo se CIFRA con BACKUP_PASSWORD (AES-256, formato estándar
+ * de OpenSSL: se puede abrir incluso sin SIGEBI, ver App\Helpers\CifradoRespaldo). Sin
+ * BACKUP_PASSWORD no se envía nada por correo. La copia local queda en .gz: el servidor
+ * ya contiene la base de datos misma, y así restaurar tras un despliegue es directo.
+ *
  * Uso manual: php database/respaldo.php
  * Pensado para ejecutarse a diario vía un cron job de Hostinger (ver
  * instrucciones de despliegue).
@@ -36,6 +41,7 @@ require __DIR__ . '/../vendor/autoload.php';
 
 use App\Core\Database;
 use App\Core\Env;
+use App\Helpers\CifradoRespaldo;
 use App\Services\MailService;
 
 Env::cargar();
@@ -162,17 +168,33 @@ if ($config['backup_email'] === '') {
     exit(0);
 }
 
+if ($config['backup_password'] === '') {
+    fwrite(STDERR, "BACKUP_PASSWORD no está configurado: por seguridad el respaldo NO se envió por correo "
+        . "(viajaría sin cifrar con todos los datos personales). Agregue BACKUP_PASSWORD al .env.\n");
+    exit(1);
+}
+
+$rutaCifrada = $rutaComprimida . '.enc';
 try {
+    CifradoRespaldo::cifrar($rutaComprimida, $rutaCifrada, $config['backup_password']);
+    $comando = htmlspecialchars(CifradoRespaldo::comandoDescifrado($nombreArchivo . '.enc'), ENT_QUOTES);
+
     MailService::enviarConAdjunto(
         $config['backup_email'],
         'SIGEBI',
         "Respaldo SIGEBI - {$fecha}",
-        "<p>Respaldo automático de la base de datos de SIGEBI.</p><p>Tablas: " . count($tablas) . " — Filas: {$totalFilas} — Tamaño: {$pesoMb} MB.</p>",
-        $rutaComprimida,
-        $nombreArchivo
+        "<p>Respaldo automático de la base de datos de SIGEBI.</p>"
+            . "<p>Tablas: " . count($tablas) . " — Filas: {$totalFilas} — Tamaño: {$pesoMb} MB.</p>"
+            . "<p>El adjunto está <strong>cifrado</strong> con la contraseña de respaldos (BACKUP_PASSWORD). "
+            . "Para abrirlo en cualquier equipo con OpenSSL:</p><pre>{$comando}</pre>"
+            . "<p>O en el servidor: <code>php database/restaurar.php {$nombreArchivo}.enc --base=NOMBRE_BASE</code></p>",
+        $rutaCifrada,
+        $nombreArchivo . '.enc'
     );
-    echo "Respaldo enviado por correo a {$config['backup_email']}.\n";
+    echo "Respaldo cifrado y enviado por correo a {$config['backup_email']}.\n";
 } catch (\RuntimeException $e) {
     fwrite(STDERR, "El respaldo se generó pero no se pudo enviar por correo: " . $e->getMessage() . "\n");
     exit(1);
+} finally {
+    @unlink($rutaCifrada);
 }
