@@ -105,12 +105,31 @@ final class InstitucionController
         $this->verificarAcceso($id);
 
         $antes = Institucion::find($id);
+        if (!$antes) {
+            http_response_code(404);
+            View::render('errors/404');
+            exit;
+        }
 
         $request = new Request();
         $datos = $this->datosDesdeFormulario($request);
+
+        // La estructura de la red de sedes (principal/sección y su institución padre) y el
+        // código DANE solo los cambia el superusuario. Si un rector pudiera declarar su
+        // institución como "sección" de cualquier otra, Institucion::familiaDe() pasaría a
+        // incluir a esa otra institución y, con /sede-activa, podría entrar a ella con
+        // todos sus permisos. Por eso aquí se ignora lo que llegue en el formulario.
+        if (!Auth::esSuperusuario()) {
+            $datos['codigo_dane'] = (string) $antes['codigo_dane'];
+            $datos['tipo_sede'] = (string) $antes['tipo_sede'];
+            $datos['institucion_padre_id'] = $antes['institucion_padre_id'] !== null
+                ? (int) $antes['institucion_padre_id']
+                : null;
+        }
+
         $this->verificarCsrf($request, "/instituciones/{$id}/editar", $datos);
 
-        if ($error = $this->validar($datos, $id)) {
+        if ($error = $this->validar($datos, $id, $antes)) {
             Session::flash('error', $error);
             Session::flashOld($datos);
             header('Location: ' . Url::to("/instituciones/{$id}/editar"));
@@ -175,7 +194,12 @@ final class InstitucionController
         ];
     }
 
-    private function validar(array $datos, ?int $exceptId): ?string
+    /**
+     * $antes: la institución tal como está guardada (solo al editar). La institución padre
+     * se valida únicamente si cambió, para no impedir editar el nombre o la dirección de
+     * una sección ya existente cuya principal fue desactivada después.
+     */
+    private function validar(array $datos, ?int $exceptId, ?array $antes = null): ?string
     {
         if ($datos['codigo_dane'] === '' || $datos['nombre'] === '') {
             return 'El código DANE y el nombre son obligatorios.';
@@ -183,6 +207,42 @@ final class InstitucionController
 
         if (Institucion::existeCodigoDane($datos['codigo_dane'], $exceptId)) {
             return 'Ya existe una institución con ese código DANE.';
+        }
+
+        $estructuraSinCambios = $antes !== null
+            && $antes['tipo_sede'] === $datos['tipo_sede']
+            && (int) ($antes['institucion_padre_id'] ?? 0) === (int) ($datos['institucion_padre_id'] ?? 0);
+
+        if ($datos['tipo_sede'] === 'seccion' && !$estructuraSinCambios) {
+            return $this->validarPadre($datos['institucion_padre_id'], $exceptId);
+        }
+
+        return null;
+    }
+
+    /**
+     * Una sección debe colgar de una institución principal existente y activa, distinta
+     * de ella misma. Una institución que ya tiene secciones no puede volverse sección de
+     * otra (dejaría a sus secciones colgando de una sección, algo que familiaDe() no
+     * contempla).
+     */
+    private function validarPadre(?int $padreId, ?int $exceptId): ?string
+    {
+        if ($padreId === null) {
+            return 'Seleccione la institución principal a la que pertenece esta sección.';
+        }
+
+        if ($exceptId !== null && $padreId === $exceptId) {
+            return 'Una institución no puede ser sección de sí misma.';
+        }
+
+        $padre = Institucion::find($padreId);
+        if (!$padre || !(int) $padre['activo'] || $padre['tipo_sede'] !== 'principal') {
+            return 'La institución principal seleccionada no es válida (debe existir, estar activa y ser sede principal).';
+        }
+
+        if ($exceptId !== null && Institucion::tieneSecciones($exceptId)) {
+            return 'Esta institución tiene secciones a su cargo, así que no puede convertirse en sección de otra.';
         }
 
         return null;

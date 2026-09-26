@@ -6,6 +6,9 @@ use App\Core\Url;
 
 $esEdicion = $institucion !== null;
 $puedeEditar = Auth::esSuperusuario() || Auth::tienePermiso('instituciones.editar');
+// Código DANE, tipo de sede e institución principal: solo el superusuario (el servidor
+// ignora estos campos para los demás — ver InstitucionController::actualizar()).
+$puedeEditarEstructura = Auth::esSuperusuario();
 $viejo ??= [];
 $v = static fn (string $campo, mixed $porDefecto = '') => $viejo[$campo] ?? $institucion[$campo] ?? $porDefecto;
 ?>
@@ -28,18 +31,26 @@ $v = static fn (string $campo, mixed $porDefecto = '') => $viejo[$campo] ?? $ins
     <?= Csrf::field() ?>
 
     <div class="col-md-6">
-        <label class="form-label small requerido">Código DANE</label>
-        <input type="text" name="codigo_dane" class="form-control" required <?= $puedeEditar ? '' : 'disabled' ?>
+        <label class="form-label small requerido" for="codigoDane">Código DANE</label>
+        <input type="text" name="codigo_dane" id="codigoDane" class="form-control" required <?= $puedeEditarEstructura ? '' : 'disabled' ?>
                value="<?= htmlspecialchars($v('codigo_dane'), ENT_QUOTES) ?>">
     </div>
 
     <div class="col-md-6">
-        <label class="form-label small">Tipo de sede</label>
-        <select name="tipo_sede" id="tipoSede" class="form-select" <?= $puedeEditar ? '' : 'disabled' ?>>
+        <label class="form-label small" for="tipoSede">Tipo de sede</label>
+        <select name="tipo_sede" id="tipoSede" class="form-select" <?= $puedeEditarEstructura ? '' : 'disabled' ?>>
             <option value="principal" <?= $v('tipo_sede', 'principal') === 'principal' ? 'selected' : '' ?>>Principal</option>
             <option value="seccion" <?= $v('tipo_sede') === 'seccion' ? 'selected' : '' ?>>Sección</option>
         </select>
     </div>
+
+    <?php if ($esEdicion && !$puedeEditarEstructura): ?>
+        <div class="col-12">
+            <p class="form-text small mb-0">
+                El código DANE, el tipo de sede y la institución principal solo los puede cambiar el superusuario.
+            </p>
+        </div>
+    <?php endif; ?>
 
     <div class="col-12">
         <label class="form-label small requerido">Nombre</label>
@@ -48,8 +59,8 @@ $v = static fn (string $campo, mixed $porDefecto = '') => $viejo[$campo] ?? $ins
     </div>
 
     <div class="col-12" id="campoPadre" style="<?= $v('tipo_sede') === 'seccion' ? '' : 'display:none;' ?>">
-        <label class="form-label small">Institución principal</label>
-        <select name="institucion_padre_id" class="form-select selector-buscable" <?= $puedeEditar ? '' : 'disabled' ?>>
+        <label class="form-label small" for="institucionPadre">Institución principal</label>
+        <select name="institucion_padre_id" id="institucionPadre" class="form-select selector-buscable" <?= $puedeEditarEstructura ? '' : 'disabled' ?>>
             <option value="">-- Selecciona --</option>
             <?php foreach ($instituciones as $opt): ?>
                 <?php if ($esEdicion && (int) $opt['id'] === (int) $institucion['id']) { continue; } ?>

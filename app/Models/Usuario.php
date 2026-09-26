@@ -115,9 +115,9 @@ final class Usuario
         return $stmt->fetch() ?: null;
     }
 
-    public static function listar(?int $institucionId = null, ?string $busqueda = null, int $pagina = 1, int $porPagina = 50): array
+    public static function listar(?int $institucionId = null, ?string $busqueda = null, int $pagina = 1, int $porPagina = 50, bool $incluirSuperusuarios = true): array
     {
-        [$whereSql, $params] = self::condicionesListado($institucionId, $busqueda);
+        [$whereSql, $params] = self::condicionesListado($institucionId, $busqueda, $incluirSuperusuarios);
 
         $sql = 'SELECT u.*, r.nombre AS rol_nombre, c.nombre AS cargo_nombre, i.nombre AS institucion_nombre
                 FROM usuarios u
@@ -133,9 +133,9 @@ final class Usuario
         return $stmt->fetchAll();
     }
 
-    public static function contarListado(?int $institucionId = null, ?string $busqueda = null): int
+    public static function contarListado(?int $institucionId = null, ?string $busqueda = null, bool $incluirSuperusuarios = true): int
     {
-        [$whereSql, $params] = self::condicionesListado($institucionId, $busqueda);
+        [$whereSql, $params] = self::condicionesListado($institucionId, $busqueda, $incluirSuperusuarios);
 
         $sql = 'SELECT COUNT(*)
                 FROM usuarios u
@@ -152,10 +152,18 @@ final class Usuario
      * Busca por nombre, apellido, documento, correo o cargo — las columnas visibles
      * en /usuarios.
      */
-    private static function condicionesListado(?int $institucionId, ?string $busqueda): array
+    /**
+     * $incluirSuperusuarios = false para quien no es superusuario: las cuentas de
+     * superusuario no se listan (ni se pueden editar, ver UsuarioController::verificarAcceso).
+     */
+    private static function condicionesListado(?int $institucionId, ?string $busqueda, bool $incluirSuperusuarios = true): array
     {
         $condiciones = ['u.eliminado_en IS NULL'];
         $params = [];
+
+        if (!$incluirSuperusuarios) {
+            $condiciones[] = "u.rol_id NOT IN (SELECT id FROM roles WHERE nombre = 'superusuario')";
+        }
 
         if ($institucionId !== null) {
             $condiciones[] = 'u.institucion_id = ?';

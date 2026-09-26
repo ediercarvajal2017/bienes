@@ -33,11 +33,11 @@ final class UsuarioController
             $porPagina = self::POR_PAGINA_DEFECTO;
         }
 
-        $total = Usuario::contarListado($institucionId, $terminoBusqueda);
+        $total = Usuario::contarListado($institucionId, $terminoBusqueda, Auth::esSuperusuario());
 
         View::layout('partials/layout', 'usuarios/index', [
             'title' => 'Usuarios',
-            'usuarios' => Usuario::listar($institucionId, $terminoBusqueda, $pagina, $porPagina),
+            'usuarios' => Usuario::listar($institucionId, $terminoBusqueda, $pagina, $porPagina, Auth::esSuperusuario()),
             'busqueda' => $busqueda,
             'pagina' => $pagina,
             'porPagina' => $porPagina,
@@ -353,6 +353,16 @@ final class UsuarioController
         }
 
         if (!Auth::esSuperusuario() && (int) $usuario['institucion_id'] !== Auth::institucionId()) {
+            http_response_code(403);
+            View::render('errors/403');
+            exit;
+        }
+
+        // Una cuenta de superusuario solo la administra otro superusuario. Sin esto, un
+        // rector que comparta institución con el superusuario (el sembrado vive en la
+        // institución Demo) podría cambiarle la contraseña, desactivarlo, eliminarlo o
+        // degradarlo a otro rol.
+        if (!Auth::esSuperusuario() && ($usuario['rol_nombre'] ?? '') === 'superusuario') {
             http_response_code(403);
             View::render('errors/403');
             exit;
