@@ -6,11 +6,13 @@ namespace App\Controllers;
 
 use App\Core\Auth;
 use App\Core\Csrf;
+use App\Core\ErrorHandler;
 use App\Core\Request;
 use App\Core\Session;
 use App\Core\Url;
 use App\Core\View;
 use App\Helpers\Paginador;
+use App\Helpers\Uploader;
 use App\Models\CargaMasiva;
 use App\Services\EspacioCargaMasivaService;
 
@@ -68,11 +70,23 @@ final class EspacioCargaMasivaController
         $institucionId = Auth::institucionId();
 
         try {
-            $rutaRelativa = $this->guardarArchivo($archivo);
+            // storeExcel valida tipo, extensión y tamaño (antes se guardaba cualquier archivo
+            // como .xlsx sin revisarlo).
+            $rutaRelativa = Uploader::storeExcel($archivo, 'cargas');
+            if ($rutaRelativa === null) {
+                throw new \RuntimeException('Selecciona un archivo .xlsx válido.');
+            }
             $config = require dirname(__DIR__, 2) . '/config/app.php';
             $filas = EspacioCargaMasivaService::analizar($config['storage_path'] . '/uploads/' . $rutaRelativa, $institucionId);
+        } catch (\RuntimeException $e) {
+            Session::flash('error', $e->getMessage());
+            header('Location: ' . Url::to('/espacios/carga-masiva'));
+            exit;
         } catch (\Throwable $e) {
-            Session::flash('error', 'No se pudo leer el archivo: ' . $e->getMessage());
+            // Errores internos del lector de Excel: al usuario, un mensaje claro; el detalle
+            // técnico queda en el log con su código de incidente.
+            $incidente = ErrorHandler::reportar($e, __METHOD__);
+            Session::flash('error', 'No se pudo leer el archivo. Verifique que sea la plantilla de Excel (.xlsx) descargada del sistema. (Código: ' . $incidente . ')');
             header('Location: ' . Url::to('/espacios/carga-masiva'));
             exit;
         }
@@ -168,25 +182,6 @@ final class EspacioCargaMasivaController
         }
 
         Session::flash('error', 'Carga masiva aplicada parcialmente: ' . implode('; ', $partes) . '.');
-    }
-
-    private function guardarArchivo(array $archivo): string
-    {
-        $config = require dirname(__DIR__, 2) . '/config/app.php';
-        $subdir = 'cargas';
-        $targetDir = $config['storage_path'] . '/uploads/' . $subdir;
-
-        if (!is_dir($targetDir) && !mkdir($targetDir, 0755, true) && !is_dir($targetDir)) {
-            throw new \RuntimeException('No se pudo preparar la carpeta de almacenamiento.');
-        }
-
-        $nombre = bin2hex(random_bytes(16)) . '.xlsx';
-
-        if (!move_uploaded_file($archivo['tmp_name'], $targetDir . '/' . $nombre)) {
-            throw new \RuntimeException('No se pudo guardar el archivo subido.');
-        }
-
-        return $subdir . '/' . $nombre;
     }
 
     private function cargaAccesible(int $id): array

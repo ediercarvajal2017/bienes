@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Helpers\LectorExcel;
 use App\Models\Asignacion;
 use App\Models\Bien;
 use App\Models\Categoria;
 use App\Models\Espacio;
-use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Shared\Date as FechaExcel;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
@@ -31,7 +31,7 @@ final class CargaMasivaService
      */
     public static function analizar(string $rutaArchivo, int $institucionId): array
     {
-        $sheet = IOFactory::load($rutaArchivo)->getActiveSheet();
+        $sheet = LectorExcel::hojaActiva($rutaArchivo);
         $filas = [];
         $codigosVistos = [];
         $espaciosPorCodigo = self::mapaEspaciosPorCodigo($institucionId);

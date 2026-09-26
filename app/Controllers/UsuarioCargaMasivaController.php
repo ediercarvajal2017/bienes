@@ -6,6 +6,7 @@ namespace App\Controllers;
 
 use App\Core\Auth;
 use App\Core\Csrf;
+use App\Core\ErrorHandler;
 use App\Core\Request;
 use App\Core\Session;
 use App\Core\Url;
@@ -81,8 +82,13 @@ final class UsuarioCargaMasivaController
                 $institucionId,
                 Auth::esSuperusuario()
             );
+        } catch (\RuntimeException $e) {
+            Session::flash('error', $e->getMessage());
+            header('Location: ' . Url::to('/usuarios/carga-masiva'));
+            exit;
         } catch (\Throwable $e) {
-            Session::flash('error', 'No se pudo leer el archivo: ' . $e->getMessage());
+            $incidente = ErrorHandler::reportar($e, __METHOD__);
+            Session::flash('error', 'No se pudo leer el archivo. Verifique que sea la plantilla de Excel (.xlsx) descargada del sistema. (Código: ' . $incidente . ')');
             header('Location: ' . Url::to('/usuarios/carga-masiva'));
             exit;
         }

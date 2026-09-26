@@ -29,7 +29,7 @@ final class Uploader
         'application/zip' => 'xlsx',
     ];
 
-    private const TAMANO_MAXIMO_IMAGEN = 2 * 1024 * 1024;
+    public const TAMANO_MAXIMO_IMAGEN = 2 * 1024 * 1024;
     private const TAMANO_MAXIMO_PDF = 8 * 1024 * 1024;
     private const TAMANO_MAXIMO_DOCUMENTO = 8 * 1024 * 1024;
     private const TAMANO_MAXIMO_EXCEL = 8 * 1024 * 1024;
