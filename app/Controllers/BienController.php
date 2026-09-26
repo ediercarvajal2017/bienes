@@ -7,6 +7,7 @@ namespace App\Controllers;
 use App\Core\Auth;
 use App\Core\Csrf;
 use App\Core\Database;
+use App\Core\ErrorHandler;
 use App\Core\Request;
 use App\Core\Session;
 use App\Core\Url;
@@ -395,6 +396,7 @@ final class BienController
             return $ids;
         } catch (\Throwable $e) {
             $pdo->rollBack();
+            ErrorHandler::reportar($e, __METHOD__);
 
             return null;
         }

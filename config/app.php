@@ -7,7 +7,9 @@ $env = Env::get('APP_ENV', 'local');
 return [
     'name' => 'SIGEBI',
     'env' => $env,
-    'debug' => Env::get('APP_DEBUG', $env !== 'production' ? '1' : '0') === '1',
+    // Apagado por defecto: si el .env se pierde o no define APP_DEBUG, nunca se muestran
+    // trazas de PHP al usuario. Para desarrollar en local, poner APP_DEBUG=1 en el .env.
+    'debug' => Env::get('APP_DEBUG', '0') === '1',
     'timezone' => Env::get('APP_TIMEZONE', 'America/Bogota'),
     'base_path' => '/gestionbienes/public',
     'session_lifetime_minutes' => 120,

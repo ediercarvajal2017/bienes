@@ -21,6 +21,18 @@ if ($appConfig['debug']) {
     error_reporting(E_ALL);
 }
 
+App\Core\ErrorHandler::registrar($appConfig['debug'], $appConfig['storage_path'] . '/logs');
+
+// Modo mantenimiento: deploy-hostinger.sh crea este archivo antes de respaldar y migrar,
+// y lo borra al terminar. Mientras exista, nadie escribe en la base de datos.
+if (is_file(__DIR__ . '/mantenimiento.flag')) {
+    http_response_code(503);
+    header('Retry-After: 300');
+    header('Cache-Control: no-store');
+    App\Core\View::render('errors/mantenimiento');
+    exit;
+}
+
 use App\Controllers\ArchivoController;
 use App\Controllers\AsignacionController;
 use App\Controllers\AuditoriaController;

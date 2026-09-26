@@ -7,6 +7,7 @@ namespace App\Controllers;
 use App\Core\Auth;
 use App\Core\Csrf;
 use App\Core\Database;
+use App\Core\ErrorHandler;
 use App\Core\Request;
 use App\Core\Session;
 use App\Core\Url;
@@ -338,6 +339,7 @@ final class ReintegroController
             return $reintegrados;
         } catch (\Throwable $e) {
             $pdo->rollBack();
+            ErrorHandler::reportar($e, __METHOD__);
 
             return null;
         }
@@ -391,6 +393,7 @@ final class ReintegroController
             return $lotesCreados;
         } catch (\Throwable $e) {
             $pdo->rollBack();
+            ErrorHandler::reportar($e, __METHOD__);
 
             return null;
         }
