@@ -200,7 +200,26 @@ final class BienController
         $datos['created_by'] = Auth::id();
 
         try {
-            $id = Bien::create($datos);
+            // Crear el bien, auditarlo y (si viene de un hallazgo) asignarlo y cerrar el
+            // hallazgo van juntos: antes podía quedar el bien creado con el hallazgo todavía
+            // pendiente, o sin su asignación, si algo fallaba a mitad de camino.
+            $id = Database::transaccion(static function () use ($datos, $hallazgo): int {
+                $id = Bien::create($datos);
+                Auditoria::registrar(Auth::id(), (int) $datos['institucion_id'], 'crear', 'bien', $id, null, $datos);
+
+                if ($hallazgo !== null) {
+                    Asignacion::crear([
+                        'bien_id' => $id,
+                        'espacio_id' => $hallazgo['espacio_id'],
+                        'fecha_asignacion' => date('Y-m-d'),
+                        'observaciones' => 'Bien registrado a partir de un hallazgo reportado durante una jornada de verificación física.',
+                        'asignado_por' => Auth::id(),
+                    ]);
+                    Hallazgo::marcarRegistrado((int) $hallazgo['id'], $id, (int) Auth::id());
+                }
+
+                return $id;
+            });
         } catch (\PDOException $e) {
             // La comprobación de Bien::existeCodigo() en validar() ya pasó, pero entre
             // ese chequeo y este INSERT otra petición pudo registrar el mismo código
@@ -218,20 +237,10 @@ final class BienController
             exit;
         }
 
-        Auditoria::registrar(Auth::id(), (int) $datos['institucion_id'], 'crear', 'bien', $id, null, $datos);
-
         $this->procesarArchivos($id, $request, $datos['codigo_identificacion']);
         $this->procesarSolicitudQr($id, $imprimirQr);
 
         if ($hallazgo !== null) {
-            Asignacion::crear([
-                'bien_id' => $id,
-                'espacio_id' => $hallazgo['espacio_id'],
-                'fecha_asignacion' => date('Y-m-d'),
-                'observaciones' => 'Bien registrado a partir de un hallazgo reportado durante una jornada de verificación física.',
-                'asignado_por' => Auth::id(),
-            ]);
-            Hallazgo::marcarRegistrado((int) $hallazgo['id'], $id, (int) Auth::id());
             Session::flash('ok', 'Bien registrado y asignado a ' . $hallazgo['espacio_nombre'] . '.');
         } else {
             Session::flash('ok', 'Bien registrado correctamente.');
@@ -443,6 +452,15 @@ final class BienController
         $bien = Bien::find($id);
         $this->verificarAcceso($bien);
 
+        // Dado de baja es el estado final del ciclo de vida: sus datos (valor, categoría,
+        // código) quedan como estaban al darse de baja, para que el historial y los
+        // reportes no cambien después.
+        if ($bien['estado'] === 'dado_de_baja') {
+            Session::flash('error', 'Este bien está dado de baja: sus datos ya no se pueden modificar.');
+            header('Location: ' . Url::to("/bienes/{$id}/editar"));
+            exit;
+        }
+
         $request = new Request();
         $datos = $this->datosDesdeFormulario($request, (int) $bien['institucion_id']);
         $datos['estado'] = $this->estadoPermitidoDesdeFormulario($bien['estado'], $datos['estado']);
@@ -493,7 +511,10 @@ final class BienController
      */
     private function esViolacionCodigoDuplicado(\PDOException $e): bool
     {
-        return $e->getCode() === '23000';
+        // SQLSTATE 23000 agrupa varias restricciones (p. ej. 1452, una llave foránea
+        // inválida); solo el 1062 es "valor duplicado". Antes cualquier 23000 se mostraba
+        // como "ya existe un bien con ese código", un mensaje engañoso.
+        return $e->getCode() === '23000' && (int) ($e->errorInfo[1] ?? 0) === 1062;
     }
 
     private function procesarArchivos(int $bienId, Request $request, string $codigoIdentificacion): void

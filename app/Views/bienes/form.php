@@ -8,6 +8,9 @@ use App\Models\Categoria;
 
 $esEdicion = $bien !== null;
 $puedeEditar = Auth::esSuperusuario() || Auth::tienePermiso('bienes.editar') || (!$esEdicion && Auth::tienePermiso('bienes.crear'));
+// Un bien dado de baja es de solo lectura (estado final; ver BienController::actualizar).
+$bienDadoDeBaja = $esEdicion && $bien['estado'] === 'dado_de_baja';
+$puedeEditar = $puedeEditar && !$bienDadoDeBaja;
 // Un bien dado de baja o reintegrado ya no esta fisicamente en la institucion -- no tiene
 // sentido ofrecer "Asignar" para el (ver MovimientoController::verificarAsignable()).
 $bienFueraDeCirculacion = $esEdicion && in_array($bien['estado'], ['dado_de_baja', 'reintegrado'], true);
@@ -60,6 +63,13 @@ $invalido = static fn (string $campo) => $errorCampo === $campo ? ' is-invalid' 
         <strong><?= htmlspecialchars($hallazgo['espacio_nombre'], ENT_QUOTES) ?></strong>
         por <?= htmlspecialchars($hallazgo['nombres'] . ' ' . $hallazgo['apellidos'], ENT_QUOTES) ?>.
         Al guardar, el bien quedará asignado automáticamente a ese espacio.
+    </div>
+<?php endif; ?>
+
+<?php if ($bienDadoDeBaja): ?>
+    <div class="alert alert-secondary py-2 small">
+        <i class="bi bi-lock me-1" aria-hidden="true"></i>
+        Este bien está <strong>dado de baja</strong>: sus datos se conservan tal como estaban y ya no se pueden modificar.
     </div>
 <?php endif; ?>
 
