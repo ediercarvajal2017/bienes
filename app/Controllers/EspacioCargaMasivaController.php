@@ -13,6 +13,7 @@ use App\Core\Url;
 use App\Core\View;
 use App\Helpers\Paginador;
 use App\Helpers\Uploader;
+use App\Models\Auditoria;
 use App\Models\CargaMasiva;
 use App\Services\EspacioCargaMasivaService;
 
@@ -144,8 +145,24 @@ final class EspacioCargaMasivaController
         }
 
         $filas = json_decode($carga['resultado_diff_json'], true) ?? [];
-        $omitidas = EspacioCargaMasivaService::aplicar($filas, (int) $carga['institucion_id']);
-        CargaMasiva::marcarAplicada($id);
+        try {
+            $omitidas = CargaMasiva::aplicarUnaVez($id, static function () use ($filas, $carga, $id): int {
+                $omitidas = EspacioCargaMasivaService::aplicar($filas, (int) $carga['institucion_id']);
+                Auditoria::registrar(Auth::id(), (int) $carga['institucion_id'], 'aplicar', 'carga_masiva', $id, null, [
+                    'tipo' => 'espacios',
+                    'filas' => count($filas),
+                    'nuevos' => count(array_filter($filas, static fn (array $f): bool => $f['tipo'] === 'nuevo')),
+                    'modificados' => count(array_filter($filas, static fn (array $f): bool => $f['tipo'] === 'modificado')),
+                    'omitidas' => $omitidas,
+                ]);
+
+                return $omitidas;
+            });
+        } catch (\DomainException $e) {
+            Session::flash('error', $e->getMessage());
+            header('Location: ' . Url::to("/espacios/carga-masiva/{$id}"));
+            exit;
+        }
 
         $invalidas = count(array_filter($filas, static fn (array $f): bool => $f['tipo'] === 'invalido'));
         $this->flashResultado($invalidas, $omitidas);

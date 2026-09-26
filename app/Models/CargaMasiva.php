@@ -90,8 +90,27 @@ final class CargaMasiva
         return (int) Database::connection()->lastInsertId();
     }
 
-    public static function marcarAplicada(int $id): void
+    /**
+     * Aplica la carga UNA sola vez y todo o nada: dentro de una transacción marca la carga
+     * como aplicada solo si todavía no lo estaba (la condición va en el UPDATE) y ejecuta
+     * $aplicar. Antes, un doble clic podía aplicarla dos veces, y un error a mitad de
+     * camino la dejaba aplicada a medias con aplicada = 0.
+     *
+     * @template T
+     * @param callable(): T $aplicar
+     * @return T
+     * @throws \DomainException si la carga ya había sido aplicada
+     */
+    public static function aplicarUnaVez(int $id, callable $aplicar): mixed
     {
-        Database::connection()->prepare('UPDATE cargas_masivas SET aplicada = 1 WHERE id = ?')->execute([$id]);
+        return Database::transaccion(static function (\PDO $pdo) use ($id, $aplicar) {
+            $stmt = $pdo->prepare('UPDATE cargas_masivas SET aplicada = 1 WHERE id = ? AND aplicada = 0');
+            $stmt->execute([$id]);
+            if ($stmt->rowCount() !== 1) {
+                throw new \DomainException('Esta carga ya fue aplicada anteriormente.');
+            }
+
+            return $aplicar();
+        });
     }
 }
