@@ -5,7 +5,6 @@
     "require": {
         "php": ">=8.3",
         "phpoffice/phpspreadsheet": "^5.9",
-        "mpdf/mpdf": "^8.3",
         "endroid/qr-code": "^6.0",
         "phpmailer/phpmailer": "^7.1"
     },
