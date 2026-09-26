@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Core;
 
+use App\Helpers\LimiteIntentos;
 use App\Models\Institucion;
 use App\Models\Usuario;
 
@@ -11,28 +12,70 @@ final class Auth
 {
     private static ?array $permisosCache = null;
 
+    /** Máximo de intentos fallidos desde una misma IP (cualquier cuenta) en la ventana. */
+    public const MAX_FALLOS_POR_IP = 20;
+    /** Máximo de intentos fallidos sobre una cuenta desde una misma IP en la ventana. */
+    public const MAX_FALLOS_CUENTA_IP = 5;
+    /** Máximo de intentos fallidos sobre una cuenta desde cualquier IP (ataque distribuido). */
+    public const MAX_FALLOS_CUENTA_TOTAL = 50;
+    public const VENTANA_MINUTOS = 15;
+
+    /**
+     * Hash bcrypt de una cadena aleatoria: si el correo no existe, se verifica la contraseña
+     * contra este hash igual, para que el tiempo de respuesta no revele qué correos tienen
+     * cuenta en el sistema.
+     */
+    private const HASH_FICTICIO = '$2y$10$quaqN3SjV2U6mqra4tY.FORwKsEVi5E2JIZFS13b41EHT47FYX9E2';
+
+    /** Por qué falló el último attempt(): 'credenciales' o 'bloqueado'. */
+    private static string $motivoFallo = 'credenciales';
+
+    public static function motivoFallo(): string
+    {
+        return self::$motivoFallo;
+    }
+
+    /**
+     * Límites (ver constantes), guardados en el servidor (App\Helpers\LimiteIntentos):
+     *  - por IP: frena a quien prueba muchas cuentas o contraseñas desde una conexión (el
+     *    límite es holgado porque en un colegio todos salen por la misma IP);
+     *  - por cuenta + IP: bloquea esa cuenta SOLO desde la conexión que falla. Antes el
+     *    bloqueo era de la cuenta entera: cualquiera podía dejar sin acceso a otra persona
+     *    (p. ej. al superusuario) fallando 5 veces con su correo;
+     *  - por cuenta desde cualquier IP: tope alto contra ataques distribuidos.
+     */
     public static function attempt(string $email, string $password): bool
     {
+        self::$motivoFallo = 'credenciales';
+        $v = self::VENTANA_MINUTOS;
+
+        if (LimiteIntentos::desdeEstaIp('login', $v) >= self::MAX_FALLOS_POR_IP
+            || LimiteIntentos::sobreClave('login', $email, $v, true) >= self::MAX_FALLOS_CUENTA_IP
+            || LimiteIntentos::sobreClave('login', $email, $v) >= self::MAX_FALLOS_CUENTA_TOTAL
+        ) {
+            self::$motivoFallo = 'bloqueado';
+
+            return false;
+        }
+
         $usuario = Usuario::findByEmail($email);
+        $claveCorrecta = password_verify($password, $usuario['password_hash'] ?? self::HASH_FICTICIO);
 
-        if (!$usuario || !(int) $usuario['activo']) {
-            return false;
-        }
-
-        if ($usuario['rol_nombre'] !== 'superusuario' && !(int) $usuario['institucion_activa']) {
-            return false;
-        }
-
-        if (!empty($usuario['bloqueado_hasta']) && strtotime($usuario['bloqueado_hasta']) > time()) {
-            return false;
-        }
-
-        if (!password_verify($password, $usuario['password_hash'])) {
-            Usuario::registrarIntentoFallido((int) $usuario['id']);
+        if (!$usuario || !$claveCorrecta) {
+            LimiteIntentos::registrar('login', $email);
 
             return false;
         }
 
+        // Cuenta o institución desactivada: se responde igual que con una contraseña
+        // incorrecta (no cuenta como intento fallido: la contraseña era la correcta).
+        if (!(int) $usuario['activo']
+            || ($usuario['rol_nombre'] !== 'superusuario' && !(int) $usuario['institucion_activa'])
+        ) {
+            return false;
+        }
+
+        LimiteIntentos::limpiar('login', $email);
         Usuario::registrarLoginExitoso((int) $usuario['id']);
 
         Session::regenerate();

@@ -61,24 +61,6 @@ final class Usuario
         return $stmt->fetch() ?: null;
     }
 
-    public static function registrarIntentoFallido(int $usuarioId): void
-    {
-        $config = require dirname(__DIR__, 2) . '/config/app.php';
-        $pdo = Database::connection();
-
-        $pdo->prepare('UPDATE usuarios SET intentos_fallidos = intentos_fallidos + 1 WHERE id = ?')
-            ->execute([$usuarioId]);
-
-        $stmt = $pdo->prepare('SELECT intentos_fallidos FROM usuarios WHERE id = ?');
-        $stmt->execute([$usuarioId]);
-        $intentos = (int) $stmt->fetchColumn();
-
-        if ($intentos >= $config['login_max_attempts']) {
-            $hasta = date('Y-m-d H:i:s', time() + $config['login_lockout_minutes'] * 60);
-            $pdo->prepare('UPDATE usuarios SET bloqueado_hasta = ? WHERE id = ?')->execute([$hasta, $usuarioId]);
-        }
-    }
-
     public static function registrarLoginExitoso(int $usuarioId): void
     {
         Database::connection()

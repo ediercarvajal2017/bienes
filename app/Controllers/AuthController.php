@@ -54,7 +54,9 @@ final class AuthController
             exit;
         }
 
-        Session::flash('error', 'Credenciales inválidas o cuenta bloqueada temporalmente.');
+        Session::flash('error', Auth::motivoFallo() === 'bloqueado'
+            ? 'Demasiados intentos fallidos. Espera ' . Auth::VENTANA_MINUTOS . ' minutos antes de volver a intentarlo.'
+            : 'Correo o contraseña incorrectos.');
         header('Location: ' . Url::to('/login'));
         exit;
     }

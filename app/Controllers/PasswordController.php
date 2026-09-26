@@ -9,6 +9,7 @@ use App\Core\Request;
 use App\Core\Session;
 use App\Core\Url;
 use App\Core\View;
+use App\Helpers\LimiteIntentos;
 use App\Models\Auditoria;
 use App\Models\Institucion;
 use App\Models\PasswordReset;
@@ -38,6 +39,17 @@ final class PasswordController
         }
 
         $email = trim((string) $request->input('email'));
+
+        // Límite (en el servidor): 5 solicitudes por conexión y 3 por correo cada 15
+        // minutos. Sin él, se podía llenar de correos la bandeja de cualquier usuario.
+        if (LimiteIntentos::desdeEstaIp('olvide_contrasena', 15) >= 5
+            || ($email !== '' && LimiteIntentos::sobreClave('olvide_contrasena', $email, 15) >= 3)
+        ) {
+            Session::flash('error', 'Demasiadas solicitudes. Espera 15 minutos antes de volver a intentarlo.');
+            header('Location: ' . Url::to('/olvide-contrasena'));
+            exit;
+        }
+        LimiteIntentos::registrar('olvide_contrasena', $email);
 
         // Siempre se responde igual, exista o no el correo, para no revelar qué
         // correos tienen cuenta en el sistema.
@@ -143,9 +155,9 @@ final class PasswordController
             exit;
         }
 
-        $config = require dirname(__DIR__, 2) . '/config/app.php';
-
-        if (Session::bloqueadoPorIntentos('olvide_correo')) {
+        // Límite en el servidor por conexión (antes vivía en la sesión y bastaba con borrar
+        // la cookie para saltarlo): 10 búsquedas fallidas cada 15 minutos.
+        if (LimiteIntentos::desdeEstaIp('olvide_correo', 15) >= 10) {
             Session::flash('error', 'Demasiados intentos. Espera unos minutos antes de volver a intentarlo.');
             header('Location: ' . Url::to('/olvide-correo'));
             exit;
@@ -163,13 +175,12 @@ final class PasswordController
         $usuario = Usuario::findByDocumento($documento, $institucionId);
 
         if (!$usuario || (int) $usuario['activo'] !== 1) {
-            Session::registrarIntentoFallido('olvide_correo', $config['login_max_attempts'], $config['login_lockout_minutes']);
+            LimiteIntentos::registrar('olvide_correo', $institucionId . ':' . $documento);
             Session::flash('error', 'No encontramos una cuenta activa con ese documento en esa institución.');
             header('Location: ' . Url::to('/olvide-correo'));
             exit;
         }
 
-        Session::resetearIntentos('olvide_correo');
         Session::flash('resultado_correo', $this->enmascararCorreo($usuario['email']));
         header('Location: ' . Url::to('/olvide-correo'));
         exit;

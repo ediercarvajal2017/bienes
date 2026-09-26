@@ -18,8 +18,8 @@ return [
     // no eliminada, institución activa, versión de sesión). Es el máximo que tarda en
     // salir del sistema un usuario recién desactivado.
     'session_revalidacion_segundos' => (int) Env::get('SESSION_REVALIDACION_SEGUNDOS', 60),
-    'login_max_attempts' => 5,
-    'login_lockout_minutes' => 15,
+    // Los límites de intentos de inicio de sesión están en App\Core\Auth (constantes
+    // MAX_FALLOS_*) y se guardan en la tabla intentos_acceso.
     // Se puede sacar por completo de la carpeta que gestiona el despliegue (ej. un
     // "Auto Deploy" de Git que limpia archivos no versionados en cada push), fijando
     // STORAGE_PATH en el .env a una ruta absoluta fuera de esa carpeta. Si no se define,

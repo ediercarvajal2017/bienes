@@ -32,7 +32,7 @@ test.describe('Login', () => {
 
         const alerta = page.locator('.alert-danger');
         await expect(alerta).toBeVisible();
-        await expect(alerta).toContainText('Credenciales inválidas');
+        await expect(alerta).toContainText('Correo o contraseña incorrectos');
 
         await alerta.getByRole('button', { name: 'Cerrar mensaje' }).click();
         await expect(alerta).toBeHidden();
