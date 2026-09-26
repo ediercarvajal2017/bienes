@@ -546,9 +546,15 @@ final class Bien
             ->execute([$institucionId, $id]);
     }
 
+    /**
+     * Al cambiar la foto se borra la huella de la búsqueda por foto (foto_vector): así el
+     * bien vuelve a quedar "pendiente de indexar" (BienFotoVector::pendientesDeIndexar) y
+     * se calcula la huella de la foto NUEVA. Sin esto, la búsqueda seguía encontrando el
+     * bien por su foto anterior.
+     */
     public static function updateFoto(int $id, string $path): void
     {
-        Database::connection()->prepare('UPDATE bienes SET foto_path = ? WHERE id = ?')->execute([$path, $id]);
+        Database::connection()->prepare('UPDATE bienes SET foto_path = ?, foto_vector = NULL WHERE id = ?')->execute([$path, $id]);
     }
 
     public static function updateFactura(int $id, string $path): void
