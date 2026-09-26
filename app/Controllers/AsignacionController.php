@@ -87,16 +87,24 @@ final class AsignacionController
         }
 
         $espacioId = (int) $espacioIdRaw;
-        $asignados = $this->asignarLote($bienIds, $institucionId, $espacioId, $fecha, $observaciones);
 
-        if ($asignados === null) {
+        if (!Espacio::perteneceYActivo($espacioId, (int) $institucionId)) {
+            Session::flash('error', 'El espacio seleccionado no es válido (debe ser un espacio activo de la institución).');
+            Session::flashOld($viejo);
+            header('Location: ' . Url::to($volverA));
+            exit;
+        }
+
+        $resultado = $this->asignarLote($bienIds, $institucionId, $espacioId, $fecha, $observaciones);
+
+        if ($resultado === null) {
             Session::flash('error', 'Ocurrió un error al procesar la asignación masiva. No se aplicó ningún cambio.');
             Session::flashOld($viejo);
-        } elseif ($asignados === 0) {
-            Session::flash('error', 'Ningún bien seleccionado pudo asignarse.');
+        } elseif ($resultado['asignados'] === 0) {
+            Session::flash('error', 'Ningún bien seleccionado pudo asignarse.' . $this->textoOmitidos($resultado));
             Session::flashOld($viejo);
         } else {
-            Session::flash('ok', $asignados . ' bien(es) asignado(s) correctamente.');
+            Session::flash('ok', $resultado['asignados'] . ' bien(es) asignado(s) correctamente.' . $this->textoOmitidos($resultado));
         }
 
         header('Location: ' . Url::to($volverA));
@@ -105,14 +113,20 @@ final class AsignacionController
 
     /**
      * Cierra cualquier asignación activa remanente (por seguridad) y crea la nueva
-     * para cada bien del lote, dentro de una única transacción. Si un bien venía
-     * 'reintegrado' lo vuelve a poner 'activo' (igual que la asignación individual).
-     * Los bienes fuera de la institución seleccionada o dados de baja se omiten.
+     * para cada bien del lote, dentro de una única transacción. Se omiten los bienes de
+     * otra institución, los dados de baja y los reintegrados: igual que en la asignación
+     * individual y en el listado de esta pantalla, un bien reintegrado solo vuelve a
+     * circular con "Reactivar" (rector o superusuario, con motivo). Antes la asignación
+     * masiva lo reactivaba en silencio si el id llegaba en el formulario.
+     *
+     * @return array{asignados: int, reintegrados: int, otros: int}|null  null si falló todo
      */
-    private function asignarLote(array $bienIds, int $institucionId, int $espacioId, string $fecha, ?string $observaciones): ?int
+    private function asignarLote(array $bienIds, int $institucionId, int $espacioId, string $fecha, ?string $observaciones): ?array
     {
+        $resultado = ['asignados' => 0, 'reintegrados' => 0, 'otros' => 0];
+
         if (!Auth::esSuperusuario() && $institucionId !== Auth::institucionId()) {
-            return 0;
+            return $resultado;
         }
 
         $pdo = Database::connection();
@@ -122,11 +136,13 @@ final class AsignacionController
         try {
             foreach ($bienIds as $bienId) {
                 $bien = Bien::find($bienId);
-                if (!$bien || $bien['estado'] === 'dado_de_baja') {
+                if (!$bien || $bien['estado'] === 'dado_de_baja' || (int) $bien['institucion_id'] !== $institucionId) {
+                    $resultado['otros']++;
                     continue;
                 }
 
-                if ((int) $bien['institucion_id'] !== $institucionId) {
+                if ($bien['estado'] === 'reintegrado') {
+                    $resultado['reintegrados']++;
                     continue;
                 }
 
@@ -139,31 +155,32 @@ final class AsignacionController
                     'asignado_por' => Auth::id(),
                 ]);
 
-                if ($bien['estado'] === 'reintegrado') {
-                    Bien::update($bienId, [
-                        'codigo_identificacion' => $bien['codigo_identificacion'],
-                        'descripcion' => $bien['descripcion'],
-                        'marca' => $bien['marca'],
-                        'categoria_id' => $bien['categoria_id'],
-                        'fecha_ingreso' => $bien['fecha_ingreso'],
-                        'valor' => $bien['valor'],
-                        'tiene_factura' => $bien['tiene_factura'],
-                        'estado' => 'activo',
-                    ]);
-                }
-
                 $asignados++;
             }
 
             $pdo->commit();
+            $resultado['asignados'] = $asignados;
 
-            return $asignados;
+            return $resultado;
         } catch (\Throwable $e) {
             $pdo->rollBack();
             ErrorHandler::reportar($e, __METHOD__);
 
             return null;
         }
+    }
+
+    private function textoOmitidos(array $resultado): string
+    {
+        $texto = '';
+        if ($resultado['reintegrados'] > 0) {
+            $texto .= " Se omitieron {$resultado['reintegrados']} bien(es) reintegrado(s): para volver a asignarlos use \"Reactivar\" en la ficha del bien.";
+        }
+        if ($resultado['otros'] > 0) {
+            $texto .= " Se omitieron {$resultado['otros']} bien(es) dados de baja o de otra institución.";
+        }
+
+        return $texto;
     }
 
     private function institucionSeleccionada(): ?int

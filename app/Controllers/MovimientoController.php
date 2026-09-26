@@ -6,6 +6,7 @@ namespace App\Controllers;
 
 use App\Core\Auth;
 use App\Core\Csrf;
+use App\Core\Database;
 use App\Core\Request;
 use App\Core\Session;
 use App\Core\Url;
@@ -40,14 +41,20 @@ final class MovimientoController
             exit;
         }
 
-        Asignacion::cerrarActivasDe($id);
-        Asignacion::crear([
-            'bien_id' => $id,
-            'espacio_id' => (int) $espacioId,
-            'fecha_asignacion' => $fecha,
-            'observaciones' => $observaciones,
-            'asignado_por' => Auth::id(),
-        ]);
+        $this->verificarEspacio((int) $espacioId, $bien);
+
+        // Cerrar la asignación anterior y crear la nueva van juntas: si una falla, ninguna
+        // queda aplicada (antes podía quedar el bien con dos asignaciones activas o ninguna).
+        Database::transaccion(static function () use ($id, $espacioId, $fecha, $observaciones): void {
+            Asignacion::cerrarActivasDe($id);
+            Asignacion::crear([
+                'bien_id' => $id,
+                'espacio_id' => (int) $espacioId,
+                'fecha_asignacion' => $fecha,
+                'observaciones' => $observaciones,
+                'asignado_por' => Auth::id(),
+            ]);
+        });
 
         // Si la asignacion viene de una discrepancia (el bien no tenia ubicacion y ahora se
         // le asigno una), esa discrepancia ya quedo atendida.
@@ -90,25 +97,29 @@ final class MovimientoController
             exit;
         }
 
-        Movimiento::crear([
-            'bien_id' => $id,
-            'tipo' => 'traslado',
-            'fecha' => $fecha,
-            'responsable_id' => Auth::id(),
-            'espacio_origen_id' => $asignacionActiva['espacio_id'] ?? null,
-            'espacio_destino_id' => (int) $espacioId,
-            'destino_texto' => null,
-            'observaciones' => $observaciones,
-        ]);
+        $this->verificarEspacio((int) $espacioId, $bien);
 
-        Asignacion::cerrarActivasDe($id);
-        Asignacion::crear([
-            'bien_id' => $id,
-            'espacio_id' => (int) $espacioId,
-            'fecha_asignacion' => $fecha,
-            'observaciones' => $observaciones,
-            'asignado_por' => Auth::id(),
-        ]);
+        Database::transaccion(static function () use ($id, $espacioId, $fecha, $observaciones, $asignacionActiva): void {
+            Movimiento::crear([
+                'bien_id' => $id,
+                'tipo' => 'traslado',
+                'fecha' => $fecha,
+                'responsable_id' => Auth::id(),
+                'espacio_origen_id' => $asignacionActiva['espacio_id'] ?? null,
+                'espacio_destino_id' => (int) $espacioId,
+                'destino_texto' => null,
+                'observaciones' => $observaciones,
+            ]);
+
+            Asignacion::cerrarActivasDe($id);
+            Asignacion::crear([
+                'bien_id' => $id,
+                'espacio_id' => (int) $espacioId,
+                'fecha_asignacion' => $fecha,
+                'observaciones' => $observaciones,
+                'asignado_por' => Auth::id(),
+            ]);
+        });
 
         // Si el traslado viene de una discrepancia ("no esta aqui, se movio"), esa
         // discrepancia ya quedo atendida — corregir la ubicacion ES la resolucion.
@@ -363,6 +374,19 @@ final class MovimientoController
      * candado. Reactivar un reintegro (el único de los dos casos con sentido de
      * revertirse) requiere la acción explícita y restringida reactivar(), no estas.
      */
+    /**
+     * El espacio de destino debe ser de la misma institución del bien, estar activo y
+     * fuera de la papelera (el formulario solo ofrece esos, pero el id llega del navegador).
+     */
+    private function verificarEspacio(int $espacioId, array $bien): void
+    {
+        if (!Espacio::perteneceYActivo($espacioId, (int) $bien['institucion_id'])) {
+            Session::flash('error', 'El espacio seleccionado no es válido para este bien (debe ser un espacio activo de su misma institución).');
+            header('Location: ' . Url::to("/bienes/{$bien['id']}/editar"));
+            exit;
+        }
+    }
+
     private function verificarAsignable(array $bien): void
     {
         if (in_array($bien['estado'], ['dado_de_baja', 'reintegrado'], true)) {
