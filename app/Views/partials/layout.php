@@ -301,6 +301,12 @@ foreach ($gruposBreadcrumb as $g) {
             </div>
         <?php endif; ?>
         <?php $content(); ?>
+
+        <?php $configApp = require dirname(__DIR__, 3) . '/config/app.php'; ?>
+        <footer class="pie-sigebi small text-muted d-flex flex-wrap justify-content-between gap-2 mt-5 pt-3 border-top">
+            <span>SIGEBI · versión <?= htmlspecialchars((string) $configApp['version'], ENT_QUOTES) ?><?php if (Auth::institucionNombre() !== null && !Auth::esSuperusuario()): ?> · <?= htmlspecialchars(Auth::institucionNombre(), ENT_QUOTES) ?><?php endif; ?></span>
+            <a href="<?= Url::to('/manual') ?>" class="text-muted">¿Necesitas ayuda? Guía rápida</a>
+        </footer>
     </main>
 </div>
 
