@@ -201,7 +201,7 @@ $invalido = static fn (string $campo) => $errorCampo === $campo ? ' is-invalid' 
                     <div class="row g-2">
                         <div class="col-sm-5">
                             <label class="form-label small requerido" for="accionFecha">Fecha</label>
-                            <input id="accionFecha" type="date" name="accion_fecha" class="form-control form-control-sm" required disabled
+                            <input id="accionFecha" type="date" min="<?= \App\Helpers\FechaMovimiento::MINIMA ?>" max="<?= \App\Helpers\FechaMovimiento::hoy() ?>" name="accion_fecha" class="form-control form-control-sm" required disabled
                                    value="<?= htmlspecialchars($va('accion_fecha', date('Y-m-d')), ENT_QUOTES) ?>">
                         </div>
                         <div class="col-sm-7" data-campos-accion="asignar trasladar trasladar_sede reintegrar">

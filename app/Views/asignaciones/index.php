@@ -70,7 +70,7 @@ $bienesSeleccionados = $viejo['bienes'] ?? [];
                     </div>
                     <div class="col-md-6">
                         <label for="campo-fecha-asignacion" class="form-label small">Fecha de asignación</label>
-                        <input id="campo-fecha-asignacion" type="date" name="fecha_asignacion" class="form-control form-control-sm" value="<?= htmlspecialchars($viejo['fecha_asignacion'] ?? date('Y-m-d'), ENT_QUOTES) ?>" required>
+                        <input id="campo-fecha-asignacion" type="date" min="<?= \App\Helpers\FechaMovimiento::MINIMA ?>" max="<?= \App\Helpers\FechaMovimiento::hoy() ?>" name="fecha_asignacion" class="form-control form-control-sm" value="<?= htmlspecialchars($viejo['fecha_asignacion'] ?? date('Y-m-d'), ENT_QUOTES) ?>" required>
                     </div>
                 </div>
 

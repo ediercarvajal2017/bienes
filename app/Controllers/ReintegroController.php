@@ -12,6 +12,7 @@ use App\Core\Request;
 use App\Core\Session;
 use App\Core\Url;
 use App\Core\View;
+use App\Helpers\FechaMovimiento;
 use App\Helpers\Paginador;
 use App\Models\Asignacion;
 use App\Models\Auditoria;
@@ -21,6 +22,7 @@ use App\Models\Institucion;
 use App\Models\LoteReintegro;
 use App\Models\Movimiento;
 use App\Models\Usuario;
+use App\Services\ReintegroService;
 use App\Services\ReporteService;
 
 final class ReintegroController
@@ -93,8 +95,9 @@ final class ReintegroController
             exit;
         }
 
-        if ($fecha === '' || !strtotime($fecha) || $destino === '') {
-            Session::flash('error', 'Indica la fecha y el destino del reintegro.');
+        $errorFecha = FechaMovimiento::error($fecha);
+        if ($destino === '' || $errorFecha !== null) {
+            Session::flash('error', $destino === '' ? 'Indica el destino del reintegro.' : $errorFecha);
             Session::flashOld($viejo);
             header('Location: ' . Url::to($volverA));
             exit;
@@ -291,50 +294,32 @@ final class ReintegroController
      */
     private function reintegrarLote(array $bienIds, string $fecha, string $destino, ?string $observaciones): ?array
     {
-        $pdo = Database::connection();
-        $reintegrados = 0;
-        $omitidos = 0;
+        $resultado = ['reintegrados' => 0, 'omitidos' => 0];
 
-        $pdo->beginTransaction();
         try {
-            foreach ($bienIds as $bienId) {
-                $bien = Bien::find($bienId);
-                if (!$bien || (!Auth::esSuperusuario() && (int) $bien['institucion_id'] !== Auth::institucionId())) {
-                    $omitidos++;
-                    continue;
+            // Cada bien pasa por las mismas reglas que el reintegro desde la ficha
+            // (ReintegroService), todo en una única transacción.
+            return Database::transaccion(static function () use ($bienIds, $fecha, $destino, $observaciones, $resultado): array {
+                foreach ($bienIds as $bienId) {
+                    $bien = Bien::find($bienId);
+                    if (!$bien || (!Auth::esSuperusuario() && (int) $bien['institucion_id'] !== Auth::institucionId())) {
+                        $resultado['omitidos']++;
+                        continue;
+                    }
+
+                    $asignacion = Asignacion::activaDe($bienId);
+                    if (Bien::motivoNoReintegrable($bien, $asignacion !== null) !== null) {
+                        $resultado['omitidos']++;
+                        continue;
+                    }
+
+                    ReintegroService::reintegrar($bien, $asignacion, $fecha, $destino, $observaciones, ['masivo' => true]);
+                    $resultado['reintegrados']++;
                 }
 
-                $asignacion = Asignacion::activaDe($bienId);
-                if (Bien::motivoNoReintegrable($bien, $asignacion !== null) !== null) {
-                    $omitidos++;
-                    continue;
-                }
-
-                Movimiento::crear([
-                    'bien_id' => $bienId,
-                    'tipo' => 'reintegro',
-                    'fecha' => $fecha,
-                    'responsable_id' => Auth::id(),
-                    'espacio_origen_id' => $asignacion['espacio_id'] ?? null,
-                    'espacio_destino_id' => null,
-                    'destino_texto' => $destino,
-                    'observaciones' => $observaciones,
-                ]);
-
-                Asignacion::cerrarActivasDe($bienId);
-                Bien::cambiarEstado($bienId, 'reintegrado');
-                Auditoria::registrar(Auth::id(), (int) $bien['institucion_id'], 'reintegrar', 'bien', $bienId,
-                    ['estado' => $bien['estado'], 'espacio_id' => $asignacion['espacio_id'] ?? null],
-                    ['estado' => 'reintegrado', 'destino' => $destino, 'fecha' => $fecha, 'masivo' => true]);
-
-                $reintegrados++;
-            }
-
-            $pdo->commit();
-
-            return ['reintegrados' => $reintegrados, 'omitidos' => $omitidos];
+                return $resultado;
+            });
         } catch (\Throwable $e) {
-            $pdo->rollBack();
             ErrorHandler::reportar($e, __METHOD__);
 
             return null;

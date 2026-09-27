@@ -61,7 +61,7 @@ $viejo ??= [];
                     </div>
                     <div class="col-md-6">
                         <label for="campo-fecha" class="form-label small">Fecha del reintegro</label>
-                        <input id="campo-fecha" type="date" name="fecha" class="form-control form-control-sm" value="<?= htmlspecialchars($viejo['fecha'] ?? date('Y-m-d'), ENT_QUOTES) ?>" required>
+                        <input id="campo-fecha" type="date" min="<?= \App\Helpers\FechaMovimiento::MINIMA ?>" max="<?= \App\Helpers\FechaMovimiento::hoy() ?>" name="fecha" class="form-control form-control-sm" value="<?= htmlspecialchars($viejo['fecha'] ?? date('Y-m-d'), ENT_QUOTES) ?>" required>
                     </div>
                 </div>
 

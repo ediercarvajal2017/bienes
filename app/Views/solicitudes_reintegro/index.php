@@ -94,7 +94,7 @@ $etiquetas = [
                               class="d-flex flex-wrap gap-1 justify-content-end mb-1"
                               data-confirmar="¿Aprobar la solicitud? El bien se reintegrará y saldrá de su espacio.">
                             <?= Csrf::field() ?>
-                            <input type="date" name="fecha" class="form-control form-control-sm" style="max-width: 150px;"
+                            <input type="date" name="fecha" min="<?= \App\Helpers\FechaMovimiento::MINIMA ?>" max="<?= \App\Helpers\FechaMovimiento::hoy() ?>" class="form-control form-control-sm" style="max-width: 150px;"
                                    value="<?= date('Y-m-d') ?>" required aria-label="Fecha del reintegro">
                             <input type="text" name="destino_texto" class="form-control form-control-sm" style="max-width: 180px;"
                                    placeholder="Destino (ej. Almacén)" required aria-label="Destino del reintegro">

@@ -6,6 +6,7 @@ namespace App\Services;
 
 use App\Core\Auth;
 use App\Core\Database;
+use App\Helpers\FechaMovimiento;
 use App\Models\Asignacion;
 use App\Models\Auditoria;
 use App\Models\Baja;
@@ -203,8 +204,9 @@ final class CicloVidaBien
         if ($motivo = Bien::motivoNoReintegrable($bien, true)) {
             throw new \DomainException('No se puede reintegrar: ' . $motivo . '.');
         }
-        if ($fecha === '' || !strtotime($fecha) || trim($destino) === '') {
-            throw new \DomainException('Indica la fecha y el destino del reintegro.');
+        self::verificarFecha($fecha);
+        if (trim($destino) === '') {
+            throw new \DomainException('Indica el destino del reintegro.');
         }
 
         ReintegroService::reintegrar($bien, $asignacionActiva, $fecha, trim($destino), $observaciones);
@@ -225,8 +227,9 @@ final class CicloVidaBien
             throw new \DomainException('Solo se puede reactivar un bien reintegrado.');
         }
         $motivo = trim($motivo);
-        if ($fecha === '' || !strtotime($fecha) || $motivo === '') {
-            throw new \DomainException('Indica la fecha y el motivo de la reactivación.');
+        self::verificarFecha($fecha);
+        if ($motivo === '') {
+            throw new \DomainException('Indica el motivo de la reactivación.');
         }
 
         $id = (int) $bien['id'];
@@ -309,8 +312,8 @@ final class CicloVidaBien
 
     private static function verificarFecha(string $fecha): void
     {
-        if ($fecha === '' || !strtotime($fecha)) {
-            throw new \DomainException('Indica una fecha válida.');
+        if ($error = FechaMovimiento::error($fecha)) {
+            throw new \DomainException($error);
         }
     }
 }
