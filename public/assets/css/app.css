@@ -660,3 +660,12 @@ summary { cursor: pointer; }
 @media (prefers-reduced-motion: reduce) { .tarjeta-cifra { transition: none; } .tarjeta-cifra:hover { transform: none; } }
 .tarjeta-cifra-unidad { font-size: .8rem; color: var(--bs-secondary-color); font-weight: 600; }
 .contenedor-manual { max-width: 760px; }
+
+/* ── Menú lateral: la página actual se distingue del simple paso del mouse ── */
+.sidebar .nav-link { border-left: 3px solid transparent; }
+.sidebar .nav-link.active { border-left-color: var(--sigebi-primary); font-weight: 600; }
+[data-bs-theme="dark"] .sidebar .nav-link.active { border-left-color: #7fe6b0; }
+
+/* Selector de institución (Tom Select): la flecha ya no se monta sobre el texto. */
+.filtro-institucion-form .ts-control { padding-right: 1.9rem !important; flex-wrap: nowrap; }
+.filtro-institucion-form .ts-control .item { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

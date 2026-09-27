@@ -6,7 +6,10 @@ use App\Core\Url;
 use App\Models\Institucion;
 
 $rutaActual = (new Request())->uri;
-$esActiva = static fn (string $prefijo): string => str_starts_with($rutaActual, $prefijo) ? ' active' : '';
+// Se imprime dentro de class="nav-link...": además de la clase, cierra el atributo y
+// agrega aria-current="page" para que los lectores de pantalla anuncien la página actual.
+$marcaActiva = ' active" aria-current="page';
+$esActiva = static fn (string $prefijo): string => str_starts_with($rutaActual, $prefijo) ? $marcaActiva : '';
 
 /**
  * Un grupo del menú se abre por defecto solo si la página actual pertenece a él —
@@ -187,7 +190,7 @@ foreach ($gruposBreadcrumb as $g) {
 
                 <?php if (Auth::esSuperusuario() || Auth::tienePermiso('asignaciones.crear')): ?>
                     <a class="nav-link<?= $esActiva('/asignaciones') ?>" href="<?= Url::to('/asignaciones') ?>"><i class="bi bi-person-check me-2"></i>Asignar bienes</a>
-                    <a class="nav-link<?= $rutaActual === '/reintegros' ? ' active' : '' ?>" href="<?= Url::to('/reintegros') ?>"><i class="bi bi-box-arrow-in-left me-2"></i>Reintegrar bienes</a>
+                    <a class="nav-link<?= $rutaActual === '/reintegros' ? $marcaActiva : '' ?>" href="<?= Url::to('/reintegros') ?>"><i class="bi bi-box-arrow-in-left me-2"></i>Reintegrar bienes</a>
                     <a class="nav-link<?= $esActiva('/reintegros/lotes') ?>" href="<?= Url::to('/reintegros/lotes') ?>"><i class="bi bi-file-earmark-spreadsheet me-2"></i>Lotes de reintegro</a>
                 <?php endif; ?>
 
