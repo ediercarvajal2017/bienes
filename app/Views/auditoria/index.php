@@ -37,6 +37,7 @@ $etiquetasAccion = [
     '2fa_desactivar' => 'Desactivar verificación en dos pasos',
     '2fa_regenerar_codigos' => 'Regenerar códigos de recuperación',
     '2fa_restablecer' => 'Restablecer verificación en dos pasos',
+    'correccion_datos' => 'Corrección de datos',
 ];
 $coloresAccion = [
     'crear' => 'text-bg-primary',
@@ -61,6 +62,7 @@ $coloresAccion = [
     'iniciar' => 'text-bg-primary',
     'cerrar' => 'text-bg-secondary',
     '2fa_restablecer' => 'text-bg-warning',
+    'correccion_datos' => 'text-bg-dark',
 ];
 $etiquetasEntidad = [
     'usuario' => 'Usuario',

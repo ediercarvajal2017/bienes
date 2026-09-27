@@ -135,6 +135,7 @@ descifra solo; en otro equipo hay que crear el remoto `sigebi-cifrado` con la mi
 | 2026-09-27 | 1.1.2 | 029–033 | Seguridad, 2FA opcional, ciclos de vida. Las 24 tablas de datos quedaron idénticas fila por fila |
 | 2026-09-27 | 1.1.3 | — | Fotos: se liberan sesión y conexión antes de enviar; reintento de conexión |
 | 2026-09-27 | 1.1.4 | — | Auditoría con todas las acciones en español; demostración local (`demo.bat`) y guion de presentación |
+| 2026-09-27 | 1.1.5 | — | Respaldo diario a Google Drive (plantilla); scripts de corrección de datos R05 y R06 (`database/correcciones/`) |
 
 ## Fuera del despliegue
 
