@@ -24,6 +24,7 @@ test('asignar un bien desde la selección masiva de /asignaciones', async ({ pag
     ]);
 
     await page.locator('#buscador').fill(codigoBien);
+    await page.locator('#buscador').press('Enter'); // busca al terminar de escribir
     await page.waitForURL(/q=/);
 
     const fila = page.locator('tr', { hasText: codigoBien });

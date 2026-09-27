@@ -50,6 +50,7 @@ test('reintegrar un bien y agruparlo en un lote', async ({ page }) => {
     ]);
 
     await page.locator('#buscador').fill(codigoBien);
+    await page.locator('#buscador').press('Enter'); // busca al terminar de escribir
     await page.waitForURL(/q=/);
 
     // El filtro de categoría existe (la institución de prueba tiene al menos una) y la

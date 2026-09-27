@@ -51,6 +51,7 @@ test('crear una jornada, verificar un bien y cerrarla', async ({ page }) => {
     await page.goto(urlJornada);
     await page.getByRole('tab', { name: /Verificados/ }).click();
     await page.locator('#buscadorOk').fill(codigoBien);
+    await page.locator('#buscadorOk').press('Enter'); // busca al terminar de escribir
     await page.waitForURL(/qOk=/);
     await expect(page.locator('tr', { hasText: codigoBien })).toBeVisible();
 
