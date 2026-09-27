@@ -44,7 +44,7 @@ paso() { echo ""; echo "▶ $*"; }
 
 # --- 1. Pruebas ---
 paso "Pruebas"
-"$PHP" vendor/bin/phpstan analyse --memory-limit=1G --no-progress --error-format=raw > /dev/null || { echo "PHPStan encontró errores: no se publica."; "$PHP" vendor/bin/phpstan analyse --memory-limit=1G --no-progress --error-format=raw | head -20; exit 1; }
+"$PHP" vendor/bin/phpstan analyse --memory-limit=1G --no-progress --error-format=raw > /dev/null 2>&1 || { echo "PHPStan encontró errores: no se publica."; "$PHP" vendor/bin/phpstan analyse --memory-limit=1G --no-progress --error-format=raw | head -20; exit 1; }
 echo "  PHPStan: sin errores"
 "$PHP" vendor/bin/phpunit > /tmp/phpunit-publicar.txt 2>&1 || { tail -20 /tmp/phpunit-publicar.txt; echo "PHPUnit falló: no se publica."; exit 1; }
 echo "  PHPUnit: $(grep -oE 'OK \([^)]*\)' /tmp/phpunit-publicar.txt)"
@@ -84,7 +84,7 @@ paso "Versión"
 ACTUAL=$(grep -oE "'version' => '[0-9]+\.[0-9]+\.[0-9]+'" config/app.php | grep -oE "[0-9]+\.[0-9]+\.[0-9]+")
 NUEVA="${ACTUAL%.*}.$(( ${ACTUAL##*.} + 1 ))"
 sed -i "s/'version' => '$ACTUAL'/'version' => '$NUEVA'/" config/app.php
-git add config/app.php
+git -c core.safecrlf=false add config/app.php 2>/dev/null
 git commit -q -m "Versión $NUEVA: $MENSAJE" -m "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 git tag -a "v$NUEVA" -m "Versión $NUEVA: $MENSAJE"
 echo "  $ACTUAL -> $NUEVA"
