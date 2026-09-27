@@ -97,7 +97,7 @@ $viejo ??= [];
             </div>
             <?php if (!empty($categorias)): ?>
                 <div style="max-width: 260px;">
-                    <select id="filtroCategoria" class="form-select form-select-sm selector-buscable">
+                    <select id="filtroCategoria" class="form-select form-select-sm selector-buscable" aria-label="Filtrar por categoría">
                         <option value="">Todas las categorías</option>
                         <?php foreach ($categorias as $c): ?>
                             <option value="<?= $c['id'] ?>" <?= $categoriaId === (int) $c['id'] ? 'selected' : '' ?>>
@@ -156,7 +156,7 @@ $viejo ??= [];
                 <tbody>
                 <?php foreach ($bienes as $b): ?>
                     <tr class="fila-bien" style="cursor:pointer;">
-                        <td data-label="Seleccionar"><input type="checkbox" name="bienes[]" value="<?= $b['id'] ?>" class="form-check-input casilla-bien"></td>
+                        <td data-label="Seleccionar"><input type="checkbox" name="bienes[]" value="<?= $b['id'] ?>" class="form-check-input casilla-bien" aria-label="Seleccionar <?= htmlspecialchars((string) $b['codigo_identificacion'], ENT_QUOTES) ?>"></td>
                         <td data-label="Foto">
                             <?php if (!empty($b['foto_path'])): ?>
                                 <img src="<?= Url::to('/archivos/' . $b['foto_path']) ?>?w=96" loading="lazy"

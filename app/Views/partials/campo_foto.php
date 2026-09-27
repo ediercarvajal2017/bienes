@@ -20,9 +20,10 @@
 $requerido = !empty($required);
 $accept = $accept ?? 'image/jpeg,image/png';
 $soloImagen = !str_contains($accept, 'pdf');
+$idCampoFoto = 'campoFoto-' . preg_replace('/[^a-z0-9_-]/i', '', (string) $nombreCampo) . '-' . bin2hex(random_bytes(3));
 ?>
 <div class="campo-foto" data-campo-foto>
-    <label class="form-label small d-block<?= $requerido ? ' requerido' : '' ?>"><?= htmlspecialchars($etiqueta ?? 'Fotografía', ENT_QUOTES) ?></label>
+    <label for="<?= $idCampoFoto ?>" class="form-label small d-block<?= $requerido ? ' requerido' : '' ?>"><?= htmlspecialchars($etiqueta ?? 'Fotografía', ENT_QUOTES) ?></label>
 
     <?php if (!empty($fotoActualUrl)): ?>
         <img src="<?= htmlspecialchars($fotoActualUrl, ENT_QUOTES) ?>"
@@ -31,7 +32,7 @@ $soloImagen = !str_contains($accept, 'pdf');
     <?php endif; ?>
 
     <div class="d-flex gap-2 flex-wrap align-items-center">
-        <input type="file" name="<?= htmlspecialchars($nombreCampo, ENT_QUOTES) ?>"
+        <input type="file" id="<?= $idCampoFoto ?>" name="<?= htmlspecialchars($nombreCampo, ENT_QUOTES) ?>"
                accept="<?= htmlspecialchars($accept, ENT_QUOTES) ?>" <?= $soloImagen ? 'capture="environment"' : '' ?>
                class="form-control form-control-sm campo-foto-input" style="max-width: 220px;"
                <?= $requerido ? 'required' : '' ?>>

@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+header_remove('X-Powered-By');
+
 require dirname(__DIR__) . '/vendor/autoload.php';
 
 use App\Core\Env;

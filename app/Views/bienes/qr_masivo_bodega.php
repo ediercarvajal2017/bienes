@@ -49,7 +49,7 @@ $fecha = static fn (?string $f): string => $f ? date('d/m/Y H:i', strtotime($f))
 <?php if ($institucionId === null): ?>
     <p class="text-muted">Selecciona una institución para continuar.</p>
 <?php else: ?>
-    <ul class="nav nav-tabs mb-3" role="tablist">
+    <ul class="nav nav-tabs mb-3">
         <li class="nav-item">
             <a class="nav-link <?= $pestana === 'por_imprimir' ? 'active' : '' ?>" id="pestanaPorImprimir"
                href="<?= $urlPestana('por_imprimir') ?>" <?= $pestana === 'por_imprimir' ? 'aria-current="page"' : '' ?>>

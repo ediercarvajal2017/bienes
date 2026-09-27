@@ -24,7 +24,7 @@ $urlBasePaginacion = Url::to('/cargas-masivas') . ($busqueda !== '' ? '?' . http
         </p>
         <form method="post" action="<?= Url::to('/cargas-masivas') ?>" enctype="multipart/form-data" class="d-flex gap-2">
             <?= Csrf::field() ?>
-            <input type="file" name="archivo" accept=".xlsx" class="form-control form-control-sm" required>
+            <input type="file" name="archivo" accept=".xlsx" aria-label="Archivo Excel de bienes" class="form-control form-control-sm" required>
             <button type="submit" class="btn btn-sm btn-primary text-nowrap">Analizar archivo</button>
         </form>
         <hr>

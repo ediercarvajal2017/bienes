@@ -55,7 +55,7 @@ img {
   height: 34px;
   flex: 0 0 auto;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.14);
+  background: rgba(0, 0, 0, 0.22); /* 7:1 con las iniciales blancas (antes 4,49:1) */
   border: 1px solid rgba(255, 255, 255, 0.4);
   color: #fff;
   display: inline-flex;
@@ -238,7 +238,7 @@ select.selector-buscable.is-invalid + .ts-wrapper .ts-control {
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: #94a3b8;
+  color: #5b6b7f; /* 5,4:1 sobre el menú blanco (antes #94a3b8, 2,6:1) */
   padding: 0.9rem 0.9rem 0.3rem;
 }
 
@@ -434,6 +434,11 @@ select.selector-buscable.is-invalid + .ts-wrapper .ts-control {
 
 [data-bs-theme="dark"] .sidebar .nav-grupo-titulo {
   color: #8b98a8; /* 6:1 sobre el fondo del menú (antes 3,7:1) */
+}
+
+/* Rojo de aviso legible sobre el fondo oscuro (el rojo del modo claro no alcanza 4,5:1). */
+[data-bs-theme="dark"] .text-danger {
+  color: #f19a8f !important;
 }
 
 [data-bs-theme="dark"] .auth-shell {

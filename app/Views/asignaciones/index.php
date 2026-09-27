@@ -119,7 +119,7 @@ $bienesSeleccionados = $viejo['bienes'] ?? [];
                 <tbody>
                 <?php foreach ($bienes as $b): ?>
                     <tr>
-                        <td data-label="Seleccionar"><input type="checkbox" name="bienes[]" value="<?= $b['id'] ?>" class="form-check-input casilla-bien" <?= in_array((int) $b['id'], $bienesSeleccionados, true) ? 'checked' : '' ?>></td>
+                        <td data-label="Seleccionar"><input type="checkbox" name="bienes[]" value="<?= $b['id'] ?>" class="form-check-input casilla-bien" aria-label="Seleccionar <?= htmlspecialchars((string) $b['codigo_identificacion'], ENT_QUOTES) ?>" <?= in_array((int) $b['id'], $bienesSeleccionados, true) ? 'checked' : '' ?>></td>
                         <td class="mono" data-label="Código"><?= htmlspecialchars($b['codigo_identificacion'], ENT_QUOTES) ?></td>
                         <td data-label="Descripción"><?= htmlspecialchars($b['descripcion'], ENT_QUOTES) ?></td>
                         <?php if (!$b['asignado']): ?>

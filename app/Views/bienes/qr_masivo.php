@@ -81,7 +81,7 @@ use App\Core\View;
                     <tbody>
                     <?php foreach ($bienes as $b): ?>
                         <tr>
-                            <td data-label="Seleccionar"><input type="checkbox" name="bienes[]" value="<?= $b['id'] ?>" class="form-check-input casilla-bien"></td>
+                            <td data-label="Seleccionar"><input type="checkbox" name="bienes[]" value="<?= $b['id'] ?>" class="form-check-input casilla-bien" aria-label="Seleccionar <?= htmlspecialchars((string) $b['codigo_identificacion'], ENT_QUOTES) ?>"></td>
                             <td class="mono" data-label="Código"><?= htmlspecialchars($b['codigo_identificacion'], ENT_QUOTES) ?></td>
                             <td data-label="Descripción"><?= htmlspecialchars($b['descripcion'], ENT_QUOTES) ?></td>
                             <td class="small text-muted" data-label="Ubicación"><?= !empty($b['espacio_nombre']) ? htmlspecialchars($b['espacio_nombre'], ENT_QUOTES) : 'Sin asignar' ?></td>

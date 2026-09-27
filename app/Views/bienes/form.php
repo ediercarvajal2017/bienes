@@ -298,14 +298,14 @@ $invalido = static fn (string $campo) => $errorCampo === $campo ? ' is-invalid' 
     </div>
     <?php $estadosEtiquetas = ['activo' => 'Activo', 'reintegrado' => 'Reintegrado', 'en_reparacion' => 'En reparación', 'dado_de_baja' => 'Dado de baja']; ?>
     <div class="col-md-4">
-        <label class="form-label small">Estado</label>
+        <label class="form-label small" for="campoEstadoBien">Estado</label>
         <?php if ($esEdicion && in_array($bien['estado'], ['reintegrado', 'dado_de_baja'], true)): ?>
-            <input type="text" class="form-control" value="<?= $estadosEtiquetas[$bien['estado']] ?>" disabled>
+            <input type="text" id="campoEstadoBien" class="form-control" value="<?= $estadosEtiquetas[$bien['estado']] ?>" disabled>
             <div class="form-text">
-                Este estado se gestiona desde <?= $bien['estado'] === 'reintegrado' ? 'el panel de "Reintegrar" más abajo' : 'la aprobación de bajas (módulo Bajas)' ?>, no desde aquí.
+                Este estado se gestiona desde <?= $bien['estado'] === 'reintegrado' ? 'el menú "¿Qué desea hacer con este bien?" (Reactivar)' : 'la aprobación de bajas (módulo Bajas)' ?>, no desde aquí.
             </div>
         <?php else: ?>
-            <select name="estado" class="form-select" <?= $puedeEditar ? '' : 'disabled' ?>>
+            <select name="estado" id="campoEstadoBien" class="form-select" <?= $puedeEditar ? '' : 'disabled' ?>>
                 <?php foreach (['activo' => 'Activo', 'en_reparacion' => 'En reparación'] as $valorEstado => $etiqueta): ?>
                     <option value="<?= $valorEstado ?>" <?= $v('estado', 'activo') === $valorEstado ? 'selected' : '' ?>><?= $etiqueta ?></option>
                 <?php endforeach; ?>

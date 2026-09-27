@@ -64,7 +64,7 @@ $movimientosSeleccionados = $viejo['movimientos'] ?? [];
                 <tbody>
                 <?php foreach ($pendientes as $p): ?>
                     <tr>
-                        <td data-label="Seleccionar"><input type="checkbox" name="movimientos[]" value="<?= $p['id'] ?>" class="form-check-input casilla-bien" <?= in_array((int) $p['id'], $movimientosSeleccionados, true) ? 'checked' : '' ?>></td>
+                        <td data-label="Seleccionar"><input type="checkbox" name="movimientos[]" value="<?= $p['id'] ?>" class="form-check-input casilla-bien" aria-label="Seleccionar <?= htmlspecialchars((string) $p['codigo_identificacion'], ENT_QUOTES) ?>" <?= in_array((int) $p['id'], $movimientosSeleccionados, true) ? 'checked' : '' ?>></td>
                         <td data-label="Foto">
                             <?php if (!empty($p['foto_path'])): ?>
                                 <img src="<?= Url::to('/archivos/' . $p['foto_path']) ?>?w=96" loading="lazy"
