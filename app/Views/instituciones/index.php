@@ -52,7 +52,8 @@ use App\Core\Url;
                 </td>
                 <td class="text-end text-nowrap">
                     <a href="<?= Url::to('/instituciones/' . $inst['id'] . '/editar') ?>" class="btn btn-sm btn-outline-secondary">Editar</a>
-                    <form method="post" action="<?= Url::to('/instituciones/' . $inst['id'] . '/estado') ?>" class="d-inline">
+                    <form method="post" action="<?= Url::to('/instituciones/' . $inst['id'] . '/estado') ?>" class="d-inline"
+                              data-confirmar="<?= (int) $inst['activo'] === 1 ? '¿Desactivar esta institución? Sus usuarios no podrán ingresar (sus datos se conservan).' : '¿Activar esta institución?' ?>">
                         <?= Csrf::field() ?>
                         <button type="submit" class="btn btn-sm btn-outline-<?= (int) $inst['activo'] === 1 ? 'danger' : 'success' ?>">
                             <?= (int) $inst['activo'] === 1 ? 'Desactivar' : 'Activar' ?>

@@ -92,7 +92,7 @@ $etiquetas = [
                     <?php if ($s['estado'] === 'pendiente' && $puedeAprobar): ?>
                         <form method="post" action="<?= Url::to('/reintegros/solicitudes/' . $s['id'] . '/aprobar') ?>"
                               class="d-flex flex-wrap gap-1 justify-content-end mb-1"
-                              onsubmit="return confirm('¿Aprobar la solicitud? El bien se reintegrará y saldrá de su espacio.');">
+                              data-confirmar="¿Aprobar la solicitud? El bien se reintegrará y saldrá de su espacio.">
                             <?= Csrf::field() ?>
                             <input type="date" name="fecha" class="form-control form-control-sm" style="max-width: 150px;"
                                    value="<?= date('Y-m-d') ?>" required aria-label="Fecha del reintegro">
@@ -108,7 +108,7 @@ $etiquetas = [
                         </form>
                     <?php elseif ($s['estado'] === 'pendiente' && (int) $s['solicitado_por'] === (int) Auth::id()): ?>
                         <form method="post" action="<?= Url::to('/reintegros/solicitudes/' . $s['id'] . '/cancelar') ?>" class="d-inline"
-                              onsubmit="return confirm('¿Cancelar esta solicitud?');">
+                              data-confirmar="¿Cancelar esta solicitud?">
                             <?= Csrf::field() ?>
                             <button type="submit" class="btn btn-sm btn-outline-secondary">Cancelar solicitud</button>
                         </form>

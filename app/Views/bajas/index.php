@@ -90,7 +90,7 @@ use App\Models\Categoria;
                     <?php if ($pendiente && (Auth::esSuperusuario() || Auth::tienePermiso('bajas.aprobar'))): ?>
                         <?php if ($admiteBaja): ?>
                             <form method="post" action="<?= Url::to('/bajas/' . $b['id'] . '/aprobar') ?>" class="d-inline"
-                                  onsubmit="return confirm('¿Aprobar esta baja? El bien pasará a estado \'Dado de baja\'.');">
+                                  data-confirmar="¿Aprobar esta baja? El bien pasará a estado &#x27;Dado de baja&#x27;.">
                                 <?= Csrf::field() ?>
                                 <button type="submit" class="btn btn-sm btn-outline-success">Aprobar</button>
                             </form>

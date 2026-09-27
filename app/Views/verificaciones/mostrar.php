@@ -132,7 +132,7 @@ $tabPorDefecto = !empty($hallazgos) ? 'hallazgos' : 'discrepancia';
                         <div class="d-flex flex-column gap-1">
                             <a href="<?= Url::to('/bienes/crear') ?>?hallazgo_id=<?= (int) $h['id'] ?>" class="btn btn-sm btn-outline-primary">Registrar como bien</a>
                             <form method="post" action="<?= Url::to('/hallazgos/' . $h['id'] . '/descartar') ?>"
-                                  onsubmit="return confirm('¿Descartar este hallazgo? No se creará ningún bien.');">
+                                  data-confirmar="¿Descartar este hallazgo? No se creará ningún bien.">
                                 <?= Csrf::field() ?>
                                 <button type="submit" class="btn btn-sm btn-outline-secondary w-100">Descartar</button>
                             </form>

@@ -1,5 +1,5 @@
 /**
- * Overlay de "procesando..." para cualquier formulario de la aplicación — antes solo
+ * Confirmación (data-confirmar) y overlay de "procesando..." para cualquier formulario de la aplicación — antes solo
  * cubría los que suben archivos, dejando sin ninguna señal de progreso a los demás
  * (crear/editar sin foto, activar/desactivar, eliminar...). Se activa por delegación
  * de eventos en el documento — cualquier formulario nuevo lo obtiene automáticamente,
@@ -26,7 +26,7 @@
         ].join(';');
 
         overlay.innerHTML = [
-            '<div class="bg-white rounded-3 shadow p-4 text-center" style="max-width:320px;">',
+            '<div class="bg-body text-body rounded-3 shadow p-4 text-center" style="max-width:320px;">',
             '  <div class="spinner-border text-primary mb-3" role="status" style="width:2.5rem;height:2.5rem;"></div>',
             '  <div class="fw-semibold">Procesando…</div>',
             '  <div class="text-muted small mt-1">No cierres ni recargues esta página.</div>',
@@ -51,6 +51,14 @@
     document.addEventListener('submit', function (evento) {
         const form = evento.target;
         if (!(form instanceof HTMLFormElement)) { return; }
+
+        // Confirmación estándar: <form data-confirmar="¿...?">. Reemplaza los
+        // onsubmit="return confirm(...)" sueltos que había en cada vista.
+        const mensaje = form.getAttribute('data-confirmar');
+        if (mensaje && !window.confirm(mensaje)) {
+            evento.preventDefault();
+            return;
+        }
 
         if (!requiereOverlay(form)) {
             if (form.hasAttribute('target')) { manejarEnvioEnPestañaNueva(evento, form); }

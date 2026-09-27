@@ -147,7 +147,7 @@ $invalido = static fn (string $campo) => $errorCampo === $campo ? ' is-invalid' 
                 </p>
                 <form method="post" action="<?= Url::to('/usuarios/' . $usuario['id'] . '/restablecer-2fa') ?>"
                       class="row g-2 align-items-end"
-                      onsubmit="return confirm('¿Restablecer la verificación en dos pasos de este usuario? Se cerrarán sus sesiones abiertas.');">
+                      data-confirmar="¿Restablecer la verificación en dos pasos de este usuario? Se cerrarán sus sesiones abiertas.">
                     <?= Csrf::field() ?>
                     <div class="col-sm-7">
                         <label class="form-label small" for="passwordConfirmacion2fa">Tu contraseña, para confirmar</label>

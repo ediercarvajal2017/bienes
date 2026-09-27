@@ -52,14 +52,15 @@ use App\Core\Url;
                     <?php endif; ?>
                 </td>
                 <td class="text-end text-nowrap">
-                    <form method="post" action="<?= Url::to('/cargos/' . $c['id'] . '/estado') ?>" class="d-inline">
+                    <form method="post" action="<?= Url::to('/cargos/' . $c['id'] . '/estado') ?>" class="d-inline"
+                              data-confirmar="<?= (int) $c['activo'] === 1 ? '¿Desactivar este cargo? No aparecerá al crear usuarios nuevos.' : '¿Activar este cargo?' ?>">
                         <?= Csrf::field() ?>
                         <button type="submit" class="btn btn-sm btn-outline-<?= (int) $c['activo'] === 1 ? 'danger' : 'success' ?>">
                             <?= (int) $c['activo'] === 1 ? 'Desactivar' : 'Activar' ?>
                         </button>
                     </form>
                     <form method="post" action="<?= Url::to('/cargos/' . $c['id'] . '/eliminar') ?>" class="d-inline"
-                          onsubmit="return confirm('¿Eliminar este cargo? Solo es posible si ningún usuario lo tiene asignado. Un superusuario podrá restaurarlo desde la papelera si fue un error.');">
+                          data-confirmar="¿Eliminar este cargo? Solo es posible si ningún usuario lo tiene asignado. Un superusuario podrá restaurarlo desde la papelera si fue un error.">
                         <?= Csrf::field() ?>
                         <button type="submit" class="btn btn-sm btn-outline-danger">Eliminar</button>
                     </form>

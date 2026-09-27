@@ -59,7 +59,7 @@ $fecha = static fn (?string $valor): string => $valor ? date('d/m/Y', strtotime(
                     <details>
                         <summary class="small">Desactivar la verificación en dos pasos</summary>
                         <form method="post" action="<?= Url::to('/2fa/desactivar') ?>" class="row g-2 align-items-end mt-1"
-                              onsubmit="return confirm('¿Desactivar la verificación en dos pasos? Tu cuenta quedará protegida solo con la contraseña.');">
+                              data-confirmar="¿Desactivar la verificación en dos pasos? Tu cuenta quedará protegida solo con la contraseña.">
                             <?= Csrf::field() ?>
                             <div class="col-sm-5">
                                 <label class="form-label small" for="passwordDesactivar">Contraseña actual</label>

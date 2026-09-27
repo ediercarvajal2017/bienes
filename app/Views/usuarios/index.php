@@ -87,14 +87,15 @@ use App\Core\View;
                         <a href="<?= Url::to('/usuarios/' . $u['id'] . '/editar') ?>" class="btn btn-sm btn-outline-secondary">Editar</a>
                     <?php endif; ?>
                     <?php if ((Auth::esSuperusuario() || Auth::tienePermiso('usuarios.eliminar')) && (int) $u['id'] !== Auth::id()): ?>
-                        <form method="post" action="<?= Url::to('/usuarios/' . $u['id'] . '/estado') ?>" class="d-inline">
+                        <form method="post" action="<?= Url::to('/usuarios/' . $u['id'] . '/estado') ?>" class="d-inline"
+                              data-confirmar="<?= (int) $u['activo'] === 1 ? '¿Desactivar este usuario? No podrá ingresar y sus sesiones abiertas se cerrarán.' : '¿Activar este usuario?' ?>">
                             <?= Csrf::field() ?>
                             <button type="submit" class="btn btn-sm btn-outline-<?= (int) $u['activo'] === 1 ? 'danger' : 'success' ?>">
                                 <?= (int) $u['activo'] === 1 ? 'Desactivar' : 'Activar' ?>
                             </button>
                         </form>
                         <form method="post" action="<?= Url::to('/usuarios/' . $u['id'] . '/eliminar') ?>" class="d-inline"
-                              onsubmit="return confirm('¿Eliminar este usuario? Solo es posible si no tiene movimientos ni registros asociados. Un superusuario podrá restaurarlo desde la papelera si fue un error.');">
+                              data-confirmar="¿Eliminar este usuario? Solo es posible si no tiene movimientos ni registros asociados. Un superusuario podrá restaurarlo desde la papelera si fue un error.">
                             <?= Csrf::field() ?>
                             <button type="submit" class="btn btn-sm btn-outline-danger">Eliminar</button>
                         </form>

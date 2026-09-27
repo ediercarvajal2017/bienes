@@ -92,14 +92,15 @@ use App\Models\Categoria;
                     </td>
                     <td class="text-end text-nowrap">
                         <?php if (!$protegida): ?>
-                            <form method="post" action="<?= Url::to('/categorias/' . $c['id'] . '/estado') ?>" class="d-inline">
+                            <form method="post" action="<?= Url::to('/categorias/' . $c['id'] . '/estado') ?>" class="d-inline"
+                              data-confirmar="<?= (int) $c['activo'] === 1 ? '¿Desactivar esta categoría? No aparecerá al registrar bienes nuevos.' : '¿Activar esta categoría?' ?>">
                                 <?= Csrf::field() ?>
                                 <button type="submit" class="btn btn-sm btn-outline-<?= (int) $c['activo'] === 1 ? 'danger' : 'success' ?>">
                                     <?= (int) $c['activo'] === 1 ? 'Desactivar' : 'Activar' ?>
                                 </button>
                             </form>
                             <form method="post" action="<?= Url::to('/categorias/' . $c['id'] . '/eliminar') ?>" class="d-inline"
-                                  onsubmit="return confirm('¿Eliminar esta categoría? Solo es posible si ningún bien la usa. Un superusuario podrá restaurarla desde la papelera si fue un error.');">
+                                  data-confirmar="¿Eliminar esta categoría? Solo es posible si ningún bien la usa. Un superusuario podrá restaurarla desde la papelera si fue un error.">
                                 <?= Csrf::field() ?>
                                 <button type="submit" class="btn btn-sm btn-outline-danger">Eliminar</button>
                             </form>

@@ -27,7 +27,7 @@ use App\Core\Url;
 <?php endif; ?>
 
 <form method="post" action="<?= Url::to('/seguridad/verificacion-dos-pasos') ?>" style="max-width: 760px;"
-      onsubmit="return confirm('¿Guardar la política? Los plazos de gracia de quienes aún no la configuran se contarán de nuevo desde su siguiente ingreso.');">
+      data-confirmar="¿Guardar la política? Los plazos de gracia de quienes aún no la configuran se contarán de nuevo desde su siguiente ingreso.">
     <?= Csrf::field() ?>
     <div class="table-responsive">
         <table class="table table-sm align-middle bg-white tabla-cards">

@@ -79,14 +79,15 @@ $puedeCrearEspacio = Auth::esSuperusuario() || Auth::tienePermiso('espacios.crea
                 <td class="text-end text-nowrap">
                     <?php if (Auth::esSuperusuario() || Auth::tienePermiso('espacios.editar')): ?>
                         <a href="<?= Url::to('/espacios/' . $e['id'] . '/editar') ?>" class="btn btn-sm btn-outline-secondary">Editar</a>
-                        <form method="post" action="<?= Url::to('/espacios/' . $e['id'] . '/estado') ?>" class="d-inline">
+                        <form method="post" action="<?= Url::to('/espacios/' . $e['id'] . '/estado') ?>" class="d-inline"
+                              data-confirmar="<?= (int) $e['activo'] === 1 ? '¿Desactivar este espacio? Ya no se le podrán asignar bienes.' : '¿Activar este espacio?' ?>">
                             <?= Csrf::field() ?>
                             <button type="submit" class="btn btn-sm btn-outline-<?= (int) $e['activo'] === 1 ? 'danger' : 'success' ?>">
                                 <?= (int) $e['activo'] === 1 ? 'Desactivar' : 'Activar' ?>
                             </button>
                         </form>
                         <form method="post" action="<?= Url::to('/espacios/' . $e['id'] . '/eliminar') ?>" class="d-inline"
-                              onsubmit="return confirm('¿Eliminar este espacio? Solo es posible si no tiene asignaciones ni movimientos registrados. Un superusuario podrá restaurarlo desde la papelera si fue un error.');">
+                              data-confirmar="¿Eliminar este espacio? Solo es posible si no tiene asignaciones ni movimientos registrados. Un superusuario podrá restaurarlo desde la papelera si fue un error.">
                             <?= Csrf::field() ?>
                             <button type="submit" class="btn btn-sm btn-outline-danger">Eliminar</button>
                         </form>
