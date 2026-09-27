@@ -14,6 +14,29 @@ $etiquetasAccion = [
     'purgar' => 'Purgar',
     'archivar' => 'Archivar',
     'confirmar_qr' => 'Confirmar etiqueta QR',
+    // Ciclo de vida de los bienes
+    'asignar' => 'Asignar',
+    'trasladar' => 'Trasladar',
+    'trasladar_sede' => 'Trasladar de sede',
+    'reintegrar' => 'Reintegrar',
+    'reactivar' => 'Reactivar',
+    'reportar' => 'Reportar baja',
+    'solicitar' => 'Solicitar reintegro',
+    'aprobar' => 'Aprobar',
+    'rechazar' => 'Rechazar',
+    'cancelar' => 'Cancelar',
+    'aplicar' => 'Aplicar carga masiva',
+    'iniciar' => 'Iniciar verificación',
+    'cerrar' => 'Cerrar verificación',
+    'descartar' => 'Descartar hallazgo',
+    // Cuentas y seguridad
+    'login_ok' => 'Inicio de sesión',
+    'cambiar_contrasena' => 'Cambiar contraseña',
+    'restablecer_contrasena' => 'Restablecer contraseña',
+    '2fa_activar' => 'Activar verificación en dos pasos',
+    '2fa_desactivar' => 'Desactivar verificación en dos pasos',
+    '2fa_regenerar_codigos' => 'Regenerar códigos de recuperación',
+    '2fa_restablecer' => 'Restablecer verificación en dos pasos',
 ];
 $coloresAccion = [
     'crear' => 'text-bg-primary',
@@ -25,6 +48,19 @@ $coloresAccion = [
     'purgar' => 'text-bg-dark',
     'archivar' => 'text-bg-secondary',
     'confirmar_qr' => 'text-bg-success',
+    'asignar' => 'text-bg-primary',
+    'trasladar' => 'text-bg-info',
+    'trasladar_sede' => 'text-bg-info',
+    'reintegrar' => 'text-bg-warning',
+    'reactivar' => 'text-bg-success',
+    'reportar' => 'text-bg-warning',
+    'solicitar' => 'text-bg-warning',
+    'aprobar' => 'text-bg-success',
+    'rechazar' => 'text-bg-danger',
+    'aplicar' => 'text-bg-primary',
+    'iniciar' => 'text-bg-primary',
+    'cerrar' => 'text-bg-secondary',
+    '2fa_restablecer' => 'text-bg-warning',
 ];
 $etiquetasEntidad = [
     'usuario' => 'Usuario',
@@ -38,13 +74,19 @@ $etiquetasEntidad = [
     'formato_plaqueteo' => 'Formato de plaqueteo',
     'cartera_envio' => 'Cartera',
     'auditoria' => 'Auditoría (archivado)',
+    'baja' => 'Baja',
+    'solicitud_reintegro' => 'Solicitud de reintegro',
+    'lote_reintegro' => 'Lote de reintegro',
+    'carga_masiva' => 'Carga masiva',
+    'jornada_verificacion' => 'Verificación física',
+    'hallazgo' => 'Hallazgo',
 ];
 ?>
 <div class="mb-3">
     <h1 class="h4 mb-0"><i class="bi bi-journal-text me-1"></i>Auditoría</h1>
     <p class="text-muted small mb-0">
-        Quién creó, editó, eliminó, restauró o purgó algo, en cualquier institución. Incluye lo que ya se
-        purgó de la papelera para siempre.
+        Quién hizo qué y cuándo, en cualquier institución: altas y cambios, asignaciones, traslados,
+        reintegros, bajas, verificaciones e inicios de sesión. Incluye lo que ya se purgó de la papelera.
     </p>
 </div>
 

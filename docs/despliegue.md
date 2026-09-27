@@ -109,6 +109,7 @@ comando con `database/restaurar.php`). Los respaldos quedan en `storage_sigebi/b
 |---|---|---|---|
 | 2026-09-27 | 1.1.2 | 029–033 | Seguridad, 2FA opcional, ciclos de vida. Las 24 tablas de datos quedaron idénticas fila por fila |
 | 2026-09-27 | 1.1.3 | — | Fotos: se liberan sesión y conexión antes de enviar; reintento de conexión |
+| 2026-09-27 | 1.1.4 | — | Auditoría con todas las acciones en español; demostración local (`demo.bat`) y guion de presentación |
 
 ## Fuera del despliegue
 
