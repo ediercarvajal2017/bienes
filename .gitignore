@@ -52,4 +52,5 @@ Thumbs.db
 
 # Suite de pruebas: archivos subidos y datos generados en cada corrida
 /storage/pruebas/
+/storage/demo/
 /playwright/.datos-prueba.json
