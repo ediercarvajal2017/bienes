@@ -60,7 +60,7 @@ foreach ($gruposBreadcrumb as $g) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title><?= htmlspecialchars($title ?? 'SIGEBI', ENT_QUOTES) ?> · SIGEBI</title>
-    <link rel="icon" type="image/jpeg" href="<?= Url::asset('/assets/img/favicon.jpg') ?>">
+    <link rel="icon" type="image/png" sizes="32x32" href="<?= Url::asset('/assets/img/favicon-32.png') ?>">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" integrity="sha384-tViUnnbYAV00FLIhhi3v/dWt3Jxw4gZQcNoSCxCIFNJVCx7/D55/wXsrNIRANwdD" crossorigin="anonymous" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.min.css" integrity="sha384-piG3EtH1fBnPi68q4spy+Qgpb0dHK1D1dwk0GaHwFkvmUxYi526bBlk3xJcjEBsD" crossorigin="anonymous" rel="stylesheet">
@@ -77,7 +77,7 @@ foreach ($gruposBreadcrumb as $g) {
         <i class="bi bi-list"></i>
     </button>
     <a class="navbar-brand d-flex align-items-center" href="<?= Url::to('/dashboard') ?>">
-        <img src="<?= Url::asset('/assets/img/logo.png') ?>" alt="SIGEBI" class="navbar-logo">
+        <img src="<?= Url::asset('/assets/img/logo.webp') ?>" width="600" height="206" alt="SIGEBI" class="navbar-logo">
     </a>
     <?php
     $nombreUsuarioNavbar = Auth::nombreCompleto() ?? '';
