@@ -6,32 +6,32 @@ use App\Core\Url;
 <h1 class="h4 mb-3">Escanear código QR</h1>
 <p class="text-muted small">Apunta la cámara del celular al código QR pegado sobre el bien.</p>
 
-<?php if (!empty($mensaje)): ?><div class="alert alert-success py-2 small" style="max-width: 420px;"><?= htmlspecialchars($mensaje, ENT_QUOTES) ?></div><?php endif; ?>
-<?php if (!empty($error)): ?><div class="alert alert-danger py-2 small" style="max-width: 420px;"><?= htmlspecialchars($error, ENT_QUOTES) ?></div><?php endif; ?>
+<?php if (!empty($mensaje)): ?><div class="alert alert-success py-2 small contenedor-escaner"><?= htmlspecialchars($mensaje, ENT_QUOTES) ?></div><?php endif; ?>
+<?php if (!empty($error)): ?><div class="alert alert-danger py-2 small contenedor-escaner"><?= htmlspecialchars($error, ENT_QUOTES) ?></div><?php endif; ?>
 
-<div style="max-width: 420px;">
+<div class="contenedor-escaner">
     <div id="lector-qr" class="rounded border overflow-hidden bg-dark"></div>
-    <div class="d-flex gap-2 mt-2 flex-wrap">
-        <button type="button" id="btnCambiarCamara" class="btn btn-sm btn-outline-secondary d-none">
-            <i class="bi bi-arrow-repeat me-1"></i>Cambiar cámara
+    <div class="d-flex gap-2 mt-2">
+        <button type="button" id="btnCambiarCamara" class="btn btn-outline-secondary flex-fill d-none">
+            <i class="bi bi-arrow-repeat me-1" aria-hidden="true"></i>Cambiar cámara
         </button>
-        <button type="button" id="btnLinterna" class="btn btn-sm btn-outline-secondary d-none">
-            <i class="bi bi-flashlight me-1"></i>Linterna
+        <button type="button" id="btnLinterna" class="btn btn-outline-secondary flex-fill d-none">
+            <i class="bi bi-flashlight me-1" aria-hidden="true"></i>Linterna
         </button>
     </div>
-    <p id="mensajeEstadoCamara" class="small text-danger mt-2 mb-0"></p>
+    <p id="mensajeEstadoCamara" class="small text-danger mt-2 mb-0" role="status" aria-live="polite"></p>
 </div>
 
-<div class="mt-4" style="max-width: 420px;">
+<div class="mt-4 contenedor-escaner">
     <label for="campo-codigo" class="form-label small">¿No tienes cámara a mano? Escribe el código del bien</label>
     <form method="get" action="<?= Url::to('/escanear/buscar') ?>" class="d-flex gap-2">
-        <input id="campo-codigo" type="text" name="codigo" class="form-control form-control-sm" placeholder="Código del bien" required>
-        <button type="submit" class="btn btn-sm btn-outline-secondary text-nowrap">Buscar</button>
+        <input id="campo-codigo" type="text" name="codigo" class="form-control" placeholder="Código del bien" required autocomplete="off" autocapitalize="characters">
+        <button type="submit" class="btn btn-outline-secondary text-nowrap">Buscar</button>
     </form>
 </div>
 
 <?php if (!empty($jornadaActiva)): ?>
-    <div class="alert alert-secondary mt-4 py-3" style="max-width: 420px;">
+    <div class="alert alert-secondary mt-4 py-3 contenedor-escaner">
         <div class="small mb-2">¿Encontraste un bien físico que no tiene código ni QR?</div>
         <a href="<?= Url::to('/hallazgos/crear') ?>" class="btn btn-sm btn-outline-primary">
             <i class="bi bi-flag me-1"></i>Reportar bien no registrado
@@ -52,13 +52,37 @@ use App\Core\Url;
     let escaneando = false;
     let linternaEncendida = false;
 
+    // Nunca se navega al texto leído tal cual: un QR ajeno pegado sobre un bien podría
+    // llevar a un sitio falso o, con "javascript:...", ejecutar código en esta sesión.
+    // Se toma solo el identificador del bien (/qr/<uuid>) —sin importar el dominio
+    // impreso en la etiqueta— o, si es texto simple, se busca como código del bien.
+    const BASE_QR = <?= json_encode(Url::to('/qr/')) ?>;
+    const BASE_BUSCAR = <?= json_encode(Url::to('/escanear/buscar')) ?>;
+    function destinoSeguro(texto) {
+        const limpio = String(texto || '').trim();
+        const token = limpio.match(/\/qr\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})(?:[\/?#]|$)/i);
+        if (token) { return BASE_QR + token[1].toLowerCase(); }
+        if (/^[A-Za-z0-9._\-]{1,40}$/.test(limpio)) { return BASE_BUSCAR + '?codigo=' + encodeURIComponent(limpio); }
+        return null;
+    }
+
     function irA(texto) {
-        window.location.href = texto;
+        const destino = destinoSeguro(texto);
+        if (destino === null) {
+            mensaje.classList.remove('text-success');
+            mensaje.classList.add('text-danger');
+            mensaje.textContent = 'Este código QR no es una etiqueta de SIGEBI.';
+            escaneando = true;
+            iniciar(camaras[indiceCamara] ? camaras[indiceCamara].id : { facingMode: 'environment' });
+            return;
+        }
+        window.location.href = destino;
     }
 
     function alDetectar(textoDecodificado) {
         if (!escaneando) { return; }
         escaneando = false;
+        if (navigator.vibrate) { navigator.vibrate(100); }
         mensaje.classList.remove('text-danger');
         mensaje.classList.add('text-success');
         mensaje.textContent = 'Código detectado, abriendo…';
@@ -83,7 +107,9 @@ use App\Core\Url;
 
     async function iniciar(cameraIdOConfig) {
         try {
-            await lector.start(cameraIdOConfig, { fps: 10, qrbox: 240 }, alDetectar, function () {});
+            // Recuadro de lectura proporcional al visor (70 % del lado menor), en cualquier pantalla.
+            const recuadro = function (ancho, alto) { const lado = Math.floor(Math.min(ancho, alto) * 0.7); return { width: lado, height: lado }; };
+            await lector.start(cameraIdOConfig, { fps: 10, qrbox: recuadro }, alDetectar, function () {});
             escaneando = true;
             mensaje.classList.remove('text-success');
             mensaje.classList.add('text-danger');
