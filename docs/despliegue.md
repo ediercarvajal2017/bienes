@@ -21,6 +21,19 @@ hPanel → Git.
 Por eso las actualizaciones llegan a producción **solo** cuando se ejecuta el script de
 despliegue, que trae de GitHub la versión indicada.
 
+## Forma rápida (uso diario): `./publicar.sh`
+
+Se trabaja en la rama **`desarrollo`**. Con los cambios en commits, desde Git Bash:
+
+```bash
+./publicar.sh "Qué cambia en esta versión"            # pruebas rápidas + versión + push + despliegue
+./publicar.sh "…" --completo                          # además, las 301 pruebas de navegador
+./publicar.sh "…" --con-migraciones                   # solo tras autorizar las migraciones que mostró
+```
+
+Hace los pasos de abajo en uno solo. Si la versión trae migraciones se detiene sin tocar nada y
+las lista. La rama `desarrollo` se une a `main` de vez en cuando (Pull Request), solo como registro.
+
 ## Flujo de una actualización
 
 ```
