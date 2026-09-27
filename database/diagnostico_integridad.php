@@ -253,7 +253,7 @@ $revisiones = [
 
 $csv = fopen($rutaCsv, 'w');
 fwrite($csv, "\xEF\xBB\xBF"); // BOM para que Excel abra bien las tildes
-fputcsv($csv, ['codigo', 'severidad', 'revision', 'fila'], ';');
+fputcsv($csv, ['codigo', 'severidad', 'revision', 'fila'], ';', '"', '');
 
 $resumen = [];
 $hayAltas = false;
@@ -297,7 +297,7 @@ foreach ($revisiones as [$codigo, $severidad, $titulo, $explicacion, $sql]) {
     }
 
     foreach ($filas as $fila) {
-        fputcsv($csv, [$codigo, $severidad, $titulo, json_encode($fila, JSON_UNESCAPED_UNICODE)], ';');
+        fputcsv($csv, [$codigo, $severidad, $titulo, json_encode($fila, JSON_UNESCAPED_UNICODE)], ';', '"', '');
     }
 }
 
