@@ -69,7 +69,14 @@ foreach ($gruposBreadcrumb as $g) {
     <link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.min.css" integrity="sha384-piG3EtH1fBnPi68q4spy+Qgpb0dHK1D1dwk0GaHwFkvmUxYi526bBlk3xJcjEBsD" crossorigin="anonymous" rel="stylesheet">
     <link href="<?= Url::asset('/assets/css/app.css') ?>" rel="stylesheet">
     <link rel="manifest" href="<?= Url::to('/manifest.json') ?>">
-    <meta name="theme-color" content="#1F6F54">
+    <meta name="theme-color" content="#1F6F54" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#0f141a" media="(prefers-color-scheme: dark)">
+    <!-- iPhone/iPad: ícono y pantalla completa al agregar SIGEBI a la pantalla de inicio. -->
+    <link rel="apple-touch-icon" href="<?= Url::asset('/assets/img/icon-192.png') ?>">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="SIGEBI">
 </head>
 <body>
 
