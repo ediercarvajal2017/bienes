@@ -33,7 +33,9 @@ test('reintegrar un bien y agruparlo en un lote', async ({ page }) => {
     await seleccionarPrimeraOpcionTomSelect(page, 'categoriaBien');
     await page.setInputFiles('input[name="foto"]', fotoFixture);
     await page.getByRole('button', { name: 'Registrar bien' }).click();
-    await expect(page).toHaveURL(/\/bienes$/);
+    // Al registrar se abre la ficha del bien nuevo; aquí se sigue desde el listado.
+    await expect(page).toHaveURL(/\/bienes\/\d+\/editar/);
+    await page.goto('bienes');
 
     const filaBien = page.locator('tr', { hasText: codigoBien });
     await filaBien.getByRole('link', { name: 'Editar' }).click();

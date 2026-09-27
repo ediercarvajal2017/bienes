@@ -41,9 +41,14 @@ test('editar datos y trasladar con un solo guardado, y volver al listado como es
     await seleccionarTomSelect(page, 'accionEspacio', `PW Espacio B ${sufijo}`);
     await page.getByRole('button', { name: 'Guardar y trasladar' }).click();
 
-    // Vuelve al listado con la misma búsqueda y resalta el bien.
-    await expect(page).toHaveURL(new RegExp(`/bienes\\?q=${codigo}&pagina=1&editado=${bienId}`));
+    // Se queda en la ficha, que ya muestra la nueva ubicación.
+    await expect(page).toHaveURL(new RegExp(`/bienes/${bienId}/editar$`));
     await expect(page.locator('.alert-success')).toContainText('Bien actualizado. Trasladado a PW Espacio B');
+    await expect(page.locator('#ubicacionActual')).toContainText(`PW Espacio B ${sufijo}`);
+
+    // "Volver" regresa al listado con la misma búsqueda y página, resaltando el bien.
+    await page.getByRole('link', { name: 'Volver' }).click();
+    await expect(page).toHaveURL(new RegExp(`/bienes\\?q=${codigo}&pagina=1&editado=${bienId}`));
     await expect(page.locator('#bienEditado')).toContainText(`PW bien editado ${sufijo}`);
 
     // En la base: el dato, un traslado, una sola asignación activa (la nueva) y la auditoría.
@@ -53,17 +58,17 @@ test('editar datos y trasladar con un solo guardado, y volver al listado como es
     expect(bd(`SELECT GROUP_CONCAT(accion ORDER BY id) FROM auditoria WHERE entidad = 'bien' AND entidad_id = ${bienId}`)).toBe('trasladar,editar');
 });
 
-test('solo guardar los datos no crea movimientos; Volver regresa al listado', async ({ page }) => {
+test('solo guardar los datos no crea movimientos y se queda en la ficha', async ({ page }) => {
     const sufijo = Date.now();
     const { bienId, codigo } = prepararBien(sufijo);
 
     await page.goto(`bienes?q=${encodeURIComponent(codigo)}`);
     await page.goto(`bienes/${bienId}/editar`);
-    await expect(page.getByRole('link', { name: 'Volver' })).toHaveAttribute('href', new RegExp(`/bienes\\?q=${codigo}$`));
+    await expect(page.getByRole('link', { name: 'Volver' })).toHaveAttribute('href', new RegExp(`/bienes\\?q=${codigo}&editado=${bienId}$`));
 
     await page.locator('input[name="descripcion"]').fill(`PW solo datos ${sufijo}`);
     await page.getByRole('button', { name: 'Guardar cambios' }).click();
-    await expect(page).toHaveURL(new RegExp(`/bienes\\?q=${codigo}&editado=${bienId}`));
+    await expect(page).toHaveURL(new RegExp(`/bienes/${bienId}/editar$`));
     expect(bd(`SELECT COUNT(*) FROM movimientos WHERE bien_id = ${bienId}`)).toBe('0');
 });
 
@@ -126,4 +131,24 @@ test('el docente no ve el menú de acciones', async ({ browser }) => {
     await docente.goto(`bienes/${datos().bienes.A.silla}/editar`);
     await expect(docente.locator('#accionBien')).toHaveCount(0);
     await docente.context().close();
+});
+
+test('registrar un bien con su ubicación en un solo paso abre su ficha', async ({ page }) => {
+    const sufijo = Date.now();
+    const d = datos();
+    bd(`INSERT INTO espacios (institucion_id, codigo, nombre, activo) VALUES (${d.instituciones.A}, 'PWN-${sufijo}', 'PW Espacio nuevo ${sufijo}', 1)`);
+    const espacio = Number(bd(`SELECT id FROM espacios WHERE codigo = 'PWN-${sufijo}'`));
+
+    await page.goto('bienes/crear');
+    await page.locator('input[name="codigo_identificacion"]').fill(`PW-NUEVO-${sufijo}`);
+    await page.locator('input[name="descripcion"]').fill(`PW bien nuevo ${sufijo}`);
+    await seleccionarTomSelect(page, 'campoEspacioNuevo', `PW Espacio nuevo ${sufijo}`);
+    await page.getByRole('button', { name: 'Registrar bien' }).click();
+
+    await expect(page).toHaveURL(/\/bienes\/\d+\/editar$/);
+    await expect(page.locator('.alert-success')).toContainText(`Bien registrado y asignado a PW Espacio nuevo ${sufijo}`);
+    await expect(page.locator('#ubicacionActual')).toContainText(`PW Espacio nuevo ${sufijo}`);
+    const bienId = Number(bd(`SELECT id FROM bienes WHERE codigo_identificacion = 'PW-NUEVO-${sufijo}'`));
+    expect(bd(`SELECT espacio_id FROM asignaciones WHERE bien_id = ${bienId} AND activa = 1`)).toBe(String(espacio));
+    expect(bd(`SELECT GROUP_CONCAT(accion ORDER BY id) FROM auditoria WHERE entidad = 'bien' AND entidad_id = ${bienId}`)).toBe('crear,asignar');
 });

@@ -39,7 +39,9 @@ test('un bien recorre crear → asignar → trasladar → reintegrar', async ({ 
     await seleccionarPrimeraOpcionTomSelect(page, 'categoriaBien');
     await page.getByRole('button', { name: 'Registrar bien' }).click();
 
-    await expect(page).toHaveURL(/\/bienes$/);
+    // Al registrar se abre la ficha del bien nuevo; aquí se sigue desde el listado.
+    await expect(page).toHaveURL(/\/bienes\/\d+\/editar/);
+    await page.goto('bienes');
     const filaBien = page.locator('tr', { hasText: codigoBien });
     await expect(filaBien).toBeVisible();
 
@@ -48,14 +50,13 @@ test('un bien recorre crear → asignar → trasladar → reintegrar', async ({ 
     const urlFicha = page.url();
 
     // Cada acción se elige en "¿Qué desea hacer con este bien?" y se guarda junto con los
-    // datos con un solo botón; al guardar se vuelve al listado y se reabre la ficha.
+    // datos con un solo botón; al guardar se queda en la ficha del bien.
     async function hacer(accion, completar, boton) {
         await page.selectOption('#accionBien', accion);
         await completar();
         await page.getByRole('button', { name: boton }).click();
-        await expect(page).toHaveURL(/\/bienes(\?|$)/);
+        await expect(page).toHaveURL(urlFicha);
         await expect(page.locator('.alert-success')).toContainText('Bien actualizado');
-        await page.goto(urlFicha);
     }
 
     // --- Asignar al espacio A ---

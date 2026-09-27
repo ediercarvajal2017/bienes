@@ -22,6 +22,7 @@ $verificacionId ??= null;
 $hallazgo ??= null;
 $errorCampo ??= null;
 $acciones ??= [];
+$espaciosInstitucion ??= [];
 $urlVolver ??= Url::to('/bienes');
 $v = static fn (string $campo, mixed $porDefecto = '') => $viejo[$campo] ?? $bien[$campo] ?? $porDefecto;
 $invalido = static fn (string $campo) => $errorCampo === $campo ? ' is-invalid' : '';
@@ -265,6 +266,19 @@ $invalido = static fn (string $campo) => $errorCampo === $campo ? ' is-invalid' 
             <div class="invalid-feedback d-block"><?= htmlspecialchars($error, ENT_QUOTES) ?></div>
         <?php endif; ?>
     </div>
+
+    <?php if (!$esEdicion && !empty($espaciosInstitucion)): ?>
+        <div class="col-12">
+            <label for="campoEspacioNuevo" class="form-label small">Ubicación (espacio)</label>
+            <select id="campoEspacioNuevo" name="espacio_id" class="form-select selector-buscable">
+                <option value="">-- Sin asignar por ahora --</option>
+                <?php foreach ($espaciosInstitucion as $e): ?>
+                    <option value="<?= $e['id'] ?>" <?= (string) ($viejo['espacio_id'] ?? '') === (string) $e['id'] ? 'selected' : '' ?>><?= htmlspecialchars($e['codigo'] . ' - ' . $e['nombre'], ENT_QUOTES) ?></option>
+                <?php endforeach; ?>
+            </select>
+            <div class="form-text">Si lo elige, el bien queda asignado a ese espacio al registrarlo.</div>
+        </div>
+    <?php endif; ?>
 
     <div class="col-md-4">
         <label for="campo-fecha-ingreso" class="form-label small requerido">Fecha de ingreso</label>

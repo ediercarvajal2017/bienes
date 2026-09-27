@@ -128,6 +128,8 @@ final class BienController
         View::layout('partials/layout', 'bienes/form', [
             'title' => 'Registrar bien',
             'bien' => null,
+            'espaciosInstitucion' => !Auth::esSuperusuario() && Auth::tienePermiso('asignaciones.crear') && $hallazgo === null
+                ? Espacio::listadoParaSelect((int) Auth::institucionId()) : [],
             'categorias' => Auth::esSuperusuario() ? [] : Categoria::activas((int) Auth::institucionId()),
             'instituciones' => Auth::esSuperusuario() ? Institucion::listadoParaSelect() : [],
             'error' => Session::pullFlash('error'),
@@ -201,8 +203,18 @@ final class BienController
         // ":imprimir_qr" en la consulta -- con PDO::ATTR_EMULATE_PREPARES en false eso
         // revienta con "Invalid parameter number", no se ignora en silencio.
         $imprimirQr = $datos['imprimir_qr'] === '1';
-        $datosParaReintentar = $datos;
+        $espacioId = $hallazgo === null ? (int) $request->input('espacio_id') : 0;
+        $datosParaReintentar = $datos + ['espacio_id' => $espacioId ?: ''];
         unset($datos['imprimir_qr']);
+
+        // Ubicación elegida al registrar (opcional): se asigna en el mismo guardado.
+        if ($espacioId > 0 && (Auth::esSuperusuario() || !Auth::tienePermiso('asignaciones.crear')
+                || !Espacio::perteneceYActivo($espacioId, (int) $datos['institucion_id']))) {
+            Session::flash('error', 'El espacio seleccionado no es válido (debe ser un espacio activo de la institución).');
+            Session::flashOld($datosParaReintentar);
+            header('Location: ' . Url::to($volverA));
+            exit;
+        }
 
         $datos['created_by'] = Auth::id();
 
@@ -210,9 +222,13 @@ final class BienController
             // Crear el bien, auditarlo y (si viene de un hallazgo) asignarlo y cerrar el
             // hallazgo van juntos: antes podía quedar el bien creado con el hallazgo todavía
             // pendiente, o sin su asignación, si algo fallaba a mitad de camino.
-            $id = Database::transaccion(static function () use ($datos, $hallazgo): int {
+            $id = Database::transaccion(static function () use ($datos, $hallazgo, $espacioId): int {
                 $id = Bien::create($datos);
                 Auditoria::registrar(Auth::id(), (int) $datos['institucion_id'], 'crear', 'bien', $id, null, $datos);
+
+                if ($espacioId > 0) {
+                    CicloVidaBien::asignarOTrasladar((array) Bien::find($id), $espacioId, date('Y-m-d'), null);
+                }
 
                 if ($hallazgo !== null) {
                     Asignacion::crear([
@@ -227,6 +243,11 @@ final class BienController
 
                 return $id;
             });
+        } catch (\DomainException $e) {
+            Session::flash('error', $e->getMessage());
+            Session::flashOld($datosParaReintentar);
+            header('Location: ' . Url::to($volverA));
+            exit;
         } catch (\PDOException $e) {
             // La comprobación de Bien::existeCodigo() en validar() ya pasó, pero entre
             // ese chequeo y este INSERT otra petición pudo registrar el mismo código
@@ -249,11 +270,15 @@ final class BienController
 
         if ($hallazgo !== null) {
             Session::flash('ok', 'Bien registrado y asignado a ' . $hallazgo['espacio_nombre'] . '.');
+        } elseif ($espacioId > 0) {
+            Session::flash('ok', 'Bien registrado y asignado a ' . (Espacio::find($espacioId)['nombre'] ?? 'el espacio elegido') . '.');
         } else {
             Session::flash('ok', 'Bien registrado correctamente.');
         }
 
-        header('Location: ' . Url::to('/bienes'));
+        // Se abre la ficha del bien recién creado, para seguir con él (asignarlo, imprimir
+        // su QR...) sin tener que buscarlo en el listado.
+        header('Location: ' . Url::to("/bienes/{$id}/editar"));
         exit;
     }
 
@@ -442,7 +467,7 @@ final class BienController
             'title' => 'Editar bien',
             'bien' => $bien,
             'acciones' => CicloVidaBien::accionesDisponibles($bien, $asignacionActiva, $familiaSedesDestino),
-            'urlVolver' => self::urlListado(),
+            'urlVolver' => self::urlListado($id),
             'categorias' => $this->categoriasParaFormulario($bien),
             'asignacionActiva' => $asignacionActiva,
             'historialMovimientos' => Movimiento::historialDe($id),
@@ -556,12 +581,15 @@ final class BienController
 
         Session::flash('ok', trim('Bien actualizado. ' . $mensajeAccion));
 
-        // Al asignar un bien de un lote de alta masiva se sigue en el listado de ese lote
-        // (para asignar el resto); si no, se vuelve al listado tal como estaba.
+        // Se queda en la ficha del bien para seguir trabajando con él. Excepciones: al
+        // asignar un bien de un lote de alta masiva se va al listado del lote (para asignar
+        // el resto), y tras trasladarlo a otra sede el bien ya es de esa sede.
         if ($accion === 'asignar' && !empty($bien['lote'])) {
             header('Location: ' . Url::to('/bienes?q=' . urlencode($bien['lote'])));
+        } elseif ($accion === 'trasladar_sede') {
+            header('Location: ' . self::urlListado());
         } else {
-            header('Location: ' . self::urlListado($id));
+            header('Location: ' . Url::to("/bienes/{$id}/editar"));
         }
         exit;
     }

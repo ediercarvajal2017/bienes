@@ -25,7 +25,9 @@ test('busca un bien por su foto y lo encuentra por parecido', async ({ page }) =
         await page.locator('input[name="descripcion"]').fill('PW-TEST bien para búsqueda por foto');
         await page.setInputFiles('input[name="foto"]', fotoFixture);
         await page.getByRole('button', { name: 'Registrar bien' }).click();
-        await expect(page).toHaveURL(/\/bienes$/);
+        // Al registrar se abre la ficha del bien nuevo; aquí se sigue desde el listado.
+        await expect(page).toHaveURL(/\/bienes\/\d+\/editar/);
+        await page.goto('bienes');
     }
 
     // Para un superusuario, esta pantalla mira el filtro de institución del

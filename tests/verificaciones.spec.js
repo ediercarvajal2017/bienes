@@ -28,7 +28,9 @@ test('crear una jornada, verificar un bien y cerrarla', async ({ page }) => {
     await page.locator('input[name="codigo_identificacion"]').fill(codigoBien);
     await page.locator('input[name="descripcion"]').fill(descripcionBien);
     await page.getByRole('button', { name: 'Registrar bien' }).click();
-    await expect(page).toHaveURL(/\/bienes$/);
+    // Al registrar se abre la ficha del bien nuevo; aquí se sigue desde el listado.
+    await expect(page).toHaveURL(/\/bienes\/\d+\/editar/);
+    await page.goto('bienes');
 
     const filaBien = page.locator('tr', { hasText: codigoBien });
     await filaBien.getByRole('link', { name: 'Editar' }).click();
