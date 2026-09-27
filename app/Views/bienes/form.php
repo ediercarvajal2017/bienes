@@ -345,12 +345,12 @@ $invalido = static fn (string $campo) => $errorCampo === $campo ? ' is-invalid' 
                 'nombreCampo' => 'foto',
                 'etiqueta' => 'Fotografía del bien',
                 'fotoActualUrl' => !empty($bien['foto_path'])
-                    ? Url::to('/archivos/' . $bien['foto_path'])
-                    : (!empty($hallazgo['foto_path']) ? Url::to('/archivos/' . $hallazgo['foto_path']) : null),
+                    ? \App\Helpers\EnlaceArchivo::url($bien['foto_path'])
+                    : (!empty($hallazgo['foto_path']) ? \App\Helpers\EnlaceArchivo::url($hallazgo['foto_path']) : null),
             ]); ?>
         <?php elseif (!empty($bien['foto_path'])): ?>
             <label class="form-label small d-block">Fotografía del bien</label>
-            <img src="<?= Url::to('/archivos/' . $bien['foto_path']) ?>"
+            <img src="<?= \App\Helpers\EnlaceArchivo::url($bien['foto_path']) ?>"
                  alt="Foto de <?= htmlspecialchars($bien['descripcion'], ENT_QUOTES) ?>"
                  class="mb-2 d-block" style="height:72px;border-radius:4px;">
         <?php endif; ?>
@@ -358,7 +358,7 @@ $invalido = static fn (string $campo) => $errorCampo === $campo ? ' is-invalid' 
     <div class="col-md-6<?= !empty($bien['tiene_factura']) ? '' : ' d-none' ?>" id="contenedorFactura">
         <label for="campo-factura-pdf" class="form-label small d-block">Factura (PDF)</label>
         <?php if (!empty($bien['factura_pdf_path'])): ?>
-            <a href="<?= Url::to('/archivos/' . $bien['factura_pdf_path']) ?>" target="_blank" class="d-block mb-2 small">
+            <a href="<?= \App\Helpers\EnlaceArchivo::url($bien['factura_pdf_path']) ?>" target="_blank" class="d-block mb-2 small">
                 <i class="bi bi-file-earmark-pdf me-1"></i>Ver factura actual
             </a>
         <?php endif; ?>

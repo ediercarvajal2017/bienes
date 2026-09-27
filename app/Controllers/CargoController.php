@@ -110,7 +110,7 @@ final class CargoController
         } elseif (Cargo::estaEnUso($id)) {
             Session::flash('error', 'No se puede eliminar: hay usuarios con este cargo asignado. Desactívalo en su lugar.');
         } else {
-            Cargo::eliminar($id, Auth::id());
+            Cargo::eliminar($id, (int) Auth::id());
             Auditoria::registrar(Auth::id(), Auth::institucionId(), 'eliminar', 'cargo', $id, $cargo);
             Session::flash('ok', 'Cargo enviado a la papelera. Un superusuario puede restaurarlo si fue un error.');
         }

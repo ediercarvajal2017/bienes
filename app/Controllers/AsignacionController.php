@@ -72,7 +72,7 @@ final class AsignacionController
 
         $this->verificarCsrf($request, $viejo);
 
-        $institucionId = Auth::esSuperusuario() ? (int) $request->input('institucion_id') : Auth::institucionId();
+        $institucionId = Auth::esSuperusuario() ? (int) $request->input('institucion_id') : (int) Auth::institucionId();
         $volverA = '/asignaciones' . (Auth::esSuperusuario() ? '?institucion=' . $institucionId : '');
 
         if (empty($bienIds)) {

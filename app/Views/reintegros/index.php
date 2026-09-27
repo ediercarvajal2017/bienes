@@ -159,8 +159,8 @@ $viejo ??= [];
                         <td data-label="Seleccionar"><input type="checkbox" name="bienes[]" value="<?= $b['id'] ?>" class="form-check-input casilla-bien" aria-label="Seleccionar <?= htmlspecialchars((string) $b['codigo_identificacion'], ENT_QUOTES) ?>"></td>
                         <td data-label="Foto">
                             <?php if (!empty($b['foto_path'])): ?>
-                                <img src="<?= Url::to('/archivos/' . $b['foto_path']) ?>?w=96" loading="lazy"
-                                     data-lightbox-src="<?= Url::to('/archivos/' . $b['foto_path']) ?>"
+                                <img src="<?= \App\Helpers\EnlaceArchivo::url($b['foto_path'], 96) ?>" loading="lazy"
+                                     data-lightbox-src="<?= \App\Helpers\EnlaceArchivo::url($b['foto_path']) ?>"
                                      alt="Foto de <?= htmlspecialchars($b['descripcion'], ENT_QUOTES) ?>"
                                      class="miniatura-36 miniatura-ampliable"
                                      title="Ver foto en grande" loading="lazy">

@@ -117,7 +117,7 @@ final class CategoriaController
         if (Categoria::estaEnUso($id)) {
             Session::flash('error', 'No se puede eliminar: hay bienes registrados en esta categoría. Desactívala en su lugar.');
         } else {
-            Categoria::eliminar($id, Auth::id());
+            Categoria::eliminar($id, (int) Auth::id());
             Auditoria::registrar(Auth::id(), $institucionId, 'eliminar', 'categoria', $id, $categoria);
             Session::flash('ok', 'Categoría enviada a la papelera. Un superusuario puede restaurarla si fue un error.');
         }
@@ -172,6 +172,7 @@ final class CategoriaController
      * Un rector solo puede gestionar las categorías de su propia institución — antes de
      * este cambio no existía ninguna verificación de este tipo, porque el catálogo era
      * compartido por todo el sistema.
+     * @phpstan-assert array $categoria
      */
     private function verificarPertenencia(?array $categoria): void
     {

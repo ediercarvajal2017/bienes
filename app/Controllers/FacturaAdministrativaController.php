@@ -168,7 +168,7 @@ final class FacturaAdministrativaController
         $registro = FacturaAdministrativa::find($id);
         Evidencia::verificarAcceso($registro);
 
-        FacturaAdministrativa::eliminar($id, Auth::id());
+        FacturaAdministrativa::eliminar($id, (int) Auth::id());
         Auditoria::registrar(Auth::id(), (int) $registro['institucion_id'], 'eliminar', 'factura_administrativa', $id, $registro);
 
         Session::flash('ok', 'Registro enviado a la papelera. Un superusuario puede restaurarlo si fue un error.');

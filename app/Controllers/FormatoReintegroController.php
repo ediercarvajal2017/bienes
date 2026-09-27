@@ -168,7 +168,7 @@ final class FormatoReintegroController
         $registro = FormatoReintegro::find($id);
         Evidencia::verificarAcceso($registro);
 
-        FormatoReintegro::eliminar($id, Auth::id());
+        FormatoReintegro::eliminar($id, (int) Auth::id());
         Auditoria::registrar(Auth::id(), (int) $registro['institucion_id'], 'eliminar', 'formato_reintegro', $id, $registro);
 
         Session::flash('ok', 'Registro enviado a la papelera. Un superusuario puede restaurarlo si fue un error.');

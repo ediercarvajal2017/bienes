@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Core\Auth;
+use App\Helpers\EnlaceArchivo;
+use App\Helpers\PoliticaContenido;
 use App\Core\Csrf;
 use App\Core\Request;
 use App\Core\View;
@@ -23,6 +25,9 @@ final class BusquedaFotoController
 
     public function index(): void
     {
+        // TensorFlow compila código y WebAssembly en el navegador: solo esta pantalla lo permite.
+        PoliticaContenido::enviar(true);
+
         $institucionId = Auth::esSuperusuario() ? Auth::filtroInstitucionId() : Auth::institucionId();
 
         View::layout('partials/layout', 'bienes/buscar_por_foto', [
@@ -46,7 +51,7 @@ final class BusquedaFotoController
         }
 
         $pendientes = array_map(
-            static fn (array $b) => ['id' => (int) $b['id'], 'foto_path' => $b['foto_path']],
+            static fn (array $b) => ['id' => (int) $b['id'], 'foto_path' => $b['foto_path'], 'foto_url' => EnlaceArchivo::url((string) $b['foto_path'])],
             BienFotoVector::pendientesDeIndexar($institucionId)
         );
 
@@ -124,6 +129,7 @@ final class BusquedaFotoController
             static function (array $b): array {
                 $b['id'] = (int) $b['id'];
                 $b['similitud'] = round((float) $b['similitud'], 4);
+                $b['foto_url'] = !empty($b['foto_path']) ? EnlaceArchivo::url((string) $b['foto_path']) : null;
 
                 return $b;
             },

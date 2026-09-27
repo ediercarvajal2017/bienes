@@ -779,6 +779,9 @@ final class BienController
         Csrf::verificarORedirigir($request, $volverA, $datosAConservar);
     }
 
+    /**
+     * @phpstan-assert array $bien
+     */
     private function verificarAcceso(?array $bien): void
     {
         if (!$bien) {

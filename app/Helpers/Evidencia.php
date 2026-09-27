@@ -14,6 +14,9 @@ use App\Core\View;
  */
 final class Evidencia
 {
+    /**
+     * @phpstan-assert array $registro
+     */
     public static function verificarAcceso(?array $registro): void
     {
         if (!$registro) {

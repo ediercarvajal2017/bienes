@@ -386,6 +386,9 @@ final class ReintegroController
         }
     }
 
+    /**
+     * @phpstan-assert array $lote
+     */
     private function verificarAccesoLote(?array $lote): void
     {
         if (!$lote) {

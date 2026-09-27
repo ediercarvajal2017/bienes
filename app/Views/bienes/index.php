@@ -213,8 +213,8 @@ $algunFiltroActivo = $busqueda !== '' || $categoriaId !== null || $estado !== nu
             <tr<?= (int) $b['id'] === $bienEditado ? ' id="bienEditado" class="fila-editada"' : '' ?>>
                 <td>
                     <?php if (!empty($b['foto_path'])): ?>
-                        <img src="<?= Url::to('/archivos/' . $b['foto_path']) ?>?w=96" loading="lazy"
-                             data-lightbox-src="<?= Url::to('/archivos/' . $b['foto_path']) ?>"
+                        <img src="<?= \App\Helpers\EnlaceArchivo::url($b['foto_path'], 96) ?>" loading="lazy"
+                             data-lightbox-src="<?= \App\Helpers\EnlaceArchivo::url($b['foto_path']) ?>"
                              alt="Foto de <?= htmlspecialchars($b['descripcion'], ENT_QUOTES) ?>"
                              class="miniatura-36 miniatura-ampliable"
                              title="Ver foto en grande" loading="lazy">

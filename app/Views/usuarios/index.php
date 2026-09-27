@@ -59,7 +59,7 @@ use App\Core\View;
             <tr>
                 <td>
                     <?php if (!empty($u['foto_path'])): ?>
-                        <img src="<?= Url::to('/archivos/' . $u['foto_path']) ?>?w=96" loading="lazy"
+                        <img src="<?= \App\Helpers\EnlaceArchivo::url($u['foto_path'], 96) ?>" loading="lazy"
                              alt="Foto de <?= htmlspecialchars($u['nombres'] . ' ' . $u['apellidos'], ENT_QUOTES) ?>"
                              class="rounded-circle" style="width:32px;height:32px;object-fit:cover;" loading="lazy">
                     <?php else: ?>

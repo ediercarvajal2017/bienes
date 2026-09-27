@@ -6,6 +6,8 @@ header_remove('X-Powered-By');
 
 require dirname(__DIR__) . '/vendor/autoload.php';
 
+\App\Helpers\PoliticaContenido::enviar();
+
 use App\Core\Env;
 
 Env::cargar();

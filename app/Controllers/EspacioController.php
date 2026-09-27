@@ -154,7 +154,7 @@ final class EspacioController
         if (Espacio::estaEnUso($id)) {
             Session::flash('error', 'No se puede eliminar: el espacio tiene asignaciones o movimientos registrados. Desactívalo en su lugar.');
         } else {
-            Espacio::eliminar($id, Auth::id());
+            Espacio::eliminar($id, (int) Auth::id());
             Auditoria::registrar(Auth::id(), (int) $espacio['institucion_id'], 'eliminar', 'espacio', $id, $espacio);
             Session::flash('ok', 'Espacio enviado a la papelera. Un superusuario puede restaurarlo si fue un error.');
         }
@@ -205,6 +205,9 @@ final class EspacioController
         Csrf::verificarORedirigir($request, $volverA, $datosAConservar);
     }
 
+    /**
+     * @phpstan-assert array $espacio
+     */
     private function verificarAcceso(?array $espacio): void
     {
         if (!$espacio) {

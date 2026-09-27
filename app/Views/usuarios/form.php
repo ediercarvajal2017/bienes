@@ -127,7 +127,7 @@ $invalido = static fn (string $campo) => $errorCampo === $campo ? ' is-invalid' 
         <?php View::render('partials/campo_foto', [
             'nombreCampo' => 'foto',
             'etiqueta' => 'Fotografía',
-            'fotoActualUrl' => !empty($usuario['foto_path']) ? Url::to('/archivos/' . $usuario['foto_path']) : null,
+            'fotoActualUrl' => !empty($usuario['foto_path']) ? \App\Helpers\EnlaceArchivo::url($usuario['foto_path']) : null,
         ]); ?>
     </div>
 

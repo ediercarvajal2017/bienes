@@ -67,8 +67,8 @@ $movimientosSeleccionados = $viejo['movimientos'] ?? [];
                         <td data-label="Seleccionar"><input type="checkbox" name="movimientos[]" value="<?= $p['id'] ?>" class="form-check-input casilla-bien" aria-label="Seleccionar <?= htmlspecialchars((string) $p['codigo_identificacion'], ENT_QUOTES) ?>" <?= in_array((int) $p['id'], $movimientosSeleccionados, true) ? 'checked' : '' ?>></td>
                         <td data-label="Foto">
                             <?php if (!empty($p['foto_path'])): ?>
-                                <img src="<?= Url::to('/archivos/' . $p['foto_path']) ?>?w=96" loading="lazy"
-                                     data-lightbox-src="<?= Url::to('/archivos/' . $p['foto_path']) ?>"
+                                <img src="<?= \App\Helpers\EnlaceArchivo::url($p['foto_path'], 96) ?>" loading="lazy"
+                                     data-lightbox-src="<?= \App\Helpers\EnlaceArchivo::url($p['foto_path']) ?>"
                                      alt="Foto de <?= htmlspecialchars($p['descripcion'], ENT_QUOTES) ?>"
                                      class="miniatura-36 miniatura-ampliable"
                                      title="Ver foto en grande" loading="lazy">

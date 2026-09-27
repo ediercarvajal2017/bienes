@@ -273,7 +273,7 @@ final class UsuarioController
         } else {
             $snapshot = $usuario;
             unset($snapshot['password_hash']);
-            Usuario::eliminar($id, Auth::id());
+            Usuario::eliminar($id, (int) Auth::id());
             Usuario::invalidarSesiones($id);
             Auditoria::registrar(Auth::id(), (int) $usuario['institucion_id'], 'eliminar', 'usuario', $id, $snapshot);
             Session::flash('ok', 'Usuario enviado a la papelera. Un superusuario puede restaurarlo si fue un error.');
@@ -426,6 +426,9 @@ final class UsuarioController
         Csrf::verificarORedirigir($request, $volverA, $datosAConservar);
     }
 
+    /**
+     * @phpstan-assert array $usuario
+     */
     private function verificarAcceso(?array $usuario): void
     {
         if (!$usuario) {

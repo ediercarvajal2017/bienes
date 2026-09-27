@@ -1,5 +1,5 @@
 parameters:
-    level: 7
+    level: 8
     ignoreErrors:
         # El codigo no anota el tipo interno de cada array (@param array<string,mixed>...)
         # en ningun lado -- exigirlo ahora es un proyecto de anotacion aparte, no deteccion
