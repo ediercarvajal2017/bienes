@@ -31,6 +31,7 @@ const EXCEPCIONES = {
     'GET /bienes/qr-masivo': sinDocente,
     'POST /bienes/qr-masivo': sinDocente,
     'GET /bienes/qr-masivo/bodega': sinDocente,
+    'POST /bienes/qr-masivo/bodega/confirmar': sinDocente,
 };
 
 // Rutas que no se prueban aquí (motivo al lado).

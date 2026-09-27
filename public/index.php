@@ -265,6 +265,9 @@ $router->post('/bienes/qr-masivo', [QrMasivoController::class, 'generar'], [
 $router->get('/bienes/qr-masivo/bodega', [QrMasivoController::class, 'bodega'], [
     AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':bienes.ver',
 ]);
+$router->post('/bienes/qr-masivo/bodega/confirmar', [QrMasivoController::class, 'confirmarPegados'], [
+    AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':bienes.ver',
+]);
 
 $router->get('/bienes/carga-masiva-fotos', [BienFotoCargaMasivaController::class, 'index'], [
     AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':cargas.masivas',
