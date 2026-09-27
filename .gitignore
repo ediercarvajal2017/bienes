@@ -49,3 +49,7 @@ Thumbs.db
 
 # Modo mantenimiento (lo crea y lo borra deploy-hostinger.sh durante cada despliegue)
 /public/mantenimiento.flag
+
+# Suite de pruebas: archivos subidos y datos generados en cada corrida
+/storage/pruebas/
+/playwright/.datos-prueba.json

@@ -8,6 +8,8 @@ function filaConValor(page, valor) {
 }
 
 test('crear, editar, desactivar/activar y eliminar una categoría', async ({ page }) => {
+    // Activar/desactivar/eliminar piden confirmación (data-confirmar): se acepta.
+    page.on('dialog', (dialogo) => dialogo.accept());
     const nombre = `PW-TEST-Categoria-${Date.now()}`;
     const nombreEditado = `${nombre}-editada`;
 
@@ -44,7 +46,6 @@ test('crear, editar, desactivar/activar y eliminar una categoría', async ({ pag
     await expect(fila.locator('.badge')).toHaveText('Activa');
 
     // Eliminar: va a la papelera (borrado suave), desaparece del listado activo.
-    page.once('dialog', (dialog) => dialog.accept());
     await fila.getByRole('button', { name: 'Eliminar' }).click();
 
     await expect(page.locator(`input[value="${nombreEditado}"]`)).toHaveCount(0);

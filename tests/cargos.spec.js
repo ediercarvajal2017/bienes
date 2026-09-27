@@ -5,6 +5,8 @@ function filaConValor(page, valor) {
 }
 
 test('crear, editar, desactivar/activar y eliminar un cargo', async ({ page }) => {
+    // Activar/desactivar/eliminar piden confirmación (data-confirmar): se acepta.
+    page.on('dialog', (dialogo) => dialogo.accept());
     const nombre = `PW-TEST-Cargo-${Date.now()}`;
     const nombreEditado = `${nombre}-editado`;
 
@@ -30,8 +32,6 @@ test('crear, editar, desactivar/activar y eliminar un cargo', async ({ page }) =
     await fila.getByRole('button', { name: 'Activar' }).click();
     fila = filaConValor(page, nombreEditado);
     await expect(fila.locator('.badge')).toHaveText('Activo');
-
-    page.once('dialog', (dialog) => dialog.accept());
     await fila.getByRole('button', { name: 'Eliminar' }).click();
 
     await expect(page.locator(`input[value="${nombreEditado}"]`)).toHaveCount(0);

@@ -8,6 +8,8 @@ import { seleccionarTomSelect, seleccionarPrimeraOpcionTomSelect } from './helpe
  * carga_masiva.spec.js. Los dos espacios de apoyo sí se limpian (van a la papelera).
  */
 test('un bien recorre crear → asignar → trasladar → reintegrar', async ({ page }) => {
+    // Activar/desactivar/eliminar piden confirmación (data-confirmar): se acepta.
+    page.on('dialog', (dialogo) => dialogo.accept());
     const sufijo = Date.now();
     const codigoBien = `PW-TEST-CICLO-${sufijo}`;
     const descripcionBien = `PW-TEST bien de ciclo de vida ${sufijo}`;

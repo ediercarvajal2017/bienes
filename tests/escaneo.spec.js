@@ -7,7 +7,7 @@ import { seleccionarPrimeraOpcionTomSelect } from './helpers/tomSelect.js';
  * alcance de esta suite. Para un superusuario, tanto index() como buscar() miran el
  * filtro de institución del encabezado, no su institución de sesión.
  */
-test.use({ storageState: 'playwright/.auth/user.json' });
+test.use({ storageState: 'playwright/.auth/superusuario.json' });
 
 test('buscar un bien por código desde /escanear', async ({ page }) => {
     // El filtro de institución del encabezado es una sesión compartida con el resto de

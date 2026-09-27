@@ -6,7 +6,7 @@ import { seleccionarPrimeraOpcionTomSelect } from './helpers/tomSelect.js';
  * (2026-08-17): cada prueba de este archivo existe porque ya se rompió una vez.
  */
 
-test.use({ storageState: 'playwright/.auth/user.json' });
+test.use({ storageState: 'playwright/.auth/superusuario.json' });
 
 test('bienes: un valor de más de 10 dígitos se rechaza en el campo correcto', async ({ page }) => {
     await page.goto('bienes/crear');
@@ -44,8 +44,8 @@ test('bienes: registrar el mismo código dos veces casi al mismo tiempo no da un
     // mensaje de siempre.
     const codigo = `PW-TEST-RACE-${Date.now()}`;
 
-    const ctx1 = await browser.newContext({ storageState: 'playwright/.auth/user.json' });
-    const ctx2 = await browser.newContext({ storageState: 'playwright/.auth/user.json' });
+    const ctx1 = await browser.newContext({ storageState: 'playwright/.auth/superusuario.json' });
+    const ctx2 = await browser.newContext({ storageState: 'playwright/.auth/superusuario.json' });
     const page1 = await ctx1.newPage();
     const page2 = await ctx2.newPage();
 
@@ -102,7 +102,7 @@ test('bienes: una categoría marcada inválida resalta en rojo el widget de Tom 
 
     const control = page.locator('#categoriaBien + .ts-wrapper .ts-control');
     const color = await control.evaluate((el) => getComputedStyle(el).borderColor);
-    expect(color).toBe('rgb(214, 69, 69)'); // --sigebi-danger
+    expect(color).toBe('rgb(192, 57, 43)'); // --sigebi-danger (#C0392B, contraste AA)
 });
 
 test('cargas masivas: buscar por "pendiente" o "aplicada" no rompe (regresión de colación de MySQL)', async ({ page }) => {
