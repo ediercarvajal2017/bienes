@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Core\Auth;
+use App\Core\Database;
 use App\Models\Archivo;
 
 final class ArchivoController
@@ -27,6 +28,13 @@ final class ArchivoController
                 exit;
             }
         }
+
+        // Permiso ya verificado: se liberan la sesión y la conexión a la base antes de
+        // generar la miniatura y enviar el archivo. Si no, la sesión queda bloqueada durante
+        // todo el envío y las demás fotos de la página esperan en fila ocupando procesos del
+        // hosting (que termina rechazando conexiones nuevas a la base).
+        session_write_close();
+        Database::desconectar();
 
         $config = require dirname(__DIR__, 2) . '/config/app.php';
         $path = $config['storage_path'] . "/uploads/{$tipo}/{$archivo}";
