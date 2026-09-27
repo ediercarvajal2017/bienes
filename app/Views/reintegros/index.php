@@ -145,7 +145,7 @@ $viejo ??= [];
             <table class="table table-sm table-hover align-middle bg-white tabla-cards">
                 <thead>
                 <tr>
-                    <th style="width: 32px;"><input type="checkbox" id="seleccionarTodos" class="form-check-input"></th>
+                    <th style="width: 32px;"><input type="checkbox" id="seleccionarTodos" class="form-check-input" aria-label="Seleccionar todos"></th>
                     <th></th>
                     <th>Código</th>
                     <th>Descripción</th>

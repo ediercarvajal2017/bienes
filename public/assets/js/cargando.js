@@ -140,13 +140,14 @@
 
     /**
      * Selección masiva (asignar, QR masivo, generar lote): tocar cualquier parte de la
-     * celda marca la casilla. En el celular la celda ocupa todo el ancho de la tarjeta,
+     * celda marca la casilla (también la de "seleccionar todos" del encabezado). En el celular la celda ocupa todo el ancho de la tarjeta,
      * así el área táctil pasa de 24 px a la fila completa.
      */
     document.addEventListener('click', function (evento) {
-        const celda = evento.target.closest('td');
+        const celda = evento.target.closest('td, th');
         if (!celda || evento.target.closest('input, a, button, label, select, textarea')) { return; }
-        const casilla = celda.querySelector(':scope > input.casilla-bien[type="checkbox"]');
+        // Casilla sola en la celda: de un bien o "seleccionar todos" del encabezado.
+        const casilla = celda.querySelector(':scope > input[type="checkbox"]');
         if (!casilla || casilla.disabled) { return; }
         casilla.checked = !casilla.checked;
         casilla.dispatchEvent(new Event('change', { bubbles: true }));

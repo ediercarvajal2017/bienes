@@ -55,6 +55,9 @@ export default defineConfig({
         baseURL,
         trace: 'on-first-retry',
         screenshot: 'only-on-failure',
+        // PW_CANAL=msedge (o chrome): usa el navegador instalado en el equipo en vez de
+        // los que descarga "npx playwright install".
+        ...(process.env.PW_CANAL ? { channel: process.env.PW_CANAL } : {}),
     },
 
     projects: [
@@ -79,9 +82,33 @@ export default defineConfig({
         {
             name: 'authenticated',
             testMatch: /\.spec\.js$/,
-            testIgnore: /login\.spec\.js/,
+            testIgnore: [/login\.spec\.js/, /responsive\.spec\.js/],
             use: { ...devices['Desktop Chrome'], storageState: 'playwright/.auth/user.json' },
             dependencies: ['setup'],
         },
+
+        // Diseño responsive (tests/responsive.spec.js) en varios dispositivos, todos con
+        // Chromium (PW_CANAL=msedge usa el Edge instalado si no se descargaron navegadores).
+        // Correr solo estos: npx playwright test --project="responsive-*"
+        ...[
+            ['responsive-movil-320', { viewport: { width: 320, height: 640 }, isMobile: true, hasTouch: true, deviceScaleFactor: 2 }],
+            ['responsive-android', devices['Pixel 7']],
+            ['responsive-iphone', devices['iPhone 13']],
+            ['responsive-tablet', devices['iPad (gen 7)']],
+            ['responsive-tablet-horizontal', devices['iPad (gen 7) landscape']],
+            ['responsive-escritorio', { viewport: { width: 1366, height: 768 } }],
+            ['responsive-grande', { viewport: { width: 1920, height: 1080 } }],
+        ].map(([name, dispositivo]) => ({
+            name,
+            testMatch: /responsive\.spec\.js/,
+            use: {
+                ...dispositivo,
+                browserName: 'chromium',
+                defaultBrowserType: 'chromium',
+                ...(process.env.PW_CANAL ? { channel: process.env.PW_CANAL } : {}),
+                storageState: 'playwright/.auth/user.json',
+            },
+            dependencies: ['setup'],
+        })),
     ],
 });
