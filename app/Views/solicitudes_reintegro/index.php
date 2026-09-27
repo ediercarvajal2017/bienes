@@ -6,10 +6,10 @@ use App\Core\Url;
 use App\Core\View;
 
 $etiquetas = [
-    'pendiente' => ['Pendiente', 'text-bg-warning'],
-    'aprobada' => ['Aprobada', 'text-bg-success'],
-    'rechazada' => ['Rechazada', 'text-bg-secondary'],
-    'cancelada' => ['Cancelada', 'text-bg-light border'],
+    'pendiente' => ['Pendiente', 'badge-solicitud badge-solicitud-pendiente'],
+    'aprobada' => ['Aprobada', 'badge-solicitud badge-solicitud-aprobada'],
+    'rechazada' => ['Rechazada', 'badge-solicitud badge-solicitud-rechazada'],
+    'cancelada' => ['Cancelada', 'badge-solicitud badge-solicitud-cancelada'],
 ];
 ?>
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">

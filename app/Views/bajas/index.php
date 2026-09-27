@@ -74,11 +74,11 @@ use App\Models\Categoria;
                 <td class="mono small" data-label="Fecha"><?= htmlspecialchars(substr($b['fecha_reporte'], 0, 10), ENT_QUOTES) ?></td>
                 <td data-label="Estado">
                     <?php if ($b['estado'] === 'aprobada'): ?>
-                        <span class="badge text-bg-danger">Aprobada</span>
+                        <span class="badge badge-solicitud badge-solicitud-aprobada">Aprobada</span>
                     <?php elseif ($b['estado'] === 'rechazada'): ?>
-                        <span class="badge text-bg-secondary">Rechazada</span>
+                        <span class="badge badge-solicitud badge-solicitud-rechazada">Rechazada</span>
                     <?php else: ?>
-                        <span class="badge text-bg-warning">Pendiente</span>
+                        <span class="badge badge-solicitud badge-solicitud-pendiente">Pendiente</span>
                     <?php endif; ?>
                     <?php if (!$pendiente && !empty($b['resuelta_por_nombre'])): ?>
                         <div class="small text-muted mt-1">

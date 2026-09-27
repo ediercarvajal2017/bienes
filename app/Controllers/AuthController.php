@@ -26,7 +26,11 @@ final class AuthController
             exit;
         }
 
-        View::render('auth/login', ['error' => Session::pullFlash('error')]);
+        View::render('auth/login', [
+            'error' => Session::pullFlash('error'),
+            // Tras un intento fallido, el correo vuelve escrito (solo hay que corregir la clave).
+            'email' => (string) (Session::pullOld()['email'] ?? ''),
+        ]);
     }
 
     public function login(): void
@@ -56,6 +60,7 @@ final class AuthController
             exit;
         }
 
+        Session::flashOld(['email' => $email]);
         Session::flash('error', Auth::motivoFallo() === 'bloqueado'
             ? 'Demasiados intentos fallidos. Espera ' . Auth::VENTANA_MINUTOS . ' minutos antes de volver a intentarlo.'
             : 'Correo o contraseña incorrectos.');

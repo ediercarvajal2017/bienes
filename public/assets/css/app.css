@@ -712,3 +712,16 @@ summary { cursor: pointer; }
 [data-bs-theme="dark"] .btn-outline-success { --bs-btn-color: #5fcf8e; --bs-btn-border-color: #3f9e66; }
 [data-bs-theme="dark"] .btn-outline-danger { --bs-btn-color: #f08a80; --bs-btn-border-color: #d25a4e; }
 [data-bs-theme="dark"] .form-check-input:checked { background-color: #23805d; border-color: #23805d; }
+
+/* Estado de una SOLICITUD (baja, reintegro): pastilla con fondo suave y borde, para no
+   confundirla con el estado del BIEN (badge-estado-*, colores sólidos). Antes una baja
+   "Aprobada" usaba el mismo rojo sólido que un bien "Dado de baja". */
+.badge-solicitud { border-radius: 50rem; border: 1px solid; font-weight: 600; }
+.badge-solicitud-pendiente { background: #fff4d6; color: #7a5200; border-color: #e0b54d; }
+.badge-solicitud-aprobada { background: #e3f3e9; color: #1b5e37; border-color: #7cbf96; }
+.badge-solicitud-rechazada { background: #f1f2f4; color: #3f4650; border-color: #b3b9c1; }
+.badge-solicitud-cancelada { background: transparent; color: #5f6873; border-color: #c4c9cf; border-style: dashed; }
+[data-bs-theme="dark"] .badge-solicitud-pendiente { background: #3a2f12; color: #f3cf73; border-color: #8a6d24; }
+[data-bs-theme="dark"] .badge-solicitud-aprobada { background: #16301f; color: #86d7a4; border-color: #2f6b46; }
+[data-bs-theme="dark"] .badge-solicitud-rechazada { background: #262c33; color: #c3cad2; border-color: #4a535d; }
+[data-bs-theme="dark"] .badge-solicitud-cancelada { color: #9aa3ad; border-color: #4a535d; }
