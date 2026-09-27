@@ -634,3 +634,28 @@ select.selector-buscable.is-invalid + .ts-wrapper .ts-control {
     .codigos-recuperacion span { border: 1px solid #999; }
 }
 
+
+/* ── Panel principal: cifras del inventario ── */
+:root {
+  --sigebi-estado-activo: var(--sigebi-success);
+  --sigebi-estado-reparacion: var(--sigebi-accent);
+  --sigebi-estado-reintegrado: #6c757d;
+  --sigebi-estado-baja: var(--sigebi-danger);
+}
+.text-sigebi-primary { color: var(--sigebi-primary); }
+.contenedor-form { max-width: 640px; }
+summary { cursor: pointer; }
+.tarjeta-cifra { transition: border-color .15s ease, transform .15s ease; }
+.tarjeta-cifra:hover, .tarjeta-cifra:focus-visible { border-color: var(--sigebi-primary); transform: translateY(-1px); }
+.tarjeta-cifra-icono { font-size: 1.35rem; color: var(--sigebi-primary); }
+.tarjeta-cifra-valor { font-size: clamp(1.15rem, .95rem + .8vw, 1.6rem); font-weight: 700; line-height: 1.1; color: var(--bs-emphasis-color); font-variant-numeric: tabular-nums; }
+.tarjeta-cifra-progreso { height: .4rem; }
+.tarjeta-cifra-progreso .progress-bar { background-color: var(--sigebi-primary); }
+.barra-apilada { display: flex; height: 1.1rem; border-radius: .5rem; overflow: hidden; background: var(--bs-secondary-bg); }
+.barra-apilada span { display: block; height: 100%; }
+.leyenda-punto { width: .75rem; height: .75rem; border-radius: 50%; flex: 0 0 auto; }
+.leyenda-porcentaje { min-width: 3.2rem; text-align: right; }
+.barra-categoria { height: .55rem; border-radius: .3rem; background: var(--bs-secondary-bg); overflow: hidden; }
+.barra-categoria span { display: block; height: 100%; background: var(--sigebi-primary); border-radius: .3rem; }
+@media (prefers-reduced-motion: reduce) { .tarjeta-cifra { transition: none; } .tarjeta-cifra:hover { transform: none; } }
+.tarjeta-cifra-unidad { font-size: .8rem; color: var(--bs-secondary-color); font-weight: 600; }

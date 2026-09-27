@@ -21,9 +21,32 @@ final class DashboardController
             'title' => 'Panel principal',
             'primerosPasos' => $this->primerosPasos(),
             'indicadores' => $this->indicadores(),
+            'cifras' => $this->cifras(),
             'mensaje' => Session::pullFlash('ok'),
             'error' => Session::pullFlash('error'),
         ]);
+    }
+
+    /**
+     * Cifras del inventario (tarjetas y gráficos del panel). Solo para quien administra
+     * el inventario (superusuario, rector, secretario): el docente ve únicamente los bienes
+     * de sus espacios, y estas cifras son de toda la institución.
+     */
+    private function cifras(): ?array
+    {
+        if (!Auth::esSuperusuario() && !Auth::tienePermiso('asignaciones.crear')) {
+            return null;
+        }
+
+        $institucionId = Auth::esSuperusuario() ? Auth::filtroInstitucionId() : Auth::institucionId();
+        $resumen = Bien::resumenPanel($institucionId);
+
+        return [
+            'resumen' => $resumen,
+            'categorias' => Bien::porCategoriaPanel($institucionId),
+            'bajasPendientes' => Baja::contarPendientes($institucionId),
+            'alcance' => $institucionId === null ? 'todas las instituciones' : (string) Auth::institucionNombre(),
+        ];
     }
 
     /**

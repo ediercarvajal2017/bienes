@@ -277,6 +277,83 @@ final class Bien
         return (int) $stmt->fetchColumn();
     }
 
+    /**
+     * Cifras del panel principal. "En circulación" = activo o en reparación (lo que la
+     * institución tiene hoy); los reintegrados y dados de baja se cuentan aparte.
+     *
+     * @return array{total: int, en_circulacion: int, valor: float, asignados: int, qr_confirmados: int, por_estado: array<string, int>}
+     */
+    public static function resumenPanel(?int $institucionId): array
+    {
+        $filtro = $institucionId !== null ? ' WHERE b.institucion_id = ?' : '';
+        $params = $institucionId !== null ? [$institucionId] : [];
+
+        $stmt = Database::connection()->prepare(
+            "SELECT b.estado,
+                    COUNT(*) AS cantidad,
+                    COALESCE(SUM(b.valor), 0) AS valor,
+                    SUM(a.id IS NOT NULL) AS asignados,
+                    SUM(b.qr_confirmado_en IS NOT NULL) AS qr_confirmados
+             FROM bienes b
+             LEFT JOIN asignaciones a ON a.bien_id = b.id AND a.activa = 1
+             {$filtro}
+             GROUP BY b.estado"
+        );
+        $stmt->execute($params);
+
+        $resumen = ['total' => 0, 'en_circulacion' => 0, 'valor' => 0.0, 'asignados' => 0, 'qr_confirmados' => 0,
+            'por_estado' => array_fill_keys(array_keys(self::TRANSICIONES), 0)];
+
+        foreach ($stmt->fetchAll() as $fila) {
+            $cantidad = (int) $fila['cantidad'];
+            $resumen['total'] += $cantidad;
+            $resumen['por_estado'][$fila['estado']] = $cantidad;
+
+            if (in_array($fila['estado'], ['activo', 'en_reparacion'], true)) {
+                $resumen['en_circulacion'] += $cantidad;
+                $resumen['valor'] += (float) $fila['valor'];
+                $resumen['asignados'] += (int) $fila['asignados'];
+                $resumen['qr_confirmados'] += (int) $fila['qr_confirmados'];
+            }
+        }
+
+        return $resumen;
+    }
+
+    /**
+     * Bienes en circulación por categoría (las $limite con más bienes; el resto se suma
+     * en "Otras categorías").
+     *
+     * @return list<array{nombre: string, cantidad: int}>
+     */
+    public static function porCategoriaPanel(?int $institucionId, int $limite = 6): array
+    {
+        $filtro = $institucionId !== null ? ' AND b.institucion_id = ?' : '';
+        $params = $institucionId !== null ? [$institucionId] : [];
+
+        $stmt = Database::connection()->prepare(
+            "SELECT COALESCE(c.nombre, 'Sin categoría') AS nombre, COUNT(*) AS cantidad
+             FROM bienes b
+             LEFT JOIN categorias_bienes c ON c.id = b.categoria_id
+             WHERE b.estado IN ('activo', 'en_reparacion'){$filtro}
+             GROUP BY nombre
+             ORDER BY cantidad DESC, nombre"
+        );
+        $stmt->execute($params);
+        $filas = array_map(
+            static fn (array $f): array => ['nombre' => (string) $f['nombre'], 'cantidad' => (int) $f['cantidad']],
+            $stmt->fetchAll()
+        );
+
+        if (count($filas) <= $limite) {
+            return $filas;
+        }
+
+        $resto = array_sum(array_column(array_slice($filas, $limite), 'cantidad'));
+
+        return [...array_slice($filas, 0, $limite), ['nombre' => 'Otras categorías', 'cantidad' => $resto]];
+    }
+
     /** Para el indicador del panel principal: bienes activos que hoy no están asignados a ningún espacio. */
     public static function contarSinAsignar(?int $institucionId = null): int
     {
