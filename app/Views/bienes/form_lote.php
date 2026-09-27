@@ -48,7 +48,7 @@ $v = static fn (string $campo, mixed $porDefecto = '') => $viejo[$campo] ?? $por
     </div>
     <div class="col-md-4">
         <label for="campo-cantidad" class="form-label small requerido">Cantidad</label>
-        <input id="campo-cantidad" type="number" name="cantidad" class="form-control" min="2" max="500" required
+        <input id="campo-cantidad" type="number" inputmode="numeric" name="cantidad" class="form-control" min="2" max="500" required
                value="<?= htmlspecialchars((string) $v('cantidad', '2'), ENT_QUOTES) ?>">
     </div>
     <div class="col-md-4">
@@ -80,7 +80,7 @@ $v = static fn (string $campo, mixed $porDefecto = '') => $viejo[$campo] ?? $por
     </div>
     <div class="col-md-4">
         <label for="campo-valor" class="form-label small">Valor unitario</label>
-        <input id="campo-valor" type="number" step="0.01" min="0" max="9999999999" name="valor" class="form-control" value="<?= htmlspecialchars((string) $v('valor', '0'), ENT_QUOTES) ?>">
+        <input id="campo-valor" type="number" inputmode="decimal" step="0.01" min="0" max="9999999999" name="valor" class="form-control" value="<?= htmlspecialchars((string) $v('valor', '0'), ENT_QUOTES) ?>">
     </div>
 
     <div class="col-12">

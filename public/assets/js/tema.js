@@ -12,30 +12,41 @@
 
     function aplicarEstado(boton, icono, tema) {
         if (icono) {
-            icono.className = 'bi ' + iconoPara(tema);
+            icono.className = 'bi ' + iconoPara(tema) + (icono.classList.contains('me-1') ? ' me-1' : '');
         }
         var etiqueta = etiquetaPara(tema);
         boton.setAttribute('aria-label', etiqueta);
         boton.setAttribute('title', etiqueta);
     }
 
+    // Hay un botón en la barra superior y, en el celular, otro dentro del menú lateral
+    // ([data-tema-toggle]); las pantallas de acceso solo tienen #btnTema.
     document.addEventListener('DOMContentLoaded', function () {
-        var boton = document.getElementById('btnTema');
-        if (!boton) {
+        var botones = Array.prototype.slice.call(document.querySelectorAll('#btnTema, [data-tema-toggle]'))
+            .filter(function (b, i, lista) { return lista.indexOf(b) === i; });
+        if (!botones.length) {
             return;
         }
 
-        var icono = boton.querySelector('i');
-        var actual = document.documentElement.getAttribute('data-bs-theme') || 'light';
-        aplicarEstado(boton, icono, actual);
+        function actualizarTodos(tema) {
+            botones.forEach(function (boton) {
+                aplicarEstado(boton, boton.querySelector('i'), tema);
+                var texto = boton.querySelector('[data-tema-texto]');
+                if (texto) { texto.textContent = etiquetaPara(tema); }
+            });
+        }
 
-        boton.addEventListener('click', function () {
-            var nuevo = document.documentElement.getAttribute('data-bs-theme') === 'dark' ? 'light' : 'dark';
-            document.documentElement.setAttribute('data-bs-theme', nuevo);
-            try {
-                localStorage.setItem('sigebi-theme', nuevo);
-            } catch (e) {}
-            aplicarEstado(boton, icono, nuevo);
+        actualizarTodos(document.documentElement.getAttribute('data-bs-theme') || 'light');
+
+        botones.forEach(function (boton) {
+            boton.addEventListener('click', function () {
+                var nuevo = document.documentElement.getAttribute('data-bs-theme') === 'dark' ? 'light' : 'dark';
+                document.documentElement.setAttribute('data-bs-theme', nuevo);
+                try {
+                    localStorage.setItem('sigebi-theme', nuevo);
+                } catch (e) {}
+                actualizarTodos(nuevo);
+            });
         });
     });
 })();

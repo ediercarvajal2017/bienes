@@ -146,9 +146,11 @@ $bienesSeleccionados = $viejo['bienes'] ?? [];
             'urlBase' => $urlBasePaginacion,
         ]); ?>
 
-        <button type="submit" class="btn btn-primary mt-2 boton-asignar" disabled>
-            <i class="bi bi-person-check me-1"></i>Asignar <span class="badge bg-white text-primary contador-seleccionados">0</span>
-        </button>
+        <div class="accion-fija-movil">
+            <button type="submit" class="btn btn-primary mt-2 boton-asignar" disabled>
+                <i class="bi bi-person-check me-1"></i>Asignar <span class="badge bg-white text-primary contador-seleccionados">0</span>
+            </button>
+        </div>
     </form>
 
     <script>

@@ -105,7 +105,7 @@ use App\Core\View;
                 </select>
             </div>
 
-            <div class="d-flex flex-wrap gap-2 align-items-center mt-3">
+            <div class="d-flex flex-wrap gap-2 align-items-center mt-3 accion-fija-movil">
                 <button type="submit" class="btn btn-primary" id="botonGenerar" disabled>
                     <i class="bi bi-qr-code me-1"></i>Generar QR (<span id="contadorSeleccionados">0</span>)
                 </button>

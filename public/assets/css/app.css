@@ -566,8 +566,9 @@ select.selector-buscable.is-invalid + .ts-wrapper .ts-control {
    un solo umbral de "modo compacto" para toda la app, no dos distintos.
    Cada fila pasa a ser una tarjeta y cada celda muestra su etiqueta (data-label) a la
    izquierda y el valor a la derecha, de modo que TODAS las columnas (incluido el Valor)
-   quedan visibles sin desplazamiento horizontal. */
-@media (max-width: 991.98px) {
+   quedan visibles sin desplazamiento horizontal.
+   Solo en pantalla: al imprimir (una hoja A4 mide ~794 px) las tablas salen como tablas. */
+@media screen and (max-width: 991.98px) {
   .tabla-cards thead {
     display: none;
   }
@@ -740,3 +741,106 @@ summary { cursor: pointer; }
 /* Selectores con buscador (Tom Select) de filtros y formularios: la flecha no tapa el texto. */
 .ts-wrapper.single .ts-control { padding-right: 2rem !important; flex-wrap: nowrap; }
 .ts-wrapper.single .ts-control > .item { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ══════════ Fase 3B: pantallas táctiles (celular, tableta) ══════════
+   Objetivos táctiles de al menos 44x44 px (WCAG 2.5.5 / guías de Apple y Android).
+   Solo con puntero "grueso" (dedo): en escritorio con mouse no cambia nada. */
+@media (pointer: coarse) {
+  .btn, .btn-sm, .page-link { min-height: 44px; min-width: 44px; display: inline-flex; align-items: center; justify-content: center; }
+  .btn-group > .btn { min-width: 44px; }
+  .sidebar .nav-link { min-height: 44px; display: flex; align-items: center; }
+  .sidebar .nav-grupo-titulo { min-height: 44px; }
+  .nav-tabs .nav-link, .nav-pills .nav-link { min-height: 44px; display: flex; align-items: center; }
+  .theme-toggle, .navbar-toggle { width: 44px; height: 44px; }
+  .form-select, .form-select-sm, .form-control, .form-control-sm, .ts-control { min-height: 44px; }
+  /* 16 px en los campos: con menos, iPhone hace zoom al enfocarlos. */
+  .form-control, .form-control-sm, .form-select, .form-select-sm, .ts-control, .ts-control input { font-size: 16px !important; }
+  .form-check { min-height: 44px; display: flex; align-items: center; gap: .5rem; padding-left: 0; }
+  .form-check .form-check-input { width: 1.4em; height: 1.4em; margin: 0; float: none; flex: 0 0 auto; }
+  .form-check-label { padding: .6rem 0; }
+  .form-switch .form-check-input { width: 2.6em; }
+  /* Casillas sueltas en tablas (selección masiva): área táctil ampliada sin mover el diseño. */
+  td > .form-check-input, th > .form-check-input, td > input[type="checkbox"], th > input[type="checkbox"] { width: 1.5em; height: 1.5em; }
+}
+td:has(> .casilla-bien) { cursor: pointer; }
+@media (pointer: coarse) {
+  .casilla-bien { width: 1.6em !important; height: 1.6em !important; }
+  td:has(> .casilla-bien) { min-height: 44px; }
+  .form-check-label { padding: .7rem 0; }
+}
+@media (pointer: coarse) {
+  .form-check-label { padding: 0; min-height: 44px; display: inline-flex; align-items: center; }
+}
+
+/* ── Barra superior en celular: nada se sale ni aleja la página ── */
+.navbar-sigebi .navbar-brand { flex-shrink: 0; }
+.navbar-sigebi .ms-auto { min-width: 0; }
+.sidebar-movil { padding: .25rem .5rem .75rem; margin-bottom: .5rem; border-bottom: 1px solid var(--bs-border-color); display: grid; gap: .5rem; }
+.sidebar-movil .filtro-institucion-select, .sidebar-movil .form-select { max-width: none; width: 100%; }
+@media (max-width: 575.98px) {
+  .navbar-sigebi { padding-left: .75rem !important; padding-right: .75rem !important; }
+  .boton-salir { min-width: 44px; }
+}
+
+/* ── Áreas seguras (muesca y barra inferior del iPhone, PWA instalada) ── */
+.navbar-sigebi { padding-top: max(.5rem, env(safe-area-inset-top)); padding-left: max(1rem, env(safe-area-inset-left)) !important; padding-right: max(1rem, env(safe-area-inset-right)) !important; }
+main.flex-fill { padding-bottom: max(1.5rem, env(safe-area-inset-bottom)) !important; }
+@media (max-width: 575.98px) {
+  main.flex-fill { padding: 1rem max(1rem, env(safe-area-inset-right)) max(1.5rem, env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left)) !important; }
+}
+
+/* ── Pantallas grandes / proyector: el contenido no se estira a 2560 px ── */
+@media (min-width: 1920px) {
+  main.flex-fill > * { max-width: 1600px; }
+  html { font-size: 17px; }
+}
+
+/* ── Impresión: planillas y listados legibles en papel ── */
+@media print {
+  @page { margin: 12mm; }
+  html, body { background: #fff !important; color: #000 !important; font-size: 11pt; }
+  [data-bs-theme="dark"] { color-scheme: light; }
+  .navbar, .sidebar, .sidebar-overlay, .breadcrumb, .pie-sigebi, .pagination, .d-print-none,
+  .btn, form[method="get"], .alert-dismissible .btn-close, #lightboxOverlay, #cargandoOverlay,
+  .visually-hidden-focusable, .selectorPorPagina { display: none !important; }
+  main.flex-fill { padding: 0 !important; }
+  .card, .table, .table td, .table th { background: #fff !important; color: #000 !important; }
+  .table-responsive { overflow: visible !important; }
+  .table { font-size: 9.5pt; }
+  .table thead { display: table-header-group; }
+  .table tr { page-break-inside: avoid; }
+  a { color: #000 !important; text-decoration: none !important; }
+  .badge { border: 1px solid #555; color: #000 !important; background: #fff !important; }
+  .miniatura-36 { display: none; }
+  h1 { font-size: 16pt; }
+}
+@media (max-width: 575.98px) {
+  .navbar-sigebi { padding-left: max(.75rem, env(safe-area-inset-left)) !important; padding-right: max(.75rem, env(safe-area-inset-right)) !important; }
+}
+
+/* ── Filtros de los listados ── */
+.filtro-busqueda { flex: 1 1 260px; max-width: 420px; }
+.filtro-item { flex: 0 1 240px; min-width: 0; }
+@media (max-width: 767.98px) {
+  .filtro-busqueda { flex: 1 1 100%; max-width: none; }
+  .filtros-plegables { flex: 1 1 100%; }
+  .filtros-plegables .filtro-item { flex: 1 1 100%; }
+  .filtros-plegables:not(.abierto) { display: none !important; }
+}
+
+/* Selección masiva en el celular: el botón de acción ("Asignar (3)") queda fijo abajo
+   mientras se recorre la lista, en lugar de quedar fuera de la vista. */
+@media (max-width: 767.98px) {
+  .accion-fija-movil {
+    position: sticky; bottom: 0; z-index: 5;
+    margin: .75rem -1rem 0; padding: .6rem 1rem calc(.6rem + env(safe-area-inset-bottom));
+    background: var(--bs-body-bg); border-top: 1px solid var(--bs-border-color);
+    box-shadow: 0 -4px 12px rgba(0, 0, 0, .08);
+  }
+  .accion-fija-movil .btn { width: 100%; margin-top: 0 !important; }
+}
+
+/* Escáner QR: ocupa el ancho del celular; en pantallas grandes, 480 px. */
+.contenedor-escaner { max-width: 480px; }
+#lector-qr { min-height: 240px; }
+#lector-qr video { width: 100% !important; height: auto !important; object-fit: cover; }

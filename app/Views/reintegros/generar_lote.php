@@ -104,9 +104,11 @@ $movimientosSeleccionados = $viejo['movimientos'] ?? [];
             <p class="text-muted small mt-2">La selección solo aplica a los reintegros visibles en esta página; genera el lote antes de pasar de página si quieres incluir más.</p>
         <?php endif; ?>
 
-        <button type="submit" class="btn btn-primary mt-2" id="botonGenerar" disabled>
-            <i class="bi bi-file-earmark-plus me-1"></i>Generar lote (<span id="contadorSeleccionados">0</span>)
-        </button>
+        <div class="accion-fija-movil">
+            <button type="submit" class="btn btn-primary mt-2" id="botonGenerar" disabled>
+                <i class="bi bi-file-earmark-plus me-1"></i>Generar lote (<span id="contadorSeleccionados">0</span>)
+            </button>
+        </div>
     </form>
 
     <script>

@@ -61,7 +61,7 @@ foreach ($gruposBreadcrumb as $g) {
     })();
     </script>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <title><?= htmlspecialchars($title ?? 'SIGEBI', ENT_QUOTES) ?> · SIGEBI</title>
     <link rel="icon" type="image/png" sizes="32x32" href="<?= Url::asset('/assets/img/favicon-32.png') ?>">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous" rel="stylesheet">
@@ -104,7 +104,7 @@ foreach ($gruposBreadcrumb as $g) {
                placeholder="Buscar en todo SIGEBI...">
     </form>
     <div class="ms-auto d-flex align-items-center gap-2 gap-sm-3">
-        <a href="<?= Url::to('/buscar') ?>" class="theme-toggle d-lg-none" aria-label="Buscar" title="Buscar">
+        <a href="<?= Url::to('/buscar') ?>" class="theme-toggle d-none d-sm-inline-flex d-lg-none" aria-label="Buscar" title="Buscar">
             <i class="bi bi-search"></i>
         </a>
         <a href="<?= Url::to('/mi-cuenta') ?>" class="theme-toggle d-md-none" aria-label="Mi cuenta" title="Mi cuenta">
@@ -125,7 +125,7 @@ foreach ($gruposBreadcrumb as $g) {
             </div>
         </a>
         <?php if (count($familiaSedes) > 1): ?>
-            <form method="post" action="<?= Url::to('/sede-activa') ?>" class="d-flex align-items-center">
+            <form method="post" action="<?= Url::to('/sede-activa') ?>" class="d-none d-md-flex align-items-center">
                 <?= \App\Core\Csrf::field() ?>
                 <input type="hidden" name="volver" value="<?= htmlspecialchars($rutaActual, ENT_QUOTES) ?>">
                 <label for="sedeActivaSelect" class="visually-hidden">Sede activa</label>
@@ -138,7 +138,7 @@ foreach ($gruposBreadcrumb as $g) {
         <?php endif; ?>
         <?php if (Auth::esSuperusuario()): ?>
             <form method="post" action="<?= Url::to('/filtro-institucion') ?>"
-                  class="d-flex align-items-center filtro-institucion-form<?= Auth::filtroInstitucionId() !== null ? ' filtro-institucion-form--activo' : '' ?>">
+                  class="d-none d-md-flex align-items-center filtro-institucion-form<?= Auth::filtroInstitucionId() !== null ? ' filtro-institucion-form--activo' : '' ?>">
                 <?= \App\Core\Csrf::field() ?>
                 <input type="hidden" name="volver" value="<?= htmlspecialchars($rutaActual, ENT_QUOTES) ?>">
                 <label for="filtroInstitucionSelect" class="visually-hidden">Filtrar por institución</label>
@@ -154,12 +154,14 @@ foreach ($gruposBreadcrumb as $g) {
                 </select>
             </form>
         <?php endif; ?>
-        <button type="button" id="btnTema" class="theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+        <button type="button" id="btnTema" class="theme-toggle d-none d-sm-inline-flex" data-tema-toggle aria-label="Cambiar tema" title="Cambiar tema">
             <i class="bi bi-moon-stars"></i>
         </button>
         <form method="post" action="<?= Url::to('/logout') ?>">
             <?= \App\Core\Csrf::field() ?>
-            <button type="submit" class="btn btn-sm btn-light">Salir</button>
+            <button type="submit" class="btn btn-sm btn-light boton-salir" aria-label="Salir" title="Salir">
+                <i class="bi bi-box-arrow-right d-sm-none" aria-hidden="true"></i><span class="d-none d-sm-inline">Salir</span>
+            </button>
         </form>
     </div>
 </nav>
@@ -167,6 +169,41 @@ foreach ($gruposBreadcrumb as $g) {
 <div class="d-flex">
     <div id="sidebarOverlay" class="sidebar-overlay"></div>
     <aside id="sidebar" class="sidebar">
+        <?php if (count($familiaSedes) > 1 || Auth::esSuperusuario()): ?>
+            <div class="sidebar-movil d-md-none">
+                <?php if (count($familiaSedes) > 1): ?>
+                    <form method="post" action="<?= Url::to('/sede-activa') ?>">
+                        <?= \App\Core\Csrf::field() ?>
+                        <input type="hidden" name="volver" value="<?= htmlspecialchars($rutaActual, ENT_QUOTES) ?>">
+                        <label for="sedeActivaSelectMovil" class="form-label small mb-1">Sede activa</label>
+                        <select id="sedeActivaSelectMovil" name="institucion_id" class="form-select form-select-sm" onchange="this.form.submit()">
+                            <?php foreach ($familiaSedes as $sede): ?>
+                                <option value="<?= (int) $sede['id'] ?>" <?= (int) $sede['id'] === Auth::sedeActivaId() ? 'selected' : '' ?>><?= htmlspecialchars($sede['nombre'], ENT_QUOTES) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </form>
+                <?php endif; ?>
+                <?php if (Auth::esSuperusuario()): ?>
+                    <form method="post" action="<?= Url::to('/filtro-institucion') ?>"
+                          class="filtro-institucion-form<?= Auth::filtroInstitucionId() !== null ? ' filtro-institucion-form--activo' : '' ?>">
+                        <?= \App\Core\Csrf::field() ?>
+                        <input type="hidden" name="volver" value="<?= htmlspecialchars($rutaActual, ENT_QUOTES) ?>">
+                        <label for="filtroInstitucionSelectMovil" class="form-label small mb-1">Ver institución</label>
+                        <select id="filtroInstitucionSelectMovil" name="institucion_id" class="form-select form-select-sm filtro-institucion-select" onchange="this.form.submit()">
+                            <option value="">Ver todas las instituciones</option>
+                            <?php foreach ($institucionesFiltro as $i): ?>
+                                <option value="<?= (int) $i['id'] ?>" <?= Auth::filtroInstitucionId() === (int) $i['id'] ? 'selected' : '' ?>><?= htmlspecialchars($i['nombre'], ENT_QUOTES) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </form>
+                <?php endif; ?>
+            </div>
+        <?php endif; ?>
+        <div class="sidebar-movil d-sm-none">
+            <button type="button" class="btn btn-sm btn-outline-secondary w-100" data-tema-toggle>
+                <i class="bi bi-moon-stars me-1" aria-hidden="true"></i><span data-tema-texto>Cambiar tema</span>
+            </button>
+        </div>
         <?php
         $mostrarVerificacion = Auth::esSuperusuario() || Auth::tienePermiso('bajas.crear') || Auth::tienePermiso('bajas.aprobar') || Auth::tienePermiso('verificaciones.gestionar');
         $mostrarReportes = Auth::esSuperusuario() || Auth::tienePermiso('reportes.generar') || Auth::tienePermiso('cartera.gestionar') || Auth::tienePermiso('formatos_reintegro.gestionar') || Auth::tienePermiso('formatos_plaqueteo.gestionar') || Auth::tienePermiso('facturas_admin.gestionar');

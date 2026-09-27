@@ -137,4 +137,32 @@
             enlace.innerHTML = textoOriginal;
         }, 3000);
     });
+
+    /**
+     * Selección masiva (asignar, QR masivo, generar lote): tocar cualquier parte de la
+     * celda marca la casilla. En el celular la celda ocupa todo el ancho de la tarjeta,
+     * así el área táctil pasa de 24 px a la fila completa.
+     */
+    document.addEventListener('click', function (evento) {
+        const celda = evento.target.closest('td');
+        if (!celda || evento.target.closest('input, a, button, label, select, textarea')) { return; }
+        const casilla = celda.querySelector(':scope > input.casilla-bien[type="checkbox"]');
+        if (!casilla || casilla.disabled) { return; }
+        casilla.checked = !casilla.checked;
+        casilla.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+
+    /**
+     * Botón que muestra/oculta un bloque (p. ej. los filtros en el celular):
+     * <button data-alternar="idDelBloque" aria-expanded="false">. El bloque usa la clase
+     * "abierto"; el CSS decide en qué tamaños se oculta.
+     */
+    document.addEventListener('click', function (evento) {
+        const boton = evento.target.closest('[data-alternar]');
+        if (!boton) { return; }
+        const bloque = document.getElementById(boton.getAttribute('data-alternar'));
+        if (!bloque) { return; }
+        const abierto = bloque.classList.toggle('abierto');
+        boton.setAttribute('aria-expanded', abierto ? 'true' : 'false');
+    });
 })();

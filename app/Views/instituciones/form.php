@@ -32,7 +32,7 @@ $v = static fn (string $campo, mixed $porDefecto = '') => $viejo[$campo] ?? $ins
 
     <div class="col-md-6">
         <label class="form-label small requerido" for="codigoDane">Código DANE</label>
-        <input type="text" name="codigo_dane" id="codigoDane" class="form-control" required <?= $puedeEditarEstructura ? '' : 'disabled' ?>
+        <input type="text" name="codigo_dane" id="codigoDane" class="form-control" inputmode="numeric" pattern="[0-9]*" required <?= $puedeEditarEstructura ? '' : 'disabled' ?>
                value="<?= htmlspecialchars($v('codigo_dane'), ENT_QUOTES) ?>">
     </div>
 
