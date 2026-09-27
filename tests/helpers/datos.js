@@ -23,12 +23,20 @@ export async function comoRol(browser, rol) {
     return browser.newContext({ storageState: `playwright/.auth/${rol}.json` });
 }
 
-/** Devuelve el resultado como texto (filas separadas por \n, columnas por \t). */
+/** Contexto SIN sesión (browser.newContext() a secas hereda la del proyecto). */
+export async function sinSesion(browser) {
+    return browser.newContext({ storageState: { cookies: [], origins: [] } });
+}
+
+/** Devuelve el resultado como texto (filas separadas por salto de línea, columnas por tabulador). */
 export function bd(sql) {
     if (!/test/i.test(BD_PRUEBAS)) {
         throw new Error('bd() solo consulta la base de pruebas');
     }
-    return execFileSync(MYSQL_BIN, ['-uroot', '-N', '--default-character-set=utf8mb4', BD_PRUEBAS, '-e', sql], { encoding: 'utf8' }).trim();
+    // En Windows mysql.exe devuelve CRLF: se normaliza para que split() por salto de línea
+    // no deje un retorno de carro pegado a cada valor.
+    return execFileSync(MYSQL_BIN, ['-uroot', '-N', '--default-character-set=utf8mb4', BD_PRUEBAS, '-e', sql], { encoding: 'utf8' })
+        .replace(/\r\n/g, '\n').trim();
 }
 
 export function totp(secretoBase32, paso = Math.floor(Date.now() / 30000)) {

@@ -83,6 +83,10 @@ $claves = [
     'secretario' => 'Prueba-Secretario-2026',
     'docente' => 'Prueba-Docente-2026',
     'rector_b' => 'Prueba-RectorB-2026',
+    // Cuentas propias de pruebas que cambian la cuenta (activan 2FA, se desactivan...),
+    // para no invalidar las sesiones de los demás roles durante la corrida.
+    'dosfa' => 'Prueba-DosFactores-2026',
+    'sesion' => 'Prueba-Sesion-2026',
 ];
 $superId = (int) $valor("SELECT u.id FROM usuarios u JOIN roles r ON r.id = u.rol_id WHERE r.nombre = 'superusuario' ORDER BY u.id LIMIT 1");
 $pdo->prepare('UPDATE usuarios SET email = ?, password_hash = ?, activo = 1 WHERE id = ?')
@@ -99,6 +103,8 @@ $rectorA = $usuario('9000000001', 'Rector A', 'rector@prueba.test', $claves['rec
 $secretarioA = $usuario('9000000002', 'Secretario A', 'secretario@prueba.test', $claves['secretario'], $instA, 'secretario');
 $docenteA = $usuario('9000000003', 'Docente A', 'docente@prueba.test', $claves['docente'], $instA, 'docente');
 $rectorB = $usuario('9000000004', 'Rector B', 'rector.b@prueba.test', $claves['rector_b'], $instB, 'rector');
+$usuarioDosfa = $usuario('9000000005', 'Usuario DosFactores', 'dosfa@prueba.test', $claves['dosfa'], $instA, 'docente');
+$usuarioSesion = $usuario('9000000006', 'Usuario Sesion', 'sesion@prueba.test', $claves['sesion'], $instA, 'docente');
 
 // ── Espacios (el docente es responsable del aula A-101)
 $espacio = static fn (int $inst, string $codigo, string $nombre): int => $insertar('espacios', [
@@ -113,10 +119,10 @@ $insertar('espacio_responsables', ['espacio_id' => $aulaA, 'usuario_id' => $doce
 $categoria = static fn (int $inst, string $nombre): int => (int) $valor(
     'SELECT id FROM categorias_bienes WHERE institucion_id = ? AND nombre = ?', [$inst, $nombre]
 ) ?: (int) $valor('SELECT id FROM categorias_bienes WHERE institucion_id = ? ORDER BY id LIMIT 1', [$inst]);
-$bien = static function (int $inst, string $codigo, string $descripcion, string $estado, ?int $espacioId) use ($insertar, $categoria, $uuid, $superId): int {
+$bien = static function (int $inst, string $codigo, string $descripcion, string $estado, ?int $espacioId, string $nombreCategoria = 'Muebles') use ($insertar, $categoria, $uuid, $superId): int {
     $id = $insertar('bienes', [
         'institucion_id' => $inst, 'codigo_identificacion' => $codigo, 'descripcion' => $descripcion,
-        'categoria_id' => $categoria($inst, 'Muebles'), 'fecha_ingreso' => '2026-01-15', 'valor' => 150000,
+        'categoria_id' => $categoria($inst, $nombreCategoria), 'fecha_ingreso' => '2026-01-15', 'valor' => 150000,
         'estado' => $estado, 'qr_token' => $uuid(), 'created_by' => $superId,
     ]);
     if ($espacioId !== null) {
@@ -131,6 +137,11 @@ $bienesA = [
     'tablero' => $bien($instA, 'PA-0003', 'Tablero de prueba', 'activo', $bodegaA),
     'libre' => $bien($instA, 'PA-0004', 'Bien sin asignar', 'activo', null),
     'reparacion' => $bien($instA, 'PA-0005', 'Proyector en reparación', 'en_reparacion', $bodegaA),
+    // Para los ciclos de vida (en el aula del docente): se modifican durante las pruebas.
+    // Solo los bienes "Sin cartera" admiten baja directa (código de 10 dígitos).
+    'para_baja' => $bien($instA, '0000000006', 'Silla para dar de baja', 'activo', $aulaA, 'Sin cartera'),
+    'para_rechazo' => $bien($instA, '0000000008', 'Silla para rechazar su baja', 'activo', $aulaA, 'Sin cartera'),
+    'para_solicitud' => $bien($instA, 'PA-0007', 'Mesa para solicitar reintegro', 'activo', $aulaA),
 ];
 // Foto JPEG propia (generada aquí, distinta de las fixtures de otras pruebas, p. ej. la
 // búsqueda por foto) para el bien "silla" de A.
@@ -160,8 +171,17 @@ echo json_encode([
         'secretario' => ['id' => $secretarioA, 'email' => 'secretario@prueba.test', 'clave' => $claves['secretario']],
         'docente' => ['id' => $docenteA, 'email' => 'docente@prueba.test', 'clave' => $claves['docente']],
         'rector_b' => ['id' => $rectorB, 'email' => 'rector.b@prueba.test', 'clave' => $claves['rector_b']],
+        'dosfa' => ['id' => $usuarioDosfa, 'email' => 'dosfa@prueba.test', 'clave' => $claves['dosfa']],
+        'sesion' => ['id' => $usuarioSesion, 'email' => 'sesion@prueba.test', 'clave' => $claves['sesion']],
     ],
     'espacios' => ['aulaA' => $aulaA, 'bodegaA' => $bodegaA, 'aulaB' => $aulaB],
     'bienes' => ['A' => $bienesA, 'B' => $bienesB],
     'fotos' => ['silla' => 'fotos_bienes/PA-0001_1.jpg'],
+    'qr' => [
+        'A' => (string) $valor('SELECT qr_token FROM bienes WHERE id = ?', [$bienesA['silla']]),
+        'B' => (string) $valor('SELECT qr_token FROM bienes WHERE id = ?', [$bienesB['silla']]),
+        'para_baja' => (string) $valor('SELECT qr_token FROM bienes WHERE id = ?', [$bienesA['para_baja']]),
+        'para_rechazo' => (string) $valor('SELECT qr_token FROM bienes WHERE id = ?', [$bienesA['para_rechazo']]),
+        'para_solicitud' => (string) $valor('SELECT qr_token FROM bienes WHERE id = ?', [$bienesA['para_solicitud']]),
+    ],
 ], JSON_PRETTY_PRINT) . "\n";
