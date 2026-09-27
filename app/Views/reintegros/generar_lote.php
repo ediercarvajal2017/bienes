@@ -28,13 +28,13 @@ $movimientosSeleccionados = $viejo['movimientos'] ?? [];
                 <h2 class="h6 mb-3">Datos del lote (opcional)</h2>
                 <div class="row g-3">
                     <div class="col-md-6">
-                        <label class="form-label small">Descripción</label>
-                        <input type="text" name="descripcion" class="form-control form-control-sm" placeholder="Ej. Entregas de la semana del 20 de julio"
+                        <label for="campo-descripcion" class="form-label small">Descripción</label>
+                        <input id="campo-descripcion" type="text" name="descripcion" class="form-control form-control-sm" placeholder="Ej. Entregas de la semana del 20 de julio"
                                value="<?= htmlspecialchars($viejo['descripcion'] ?? '', ENT_QUOTES) ?>">
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label small">Observaciones</label>
-                        <input type="text" name="observaciones" class="form-control form-control-sm" value="<?= htmlspecialchars($viejo['observaciones'] ?? '', ENT_QUOTES) ?>">
+                        <label for="campo-observaciones" class="form-label small">Observaciones</label>
+                        <input id="campo-observaciones" type="text" name="observaciones" class="form-control form-control-sm" value="<?= htmlspecialchars($viejo['observaciones'] ?? '', ENT_QUOTES) ?>">
                     </div>
                 </div>
             </div>

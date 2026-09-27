@@ -99,13 +99,13 @@ $algunFiltroActivo = $busqueda !== '' || $categoriaId !== null || $estado !== nu
 
 <div class="mb-3 d-flex flex-wrap gap-3 align-items-end">
     <div style="max-width: 420px; flex: 1 1 260px;">
-        <label class="form-label small mb-1">Buscar</label>
+        <label for="buscador" class="form-label small mb-1">Buscar</label>
         <input type="search" id="buscador" class="form-control form-control-sm"
                placeholder="Buscar por código, descripción, responsable, ubicación, estado o valor..."
                value="<?= htmlspecialchars($busqueda, ENT_QUOTES) ?>">
     </div>
     <div style="max-width: 260px;">
-        <label class="form-label small mb-1">Categoría</label>
+        <label for="filtroCategoria" class="form-label small mb-1">Categoría</label>
         <select id="filtroCategoria" class="form-select form-select-sm selector-buscable">
             <option value="">Todas las categorías</option>
             <?php foreach ($categorias as $c): ?>
@@ -116,7 +116,7 @@ $algunFiltroActivo = $busqueda !== '' || $categoriaId !== null || $estado !== nu
         </select>
     </div>
     <div style="max-width: 220px;">
-        <label class="form-label small mb-1">Estado</label>
+        <label for="filtroEstado" class="form-label small mb-1">Estado</label>
         <select id="filtroEstado" class="form-select form-select-sm">
             <option value="">Todos los estados</option>
             <?php foreach ($etiquetasEstado as $valorEstado => $etiqueta): ?>
@@ -126,7 +126,7 @@ $algunFiltroActivo = $busqueda !== '' || $categoriaId !== null || $estado !== nu
     </div>
     <?php if (!empty($espacios)): ?>
         <div style="max-width: 260px;">
-            <label class="form-label small mb-1">Espacio</label>
+            <label for="filtroEspacio" class="form-label small mb-1">Espacio</label>
             <select id="filtroEspacio" class="form-select form-select-sm selector-buscable">
                 <option value="">Todos los espacios</option>
                 <?php foreach ($espacios as $e): ?>

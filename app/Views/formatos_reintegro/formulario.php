@@ -18,7 +18,7 @@ use App\Core\Url;
 
 <?php if (Auth::esSuperusuario()): ?>
     <div class="mb-3" style="max-width: 320px;">
-        <label class="form-label small">Institución</label>
+        <label for="selectorInstitucion" class="form-label small">Institución</label>
         <select id="selectorInstitucion" class="form-select form-select-sm selector-buscable">
             <option value="">-- Selecciona una institución --</option>
             <?php foreach ($instituciones as $i): ?>
@@ -44,16 +44,16 @@ use App\Core\Url;
         <input type="hidden" name="institucion_id" value="<?= $institucionId ?>">
 
         <div class="col-md-6">
-            <label class="form-label small requerido">Fecha del reintegro</label>
-            <input type="date" name="fecha_reintegro" class="form-control" required value="<?= date('Y-m-d') ?>">
+            <label for="campo-fecha-reintegro" class="form-label small requerido">Fecha del reintegro</label>
+            <input id="campo-fecha-reintegro" type="date" name="fecha_reintegro" class="form-control" required value="<?= date('Y-m-d') ?>">
         </div>
         <div class="col-md-6">
-            <label class="form-label small requerido">Archivo adjunto (PDF)</label>
-            <input type="file" name="archivo" accept="application/pdf" class="form-control" required>
+            <label for="campo-archivo" class="form-label small requerido">Archivo adjunto (PDF)</label>
+            <input id="campo-archivo" type="file" name="archivo" accept="application/pdf" class="form-control" required>
         </div>
         <div class="col-12">
-            <label class="form-label small">Descripción (opcional)</label>
-            <input type="text" name="descripcion" class="form-control" placeholder="Ej. Reintegro de equipos de la sede principal">
+            <label for="campo-descripcion" class="form-label small">Descripción (opcional)</label>
+            <input id="campo-descripcion" type="text" name="descripcion" class="form-control" placeholder="Ej. Reintegro de equipos de la sede principal">
         </div>
 
         <div class="col-12">

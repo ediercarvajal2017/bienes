@@ -172,7 +172,7 @@ $qrImpreso = !empty($bien['qr_impreso_en']);
                     <?= \App\Core\Csrf::field() ?>
                     <input type="hidden" name="resultado" value="ok">
                     <?php if (empty($bien['foto_path'])): ?>
-                        <label class="form-label small text-muted mb-1">Este bien no tiene foto — puedes tomarle una (opcional)</label>
+                        <label for="fotoVerificar" class="form-label small text-muted mb-1">Este bien no tiene foto — puedes tomarle una (opcional)</label>
                         <input type="file" name="foto" id="fotoVerificar" accept="image/*" capture="environment" class="form-control form-control-sm mb-2">
                     <?php endif; ?>
                     <button type="submit" class="btn btn-outline-success btn-sm w-100 mb-2">
@@ -186,7 +186,7 @@ $qrImpreso = !empty($bien['qr_impreso_en']);
                 <form method="post" action="<?= Url::to('/qr/' . $token . '/verificar') ?>" id="formDiscrepancia" style="display:none;" class="mt-2">
                     <?= \App\Core\Csrf::field() ?>
                     <input type="hidden" name="resultado" value="discrepancia">
-                    <label class="form-label small text-muted mb-1">¿Qué pasa con este bien?</label>
+                    <label for="motivoDiscrepancia" class="form-label small text-muted mb-1">¿Qué pasa con este bien?</label>
                     <select name="motivo" id="motivoDiscrepancia" class="form-select form-select-sm mb-2" required>
                         <option value="">-- Selecciona --</option>
                         <option value="no_se_encuentra">No se encuentra</option>

@@ -16,7 +16,7 @@ use App\Models\Categoria;
 
 <?php if (Auth::esSuperusuario()): ?>
     <div class="mb-3" style="max-width: 320px;">
-        <label class="form-label small">Institución</label>
+        <label for="selectorInstitucion" class="form-label small">Institución</label>
         <select id="selectorInstitucion" class="form-select form-select-sm selector-buscable">
             <option value="">-- Selecciona una institución --</option>
             <?php foreach ($instituciones as $i): ?>

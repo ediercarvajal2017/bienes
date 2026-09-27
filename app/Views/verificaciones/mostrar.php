@@ -64,8 +64,8 @@ $tabPorDefecto = !empty($hallazgos) ? 'hallazgos' : 'discrepancia';
         <div class="card-body">
             <?= Csrf::field() ?>
             <input type="hidden" name="confirmar_hallazgos" value="0">
-            <label class="form-label small">Observaciones de cierre (opcional)</label>
-            <textarea name="observaciones" class="form-control form-control-sm mb-2" rows="2"></textarea>
+            <label for="campo-observaciones" class="form-label small">Observaciones de cierre (opcional)</label>
+            <textarea id="campo-observaciones" name="observaciones" class="form-control form-control-sm mb-2" rows="2"></textarea>
             <button type="submit" class="btn btn-outline-danger btn-sm">
                 <i class="bi bi-lock me-1"></i>Cerrar jornada
             </button>
@@ -165,13 +165,13 @@ $tabPorDefecto = !empty($hallazgos) ? 'hallazgos' : 'discrepancia';
     <?php if ($verificadosDiscrepancia > 0): ?>
         <div class="mb-2 d-flex flex-wrap gap-3 align-items-end">
             <div style="max-width: 420px; flex: 1 1 260px;">
-                <label class="form-label small mb-1">Buscar</label>
+                <label for="buscadorDiscrepancia" class="form-label small mb-1">Buscar</label>
                 <input type="search" id="buscadorDiscrepancia" class="form-control form-control-sm"
                        placeholder="Buscar por código, descripción o ubicación..."
                        value="<?= htmlspecialchars($busquedaDiscrepancia, ENT_QUOTES) ?>">
             </div>
             <div>
-                <label class="form-label small mb-1">Estado</label>
+                <label for="selectorEstadoDiscrepancia" class="form-label small mb-1">Estado</label>
                 <select id="selectorEstadoDiscrepancia" class="form-select form-select-sm">
                     <option value="pendiente" <?= $estadoDiscrepancia === 'pendiente' ? 'selected' : '' ?>>Sin atender</option>
                     <option value="revisada" <?= $estadoDiscrepancia === 'revisada' ? 'selected' : '' ?>>Revisadas</option>

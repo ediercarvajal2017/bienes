@@ -17,13 +17,13 @@ use App\Core\Url;
     <?= Csrf::field() ?>
 
     <div class="col-md-6">
-        <label class="form-label small requerido">Fecha del plaqueteo</label>
-        <input type="date" name="fecha_plaqueteo" class="form-control" required
+        <label for="campo-fecha-plaqueteo" class="form-label small requerido">Fecha del plaqueteo</label>
+        <input id="campo-fecha-plaqueteo" type="date" name="fecha_plaqueteo" class="form-control" required
                value="<?= htmlspecialchars($registro['fecha_plaqueteo'], ENT_QUOTES) ?>">
     </div>
     <div class="col-md-6">
-        <label class="form-label small requerido">Funcionario que asistió</label>
-        <input type="text" name="funcionario_asistio" class="form-control" required
+        <label for="campo-funcionario-asistio" class="form-label small requerido">Funcionario que asistió</label>
+        <input id="campo-funcionario-asistio" type="text" name="funcionario_asistio" class="form-control" required
                value="<?= htmlspecialchars($registro['funcionario_asistio'], ENT_QUOTES) ?>">
     </div>
     <div class="col-md-6">
@@ -33,12 +33,12 @@ use App\Core\Url;
         </a>
     </div>
     <div class="col-12">
-        <label class="form-label small">Reemplazar archivo (opcional, PDF)</label>
-        <input type="file" name="archivo" accept="application/pdf" class="form-control">
+        <label for="campo-archivo" class="form-label small">Reemplazar archivo (opcional, PDF)</label>
+        <input id="campo-archivo" type="file" name="archivo" accept="application/pdf" class="form-control">
     </div>
     <div class="col-12">
-        <label class="form-label small">Descripción (opcional)</label>
-        <input type="text" name="descripcion" class="form-control"
+        <label for="campo-descripcion" class="form-label small">Descripción (opcional)</label>
+        <input id="campo-descripcion" type="text" name="descripcion" class="form-control"
                value="<?= htmlspecialchars($registro['descripcion'] ?? '', ENT_QUOTES) ?>">
     </div>
 

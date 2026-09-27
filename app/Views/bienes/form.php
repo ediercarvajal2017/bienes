@@ -122,14 +122,14 @@ $invalido = static fn (string $campo) => $errorCampo === $campo ? ' is-invalid' 
         <?php endif; ?>
     </div>
     <div class="col-md-4">
-        <label class="form-label small">Marca (si aplica)</label>
-        <input type="text" name="marca" class="form-control" <?= $puedeEditar ? '' : 'disabled' ?>
+        <label for="campo-marca" class="form-label small">Marca (si aplica)</label>
+        <input id="campo-marca" type="text" name="marca" class="form-control" <?= $puedeEditar ? '' : 'disabled' ?>
                value="<?= htmlspecialchars($v('marca'), ENT_QUOTES) ?>">
     </div>
 
     <div class="col-12">
-        <label class="form-label small requerido">Descripción</label>
-        <input type="text" name="descripcion" class="form-control<?= $invalido('descripcion') ?>" required <?= $puedeEditar ? '' : 'disabled' ?>
+        <label for="campo-descripcion" class="form-label small requerido">Descripción</label>
+        <input id="campo-descripcion" type="text" name="descripcion" class="form-control<?= $invalido('descripcion') ?>" required <?= $puedeEditar ? '' : 'disabled' ?>
                placeholder="Ej. Silla plástica azul, Proyector Epson X200..."
                value="<?= htmlspecialchars($v('descripcion'), ENT_QUOTES) ?>">
         <?php if ($errorCampo === 'descripcion'): ?>
@@ -138,16 +138,16 @@ $invalido = static fn (string $campo) => $errorCampo === $campo ? ' is-invalid' 
     </div>
 
     <div class="col-md-4">
-        <label class="form-label small requerido">Fecha de ingreso</label>
-        <input type="date" name="fecha_ingreso" class="form-control<?= $invalido('fecha_ingreso') ?>" required <?= $puedeEditar ? '' : 'disabled' ?>
+        <label for="campo-fecha-ingreso" class="form-label small requerido">Fecha de ingreso</label>
+        <input id="campo-fecha-ingreso" type="date" name="fecha_ingreso" class="form-control<?= $invalido('fecha_ingreso') ?>" required <?= $puedeEditar ? '' : 'disabled' ?>
                value="<?= htmlspecialchars((string) $v('fecha_ingreso', date('Y-m-d')), ENT_QUOTES) ?>">
         <?php if ($errorCampo === 'fecha_ingreso'): ?>
             <div class="invalid-feedback d-block"><?= htmlspecialchars($error, ENT_QUOTES) ?></div>
         <?php endif; ?>
     </div>
     <div class="col-md-4">
-        <label class="form-label small">Valor</label>
-        <input type="number" step="0.01" min="0" max="9999999999" name="valor" class="form-control<?= $invalido('valor') ?>" <?= $puedeEditar ? '' : 'disabled' ?>
+        <label for="campo-valor" class="form-label small">Valor</label>
+        <input id="campo-valor" type="number" step="0.01" min="0" max="9999999999" name="valor" class="form-control<?= $invalido('valor') ?>" <?= $puedeEditar ? '' : 'disabled' ?>
                value="<?= htmlspecialchars((string) $v('valor', '0'), ENT_QUOTES) ?>">
         <?php if ($errorCampo === 'valor'): ?>
             <div class="invalid-feedback d-block"><?= htmlspecialchars($error, ENT_QUOTES) ?></div>
@@ -213,14 +213,14 @@ $invalido = static fn (string $campo) => $errorCampo === $campo ? ' is-invalid' 
         <?php endif; ?>
     </div>
     <div class="col-md-6<?= !empty($bien['tiene_factura']) ? '' : ' d-none' ?>" id="contenedorFactura">
-        <label class="form-label small d-block">Factura (PDF)</label>
+        <label for="campo-factura-pdf" class="form-label small d-block">Factura (PDF)</label>
         <?php if (!empty($bien['factura_pdf_path'])): ?>
             <a href="<?= Url::to('/archivos/' . $bien['factura_pdf_path']) ?>" target="_blank" class="d-block mb-2 small">
                 <i class="bi bi-file-earmark-pdf me-1"></i>Ver factura actual
             </a>
         <?php endif; ?>
         <?php if ($puedeEditar): ?>
-            <input type="file" name="factura_pdf" accept="application/pdf" class="form-control">
+            <input id="campo-factura-pdf" type="file" name="factura_pdf" accept="application/pdf" class="form-control">
         <?php endif; ?>
     </div>
 
@@ -453,12 +453,12 @@ document.addEventListener('DOMContentLoaded', function () {
                         </select>
                     </div>
                     <div>
-                        <label class="form-label small">Fecha de asignación</label>
-                        <input type="date" name="fecha_asignacion" class="form-control form-control-sm" required value="<?= date('Y-m-d') ?>">
+                        <label for="campo-fecha-asignacion" class="form-label small">Fecha de asignación</label>
+                        <input id="campo-fecha-asignacion" type="date" name="fecha_asignacion" class="form-control form-control-sm" required value="<?= date('Y-m-d') ?>">
                     </div>
                     <div>
-                        <label class="form-label small">Observaciones</label>
-                        <textarea name="observaciones" class="form-control form-control-sm" rows="2"></textarea>
+                        <label for="campo-observaciones" class="form-label small">Observaciones</label>
+                        <textarea id="campo-observaciones" name="observaciones" class="form-control form-control-sm" rows="2"></textarea>
                     </div>
                     <button type="submit" class="btn btn-sm btn-primary">Asignar</button>
                 </form>
@@ -474,12 +474,12 @@ document.addEventListener('DOMContentLoaded', function () {
                 <form method="post" action="<?= Url::to('/bienes/' . $bien['id'] . '/reactivar') ?>" class="d-flex flex-column gap-2">
                     <?= Csrf::field() ?>
                     <div>
-                        <label class="form-label small">Fecha</label>
-                        <input type="date" name="fecha" class="form-control form-control-sm" required value="<?= date('Y-m-d') ?>">
+                        <label for="campo-fecha" class="form-label small">Fecha</label>
+                        <input id="campo-fecha" type="date" name="fecha" class="form-control form-control-sm" required value="<?= date('Y-m-d') ?>">
                     </div>
                     <div>
-                        <label class="form-label small requerido">Motivo</label>
-                        <textarea name="motivo" class="form-control form-control-sm" rows="2" required></textarea>
+                        <label for="campo-motivo" class="form-label small requerido">Motivo</label>
+                        <textarea id="campo-motivo" name="motivo" class="form-control form-control-sm" rows="2" required></textarea>
                     </div>
                     <button type="submit" class="btn btn-sm btn-outline-primary">Reactivar bien</button>
                 </form>
@@ -515,12 +515,12 @@ document.addEventListener('DOMContentLoaded', function () {
                         </select>
                     </div>
                     <div>
-                        <label class="form-label small">Fecha del traslado</label>
-                        <input type="date" name="fecha" class="form-control form-control-sm" required value="<?= date('Y-m-d') ?>">
+                        <label for="campo-fecha-2" class="form-label small">Fecha del traslado</label>
+                        <input id="campo-fecha-2" type="date" name="fecha" class="form-control form-control-sm" required value="<?= date('Y-m-d') ?>">
                     </div>
                     <div>
-                        <label class="form-label small">Observaciones</label>
-                        <textarea name="observaciones" class="form-control form-control-sm" rows="2"></textarea>
+                        <label for="campo-observaciones-2" class="form-label small">Observaciones</label>
+                        <textarea id="campo-observaciones-2" name="observaciones" class="form-control form-control-sm" rows="2"></textarea>
                     </div>
                     <button type="submit" class="btn btn-sm btn-primary">Registrar traslado</button>
                 </form>
@@ -547,12 +547,12 @@ document.addEventListener('DOMContentLoaded', function () {
                             </select>
                         </div>
                         <div>
-                            <label class="form-label small">Fecha del traslado</label>
-                            <input type="date" name="fecha" class="form-control form-control-sm" required value="<?= date('Y-m-d') ?>">
+                            <label for="campo-fecha-3" class="form-label small">Fecha del traslado</label>
+                            <input id="campo-fecha-3" type="date" name="fecha" class="form-control form-control-sm" required value="<?= date('Y-m-d') ?>">
                         </div>
                         <div>
-                            <label class="form-label small">Observaciones</label>
-                            <textarea name="observaciones" class="form-control form-control-sm" rows="2"></textarea>
+                            <label for="campo-observaciones-3" class="form-label small">Observaciones</label>
+                            <textarea id="campo-observaciones-3" name="observaciones" class="form-control form-control-sm" rows="2"></textarea>
                         </div>
                         <button type="submit" class="btn btn-sm btn-outline-primary">Trasladar a otra sede</button>
                     </form>
@@ -594,16 +594,16 @@ document.addEventListener('DOMContentLoaded', function () {
                     <form method="post" action="<?= Url::to('/bienes/' . $bien['id'] . '/reintegrar') ?>" class="mt-3 d-flex flex-column gap-2">
                         <?= Csrf::field() ?>
                         <div>
-                            <label class="form-label small">Destino del reintegro</label>
-                            <input type="text" name="destino_texto" class="form-control form-control-sm" required placeholder="Ej. Almacén institucional">
+                            <label for="campo-destino-texto" class="form-label small">Destino del reintegro</label>
+                            <input id="campo-destino-texto" type="text" name="destino_texto" class="form-control form-control-sm" required placeholder="Ej. Almacén institucional">
                         </div>
                         <div>
-                            <label class="form-label small">Fecha del reintegro</label>
-                            <input type="date" name="fecha" class="form-control form-control-sm" required value="<?= date('Y-m-d') ?>">
+                            <label for="campo-fecha-4" class="form-label small">Fecha del reintegro</label>
+                            <input id="campo-fecha-4" type="date" name="fecha" class="form-control form-control-sm" required value="<?= date('Y-m-d') ?>">
                         </div>
                         <div>
-                            <label class="form-label small">Observaciones</label>
-                            <textarea name="observaciones" class="form-control form-control-sm" rows="2"></textarea>
+                            <label for="campo-observaciones-4" class="form-label small">Observaciones</label>
+                            <textarea id="campo-observaciones-4" name="observaciones" class="form-control form-control-sm" rows="2"></textarea>
                         </div>
                         <button type="submit" class="btn btn-sm btn-outline-danger">Registrar reintegro</button>
                     </form>

@@ -25,7 +25,7 @@ use App\Core\View;
 
 <?php if (Auth::esSuperusuario()): ?>
     <div class="mb-3" style="max-width: 320px;">
-        <label class="form-label small">Institución</label>
+        <label for="selectorInstitucion" class="form-label small">Institución</label>
         <select id="selectorInstitucion" class="form-select form-select-sm selector-buscable">
             <option value="">-- Selecciona una institución --</option>
             <?php foreach ($instituciones as $i): ?>
@@ -98,8 +98,8 @@ use App\Core\View;
             ]); ?>
 
             <div class="mb-2" style="max-width: 360px;">
-                <label class="form-label small mb-1">Formato de impresión</label>
-                <select name="formato" class="form-select form-select-sm">
+                <label for="campo-formato" class="form-label small mb-1">Formato de impresión</label>
+                <select id="campo-formato" name="formato" class="form-select form-select-sm">
                     <option value="hoja">Hoja para recortar (varios QR por página, papel normal)</option>
                     <option value="etiqueta">Etiqueta térmica 50x25mm (una por etiqueta, rollo continuo)</option>
                 </select>

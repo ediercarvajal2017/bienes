@@ -21,7 +21,7 @@ $bienesSeleccionados = $viejo['bienes'] ?? [];
 
 <?php if (Auth::esSuperusuario()): ?>
     <div class="mb-3" style="max-width: 320px;">
-        <label class="form-label small">Institución</label>
+        <label for="selectorInstitucion" class="form-label small">Institución</label>
         <select id="selectorInstitucion" class="form-select form-select-sm selector-buscable">
             <option value="">-- Selecciona una institución --</option>
             <?php foreach ($instituciones as $i): ?>
@@ -57,8 +57,8 @@ $bienesSeleccionados = $viejo['bienes'] ?? [];
 
                 <div class="row g-3">
                     <div class="col-md-6">
-                        <label class="form-label small">Espacio / ubicación (define el responsable)</label>
-                        <select name="espacio_id" class="form-select form-select-sm selector-buscable" required>
+                        <label for="campo-espacio-id" class="form-label small">Espacio / ubicación (define el responsable)</label>
+                        <select id="campo-espacio-id" name="espacio_id" class="form-select form-select-sm selector-buscable" required>
                             <option value="">-- Selecciona --</option>
                             <?php foreach ($espacios as $e): ?>
                                 <option value="<?= $e['id'] ?>" <?= ($viejo['espacio_id'] ?? '') === (string) $e['id'] ? 'selected' : '' ?>><?= htmlspecialchars($e['codigo'] . ' - ' . $e['nombre'], ENT_QUOTES) ?></option>
@@ -69,14 +69,14 @@ $bienesSeleccionados = $viejo['bienes'] ?? [];
                         <?php endif; ?>
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label small">Fecha de asignación</label>
-                        <input type="date" name="fecha_asignacion" class="form-control form-control-sm" value="<?= htmlspecialchars($viejo['fecha_asignacion'] ?? date('Y-m-d'), ENT_QUOTES) ?>" required>
+                        <label for="campo-fecha-asignacion" class="form-label small">Fecha de asignación</label>
+                        <input id="campo-fecha-asignacion" type="date" name="fecha_asignacion" class="form-control form-control-sm" value="<?= htmlspecialchars($viejo['fecha_asignacion'] ?? date('Y-m-d'), ENT_QUOTES) ?>" required>
                     </div>
                 </div>
 
                 <div class="mt-3">
-                    <label class="form-label small">Observaciones (opcional, aplica a todos)</label>
-                    <input type="text" name="observaciones" class="form-control form-control-sm" value="<?= htmlspecialchars($viejo['observaciones'] ?? '', ENT_QUOTES) ?>">
+                    <label for="campo-observaciones" class="form-label small">Observaciones (opcional, aplica a todos)</label>
+                    <input id="campo-observaciones" type="text" name="observaciones" class="form-control form-control-sm" value="<?= htmlspecialchars($viejo['observaciones'] ?? '', ENT_QUOTES) ?>">
                 </div>
             </div>
         </div>

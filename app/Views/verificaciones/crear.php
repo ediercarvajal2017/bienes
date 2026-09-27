@@ -22,12 +22,12 @@ use App\Core\Url;
     <div class="card-body">
         <?= Csrf::field() ?>
         <div class="mb-3">
-            <label class="form-label small requerido">Nombre de la jornada</label>
-            <input type="text" name="nombre" class="form-control" placeholder="Ej. Verificación semestre 1 - 2026" required>
+            <label for="campo-nombre" class="form-label small requerido">Nombre de la jornada</label>
+            <input id="campo-nombre" type="text" name="nombre" class="form-control" placeholder="Ej. Verificación semestre 1 - 2026" required>
         </div>
         <div class="mb-3">
-            <label class="form-label small requerido">Fecha de inicio</label>
-            <input type="date" name="fecha_inicio" class="form-control" value="<?= date('Y-m-d') ?>" required>
+            <label for="campo-fecha-inicio" class="form-label small requerido">Fecha de inicio</label>
+            <input id="campo-fecha-inicio" type="date" name="fecha_inicio" class="form-control" value="<?= date('Y-m-d') ?>" required>
         </div>
         <button type="submit" class="btn btn-primary btn-sm">
             <i class="bi bi-clipboard2-check me-1"></i>Iniciar jornada

@@ -43,8 +43,8 @@
         <form method="post" action="<?= Url::to('/olvide-contrasena') ?>">
             <?= \App\Core\Csrf::field() ?>
             <div class="mb-3">
-                <label class="form-label small">Correo institucional</label>
-                <input type="email" name="email" class="form-control" required autofocus>
+                <label for="campo-email" class="form-label small">Correo institucional</label>
+                <input id="campo-email" type="email" name="email" class="form-control" required autofocus>
             </div>
             <button type="submit" class="btn btn-primary w-100">Enviar enlace</button>
         </form>

@@ -10,7 +10,7 @@ $instituciones = Auth::esSuperusuario() ? Institucion::listadoParaSelect() : [];
 
 <?php if (Auth::esSuperusuario()): ?>
     <div class="mb-3" style="max-width: 320px;">
-        <label class="form-label small">Institución a exportar</label>
+        <label for="selectorInstitucion" class="form-label small">Institución a exportar</label>
         <select id="selectorInstitucion" class="form-select form-select-sm selector-buscable">
             <option value="">Todas las instituciones</option>
             <?php foreach ($instituciones as $i): ?>

@@ -22,7 +22,7 @@ $viejo ??= [];
 
 <?php if (Auth::esSuperusuario()): ?>
     <div class="mb-3" style="max-width: 320px;">
-        <label class="form-label small">Institución</label>
+        <label for="selectorInstitucion" class="form-label small">Institución</label>
         <select id="selectorInstitucion" class="form-select form-select-sm selector-buscable">
             <option value="">-- Selecciona una institución --</option>
             <?php foreach ($instituciones as $i): ?>
@@ -55,19 +55,19 @@ $viejo ??= [];
 
                 <div class="row g-3">
                     <div class="col-md-6">
-                        <label class="form-label small">Destino</label>
-                        <input type="text" name="destino_texto" class="form-control form-control-sm" placeholder="Ej. Almacén institucional" required
+                        <label for="campo-destino-texto" class="form-label small">Destino</label>
+                        <input id="campo-destino-texto" type="text" name="destino_texto" class="form-control form-control-sm" placeholder="Ej. Almacén institucional" required
                                value="<?= htmlspecialchars($viejo['destino_texto'] ?? '', ENT_QUOTES) ?>">
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label small">Fecha del reintegro</label>
-                        <input type="date" name="fecha" class="form-control form-control-sm" value="<?= htmlspecialchars($viejo['fecha'] ?? date('Y-m-d'), ENT_QUOTES) ?>" required>
+                        <label for="campo-fecha" class="form-label small">Fecha del reintegro</label>
+                        <input id="campo-fecha" type="date" name="fecha" class="form-control form-control-sm" value="<?= htmlspecialchars($viejo['fecha'] ?? date('Y-m-d'), ENT_QUOTES) ?>" required>
                     </div>
                 </div>
 
                 <div class="mt-3">
-                    <label class="form-label small">Observaciones (opcional, aplica a todos)</label>
-                    <input type="text" name="observaciones" class="form-control form-control-sm" value="<?= htmlspecialchars($viejo['observaciones'] ?? '', ENT_QUOTES) ?>">
+                    <label for="campo-observaciones" class="form-label small">Observaciones (opcional, aplica a todos)</label>
+                    <input id="campo-observaciones" type="text" name="observaciones" class="form-control form-control-sm" value="<?= htmlspecialchars($viejo['observaciones'] ?? '', ENT_QUOTES) ?>">
                 </div>
             </div>
         </div>

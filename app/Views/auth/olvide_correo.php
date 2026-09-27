@@ -46,8 +46,8 @@
         <form method="post" action="<?= Url::to('/olvide-correo') ?>">
             <?= \App\Core\Csrf::field() ?>
             <div class="mb-3">
-                <label class="form-label small">Institución</label>
-                <select name="institucion_id" class="form-select selector-buscable" required>
+                <label for="campo-institucion-id" class="form-label small">Institución</label>
+                <select id="campo-institucion-id" name="institucion_id" class="form-select selector-buscable" required>
                     <option value="">-- Selecciona --</option>
                     <?php foreach ($instituciones as $i): ?>
                         <option value="<?= $i['id'] ?>"><?= htmlspecialchars($i['nombre'], ENT_QUOTES) ?></option>
@@ -55,8 +55,8 @@
                 </select>
             </div>
             <div class="mb-3">
-                <label class="form-label small">Número de documento</label>
-                <input type="text" name="documento" class="form-control" required autofocus>
+                <label for="campo-documento" class="form-label small">Número de documento</label>
+                <input id="campo-documento" type="text" name="documento" class="form-control" required autofocus>
             </div>
             <button type="submit" class="btn btn-primary w-100">Buscar mi correo</button>
         </form>

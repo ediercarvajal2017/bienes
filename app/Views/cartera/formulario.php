@@ -18,7 +18,7 @@ use App\Core\Url;
 
 <?php if (Auth::esSuperusuario()): ?>
     <div class="mb-3" style="max-width: 320px;">
-        <label class="form-label small">Institución</label>
+        <label for="selectorInstitucion" class="form-label small">Institución</label>
         <select id="selectorInstitucion" class="form-select form-select-sm selector-buscable">
             <option value="">-- Selecciona una institución --</option>
             <?php foreach ($instituciones as $i): ?>
@@ -44,21 +44,21 @@ use App\Core\Url;
         <input type="hidden" name="institucion_id" value="<?= $institucionId ?>">
 
         <div class="col-md-6">
-            <label class="form-label small requerido">Funcionario que realizó el envío</label>
-            <input type="text" name="nombre_funcionario" class="form-control" required
+            <label for="campo-nombre-funcionario" class="form-label small requerido">Funcionario que realizó el envío</label>
+            <input id="campo-nombre-funcionario" type="text" name="nombre_funcionario" class="form-control" required
                    value="<?= htmlspecialchars($nombreFuncionarioPorDefecto ?? '', ENT_QUOTES) ?>">
         </div>
         <div class="col-md-6">
-            <label class="form-label small requerido">Correo del remitente</label>
-            <input type="email" name="correo_remitente" class="form-control" required>
+            <label for="campo-correo-remitente" class="form-label small requerido">Correo del remitente</label>
+            <input id="campo-correo-remitente" type="email" name="correo_remitente" class="form-control" required>
         </div>
         <div class="col-md-6">
-            <label class="form-label small requerido">Fecha de envío</label>
-            <input type="date" name="fecha_envio" class="form-control" required value="<?= date('Y-m-d') ?>">
+            <label for="campo-fecha-envio" class="form-label small requerido">Fecha de envío</label>
+            <input id="campo-fecha-envio" type="date" name="fecha_envio" class="form-control" required value="<?= date('Y-m-d') ?>">
         </div>
         <div class="col-md-6">
-            <label class="form-label small requerido">Archivo adjunto (cartera, Excel)</label>
-            <input type="file" name="archivo" accept=".xlsx,.xls" class="form-control" required>
+            <label for="campo-archivo" class="form-label small requerido">Archivo adjunto (cartera, Excel)</label>
+            <input id="campo-archivo" type="file" name="archivo" accept=".xlsx,.xls" class="form-control" required>
         </div>
 
         <div class="col-12">

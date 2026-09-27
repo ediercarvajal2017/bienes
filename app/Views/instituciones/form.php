@@ -53,8 +53,8 @@ $v = static fn (string $campo, mixed $porDefecto = '') => $viejo[$campo] ?? $ins
     <?php endif; ?>
 
     <div class="col-12">
-        <label class="form-label small requerido">Nombre</label>
-        <input type="text" name="nombre" class="form-control" required <?= $puedeEditar ? '' : 'disabled' ?>
+        <label for="campo-nombre" class="form-label small requerido">Nombre</label>
+        <input id="campo-nombre" type="text" name="nombre" class="form-control" required <?= $puedeEditar ? '' : 'disabled' ?>
                value="<?= htmlspecialchars($v('nombre'), ENT_QUOTES) ?>">
     </div>
 
@@ -72,24 +72,24 @@ $v = static fn (string $campo, mixed $porDefecto = '') => $viejo[$campo] ?? $ins
     </div>
 
     <div class="col-12">
-        <label class="form-label small">Dirección</label>
-        <input type="text" name="direccion" class="form-control" <?= $puedeEditar ? '' : 'disabled' ?>
+        <label for="campo-direccion" class="form-label small">Dirección</label>
+        <input id="campo-direccion" type="text" name="direccion" class="form-control" <?= $puedeEditar ? '' : 'disabled' ?>
                value="<?= htmlspecialchars($v('direccion'), ENT_QUOTES) ?>">
     </div>
 
     <div class="col-12">
-        <label class="form-label small">Correo institucional</label>
-        <input type="email" name="email_institucional" class="form-control" <?= $puedeEditar ? '' : 'disabled' ?>
+        <label for="campo-email-institucional" class="form-label small">Correo institucional</label>
+        <input id="campo-email-institucional" type="email" name="email_institucional" class="form-control" <?= $puedeEditar ? '' : 'disabled' ?>
                value="<?= htmlspecialchars($v('email_institucional'), ENT_QUOTES) ?>">
     </div>
 
     <div class="col-12">
-        <label class="form-label small d-block">Logo institucional (JPG o PNG)</label>
+        <label for="campo-logo" class="form-label small d-block">Logo institucional (JPG o PNG)</label>
         <?php if (!empty($institucion['logo_path'])): ?>
             <img src="<?= Url::to('/archivos/' . $institucion['logo_path']) ?>" alt="Logo actual" class="mb-2 d-block" style="height:56px;">
         <?php endif; ?>
         <?php if ($puedeEditar): ?>
-            <input type="file" name="logo" accept="image/jpeg,image/png" class="form-control">
+            <input id="campo-logo" type="file" name="logo" accept="image/jpeg,image/png" class="form-control">
         <?php endif; ?>
     </div>
 

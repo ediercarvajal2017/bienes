@@ -18,8 +18,8 @@ use App\Core\View;
     <?= Csrf::field() ?>
 
     <div class="col-md-6">
-        <label class="form-label small requerido">Fecha de la factura</label>
-        <input type="date" name="fecha_factura" class="form-control" required
+        <label for="campo-fecha-factura" class="form-label small requerido">Fecha de la factura</label>
+        <input id="campo-fecha-factura" type="date" name="fecha_factura" class="form-control" required
                value="<?= htmlspecialchars($registro['fecha_factura'], ENT_QUOTES) ?>">
     </div>
     <div class="col-md-6">
@@ -29,8 +29,8 @@ use App\Core\View;
         </a>
     </div>
     <div class="col-12">
-        <label class="form-label small requerido">Descripción breve</label>
-        <input type="text" name="descripcion" class="form-control" required
+        <label for="campo-descripcion" class="form-label small requerido">Descripción breve</label>
+        <input id="campo-descripcion" type="text" name="descripcion" class="form-control" required
                value="<?= htmlspecialchars($registro['descripcion'], ENT_QUOTES) ?>">
     </div>
     <div class="col-12">

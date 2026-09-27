@@ -27,7 +27,7 @@ $puedeCrearEspacio = Auth::esSuperusuario() || Auth::tienePermiso('espacios.crea
 <?php endif; ?>
 
 <div class="mb-3" style="max-width: 420px;">
-    <label class="form-label small mb-1">Buscar</label>
+    <label for="buscador" class="form-label small mb-1">Buscar</label>
     <input type="search" id="buscador" class="form-control form-control-sm"
            placeholder="Buscar por código o nombre..."
            value="<?= htmlspecialchars($busqueda, ENT_QUOTES) ?>">

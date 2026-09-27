@@ -40,15 +40,15 @@ $v = static fn (string $campo, mixed $porDefecto = '') => $viejo[$campo] ?? $por
     <?php endif; ?>
 
     <div class="col-md-4">
-        <label class="form-label small requerido">Código de lote</label>
-        <input type="text" name="lote" class="form-control" required
+        <label for="campo-lote" class="form-label small requerido">Código de lote</label>
+        <input id="campo-lote" type="text" name="lote" class="form-control" required
                placeholder="Ej. SILLAS-2026"
                value="<?= htmlspecialchars($v('lote'), ENT_QUOTES) ?>">
         <div class="form-text">Solo letras, números y guiones. Cada bien queda con el código "{lote}-001", "{lote}-002", etc.</div>
     </div>
     <div class="col-md-4">
-        <label class="form-label small requerido">Cantidad</label>
-        <input type="number" name="cantidad" class="form-control" min="2" max="500" required
+        <label for="campo-cantidad" class="form-label small requerido">Cantidad</label>
+        <input id="campo-cantidad" type="number" name="cantidad" class="form-control" min="2" max="500" required
                value="<?= htmlspecialchars((string) $v('cantidad', '2'), ENT_QUOTES) ?>">
     </div>
     <div class="col-md-4">
@@ -64,23 +64,23 @@ $v = static fn (string $campo, mixed $porDefecto = '') => $viejo[$campo] ?? $por
     </div>
 
     <div class="col-12">
-        <label class="form-label small requerido">Descripción</label>
-        <input type="text" name="descripcion" class="form-control" required
+        <label for="campo-descripcion" class="form-label small requerido">Descripción</label>
+        <input id="campo-descripcion" type="text" name="descripcion" class="form-control" required
                placeholder="Ej. Silla metálica con espaldar en polipropileno"
                value="<?= htmlspecialchars($v('descripcion'), ENT_QUOTES) ?>">
     </div>
 
     <div class="col-md-4">
-        <label class="form-label small">Marca (si aplica)</label>
-        <input type="text" name="marca" class="form-control" value="<?= htmlspecialchars($v('marca'), ENT_QUOTES) ?>">
+        <label for="campo-marca" class="form-label small">Marca (si aplica)</label>
+        <input id="campo-marca" type="text" name="marca" class="form-control" value="<?= htmlspecialchars($v('marca'), ENT_QUOTES) ?>">
     </div>
     <div class="col-md-4">
-        <label class="form-label small requerido">Fecha de ingreso</label>
-        <input type="date" name="fecha_ingreso" class="form-control" required value="<?= htmlspecialchars((string) $v('fecha_ingreso', date('Y-m-d')), ENT_QUOTES) ?>">
+        <label for="campo-fecha-ingreso" class="form-label small requerido">Fecha de ingreso</label>
+        <input id="campo-fecha-ingreso" type="date" name="fecha_ingreso" class="form-control" required value="<?= htmlspecialchars((string) $v('fecha_ingreso', date('Y-m-d')), ENT_QUOTES) ?>">
     </div>
     <div class="col-md-4">
-        <label class="form-label small">Valor unitario</label>
-        <input type="number" step="0.01" min="0" max="9999999999" name="valor" class="form-control" value="<?= htmlspecialchars((string) $v('valor', '0'), ENT_QUOTES) ?>">
+        <label for="campo-valor" class="form-label small">Valor unitario</label>
+        <input id="campo-valor" type="number" step="0.01" min="0" max="9999999999" name="valor" class="form-control" value="<?= htmlspecialchars((string) $v('valor', '0'), ENT_QUOTES) ?>">
     </div>
 
     <div class="col-12">

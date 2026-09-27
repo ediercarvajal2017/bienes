@@ -23,9 +23,9 @@ use App\Core\Url;
 </div>
 
 <div class="mt-4" style="max-width: 420px;">
-    <label class="form-label small">¿No tienes cámara a mano? Escribe el código del bien</label>
+    <label for="campo-codigo" class="form-label small">¿No tienes cámara a mano? Escribe el código del bien</label>
     <form method="get" action="<?= Url::to('/escanear/buscar') ?>" class="d-flex gap-2">
-        <input type="text" name="codigo" class="form-control form-control-sm" placeholder="Código del bien" required>
+        <input id="campo-codigo" type="text" name="codigo" class="form-control form-control-sm" placeholder="Código del bien" required>
         <button type="submit" class="btn btn-sm btn-outline-secondary text-nowrap">Buscar</button>
     </form>
 </div>
