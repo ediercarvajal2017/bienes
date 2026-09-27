@@ -69,9 +69,8 @@ test('un bien recorre crear → asignar → trasladar → reintegrar', async ({ 
 
     // --- Reintegrar ---
     await hacer('reintegrar', () => page.locator('#accionDestino').fill('PW-TEST Almacén institucional'), 'Guardar y reintegrar');
-    // Un bien reintegrado muestra el estado como texto deshabilitado, no como badge
-    // (esa clase solo existe en el listado de /bienes, no en esta pantalla de edición).
-    await expect(page.locator('input[disabled]').first()).toHaveValue('Reintegrado');
+    // La tarjeta de resumen de la ficha muestra el estado del bien.
+    await expect(page.locator('.card .badge.badge-estado-reintegrado')).toHaveText('Reintegrado');
 
     // --- Limpieza de los espacios de apoyo ---
     // A esta altura ya tienen historial (asignación y/o traslado), así que SIGEBI

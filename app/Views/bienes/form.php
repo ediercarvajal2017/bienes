@@ -39,7 +39,7 @@ $invalido = static fn (string $campo) => $errorCampo === $campo ? ' is-invalid' 
     ?>
     <div class="card mb-3" style="max-width: 680px;">
         <div class="card-body d-flex align-items-center gap-3 py-3">
-            <a href="<?= Url::to('/qr/' . $bien['qr_token']) ?>" target="_blank" title="Ver la ficha pública del código QR" class="flex-shrink-0">
+            <a href="<?= Url::to('/qr/' . $bien['qr_token']) ?>" target="_blank" title="Ver la ficha pública del código QR" aria-label="Ver ficha pública" class="flex-shrink-0">
                 <img src="<?= Url::to('/qr/' . $bien['qr_token'] . '/imagen') ?>" alt="Código QR del bien" style="width:64px;height:64px;">
             </a>
             <div class="flex-grow-1" style="min-width: 0;">
