@@ -51,6 +51,10 @@ use App\Core\View;
         </tr>
         </thead>
         <tbody>
+        <?php if ($usuarios === []): ?>
+            <?php View::render('partials/tabla_vacia', ['colspan' => Auth::esSuperusuario() ? 8 : 7, 'icono' => 'people',
+                'mensaje' => !empty($busqueda) ? 'Ningún usuario coincide con la búsqueda.' : 'Todavía no hay usuarios registrados.']); ?>
+        <?php endif; ?>
         <?php foreach ($usuarios as $u): ?>
             <tr>
                 <td>

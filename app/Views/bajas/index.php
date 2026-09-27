@@ -41,6 +41,10 @@ use App\Models\Categoria;
         </tr>
         </thead>
         <tbody>
+        <?php if ($bajas === []): ?>
+            <?php View::render('partials/tabla_vacia', ['colspan' => 8, 'icono' => 'check2-circle',
+                'mensaje' => 'No hay reportes de baja.']); ?>
+        <?php endif; ?>
         <?php foreach ($bajas as $b): ?>
             <?php
             $admiteBaja = $b['categoria_nombre'] === Categoria::NOMBRE_CATEGORIA_PROTEGIDA;

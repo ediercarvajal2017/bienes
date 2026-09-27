@@ -2,6 +2,7 @@
 
 use App\Core\Csrf;
 use App\Core\Url;
+use App\Core\View;
 
 ?>
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
@@ -32,6 +33,10 @@ use App\Core\Url;
         </tr>
         </thead>
         <tbody>
+        <?php if ($instituciones === []): ?>
+            <?php View::render('partials/tabla_vacia', ['colspan' => 6, 'icono' => 'building',
+                'mensaje' => 'Todavía no hay instituciones registradas.']); ?>
+        <?php endif; ?>
         <?php foreach ($instituciones as $inst): ?>
             <tr>
                 <td data-label="Institución">

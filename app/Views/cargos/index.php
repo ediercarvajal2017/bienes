@@ -2,6 +2,7 @@
 
 use App\Core\Csrf;
 use App\Core\Url;
+use App\Core\View;
 
 ?>
 <div class="mb-3">
@@ -34,6 +35,10 @@ use App\Core\Url;
         </tr>
         </thead>
         <tbody>
+        <?php if ($cargos === []): ?>
+            <?php View::render('partials/tabla_vacia', ['colspan' => 3, 'icono' => 'person-badge',
+                'mensaje' => 'Todavía no hay cargos registrados.']); ?>
+        <?php endif; ?>
         <?php foreach ($cargos as $c): ?>
             <tr>
                 <td data-label="Nombre">
