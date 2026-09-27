@@ -12,7 +12,7 @@ use PhpOffice\PhpSpreadsheet\Cell\DefaultValueBinder;
  * nunca como fórmula. Sin esto, cualquiera que pudiera escribir la descripción de un bien
  * (p. ej. =HYPERLINK("http://sitio-malicioso";"Ver")) conseguía que la fórmula se
  * ejecutara en el Excel de quien abriera el reporte (inyección de fórmulas / CSV
- * injection). Los reportes de SIGEBI no usan fórmulas propias.
+ * injection). Los reportes de MIA no usan fórmulas propias.
  */
 final class BinderSinFormulas extends DefaultValueBinder
 {

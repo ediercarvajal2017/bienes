@@ -1,4 +1,4 @@
-# Guion de la presentación de SIGEBI
+# Guion de la presentación de MIA
 
 **Público:** directivos (rectores, Secretaría de Educación) · **Duración:** 20–25 minutos ·
 **Relato:** *la vida de un bien*, desde que llega a la institución hasta que sale del inventario.
@@ -73,7 +73,7 @@ se presenta sobre producción: allí está la información real de las instituci
 > "Cada institución responde por cientos de bienes: computadores, video beam, pupitres,
 > material de laboratorio. Hoy ese control vive en hojas de cálculo que se desactualizan, no
 > dicen dónde está cada cosa ni quién la tiene, y cuando llega una verificación o una
-> auditoría hay que reconstruir la historia a mano. SIGEBI resuelve eso: cada bien tiene una
+> auditoría hay que reconstruir la historia a mano. MIA resuelve eso: cada bien tiene una
 > ficha, una etiqueta QR y una historia completa, desde que llega hasta que sale."
 
 ### 2. El panel del rector (3 min) — Ventana A

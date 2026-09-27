@@ -1,5 +1,5 @@
 <p class="text-muted contenedor-manual">
-    Como superusuario administras SIGEBI para todas las instituciones: la red de sedes, los usuarios, los catálogos
+    Como superusuario administras MIA para todas las instituciones: la red de sedes, los usuarios, los catálogos
     comunes y el control del sistema. Para el trabajo diario con los bienes, consulta también la guía del rector:
     tienes todos sus permisos en cualquier institución.
 </p>
@@ -80,7 +80,7 @@
         <summary class="fw-semibold">6. Papelera de reciclaje</summary>
         <div class="mt-2 small">
             <ol class="mb-0 ps-3">
-                <li>Lo que se elimina en SIGEBI (usuarios, espacios, categorías, evidencias...) va primero a la
+                <li>Lo que se elimina en MIA (usuarios, espacios, categorías, evidencias...) va primero a la
                     <strong>Papelera</strong>. Desde ahí puedes <strong>restaurarlo</strong> si fue un error.</li>
                 <li>Después de 90 días en la papelera, un proceso automático lo elimina definitivamente.</li>
             </ol>

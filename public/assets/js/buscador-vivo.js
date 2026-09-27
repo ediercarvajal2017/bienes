@@ -1,5 +1,5 @@
 /**
- * Comportamiento ÚNICO de todos los buscadores de SIGEBI: la búsqueda se hace cuando el
+ * Comportamiento ÚNICO de todos los buscadores de MIA: la búsqueda se hace cuando el
  * usuario TERMINA de escribir, es decir, al salir del cuadro (clic o toque fuera, tecla
  * Tab), al pulsar Enter o al borrar el texto con la ✕ del campo. No hay temporizador:
  * antes la página se recargaba 600 ms después de dejar de teclear, a veces a mitad de

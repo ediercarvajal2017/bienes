@@ -5,7 +5,8 @@ use App\Core\Env;
 $env = Env::get('APP_ENV', 'local');
 
 return [
-    'name' => 'SIGEBI',
+    'name' => 'MIA',
+    'descripcion' => 'Manejo de Inventario de Activos',
     // Versión que se muestra en el pie de página (subirla en cada despliegue a producción).
     'version' => '1.1.13',
     'env' => $env,

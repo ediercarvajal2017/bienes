@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { seleccionarTomSelect, seleccionarPrimeraOpcionTomSelect } from './helpers/tomSelect.js';
 
 /**
- * A diferencia de los demás catálogos, un bien nunca se puede borrar en SIGEBI (solo
+ * A diferencia de los demás catálogos, un bien nunca se puede borrar en MIA (solo
  * cambia de estado) — por eso esta prueba no "limpia" el bien al final, queda como
  * historial reintegrado, igual que ya documenta tests/README.md para
  * carga_masiva.spec.js. Los dos espacios de apoyo sí se limpian (van a la papelera).
@@ -30,7 +30,7 @@ test('un bien recorre crear → asignar → trasladar → reintegrar', async ({ 
     await crearEspacio(`PWTB-${sufijo}`, nombreEspacioB);
 
     // --- Crear el bien ---
-    // La categoría no es obligatoria para CREAR un bien, pero SIGEBI sí la exige más
+    // La categoría no es obligatoria para CREAR un bien, pero MIA sí la exige más
     // adelante para poder reintegrarlo ("Este bien no tiene categoría asignada..."),
     // así que se elige una desde ahora para no toparse con eso recién en el último paso.
     await page.goto('bienes/crear');
@@ -74,7 +74,7 @@ test('un bien recorre crear → asignar → trasladar → reintegrar', async ({ 
     await expect(page.locator('.card .badge.badge-estado-reintegrado')).toHaveText('Reintegrado');
 
     // --- Limpieza de los espacios de apoyo ---
-    // A esta altura ya tienen historial (asignación y/o traslado), así que SIGEBI
+    // A esta altura ya tienen historial (asignación y/o traslado), así que MIA
     // rechaza eliminarlos ("tiene asignaciones o movimientos registrados") — el mismo
     // mensaje sugiere desactivarlos en su lugar, que es justamente lo que hacemos.
     async function desactivarEspacio(nombre) {

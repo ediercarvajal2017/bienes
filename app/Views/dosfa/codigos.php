@@ -2,7 +2,7 @@
 
 use App\Core\Url;
 
-$textoDescarga = "SIGEBI - Códigos de recuperación de la verificación en dos pasos\n"
+$textoDescarga = "MIA - Códigos de recuperación de la verificación en dos pasos\n"
     . "Cuenta: {$correo}\nGenerados: " . date('Y-m-d H:i') . "\n\n"
     . "Cada código sirve UNA sola vez. Guárdelos en un lugar seguro, fuera del teléfono.\n\n"
     . implode("\n", $codigos) . "\n";

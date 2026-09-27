@@ -1,5 +1,5 @@
 <p class="text-muted contenedor-manual">
-    Estos son los pasos para las tareas que puedes realizar en SIGEBI como docente. Haz clic en cada tema para
+    Estos son los pasos para las tareas que puedes realizar en MIA como docente. Haz clic en cada tema para
     ver el detalle.
 </p>
 

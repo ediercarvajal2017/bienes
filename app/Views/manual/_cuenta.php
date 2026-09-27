@@ -9,7 +9,7 @@
             <li><strong>Cambiar tu contraseña:</strong> escribe la actual y la nueva dos veces. Debe tener al menos 10
                 caracteres, combinar letras y números, y no contener tu nombre, documento ni correo. Al cambiarla, se
                 cierran tus otras sesiones abiertas.</li>
-            <li><strong>Verificación en dos pasos:</strong> además de la contraseña, SIGEBI te pide un código de 6
+            <li><strong>Verificación en dos pasos:</strong> además de la contraseña, MIA te pide un código de 6
                 dígitos que genera tu teléfono. Para activarla, pulsa <strong>Activar verificación en dos pasos</strong> y sigue los
                 tres pasos: instala Google Authenticator o Microsoft Authenticator, escanea el código QR y escribe el
                 código que muestra la aplicación.</li>

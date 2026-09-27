@@ -62,7 +62,7 @@ foreach ($gruposBreadcrumb as $g) {
     </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <title><?= htmlspecialchars($title ?? 'SIGEBI', ENT_QUOTES) ?> · SIGEBI</title>
+    <title><?= htmlspecialchars($title ?? 'MIA', ENT_QUOTES) ?> · MIA</title>
     <link rel="icon" type="image/png" sizes="32x32" href="<?= Url::asset('/assets/img/favicon-32.png') ?>">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" integrity="sha384-tViUnnbYAV00FLIhhi3v/dWt3Jxw4gZQcNoSCxCIFNJVCx7/D55/wXsrNIRANwdD" crossorigin="anonymous" rel="stylesheet">
@@ -71,12 +71,12 @@ foreach ($gruposBreadcrumb as $g) {
     <link rel="manifest" href="<?= Url::to('/manifest.json') ?>">
     <meta name="theme-color" content="#1F6F54" media="(prefers-color-scheme: light)">
     <meta name="theme-color" content="#0f141a" media="(prefers-color-scheme: dark)">
-    <!-- iPhone/iPad: ícono y pantalla completa al agregar SIGEBI a la pantalla de inicio. -->
+    <!-- iPhone/iPad: ícono y pantalla completa al agregar MIA a la pantalla de inicio. -->
     <link rel="apple-touch-icon" href="<?= Url::asset('/assets/img/icon-192.png') ?>">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="SIGEBI">
+    <meta name="apple-mobile-web-app-title" content="MIA">
 </head>
 <body>
 
@@ -87,7 +87,7 @@ foreach ($gruposBreadcrumb as $g) {
         <i class="bi bi-list"></i>
     </button>
     <a class="navbar-brand d-flex align-items-center" href="<?= Url::to('/dashboard') ?>">
-        <img src="<?= Url::asset('/assets/img/logo.webp') ?>" width="600" height="206" alt="SIGEBI" class="navbar-logo">
+        <img src="<?= Url::asset('/assets/img/logo.webp') ?>" width="400" height="400" alt="MIA" class="navbar-logo">
     </a>
     <?php
     $nombreUsuarioNavbar = Auth::nombreCompleto() ?? '';
@@ -108,7 +108,7 @@ foreach ($gruposBreadcrumb as $g) {
     <form method="get" action="<?= Url::to('/buscar') ?>" class="d-none d-lg-block ms-3" style="width: 220px;">
         <label for="buscadorGlobal" class="visually-hidden">Buscar bienes, espacios o usuarios</label>
         <input type="search" data-buscar-form id="buscadorGlobal" name="q" class="form-control form-control-sm"
-               placeholder="Buscar en todo SIGEBI...">
+               placeholder="Buscar en todo MIA...">
     </form>
     <div class="ms-auto d-flex align-items-center gap-2 gap-sm-3">
         <a href="<?= Url::to('/buscar') ?>" class="theme-toggle d-none d-sm-inline-flex d-lg-none" aria-label="Buscar" title="Buscar">
@@ -334,7 +334,7 @@ foreach ($gruposBreadcrumb as $g) {
 
         <?php $configApp = require dirname(__DIR__, 3) . '/config/app.php'; ?>
         <footer class="pie-sigebi small text-muted d-flex flex-wrap justify-content-between gap-2 mt-5 pt-3 border-top">
-            <span>SIGEBI · versión <?= htmlspecialchars((string) $configApp['version'], ENT_QUOTES) ?><?php if (Auth::institucionNombre() !== null && !Auth::esSuperusuario()): ?> · <?= htmlspecialchars(Auth::institucionNombre(), ENT_QUOTES) ?><?php endif; ?></span>
+            <span>MIA · versión <?= htmlspecialchars((string) $configApp['version'], ENT_QUOTES) ?><?php if (Auth::institucionNombre() !== null && !Auth::esSuperusuario()): ?> · <?= htmlspecialchars(Auth::institucionNombre(), ENT_QUOTES) ?><?php endif; ?></span>
             <a href="<?= Url::to('/manual') ?>" class="text-muted">¿Necesitas ayuda? Guía rápida</a>
         </footer>
     </main>

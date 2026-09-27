@@ -1,6 +1,6 @@
 {
-    "name": "SIGEBI - Gestión de Bienes Institucionales",
-    "short_name": "SIGEBI",
+    "name": "MIA - Manejo de Inventario de Activos",
+    "short_name": "MIA",
     "start_url": "./dashboard",
     "scope": "./",
     "display": "standalone",

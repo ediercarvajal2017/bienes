@@ -178,7 +178,7 @@ final class DosFactoresController
 
         Auditoria::registrar($id, (int) $usuario['institucion_id'], '2fa_activar', 'usuario', $id);
         DosFactoresService::avisarPorCorreo($usuario, 'verificación en dos pasos activada',
-            'Se activó la verificación en dos pasos en su cuenta de SIGEBI.');
+            'Se activó la verificación en dos pasos en su cuenta de MIA.');
 
         Session::put('2fa_codigos_nuevos', $codigos);
         header('Location: ' . Url::to('/2fa/codigos'));
@@ -253,7 +253,7 @@ final class DosFactoresController
 
         Auditoria::registrar($id, (int) $usuario['institucion_id'], '2fa_desactivar', 'usuario', $id);
         DosFactoresService::avisarPorCorreo($usuario, 'verificación en dos pasos desactivada',
-            'Se desactivó la verificación en dos pasos en su cuenta de SIGEBI.');
+            'Se desactivó la verificación en dos pasos en su cuenta de MIA.');
 
         $this->volverAMiCuenta('ok', 'Verificación en dos pasos desactivada.');
     }

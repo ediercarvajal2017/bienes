@@ -103,8 +103,8 @@ if ($config['backup_email'] === '') {
 try {
     MailService::enviarConAdjunto(
         $config['backup_email'],
-        'SIGEBI',
-        "Archivado de auditoría SIGEBI - {$fecha}",
+        'MIA',
+        "Archivado de auditoría MIA - {$fecha}",
         '<p>Archivado automático de registros de auditoría antiguos.</p><p>Registros: ' . count($filas) . " — Anteriores a: {$corte} — Tamaño: {$pesoMb} MB.</p>",
         $rutaArchivo,
         $nombreArchivo

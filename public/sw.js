@@ -1,4 +1,4 @@
-// Service worker de SIGEBI.
+// Service worker de MIA.
 //
 // Regla de seguridad: NUNCA se guardan en caché páginas HTML ni archivos protegidos
 // (/archivos/...), porque contienen datos del usuario y el token CSRF, y en computadores
@@ -7,7 +7,7 @@
 //
 // Al cambiar CACHE, activate borra las versiones anteriores (incluida 'sigebi-v1', que
 // sí guardaba el panel autenticado).
-const CACHE = 'sigebi-v2';
+const CACHE = 'sigebi-v3'; // v3: nombre y logo de MIA
 const PRECARGA = ['./offline.html', './assets/css/app.css'];
 
 self.addEventListener('install', (event) => {

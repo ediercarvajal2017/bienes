@@ -1,5 +1,5 @@
 /**
- * SIGEBI reemplaza cualquier <select class="selector-buscable"> por un control de
+ * MIA reemplaza cualquier <select class="selector-buscable"> por un control de
  * Tom Select (ver public/assets/js/selector-buscable.js) — el <select> original queda
  * en el DOM pero oculto para el usuario; lo que se ve y se puede clickear es un
  * <input id="{id}-ts-control"> que al escribir filtra opciones dentro de

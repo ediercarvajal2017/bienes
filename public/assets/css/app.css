@@ -178,13 +178,16 @@ select.selector-buscable.is-invalid + .ts-wrapper .ts-control {
 }
 
 .navbar-logo {
-  height: 34px;
-  width: auto;
-  border-radius: 4px;
+  /* El logo de MIA es verde: va sobre un círculo blanco para verse en la barra verde. */
+  height: 40px;
+  width: 40px;
+  padding: 2px;
+  background: #fff;
+  border-radius: 50%;
 }
 
 .auth-logo {
-  height: 70px;
+  height: 120px;
   width: auto;
   max-width: 100%;
   border-radius: 6px;

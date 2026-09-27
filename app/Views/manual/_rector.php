@@ -124,7 +124,7 @@
         <div class="mt-2 small">
             <p class="mb-1">
                 Estas tres secciones del menú son una biblioteca de evidencia: sirven para archivar en el sistema
-                documentos que ya firmaste o recibiste aparte (no los genera SIGEBI).
+                documentos que ya firmaste o recibiste aparte (no los genera MIA).
             </p>
             <ol class="mb-0 ps-3">
                 <li><strong>Formatos de reintegro</strong> y <strong>Formatos de plaqueteo</strong>: sube el PDF ya

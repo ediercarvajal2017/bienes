@@ -78,7 +78,7 @@ $fecha = static fn (?string $valor): string => $valor ? date('d/m/Y', strtotime(
                 <p class="small text-muted mb-0">Todavía no está habilitada en este servidor.</p>
             <?php else: ?>
                 <p class="small">
-                    Opcional y recomendada: además de la contraseña, SIGEBI te pedirá un código de 6 dígitos que genera
+                    Opcional y recomendada: además de la contraseña, MIA te pedirá un código de 6 dígitos que genera
                     tu teléfono. Así, aunque alguien conozca tu contraseña, no podrá entrar sin tu teléfono.
                 </p>
                 <a href="<?= Url::to('/2fa/configurar') ?>" class="btn btn-primary btn-sm">Activar verificación en dos pasos</a>

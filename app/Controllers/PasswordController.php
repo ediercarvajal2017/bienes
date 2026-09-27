@@ -65,7 +65,7 @@ final class PasswordController
                     MailService::enviar(
                         $usuario['email'],
                         trim($usuario['nombres'] . ' ' . $usuario['apellidos']),
-                        'Restablecer tu contraseña · SIGEBI',
+                        'Restablecer tu contraseña · MIA',
                         $this->plantillaCorreoReset(trim($usuario['nombres'] . ' ' . $usuario['apellidos']), $enlace)
                     );
                 } catch (\RuntimeException $e) {
@@ -233,7 +233,7 @@ final class PasswordController
 
         return <<<HTML
             <p>Hola {$nombreEscapado},</p>
-            <p>Recibimos una solicitud para restablecer tu contraseña en SIGEBI. Si fuiste tú, haz clic en el siguiente enlace (válido por 60 minutos):</p>
+            <p>Recibimos una solicitud para restablecer tu contraseña en MIA. Si fuiste tú, haz clic en el siguiente enlace (válido por 60 minutos):</p>
             <p><a href="{$enlaceEscapado}">{$enlaceEscapado}</a></p>
             <p>Si no solicitaste esto, puedes ignorar este correo — tu contraseña actual sigue funcionando normalmente.</p>
             HTML;

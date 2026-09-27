@@ -1,4 +1,4 @@
-# Despliegue de SIGEBI a producción (Hostinger)
+# Despliegue de MIA a producción (Hostinger)
 
 **Regla:** se sube SOLO el software. La información de la base de producción es la correcta
 y no se carga, reemplaza ni corrige. Lo único que puede cambiar en la base son las migraciones

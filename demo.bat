@@ -1,6 +1,6 @@
 @echo off
 REM ============================================================================
-REM  SIGEBI - Demostracion local con DATOS FICTICIOS (base sigebi_demo).
+REM  MIA - Demostracion local con DATOS FICTICIOS (base sigebi_demo).
 REM  No toca la base "sigebi" ni produccion. Ver docs\guion-presentacion.md
 REM
 REM  Uso (doble clic o desde la consola en esta carpeta):
@@ -42,7 +42,7 @@ if /I not "%~1"=="continuar" (
 )
 
 echo.
-echo  SIGEBI - DEMOSTRACION  (%APP_URL%)
+echo  MIA - DEMOSTRACION  (%APP_URL%)
 echo  ---------------------------------------------------------------
 echo   Rector:        rector@demo.test          Demo-Rector-2026
 echo   Secretario:    secretario@demo.test      Demo-Secretario-2026
