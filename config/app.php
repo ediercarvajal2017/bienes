@@ -7,7 +7,7 @@ $env = Env::get('APP_ENV', 'local');
 return [
     'name' => 'SIGEBI',
     // Versión que se muestra en el pie de página (subirla en cada despliegue a producción).
-    'version' => '1.1.7',
+    'version' => '1.1.8',
     'env' => $env,
     // Apagado por defecto: si el .env se pierde o no define APP_DEBUG, nunca se muestran
     // trazas de PHP al usuario. Para desarrollar en local, poner APP_DEBUG=1 en el .env.
