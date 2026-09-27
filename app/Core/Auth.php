@@ -117,11 +117,7 @@ final class Auth
             && ($usuario['rol_nombre'] === 'superusuario' || (int) $usuario['institucion_activa'] === 1);
     }
 
-    /**
-     * Abre la sesión (tras la contraseña, o tras la contraseña + el segundo paso). Aplica
-     * además la política de verificación en dos pasos del rol: aviso con el plazo de
-     * gracia, o configuración obligatoria antes de seguir (ver AuthMiddleware).
-     */
+    /** Abre la sesión (tras la contraseña, o tras la contraseña + el segundo paso). */
     public static function iniciarSesionCompleta(array $usuario, string $metodo, bool $recordar = false): void
     {
         Usuario::registrarLoginExitoso((int) $usuario['id']);
@@ -139,10 +135,6 @@ final class Auth
         Session::put('institucion_id', (int) $usuario['institucion_id']);
         Session::put('institucion_nombre', $usuario['institucion_nombre']);
         Session::put('nombre_completo', trim($usuario['nombres'] . ' ' . $usuario['apellidos']));
-
-        $dosFactores = DosFactoresService::evaluarAlIniciarSesion($usuario);
-        Session::put('2fa_gracia_hasta', $dosFactores['obligatoria'] ? $dosFactores['gracia_hasta'] : null);
-        Session::put('2fa_configuracion_obligatoria', $dosFactores['debe_configurar']);
 
         if ($recordar) {
             Session::extender(Session::DIAS_RECORDARME);
@@ -181,27 +173,6 @@ final class Auth
     public static function descartarIngresoPendiente(): void
     {
         unset($_SESSION['2fa_pendiente']);
-    }
-
-    /** Tras configurar la verificación en dos pasos, se quitan el aviso y la obligación. */
-    public static function marcarDosFactoresConfigurada(): void
-    {
-        Session::put('2fa_gracia_hasta', null);
-        Session::put('2fa_configuracion_obligatoria', false);
-    }
-
-    /** ¿Debe configurar la verificación en dos pasos antes de usar el sistema? */
-    public static function debeConfigurarDosFactores(): bool
-    {
-        return (bool) Session::get('2fa_configuracion_obligatoria', false);
-    }
-
-    /** Plazo (timestamp) para configurar la verificación en dos pasos, si su rol la exige. */
-    public static function graciaDosFactores(): ?int
-    {
-        $gracia = Session::get('2fa_gracia_hasta');
-
-        return $gracia !== null ? (int) $gracia : null;
     }
 
     public static function logout(): void

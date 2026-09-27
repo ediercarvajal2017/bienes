@@ -98,12 +98,6 @@ $router->get('/2fa/codigos', [DosFactoresController::class, 'codigos'], [AuthMid
 $router->post('/2fa/codigos', [DosFactoresController::class, 'regenerarCodigos'], [AuthMiddleware::class]);
 $router->post('/2fa/desactivar', [DosFactoresController::class, 'desactivar'], [AuthMiddleware::class]);
 $router->post('/2fa/dispositivos/{id}/revocar', [DosFactoresController::class, 'revocarDispositivo'], [AuthMiddleware::class]);
-$router->get('/seguridad/verificacion-dos-pasos', [DosFactoresController::class, 'politica'], [
-    AuthMiddleware::class, SuperusuarioMiddleware::class,
-]);
-$router->post('/seguridad/verificacion-dos-pasos', [DosFactoresController::class, 'guardarPolitica'], [
-    AuthMiddleware::class, SuperusuarioMiddleware::class,
-]);
 
 // Mi cuenta: seguridad de la propia cuenta (todos los roles).
 $router->get('/mi-cuenta', [CuentaController::class, 'index'], [AuthMiddleware::class]);

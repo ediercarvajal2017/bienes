@@ -51,14 +51,11 @@
     </details>
 
     <details class="border rounded p-3 bg-body">
-        <summary class="fw-semibold">4. Política de verificación en dos pasos</summary>
+        <summary class="fw-semibold">4. Verificación en dos pasos de los usuarios</summary>
         <div class="mt-2 small">
             <ol class="mb-0 ps-3">
-                <li>En <strong>Administración &gt; Verificación en dos pasos</strong> decides para qué roles es
-                    obligatoria y cuántos días de gracia tiene quien todavía no la configuró. Ahí también ves cuántos
-                    usuarios de cada rol ya la tienen.</li>
-                <li>Nadie queda bloqueado: durante la gracia se muestra un aviso con la fecha límite, y al vencer se le
-                    pide configurarla justo después de ingresar. Con 0 días, se le pide en su siguiente ingreso.</li>
+                <li>Es <strong>opcional</strong>: cada usuario decide si la activa desde «Mi cuenta». En
+                    <strong>Usuarios</strong>, la insignia «2 pasos» muestra quién la tiene activa.</li>
                 <li>Si alguien perdió el teléfono y sus códigos, ábrelo en <strong>Usuarios</strong> y pulsa
                     <strong>Restablecer</strong> en la sección «Verificación en dos pasos» (te pedirá tu contraseña).</li>
                 <li>Si eres tú quien no puede entrar (sin teléfono ni códigos), el administrador del servidor puede

@@ -8,19 +8,9 @@ use App\Core\Url;
     <h1 class="h4 mb-1"><i class="bi bi-shield-lock me-1" aria-hidden="true"></i>Configurar la verificación en dos pasos</h1>
     <p class="text-muted small mb-3">
         Además de tu contraseña, SIGEBI te pedirá un código de 6 dígitos que genera tu teléfono.
-        Así, aunque alguien conozca tu contraseña, no podrá entrar sin tu teléfono.
+        Así, aunque alguien conozca tu contraseña, no podrá entrar sin tu teléfono. Es opcional: puedes
+        desactivarla cuando quieras desde «Mi cuenta».
     </p>
-
-    <?php if ($obligatoria): ?>
-        <div class="alert alert-warning py-2 small">
-            <strong>Tu rol exige la verificación en dos pasos.</strong> Configúrala para seguir usando SIGEBI.
-            Si no puedes hacerlo ahora, puedes <a href="#" onclick="document.getElementById('formSalir2fa').submit(); return false;">cerrar sesión</a>.
-        </div>
-    <?php elseif ($graciaHasta !== null): ?>
-        <div class="alert alert-info py-2 small">
-            Tu rol la exige a partir del <strong><?= date('d/m/Y', $graciaHasta) ?></strong>.
-        </div>
-    <?php endif; ?>
 
     <?php if (!empty($error)): ?>
         <div class="alert alert-danger py-2 small" role="alert"><?= htmlspecialchars($error, ENT_QUOTES) ?></div>
@@ -71,7 +61,3 @@ use App\Core\Url;
         </li>
     </ol>
 </div>
-
-<form method="post" action="<?= Url::to('/logout') ?>" id="formSalir2fa" class="d-none">
-    <?= Csrf::field() ?>
-</form>

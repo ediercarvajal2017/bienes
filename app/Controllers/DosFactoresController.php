@@ -16,13 +16,13 @@ use App\Helpers\Totp;
 use App\Models\Auditoria;
 use App\Models\CodigoRecuperacion;
 use App\Models\DispositivoConfiable;
-use App\Models\PoliticaDosFactores;
 use App\Models\Usuario;
 use App\Services\DosFactoresService;
 
 /**
- * Verificación en dos pasos: el segundo paso del inicio de sesión, la configuración con
- * la aplicación autenticadora, los códigos de recuperación y los dispositivos de confianza.
+ * Verificación en dos pasos (OPCIONAL: cada usuario decide si la activa): el segundo paso
+ * del inicio de sesión, la configuración con la aplicación autenticadora, los códigos de
+ * recuperación y los dispositivos de confianza.
  */
 final class DosFactoresController
 {
@@ -145,8 +145,6 @@ final class DosFactoresController
             'title' => 'Verificación en dos pasos',
             'qr' => DosFactoresService::qrDataUri($secreto, (string) $usuario['email']),
             'claveManual' => Totp::formatearParaMostrar($secreto),
-            'obligatoria' => Auth::debeConfigurarDosFactores(),
-            'graciaHasta' => Auth::graciaDosFactores(),
             'error' => Session::pullFlash('error'),
         ]);
     }
@@ -176,7 +174,6 @@ final class DosFactoresController
         $codigos = CodigoRecuperacion::regenerar($id);
         // Las demás sesiones abiertas de la cuenta se cierran; esta sigue.
         Auth::actualizarVersionSesion(Usuario::invalidarSesiones($id));
-        Auth::marcarDosFactoresConfigurada();
         unset($_SESSION['2fa_secreto_nuevo']);
 
         Auditoria::registrar($id, (int) $usuario['institucion_id'], '2fa_activar', 'usuario', $id);
@@ -239,10 +236,6 @@ final class DosFactoresController
             exit;
         }
 
-        if (PoliticaDosFactores::deRol((string) $usuario['rol_nombre'])['obligatorio']) {
-            $this->volverAMiCuenta('error', 'Tu rol exige la verificación en dos pasos: no se puede desactivar. Si cambiaste de teléfono, pide a un administrador que la restablezca y vuelve a configurarla.');
-        }
-
         $this->exigirContrasena($usuario, (string) $request->input('password_actual'));
 
         $codigo = (string) $request->input('codigo');
@@ -278,54 +271,6 @@ final class DosFactoresController
         }
 
         $this->volverAMiCuenta('error', 'Ese dispositivo ya no estaba en la lista.');
-    }
-
-    // ───────────────────────── Política por rol (superusuario) ─────────────────────────
-
-    public function politica(): void
-    {
-        View::layout('partials/layout', 'dosfa/politica', [
-            'title' => 'Verificación en dos pasos',
-            'politicas' => PoliticaDosFactores::listar(),
-            'disponible' => LlaveAplicacion::disponible(),
-            'mensaje' => Session::pullFlash('ok'),
-            'error' => Session::pullFlash('error'),
-        ]);
-    }
-
-    public function guardarPolitica(): void
-    {
-        $request = new Request();
-        Csrf::verificarORedirigir($request, '/seguridad/verificacion-dos-pasos');
-
-        $obligatorios = (array) ($request->input('obligatorio') ?? []);
-        $dias = (array) ($request->input('dias_gracia') ?? []);
-        $cambios = [];
-
-        foreach (PoliticaDosFactores::listar() as $fila) {
-            $rolId = (int) $fila['rol_id'];
-            $obligatorio = isset($obligatorios[$rolId]);
-            $diasGracia = max(0, min(PoliticaDosFactores::MAX_DIAS_GRACIA, (int) ($dias[$rolId] ?? $fila['dias_gracia'])));
-
-            if ($obligatorio === ((int) $fila['obligatorio'] === 1) && $diasGracia === (int) $fila['dias_gracia']) {
-                continue;
-            }
-
-            PoliticaDosFactores::guardar($rolId, $obligatorio, $diasGracia, (int) Auth::id());
-            // Los plazos de quienes aún no la configuran se cuentan de nuevo desde su
-            // siguiente inicio de sesión, con la regla nueva.
-            Usuario::reiniciarGraciaDeRol($rolId);
-            $cambios[$fila['rol_nombre']] = ['obligatorio' => $obligatorio, 'dias_gracia' => $diasGracia];
-            Auditoria::registrar((int) Auth::id(), Auth::institucionId(), 'politica_2fa_editar', 'rol', $rolId,
-                ['obligatorio' => (int) $fila['obligatorio'], 'dias_gracia' => (int) $fila['dias_gracia']],
-                ['obligatorio' => (int) $obligatorio, 'dias_gracia' => $diasGracia]);
-        }
-
-        Session::flash('ok', $cambios === []
-            ? 'No había cambios que guardar.'
-            : 'Política guardada. Se aplica a cada usuario desde su siguiente inicio de sesión.');
-        header('Location: ' . Url::to('/seguridad/verificacion-dos-pasos'));
-        exit;
     }
 
     // ───────────────────────── Apoyo ─────────────────────────

@@ -142,7 +142,7 @@
                 <li>Crear nuevas instituciones, o activarlas/desactivarlas, y cambiar la estructura de sedes
                     (principal/sección) o el código DANE.</li>
                 <li>Administrar el catálogo de "Cargos" (puestos de trabajo).</li>
-                <li>Definir la política de verificación en dos pasos, y consultar la auditoría y la papelera.</li>
+                <li>Consultar la auditoría y la papelera.</li>
             </ul>
         </div>
     </details>

@@ -56,7 +56,7 @@ final class AuthController
         }
 
         if ($resultado === Auth::INGRESO_OK) {
-            header('Location: ' . Url::to(Auth::debeConfigurarDosFactores() ? '/2fa/configurar' : '/dashboard'));
+            header('Location: ' . Url::to('/dashboard'));
             exit;
         }
 

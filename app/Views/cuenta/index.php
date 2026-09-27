@@ -55,39 +55,33 @@ $fecha = static fn (?string $valor): string => $valor ? date('d/m/Y', strtotime(
                     </form>
                 </details>
 
-                <?php if (!$dosFactoresObligatoria): ?>
-                    <details>
-                        <summary class="small">Desactivar la verificación en dos pasos</summary>
-                        <form method="post" action="<?= Url::to('/2fa/desactivar') ?>" class="row g-2 align-items-end mt-1"
-                              data-confirmar="¿Desactivar la verificación en dos pasos? Tu cuenta quedará protegida solo con la contraseña.">
-                            <?= Csrf::field() ?>
-                            <div class="col-sm-5">
-                                <label class="form-label small" for="passwordDesactivar">Contraseña actual</label>
-                                <input type="password" name="password_actual" id="passwordDesactivar" class="form-control form-control-sm" required autocomplete="current-password">
-                            </div>
-                            <div class="col-sm-4">
-                                <label class="form-label small" for="codigoDesactivar">Código actual</label>
-                                <input type="text" name="codigo" id="codigoDesactivar" class="form-control form-control-sm" required inputmode="numeric" autocomplete="one-time-code" maxlength="11">
-                            </div>
-                            <div class="col-sm-3">
-                                <button type="submit" class="btn btn-sm btn-outline-danger w-100">Desactivar</button>
-                            </div>
-                        </form>
-                    </details>
-                <?php else: ?>
-                    <p class="small text-muted mb-0">Tu rol la exige, por eso no se puede desactivar.</p>
-                <?php endif; ?>
+                <details>
+                    <summary class="small">Desactivar la verificación en dos pasos</summary>
+                    <form method="post" action="<?= Url::to('/2fa/desactivar') ?>" class="row g-2 align-items-end mt-1"
+                          data-confirmar="¿Desactivar la verificación en dos pasos? Tu cuenta quedará protegida solo con la contraseña.">
+                        <?= Csrf::field() ?>
+                        <div class="col-sm-5">
+                            <label class="form-label small" for="passwordDesactivar">Contraseña actual</label>
+                            <input type="password" name="password_actual" id="passwordDesactivar" class="form-control form-control-sm" required autocomplete="current-password">
+                        </div>
+                        <div class="col-sm-4">
+                            <label class="form-label small" for="codigoDesactivar">Código actual</label>
+                            <input type="text" name="codigo" id="codigoDesactivar" class="form-control form-control-sm" required inputmode="numeric" autocomplete="one-time-code" maxlength="11">
+                        </div>
+                        <div class="col-sm-3">
+                            <button type="submit" class="btn btn-sm btn-outline-danger w-100">Desactivar</button>
+                        </div>
+                    </form>
+                </details>
 
             <?php elseif (!$dosFactoresDisponible): ?>
                 <p class="small text-muted mb-0">Todavía no está habilitada en este servidor.</p>
             <?php else: ?>
                 <p class="small">
-                    Protege tu cuenta con un código de tu teléfono además de la contraseña.
-                    <?php if ($graciaHasta !== null): ?>
-                        <strong>Tu rol la exige: configúrala antes del <?= date('d/m/Y', $graciaHasta) ?>.</strong>
-                    <?php endif; ?>
+                    Opcional y recomendada: además de la contraseña, SIGEBI te pedirá un código de 6 dígitos que genera
+                    tu teléfono. Así, aunque alguien conozca tu contraseña, no podrá entrar sin tu teléfono.
                 </p>
-                <a href="<?= Url::to('/2fa/configurar') ?>" class="btn btn-primary btn-sm">Configurar ahora</a>
+                <a href="<?= Url::to('/2fa/configurar') ?>" class="btn btn-primary btn-sm">Activar verificación en dos pasos</a>
             <?php endif; ?>
         </div>
     </section>

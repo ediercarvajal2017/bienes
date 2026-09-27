@@ -8,7 +8,6 @@ use App\Core\Session;
 use App\Helpers\LlaveAplicacion;
 use App\Helpers\Totp;
 use App\Models\DispositivoConfiable;
-use App\Models\PoliticaDosFactores;
 use App\Models\Usuario;
 use Endroid\QrCode\Builder\Builder;
 use Endroid\QrCode\Writer\PngWriter;
@@ -17,10 +16,8 @@ use Endroid\QrCode\Writer\PngWriter;
  * Verificación en dos pasos (2FA): reglas de negocio compartidas por el inicio de sesión
  * (Auth), la pantalla de verificación y "Mi cuenta".
  *
- * Nadie queda bloqueado por esta función:
- *  - sin APP_KEY en el .env, la 2FA simplemente no está disponible (no se exige);
- *  - si el rol la exige, hay un plazo de gracia; al vencer, se pide configurarla justo
- *    después de iniciar sesión (la cuenta sigue intacta);
+ * Es OPCIONAL: cada usuario decide si la activa desde "Mi cuenta"; nunca se exige.
+ *  - sin APP_KEY en el .env, simplemente no está disponible;
  *  - si se pierde el teléfono: códigos de recuperación, o un administrador la restablece.
  */
 final class DosFactoresService
@@ -66,37 +63,6 @@ final class DosFactoresService
         $paso = Totp::pasoValido($secreto, $codigo);
 
         return $paso !== null && Usuario::registrarPasoTotp((int) $usuario['id'], $paso);
-    }
-
-    /**
-     * Lo que le corresponde al usuario al iniciar sesión según la política de su rol.
-     * Si su rol la exige y aún no tiene plazo de gracia, se lo inicia ahora.
-     *
-     * @return array{obligatoria: bool, gracia_hasta: ?int, debe_configurar: bool}
-     */
-    public static function evaluarAlIniciarSesion(array $usuario): array
-    {
-        $sinExigencia = ['obligatoria' => false, 'gracia_hasta' => null, 'debe_configurar' => false];
-
-        if (!self::disponible() || self::tieneActiva($usuario)) {
-            return $sinExigencia;
-        }
-
-        $politica = PoliticaDosFactores::deRol((string) $usuario['rol_nombre']);
-        if (!$politica['obligatorio']) {
-            return $sinExigencia;
-        }
-
-        $gracia = !empty($usuario['dosfa_gracia_hasta'])
-            ? (string) $usuario['dosfa_gracia_hasta']
-            : Usuario::iniciarGraciaDosFactores((int) $usuario['id'], $politica['dias_gracia']);
-        $graciaHasta = strtotime($gracia) ?: time();
-
-        return [
-            'obligatoria' => true,
-            'gracia_hasta' => $graciaHasta,
-            'debe_configurar' => $graciaHasta <= time(),
-        ];
     }
 
     /** ¿Este navegador tiene una cookie de dispositivo confiable vigente para el usuario? */

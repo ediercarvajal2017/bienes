@@ -14,7 +14,6 @@ use App\Helpers\PoliticaContrasena;
 use App\Models\Auditoria;
 use App\Models\CodigoRecuperacion;
 use App\Models\DispositivoConfiable;
-use App\Models\PoliticaDosFactores;
 use App\Models\Usuario;
 use App\Services\DosFactoresService;
 
@@ -40,8 +39,6 @@ final class CuentaController
             'usuario' => $usuario,
             'dosFactoresDisponible' => DosFactoresService::disponible(),
             'dosFactoresActiva' => $activa,
-            'dosFactoresObligatoria' => PoliticaDosFactores::deRol((string) $usuario['rol_nombre'])['obligatorio'],
-            'graciaHasta' => Auth::graciaDosFactores(),
             'codigosDisponibles' => $activa ? CodigoRecuperacion::disponibles($id) : 0,
             'dispositivos' => $activa ? DispositivoConfiable::listarDe($id) : [],
             'mensaje' => Session::pullFlash('ok'),

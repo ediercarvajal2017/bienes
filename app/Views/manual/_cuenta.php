@@ -10,7 +10,7 @@
                 caracteres, combinar letras y números, y no contener tu nombre, documento ni correo. Al cambiarla, se
                 cierran tus otras sesiones abiertas.</li>
             <li><strong>Verificación en dos pasos:</strong> además de la contraseña, SIGEBI te pide un código de 6
-                dígitos que genera tu teléfono. Para activarla, pulsa <strong>Configurar ahora</strong> y sigue los
+                dígitos que genera tu teléfono. Para activarla, pulsa <strong>Activar verificación en dos pasos</strong> y sigue los
                 tres pasos: instala Google Authenticator o Microsoft Authenticator, escanea el código QR y escribe el
                 código que muestra la aplicación.</li>
             <li><strong>Guarda tus 10 códigos de recuperación</strong> (descárgalos o imprímelos) fuera del teléfono.
@@ -18,8 +18,8 @@
             <li>Al ingresar puedes marcar <strong>«No volver a pedirlo en este dispositivo»</strong>: durante 30 días
                 ese navegador no te pedirá el código. En Mi cuenta ves esos dispositivos y puedes quitarlos.</li>
         </ol>
-        <p class="mb-1"><strong>Si tu rol la exige</strong>, verás un aviso con la fecha límite para configurarla.
-            Mientras tanto sigues trabajando normalmente; al vencer, se te pedirá configurarla al ingresar.</p>
+        <p class="mb-1">La verificación en dos pasos es <strong>opcional</strong> (recomendada): la activas o
+            desactivas cuando quieras desde Mi cuenta.</p>
         <p class="mb-0 text-muted"><strong>¿Perdiste el teléfono y los códigos?</strong> Pide a tu rector (o al
             superusuario) que restablezca tu verificación en dos pasos desde Usuarios; luego entras con tu contraseña
             y la configuras de nuevo.</p>

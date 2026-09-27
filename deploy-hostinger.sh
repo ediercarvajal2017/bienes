@@ -188,8 +188,7 @@ if [ -z "$(leer_env APP_KEY)" ]; then
     printf '\n# Llave de cifrado (verificación en dos pasos). Respaldarla FUERA del servidor.\nAPP_KEY=%s\n' "$NUEVA_APP_KEY" >> .env
     echo "AVISO: se generó APP_KEY y se agregó al .env. Guárdela también FUERA del servidor:"
     echo "  ${NUEVA_APP_KEY}"
-    echo "Desde ahora la verificación en dos pasos queda disponible (ver la política por rol en"
-    echo "Administración > Verificación en dos pasos)."
+    echo "Desde ahora cada usuario puede activar (opcional) la verificación en dos pasos en Mi cuenta."
 fi
 
 if [ -n "$(leer_env BACKUP_EMAIL)" ] && [ -z "$(leer_env BACKUP_PASSWORD)" ]; then

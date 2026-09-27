@@ -18,18 +18,6 @@ final class AuthMiddleware implements MiddlewareInterface
             exit;
         }
 
-        // Rol con verificación en dos pasos obligatoria y plazo de gracia vencido: antes de
-        // cualquier otra pantalla, debe configurarla (o cerrar sesión).
-        if (Auth::debeConfigurarDosFactores() && !$this->permitidaSinDosFactores($request->uri)) {
-            header('Location: ' . Url::to('/2fa/configurar'));
-            exit;
-        }
-
         return $next();
-    }
-
-    private function permitidaSinDosFactores(string $ruta): bool
-    {
-        return str_starts_with($ruta, '/2fa/') || $ruta === '/logout';
     }
 }

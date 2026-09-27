@@ -289,19 +289,16 @@ final class Usuario
     public static function activarTotp(int $id, string $secretoCifrado, int $pasoUsado): void
     {
         Database::connection()->prepare(
-            'UPDATE usuarios SET totp_secreto = ?, totp_activado_en = NOW(), totp_ultimo_paso = ?, dosfa_gracia_hasta = NULL
+            'UPDATE usuarios SET totp_secreto = ?, totp_activado_en = NOW(), totp_ultimo_paso = ?
              WHERE id = ?'
         )->execute([$secretoCifrado, $pasoUsado, $id]);
     }
 
-    /**
-     * Quita la verificación en dos pasos. El plazo de gracia vuelve a vacío: si el rol la
-     * exige, se le vuelve a contar desde su siguiente inicio de sesión.
-     */
+    /** Quita la verificación en dos pasos. */
     public static function desactivarTotp(int $id): void
     {
         Database::connection()->prepare(
-            'UPDATE usuarios SET totp_secreto = NULL, totp_activado_en = NULL, totp_ultimo_paso = NULL, dosfa_gracia_hasta = NULL
+            'UPDATE usuarios SET totp_secreto = NULL, totp_activado_en = NULL, totp_ultimo_paso = NULL
              WHERE id = ?'
         )->execute([$id]);
     }
@@ -320,32 +317,6 @@ final class Usuario
         $stmt->execute([$paso, $id, $paso]);
 
         return $stmt->rowCount() === 1;
-    }
-
-    /** Fija el plazo de gracia solo si aún no tenía uno. Devuelve el plazo vigente. */
-    public static function iniciarGraciaDosFactores(int $id, int $dias): string
-    {
-        $pdo = Database::connection();
-        $pdo->prepare(
-            'UPDATE usuarios SET dosfa_gracia_hasta = DATE_ADD(NOW(), INTERVAL ? DAY)
-             WHERE id = ? AND dosfa_gracia_hasta IS NULL'
-        )->execute([$dias, $id]);
-
-        $stmt = $pdo->prepare('SELECT dosfa_gracia_hasta FROM usuarios WHERE id = ?');
-        $stmt->execute([$id]);
-
-        return (string) $stmt->fetchColumn();
-    }
-
-    /** Al cambiar la política de un rol, los plazos de quienes aún no la configuran se vuelven a contar. */
-    public static function reiniciarGraciaDeRol(int $rolId): int
-    {
-        $stmt = Database::connection()->prepare(
-            'UPDATE usuarios SET dosfa_gracia_hasta = NULL WHERE rol_id = ? AND totp_activado_en IS NULL'
-        );
-        $stmt->execute([$rolId]);
-
-        return $stmt->rowCount();
     }
 
     public static function updateFoto(int $id, string $fotoPath): void

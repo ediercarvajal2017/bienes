@@ -286,7 +286,7 @@ foreach ($gruposBreadcrumb as $g) {
             <?php endif; ?>
 
             <?php if ($mostrarAdmin): ?>
-                <details class="nav-grupo"<?= $grupoAbierto(['/cargas-masivas', '/usuarios', '/instituciones', '/cargos', '/categorias', '/papelera', '/auditoria', '/seguridad']) ?>>
+                <details class="nav-grupo"<?= $grupoAbierto(['/cargas-masivas', '/usuarios', '/instituciones', '/cargos', '/categorias', '/papelera', '/auditoria']) ?>>
                     <summary class="nav-grupo-titulo">Administración<i class="bi bi-chevron-right nav-grupo-chevron"></i></summary>
 
                     <?php if (Auth::esSuperusuario() || Auth::tienePermiso('cargas.masivas')): ?>
@@ -312,7 +312,6 @@ foreach ($gruposBreadcrumb as $g) {
                     <?php if (Auth::esSuperusuario()): ?>
                         <a class="nav-link<?= $esActiva('/papelera') ?>" href="<?= Url::to('/papelera') ?>"><i class="bi bi-trash3 me-2"></i>Papelera de reciclaje</a>
                         <a class="nav-link<?= $esActiva('/auditoria') ?>" href="<?= Url::to('/auditoria') ?>"><i class="bi bi-journal-text me-2"></i>Auditoría</a>
-                        <a class="nav-link<?= $esActiva('/seguridad') ?>" href="<?= Url::to('/seguridad/verificacion-dos-pasos') ?>"><i class="bi bi-shield-lock me-2"></i>Verificación en dos pasos</a>
                     <?php endif; ?>
                 </details>
             <?php endif; ?>
@@ -330,19 +329,6 @@ foreach ($gruposBreadcrumb as $g) {
                     <li class="breadcrumb-item active" aria-current="page"><?= htmlspecialchars($title ?? '', ENT_QUOTES) ?></li>
                 </ol>
             </nav>
-        <?php endif; ?>
-        <?php $graciaDosFactores = Auth::graciaDosFactores(); ?>
-        <?php if ($graciaDosFactores !== null && !Auth::debeConfigurarDosFactores() && !str_starts_with($rutaActual, '/2fa/')): ?>
-            <?php $diasGracia = max(0, (int) ceil(($graciaDosFactores - time()) / 86400)); ?>
-            <div class="alert alert-warning py-2 small d-flex flex-wrap align-items-center gap-2" role="status">
-                <i class="bi bi-shield-exclamation" aria-hidden="true"></i>
-                <span>
-                    Tu rol exige la verificación en dos pasos. Configúrala antes del
-                    <strong><?= date('d/m/Y', $graciaDosFactores) ?></strong>
-                    (<?= $diasGracia === 1 ? 'queda 1 día' : "quedan {$diasGracia} días" ?>).
-                </span>
-                <a href="<?= Url::to('/2fa/configurar') ?>" class="btn btn-sm btn-warning ms-sm-auto">Configurar ahora</a>
-            </div>
         <?php endif; ?>
         <?php $content(); ?>
 
