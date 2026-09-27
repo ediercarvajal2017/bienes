@@ -1,75 +1,96 @@
 # Despliegue de SIGEBI a producción (Hostinger)
 
 **Regla:** se sube SOLO el software. La información de la base de producción es la correcta
-y no se carga, reemplaza ni corrige. Lo único que cambia en la base son las migraciones de
-estructura pendientes (columnas y tablas nuevas, vacías), que el script muestra y pide
-confirmar con "SI".
+y no se carga, reemplaza ni corrige. Lo único que puede cambiar en la base son las migraciones
+de estructura pendientes (columnas y tablas nuevas), que el script muestra y pide confirmar.
 
-Versión 1.1.2 → migraciones pendientes en producción: `029` a `033`. Ensayadas sobre una
-copia del volcado de producción: ninguna tabla perdió filas y las 24 tablas de datos
-conservaron su contenido idéntico, fila por fila (la única que cambia es `schema_migrations`,
-el registro de migraciones).
+- Sitio: https://bienes.ediertech.com
+- Carpeta: `/home/u397951547/domains/ediertech.com/public_html/bienes`
+- Archivos subidos: `/home/u397951547/storage_sigebi` (fuera de la carpeta del sitio)
+- Acceso SSH: alias `sigebi-hostinger` (clave en `~/.ssh/hostinger_sigebi`)
 
-## 1. GitHub (desde el equipo de desarrollo)
+## El "Auto Deploy" de Hostinger está APAGADO (desde 2026-09-27)
 
-```bash
-git push -u origin preparacion-presentacion
-git push origin v1.1.2
+Hostinger estaba conectado a GitHub y publicaba solo cada cambio de `main`: sin
+mantenimiento, sin respaldo, **sin migraciones**, instalando las dependencias de desarrollo y
+borrando los archivos no versionados de la carpeta. Se apagó quitando a la aplicación
+Hostinger el acceso al repositorio `bienes` (GitHub → Settings → Applications → Hostinger →
+Configure → Repository access). **No volver a activarlo** ni pulsar "Redistribuir" en
+hPanel → Git.
+
+Por eso las actualizaciones llegan a producción **solo** cuando se ejecuta el script de
+despliegue, que trae de GitHub la versión indicada.
+
+## Flujo de una actualización
+
+```
+cambio → pruebas → etiqueta vX.Y.Z en GitHub → script por SSH → unir el Pull Request a main
 ```
 
-Abrir el Pull Request `preparacion-presentacion → main` en GitHub (queda el registro de todos
-los cambios). **No unirlo todavía** si en Hostinger está activo el "Auto Deploy" de Git: ver el
-paso 2.
+### 1. Pruebas en local
 
-## 2. Revisión previa en Hostinger (solo lectura)
+```bash
+composer analyse      # PHPStan nivel 7: 0 errores
+composer test         # PHPUnit
+npm test              # Playwright (base desechable sigebi_test)
+```
 
-- [ ] hPanel → Avanzado → **Git**: ¿está activo el "Auto Deploy"? Si lo está, **desactivarlo**
-      antes de unir el Pull Request. Si no, al unir a `main` se publicaría el código nuevo sin
-      respaldo, sin mantenimiento y sin las migraciones (el sitio fallaría).
-- [ ] hPanel → Avanzado → **Configuración de PHP**: versión 8.3 o 8.4.
-- [ ] Por SSH, en la carpeta del proyecto:
-      ```bash
-      php -v
-      grep -E '^(APP_DEBUG|APP_URL|STORAGE_PATH|BACKUP_EMAIL)=' .env   # APP_DEBUG=0 y APP_URL con el dominio de los QR impresos
-      git status --short --untracked-files=no                          # debe estar vacío
-      php database/migrate.php --pendientes                            # debe listar 029 a 033
-      ```
-- [ ] Agregar al `.env` (si faltan): `APP_URL=https://<dominio exacto de los QR>` y
-      `BACKUP_PASSWORD=<frase larga>` (guárdela también fuera del servidor). `APP_KEY` la genera el script.
+### 2. Versión en GitHub
 
-## 3. Respaldo adicional en tu equipo
+Subir `'version'` en `config/app.php`, hacer commit en una rama y:
 
-- [ ] hPanel → Bases de datos → phpMyAdmin → Exportar la base completa y descargarla.
-- [ ] Descargar la carpeta de archivos subidos (`STORAGE_PATH/uploads`) o hacer una copia en el servidor.
+```bash
+git tag -a vX.Y.Z -m "Versión X.Y.Z"
+git push origin <rama> vX.Y.Z
+```
 
-## 4. Despliegue (horario de poca actividad)
+Abrir el Pull Request `<rama> → main`, **sin unirlo todavía** (se une en el paso 5).
 
-1. Unir el Pull Request a `main` en GitHub (con el Auto Deploy desactivado).
-2. Por SSH. **Importante:** el `deploy-hostinger.sh` que está en la carpeta del sitio es el de la
-   versión instalada (antigua). Se extrae el de la versión NUEVA a la carpeta personal y se
-   ejecuta con la ruta ABSOLUTA del proyecto (si se pasa otra cosa como primer parámetro, p. ej.
-   "SI", el script lo toma como carpeta y hace una instalación nueva allí):
-   ```bash
-   cd <ruta del proyecto>
-   git fetch --tags origin                                   # solo descarga; no cambia el sitio
-   git show v1.1.2:deploy-hostinger.sh > ~/deploy-v1.1.2.sh
-   bash ~/deploy-v1.1.2.sh <ruta ABSOLUTA del proyecto> v1.1.2
-   ```
-   El script: pone el sitio en mantenimiento → código v1.1.2 y dependencias (la base aún no se
-   toca) → respaldo verificado → conteo de filas → **lista las migraciones y pide escribir SI** → las aplica →
-   compara el conteo de filas y prueba el sitio → quita el mantenimiento.
-3. Si generó `APP_KEY`, la muestra una sola vez: **guárdela fuera del servidor**.
+### 3. Revisión previa (solo lectura)
 
-## 5. Verificación posterior
+```bash
+ssh sigebi-hostinger
+cd /home/u397951547/domains/ediertech.com/public_html/bienes
+git status --short --untracked-files=no     # debe estar vacío
+php database/migrate.php --pendientes       # lista lo que se aplicará (no ejecuta nada)
+```
 
-- [ ] Ingresar con un usuario de cada rol (todos deben iniciar sesión de nuevo una vez).
-- [ ] Panel principal, Bienes, Asignar, Reintegrar, Bajas, Verificación física, Reportes.
+Si hay migraciones pendientes, revisarlas antes con el responsable del sistema. Conviene un
+horario de poca actividad: el menor uso registrado es de 3:00 a 7:00 p. m. y los fines de semana.
+
+### 4. Despliegue
+
+El `deploy-hostinger.sh` de la carpeta del sitio es el de la versión **instalada**. Se usa el
+de la versión NUEVA, extraído a la carpeta personal, con la ruta **absoluta** del proyecto
+(si el primer parámetro es otra cosa, p. ej. "SI", el script lo toma como carpeta y prepara
+una instalación nueva allí):
+
+```bash
+cd /home/u397951547/domains/ediertech.com/public_html/bienes
+git fetch --tags origin                                    # solo descarga; no cambia el sitio
+git show vX.Y.Z:deploy-hostinger.sh > ~/deploy-vX.Y.Z.sh
+bash ~/deploy-vX.Y.Z.sh /home/u397951547/domains/ediertech.com/public_html/bienes vX.Y.Z
+```
+
+El script: mantenimiento → código y dependencias sin las de desarrollo (la base aún no se
+toca) → respaldo verificado → conteo de filas → **si hay migraciones, las lista y pide
+escribir SI** → las aplica → compara el conteo de filas y prueba el sitio → quita el
+mantenimiento. Si algo falla antes de migrar, vuelve solo a la versión anterior.
+
+### 5. Unir el Pull Request a `main`
+
+Para que `main` sea siempre igual a lo publicado. Con el Auto Deploy apagado, unirlo no
+publica nada.
+
+### 6. Verificación posterior
+
+- [ ] Ingresar con un usuario de cada rol.
+- [ ] Panel principal, Bienes (con fotos), Asignar, Reintegrar, Bajas, Verificación física, Reportes.
 - [ ] Escanear un QR ya impreso: abre la ficha del bien correcto.
-- [ ] Descargar un reporte de cartera.
-- [ ] `php database/diagnostico_integridad.php` (solo lectura) no muestra errores nuevos.
-- [ ] Registro de errores del día (`STORAGE_PATH/logs/app-AAAA-MM-DD.log`) sin fallas.
+- [ ] `php database/diagnostico_integridad.php` (solo lectura) no muestra hallazgos nuevos.
+- [ ] Registro de errores del día (`storage_sigebi/logs/app-AAAA-MM-DD.log`) sin fallas nuevas.
 
-## 6. Si algo falla
+## Si algo falla
 
 El script deja el sitio en mantenimiento y muestra los comandos exactos. Como las
 migraciones son aditivas, normalmente basta con volver el código:
@@ -80,9 +101,16 @@ rm public/mantenimiento.flag
 ```
 
 Restaurar la base con el respaldo previo **solo si fuera necesario** (el script muestra el
-comando con `database/restaurar.php`).
+comando con `database/restaurar.php`). Los respaldos quedan en `storage_sigebi/backups/`.
 
-## Fuera de este despliegue
+## Historial
+
+| Fecha | Versión | Migraciones | Notas |
+|---|---|---|---|
+| 2026-09-27 | 1.1.2 | 029–033 | Seguridad, 2FA opcional, ciclos de vida. Las 24 tablas de datos quedaron idénticas fila por fila |
+| 2026-09-27 | 1.1.3 | — | Fotos: se liberan sesión y conexión antes de enviar; reintento de conexión |
+
+## Fuera del despliegue
 
 Correcciones de datos del diagnóstico, mover al superusuario de institución y el entorno de
 demostración requieren, cada uno, una autorización aparte.
