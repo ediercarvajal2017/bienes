@@ -6,7 +6,10 @@ use App\Core\Url;
 use App\Models\Institucion;
 
 $rutaActual = (new Request())->uri;
-$esActiva = static fn (string $prefijo): string => str_starts_with($rutaActual, $prefijo) ? ' active' : '';
+// Se imprime dentro de class="nav-link...": además de la clase, cierra el atributo y
+// agrega aria-current="page" para que los lectores de pantalla anuncien la página actual.
+$marcaActiva = ' active" aria-current="page';
+$esActiva = static fn (string $prefijo): string => str_starts_with($rutaActual, $prefijo) ? $marcaActiva : '';
 
 /**
  * Un grupo del menú se abre por defecto solo si la página actual pertenece a él —
@@ -58,15 +61,22 @@ foreach ($gruposBreadcrumb as $g) {
     })();
     </script>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <title><?= htmlspecialchars($title ?? 'SIGEBI', ENT_QUOTES) ?> · SIGEBI</title>
-    <link rel="icon" type="image/jpeg" href="<?= Url::asset('/assets/img/favicon.jpg') ?>">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
+    <link rel="icon" type="image/png" sizes="32x32" href="<?= Url::asset('/assets/img/favicon-32.png') ?>">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" integrity="sha384-tViUnnbYAV00FLIhhi3v/dWt3Jxw4gZQcNoSCxCIFNJVCx7/D55/wXsrNIRANwdD" crossorigin="anonymous" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.min.css" integrity="sha384-piG3EtH1fBnPi68q4spy+Qgpb0dHK1D1dwk0GaHwFkvmUxYi526bBlk3xJcjEBsD" crossorigin="anonymous" rel="stylesheet">
     <link href="<?= Url::asset('/assets/css/app.css') ?>" rel="stylesheet">
     <link rel="manifest" href="<?= Url::to('/manifest.json') ?>">
-    <meta name="theme-color" content="#1F6F54">
+    <meta name="theme-color" content="#1F6F54" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#0f141a" media="(prefers-color-scheme: dark)">
+    <!-- iPhone/iPad: ícono y pantalla completa al agregar SIGEBI a la pantalla de inicio. -->
+    <link rel="apple-touch-icon" href="<?= Url::asset('/assets/img/icon-192.png') ?>">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="SIGEBI">
 </head>
 <body>
 
@@ -77,7 +87,7 @@ foreach ($gruposBreadcrumb as $g) {
         <i class="bi bi-list"></i>
     </button>
     <a class="navbar-brand d-flex align-items-center" href="<?= Url::to('/dashboard') ?>">
-        <img src="<?= Url::asset('/assets/img/logo.png') ?>" alt="SIGEBI" class="navbar-logo">
+        <img src="<?= Url::asset('/assets/img/logo.webp') ?>" width="600" height="206" alt="SIGEBI" class="navbar-logo">
     </a>
     <?php
     $nombreUsuarioNavbar = Auth::nombreCompleto() ?? '';
@@ -101,10 +111,13 @@ foreach ($gruposBreadcrumb as $g) {
                placeholder="Buscar en todo SIGEBI...">
     </form>
     <div class="ms-auto d-flex align-items-center gap-2 gap-sm-3">
-        <a href="<?= Url::to('/buscar') ?>" class="theme-toggle d-lg-none" aria-label="Buscar" title="Buscar">
+        <a href="<?= Url::to('/buscar') ?>" class="theme-toggle d-none d-sm-inline-flex d-lg-none" aria-label="Buscar" title="Buscar">
             <i class="bi bi-search"></i>
         </a>
-        <div class="usuario-navbar d-none d-md-flex align-items-center gap-2">
+        <a href="<?= Url::to('/mi-cuenta') ?>" class="theme-toggle d-md-none" aria-label="Mi cuenta" title="Mi cuenta">
+            <i class="bi bi-person-circle"></i>
+        </a>
+        <a href="<?= Url::to('/mi-cuenta') ?>" class="usuario-navbar usuario-navbar-enlace d-none d-md-flex align-items-center gap-2" title="Mi cuenta: contraseña y verificación en dos pasos">
             <span class="usuario-navbar-avatar" aria-hidden="true"><?= htmlspecialchars($inicialesUsuario, ENT_QUOTES) ?></span>
             <div class="usuario-navbar-info">
                 <div class="usuario-navbar-nombre"><?= htmlspecialchars($nombreUsuarioNavbar, ENT_QUOTES) ?></div>
@@ -117,9 +130,9 @@ foreach ($gruposBreadcrumb as $g) {
                     <?php endif; ?>
                 </div>
             </div>
-        </div>
+        </a>
         <?php if (count($familiaSedes) > 1): ?>
-            <form method="post" action="<?= Url::to('/sede-activa') ?>" class="d-flex align-items-center">
+            <form method="post" action="<?= Url::to('/sede-activa') ?>" class="d-none d-md-flex align-items-center">
                 <?= \App\Core\Csrf::field() ?>
                 <input type="hidden" name="volver" value="<?= htmlspecialchars($rutaActual, ENT_QUOTES) ?>">
                 <label for="sedeActivaSelect" class="visually-hidden">Sede activa</label>
@@ -132,7 +145,7 @@ foreach ($gruposBreadcrumb as $g) {
         <?php endif; ?>
         <?php if (Auth::esSuperusuario()): ?>
             <form method="post" action="<?= Url::to('/filtro-institucion') ?>"
-                  class="d-flex align-items-center filtro-institucion-form<?= Auth::filtroInstitucionId() !== null ? ' filtro-institucion-form--activo' : '' ?>">
+                  class="d-none d-md-flex align-items-center filtro-institucion-form<?= Auth::filtroInstitucionId() !== null ? ' filtro-institucion-form--activo' : '' ?>">
                 <?= \App\Core\Csrf::field() ?>
                 <input type="hidden" name="volver" value="<?= htmlspecialchars($rutaActual, ENT_QUOTES) ?>">
                 <label for="filtroInstitucionSelect" class="visually-hidden">Filtrar por institución</label>
@@ -148,12 +161,14 @@ foreach ($gruposBreadcrumb as $g) {
                 </select>
             </form>
         <?php endif; ?>
-        <button type="button" id="btnTema" class="theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+        <button type="button" id="btnTema" class="theme-toggle d-none d-sm-inline-flex" data-tema-toggle aria-label="Cambiar tema" title="Cambiar tema">
             <i class="bi bi-moon-stars"></i>
         </button>
         <form method="post" action="<?= Url::to('/logout') ?>">
             <?= \App\Core\Csrf::field() ?>
-            <button type="submit" class="btn btn-sm btn-light">Salir</button>
+            <button type="submit" class="btn btn-sm btn-light boton-salir" aria-label="Salir" title="Salir">
+                <i class="bi bi-box-arrow-right d-sm-none" aria-hidden="true"></i><span class="d-none d-sm-inline">Salir</span>
+            </button>
         </form>
     </div>
 </nav>
@@ -161,6 +176,41 @@ foreach ($gruposBreadcrumb as $g) {
 <div class="d-flex">
     <div id="sidebarOverlay" class="sidebar-overlay"></div>
     <aside id="sidebar" class="sidebar">
+        <?php if (count($familiaSedes) > 1 || Auth::esSuperusuario()): ?>
+            <div class="sidebar-movil d-md-none">
+                <?php if (count($familiaSedes) > 1): ?>
+                    <form method="post" action="<?= Url::to('/sede-activa') ?>">
+                        <?= \App\Core\Csrf::field() ?>
+                        <input type="hidden" name="volver" value="<?= htmlspecialchars($rutaActual, ENT_QUOTES) ?>">
+                        <label for="sedeActivaSelectMovil" class="form-label small mb-1">Sede activa</label>
+                        <select id="sedeActivaSelectMovil" name="institucion_id" class="form-select form-select-sm" onchange="this.form.submit()">
+                            <?php foreach ($familiaSedes as $sede): ?>
+                                <option value="<?= (int) $sede['id'] ?>" <?= (int) $sede['id'] === Auth::sedeActivaId() ? 'selected' : '' ?>><?= htmlspecialchars($sede['nombre'], ENT_QUOTES) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </form>
+                <?php endif; ?>
+                <?php if (Auth::esSuperusuario()): ?>
+                    <form method="post" action="<?= Url::to('/filtro-institucion') ?>"
+                          class="filtro-institucion-form<?= Auth::filtroInstitucionId() !== null ? ' filtro-institucion-form--activo' : '' ?>">
+                        <?= \App\Core\Csrf::field() ?>
+                        <input type="hidden" name="volver" value="<?= htmlspecialchars($rutaActual, ENT_QUOTES) ?>">
+                        <label for="filtroInstitucionSelectMovil" class="form-label small mb-1">Ver institución</label>
+                        <select id="filtroInstitucionSelectMovil" name="institucion_id" class="form-select form-select-sm filtro-institucion-select" onchange="this.form.submit()">
+                            <option value="">Ver todas las instituciones</option>
+                            <?php foreach ($institucionesFiltro as $i): ?>
+                                <option value="<?= (int) $i['id'] ?>" <?= Auth::filtroInstitucionId() === (int) $i['id'] ? 'selected' : '' ?>><?= htmlspecialchars($i['nombre'], ENT_QUOTES) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </form>
+                <?php endif; ?>
+            </div>
+        <?php endif; ?>
+        <div class="sidebar-movil d-sm-none">
+            <button type="button" class="btn btn-sm btn-outline-secondary w-100" data-tema-toggle>
+                <i class="bi bi-moon-stars me-1" aria-hidden="true"></i><span data-tema-texto>Cambiar tema</span>
+            </button>
+        </div>
         <?php
         $mostrarVerificacion = Auth::esSuperusuario() || Auth::tienePermiso('bajas.crear') || Auth::tienePermiso('bajas.aprobar') || Auth::tienePermiso('verificaciones.gestionar');
         $mostrarReportes = Auth::esSuperusuario() || Auth::tienePermiso('reportes.generar') || Auth::tienePermiso('cartera.gestionar') || Auth::tienePermiso('formatos_reintegro.gestionar') || Auth::tienePermiso('formatos_plaqueteo.gestionar') || Auth::tienePermiso('facturas_admin.gestionar');
@@ -169,6 +219,7 @@ foreach ($gruposBreadcrumb as $g) {
         <nav class="nav flex-column">
             <a class="nav-link<?= $esActiva('/dashboard') ?>" href="<?= Url::to('/dashboard') ?>"><i class="bi bi-grid-1x2 me-2"></i>Panel principal</a>
             <a class="nav-link<?= $esActiva('/buscar') ?>" href="<?= Url::to('/buscar') ?>"><i class="bi bi-search me-2"></i>Buscar</a>
+            <a class="nav-link<?= $esActiva('/manual') ?>" href="<?= Url::to('/manual') ?>"><i class="bi bi-question-circle me-2"></i>Guía rápida</a>
 
             <details class="nav-grupo"<?= $grupoAbierto(['/bienes', '/espacios', '/asignaciones', '/reintegros', '/escanear']) ?>>
                 <summary class="nav-grupo-titulo">Operación diaria<i class="bi bi-chevron-right nav-grupo-chevron"></i></summary>
@@ -183,8 +234,12 @@ foreach ($gruposBreadcrumb as $g) {
 
                 <?php if (Auth::esSuperusuario() || Auth::tienePermiso('asignaciones.crear')): ?>
                     <a class="nav-link<?= $esActiva('/asignaciones') ?>" href="<?= Url::to('/asignaciones') ?>"><i class="bi bi-person-check me-2"></i>Asignar bienes</a>
-                    <a class="nav-link<?= $rutaActual === '/reintegros' ? ' active' : '' ?>" href="<?= Url::to('/reintegros') ?>"><i class="bi bi-box-arrow-in-left me-2"></i>Reintegrar bienes</a>
+                    <a class="nav-link<?= $rutaActual === '/reintegros' ? $marcaActiva : '' ?>" href="<?= Url::to('/reintegros') ?>"><i class="bi bi-box-arrow-in-left me-2"></i>Reintegrar bienes</a>
                     <a class="nav-link<?= $esActiva('/reintegros/lotes') ?>" href="<?= Url::to('/reintegros/lotes') ?>"><i class="bi bi-file-earmark-spreadsheet me-2"></i>Lotes de reintegro</a>
+                <?php endif; ?>
+
+                <?php if (Auth::esSuperusuario() || Auth::tienePermiso('asignaciones.crear') || Auth::tienePermiso('reintegros.solicitar')): ?>
+                    <a class="nav-link<?= $esActiva('/reintegros/solicitudes') ?>" href="<?= Url::to('/reintegros/solicitudes') ?>"><i class="bi bi-inbox me-2"></i>Solicitudes de reintegro</a>
                 <?php endif; ?>
 
                 <a class="nav-link<?= $esActiva('/escanear') ?>" href="<?= Url::to('/escanear') ?>"><i class="bi bi-qr-code-scan me-2"></i>Escanear QR</a>
@@ -276,6 +331,12 @@ foreach ($gruposBreadcrumb as $g) {
             </nav>
         <?php endif; ?>
         <?php $content(); ?>
+
+        <?php $configApp = require dirname(__DIR__, 3) . '/config/app.php'; ?>
+        <footer class="pie-sigebi small text-muted d-flex flex-wrap justify-content-between gap-2 mt-5 pt-3 border-top">
+            <span>SIGEBI · versión <?= htmlspecialchars((string) $configApp['version'], ENT_QUOTES) ?><?php if (Auth::institucionNombre() !== null && !Auth::esSuperusuario()): ?> · <?= htmlspecialchars(Auth::institucionNombre(), ENT_QUOTES) ?><?php endif; ?></span>
+            <a href="<?= Url::to('/manual') ?>" class="text-muted">¿Necesitas ayuda? Guía rápida</a>
+        </footer>
     </main>
 </div>
 
@@ -286,7 +347,7 @@ foreach ($gruposBreadcrumb as $g) {
 <script src="<?= Url::asset('/assets/js/lightbox.js') ?>"></script>
 <script src="<?= Url::asset('/assets/js/cargando.js') ?>"></script>
 <script src="<?= Url::asset('/assets/js/buscador-vivo.js') ?>"></script>
-<script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js" integrity="sha384-cnROoUgVILyibe3J0zhzWoJ9p2WmdnK7j/BOTSWqVDbC1pVw2d+i6Q/1ESKJKCYf" crossorigin="anonymous"></script>
 <script src="<?= Url::asset('/assets/js/selector-buscable.js') ?>"></script>
 <script>
 (function () {

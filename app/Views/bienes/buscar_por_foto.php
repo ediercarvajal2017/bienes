@@ -32,8 +32,8 @@ use App\Core\Url;
         siempre el código antes de dar por hecho que es el mismo bien.
     </p>
 
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.20.0/dist/tf.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet@2.1.1/dist/mobilenet.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.20.0/dist/tf.min.js" integrity="sha384-xc4sZTUOM2obsQR75Be0zGbt7Gb6mOVFJN4yBm30Xn0YQLDWIY+yrtFmLmIank6w" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet@2.1.1/dist/mobilenet.min.js" integrity="sha384-oBAqwJ0tv9zzKlbIZyBhhXlEvU/PMrSMqDyOHlEZVC8xWHx4yPySuS7vRikRcYFq" crossorigin="anonymous"></script>
     <script>
     (function () {
         const csrfToken = <?= json_encode(Csrf::token()) ?>;
@@ -154,7 +154,7 @@ use App\Core\Url;
                 return (
                     '<div class="col-6 col-md-4 col-lg-3">' +
                         '<div class="card h-100">' +
-                            (foto ? '<img src="' + foto + '" class="card-img-top" style="height:140px;object-fit:cover;" loading="lazy">' : '') +
+                            (foto ? '<img src="' + foto + '?w=480" class="card-img-top foto-resultado" alt="' + escapeHtml('Foto de ' + (b.descripcion || b.codigo_identificacion)) + '" loading="lazy">' : '') +
                             '<div class="card-body p-2">' +
                                 '<div class="small text-muted">' + pct + '% parecido</div>' +
                                 '<div class="fw-semibold small text-truncate">' + escapeHtml(b.codigo_identificacion) + '</div>' +

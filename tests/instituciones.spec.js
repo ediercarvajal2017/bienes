@@ -28,5 +28,5 @@ test('editar una institución existente conservando sus datos', async ({ page })
 
     await expect(page).toHaveURL(/\/instituciones$/);
     await expect(page.locator('.alert-success')).toContainText('actualizada');
-    await expect(page.locator('tr', { hasText: nombre })).toBeVisible();
+    await expect(page.locator('tr', { hasText: nombre }).first()).toBeVisible();
 });

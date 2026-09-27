@@ -7,12 +7,14 @@ namespace App\Controllers;
 use App\Core\Auth;
 use App\Core\Csrf;
 use App\Core\Database;
+use App\Core\ErrorHandler;
 use App\Core\Request;
 use App\Core\Session;
 use App\Core\Url;
 use App\Core\View;
 use App\Helpers\Paginador;
 use App\Models\Asignacion;
+use App\Models\Auditoria;
 use App\Models\Bien;
 use App\Models\Categoria;
 use App\Models\Institucion;
@@ -98,16 +100,20 @@ final class ReintegroController
             exit;
         }
 
-        $reintegrados = $this->reintegrarLote($bienIds, $fecha, $destino, $observaciones);
+        $resultado = $this->reintegrarLote($bienIds, $fecha, $destino, $observaciones);
+        $reintegrados = $resultado['reintegrados'] ?? 0;
+        $avisoOmitidos = ($resultado['omitidos'] ?? 0) > 0
+            ? ' Se omitieron ' . $resultado['omitidos'] . ' bien(es) que ya no cumplían las condiciones (asignado, con categoría, fuera de "' . Categoria::NOMBRE_CATEGORIA_PROTEGIDA . '").'
+            : '';
 
-        if ($reintegrados === null) {
+        if ($resultado === null) {
             Session::flash('error', 'Ocurrió un error al procesar el reintegro masivo. No se aplicó ningún cambio.');
             Session::flashOld($viejo);
         } elseif ($reintegrados === 0) {
-            Session::flash('error', 'Ningún bien seleccionado pudo reintegrarse. Verifica que sigan asignados.');
+            Session::flash('error', 'Ningún bien seleccionado pudo reintegrarse.' . $avisoOmitidos);
             Session::flashOld($viejo);
         } else {
-            Session::flash('ok', $reintegrados . ' bien(es) reintegrado(s) correctamente. Cuando quieras, agrúpalos en un lote desde "Lotes de reintegro" para generar el formato.');
+            Session::flash('ok', $reintegrados . ' bien(es) reintegrado(s) correctamente. Cuando quieras, agrúpalos en un lote desde "Lotes de reintegro" para generar el formato.' . $avisoOmitidos);
         }
 
         header('Location: ' . Url::to($volverA));
@@ -277,33 +283,30 @@ final class ReintegroController
 
     /**
      * Agrupa bienes en un reintegro masivo dentro de una única transacción (todo o nada
-     * ante un error de BD). Los bienes que ya no cumplen las condiciones (no asignados,
-     * de otra institución, sin categoría) se omiten en silencio; se cuenta solo lo que sí
-     * se procesó. El lote se genera después, como acción manual aparte.
+     * ante un error de BD). Aplica la MISMA regla que el reintegro individual
+     * (Bien::motivoNoReintegrable); los bienes que no la cumplen se omiten y se cuentan.
+     * El lote se genera después, como acción manual aparte.
+     *
+     * @return array{reintegrados: int, omitidos: int}|null  null si hubo un error de BD
      */
-    private function reintegrarLote(array $bienIds, string $fecha, string $destino, ?string $observaciones): ?int
+    private function reintegrarLote(array $bienIds, string $fecha, string $destino, ?string $observaciones): ?array
     {
         $pdo = Database::connection();
         $reintegrados = 0;
+        $omitidos = 0;
 
         $pdo->beginTransaction();
         try {
             foreach ($bienIds as $bienId) {
                 $bien = Bien::find($bienId);
-                if (!$bien || $bien['estado'] !== 'activo') {
-                    continue;
-                }
-
-                if (!Auth::esSuperusuario() && (int) $bien['institucion_id'] !== Auth::institucionId()) {
-                    continue;
-                }
-
-                if ($bien['categoria_id'] === null) {
+                if (!$bien || (!Auth::esSuperusuario() && (int) $bien['institucion_id'] !== Auth::institucionId())) {
+                    $omitidos++;
                     continue;
                 }
 
                 $asignacion = Asignacion::activaDe($bienId);
-                if (!$asignacion) {
+                if (Bien::motivoNoReintegrable($bien, $asignacion !== null) !== null) {
+                    $omitidos++;
                     continue;
                 }
 
@@ -319,25 +322,20 @@ final class ReintegroController
                 ]);
 
                 Asignacion::cerrarActivasDe($bienId);
-                Bien::update($bienId, [
-                    'codigo_identificacion' => $bien['codigo_identificacion'],
-                    'descripcion' => $bien['descripcion'],
-                    'marca' => $bien['marca'],
-                    'categoria_id' => $bien['categoria_id'],
-                    'fecha_ingreso' => $bien['fecha_ingreso'],
-                    'valor' => $bien['valor'],
-                    'tiene_factura' => $bien['tiene_factura'],
-                    'estado' => 'reintegrado',
-                ]);
+                Bien::cambiarEstado($bienId, 'reintegrado');
+                Auditoria::registrar(Auth::id(), (int) $bien['institucion_id'], 'reintegrar', 'bien', $bienId,
+                    ['estado' => $bien['estado'], 'espacio_id' => $asignacion['espacio_id'] ?? null],
+                    ['estado' => 'reintegrado', 'destino' => $destino, 'fecha' => $fecha, 'masivo' => true]);
 
                 $reintegrados++;
             }
 
             $pdo->commit();
 
-            return $reintegrados;
+            return ['reintegrados' => $reintegrados, 'omitidos' => $omitidos];
         } catch (\Throwable $e) {
             $pdo->rollBack();
+            ErrorHandler::reportar($e, __METHOD__);
 
             return null;
         }
@@ -382,7 +380,13 @@ final class ReintegroController
                     'registrado_por' => Auth::id(),
                 ]);
 
-                LoteReintegro::asignarMovimientos($loteId, $idsMovimientos);
+                // Si otra solicitud ya agrupó alguno de estos reintegros entre la lectura y
+                // ahora, se deshace todo: nunca un reintegro en dos lotes ni un lote a medias.
+                if (LoteReintegro::asignarMovimientos($loteId, $idsMovimientos) !== count($idsMovimientos)) {
+                    throw new \RuntimeException('Alguno de los reintegros ya fue agrupado en otro lote.');
+                }
+                Auditoria::registrar(Auth::id(), $institucionId, 'crear', 'lote_reintegro', $loteId, null,
+                    ['movimientos' => $idsMovimientos, 'descripcion' => $descripcion, 'observaciones' => $observaciones]);
                 $lotesCreados[] = $loteId;
             }
 
@@ -391,6 +395,7 @@ final class ReintegroController
             return $lotesCreados;
         } catch (\Throwable $e) {
             $pdo->rollBack();
+            ErrorHandler::reportar($e, __METHOD__);
 
             return null;
         }

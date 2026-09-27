@@ -2,6 +2,7 @@
 
 use App\Core\Csrf;
 use App\Core\Url;
+use App\Core\View;
 
 ?>
 <div class="mb-3">
@@ -34,6 +35,10 @@ use App\Core\Url;
         </tr>
         </thead>
         <tbody>
+        <?php if ($cargos === []): ?>
+            <?php View::render('partials/tabla_vacia', ['colspan' => 3, 'icono' => 'person-badge',
+                'mensaje' => 'Todavía no hay cargos registrados.']); ?>
+        <?php endif; ?>
         <?php foreach ($cargos as $c): ?>
             <tr>
                 <td data-label="Nombre">
@@ -52,14 +57,15 @@ use App\Core\Url;
                     <?php endif; ?>
                 </td>
                 <td class="text-end text-nowrap">
-                    <form method="post" action="<?= Url::to('/cargos/' . $c['id'] . '/estado') ?>" class="d-inline">
+                    <form method="post" action="<?= Url::to('/cargos/' . $c['id'] . '/estado') ?>" class="d-inline"
+                              data-confirmar="<?= (int) $c['activo'] === 1 ? '¿Desactivar este cargo? No aparecerá al crear usuarios nuevos.' : '¿Activar este cargo?' ?>">
                         <?= Csrf::field() ?>
                         <button type="submit" class="btn btn-sm btn-outline-<?= (int) $c['activo'] === 1 ? 'danger' : 'success' ?>">
                             <?= (int) $c['activo'] === 1 ? 'Desactivar' : 'Activar' ?>
                         </button>
                     </form>
                     <form method="post" action="<?= Url::to('/cargos/' . $c['id'] . '/eliminar') ?>" class="d-inline"
-                          onsubmit="return confirm('¿Eliminar este cargo? Solo es posible si ningún usuario lo tiene asignado. Un superusuario podrá restaurarlo desde la papelera si fue un error.');">
+                          data-confirmar="¿Eliminar este cargo? Solo es posible si ningún usuario lo tiene asignado. Un superusuario podrá restaurarlo desde la papelera si fue un error.">
                         <?= Csrf::field() ?>
                         <button type="submit" class="btn btn-sm btn-outline-danger">Eliminar</button>
                     </form>

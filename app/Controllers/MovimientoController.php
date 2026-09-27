@@ -6,17 +6,19 @@ namespace App\Controllers;
 
 use App\Core\Auth;
 use App\Core\Csrf;
+use App\Core\Database;
 use App\Core\Request;
 use App\Core\Session;
 use App\Core\Url;
 use App\Core\View;
 use App\Models\Asignacion;
+use App\Models\Auditoria;
 use App\Models\Bien;
-use App\Models\Categoria;
 use App\Models\Espacio;
 use App\Models\Institucion;
 use App\Models\Movimiento;
 use App\Models\Verificacion;
+use App\Services\ReintegroService;
 
 final class MovimientoController
 {
@@ -40,14 +42,24 @@ final class MovimientoController
             exit;
         }
 
-        Asignacion::cerrarActivasDe($id);
-        Asignacion::crear([
-            'bien_id' => $id,
-            'espacio_id' => (int) $espacioId,
-            'fecha_asignacion' => $fecha,
-            'observaciones' => $observaciones,
-            'asignado_por' => Auth::id(),
-        ]);
+        $this->verificarEspacio((int) $espacioId, $bien);
+
+        // Cerrar la asignación anterior y crear la nueva van juntas: si una falla, ninguna
+        // queda aplicada (antes podía quedar el bien con dos asignaciones activas o ninguna).
+        $anterior = Asignacion::activaDe($id);
+        Database::transaccion(static function () use ($id, $bien, $espacioId, $fecha, $observaciones, $anterior): void {
+            Asignacion::cerrarActivasDe($id);
+            Asignacion::crear([
+                'bien_id' => $id,
+                'espacio_id' => (int) $espacioId,
+                'fecha_asignacion' => $fecha,
+                'observaciones' => $observaciones,
+                'asignado_por' => Auth::id(),
+            ]);
+            Auditoria::registrar(Auth::id(), (int) $bien['institucion_id'], 'asignar', 'bien', $id,
+                ['espacio_id' => $anterior['espacio_id'] ?? null],
+                ['espacio_id' => (int) $espacioId, 'fecha' => $fecha, 'observaciones' => $observaciones]);
+        });
 
         // Si la asignacion viene de una discrepancia (el bien no tenia ubicacion y ahora se
         // le asigno una), esa discrepancia ya quedo atendida.
@@ -90,25 +102,32 @@ final class MovimientoController
             exit;
         }
 
-        Movimiento::crear([
-            'bien_id' => $id,
-            'tipo' => 'traslado',
-            'fecha' => $fecha,
-            'responsable_id' => Auth::id(),
-            'espacio_origen_id' => $asignacionActiva['espacio_id'] ?? null,
-            'espacio_destino_id' => (int) $espacioId,
-            'destino_texto' => null,
-            'observaciones' => $observaciones,
-        ]);
+        $this->verificarEspacio((int) $espacioId, $bien);
 
-        Asignacion::cerrarActivasDe($id);
-        Asignacion::crear([
-            'bien_id' => $id,
-            'espacio_id' => (int) $espacioId,
-            'fecha_asignacion' => $fecha,
-            'observaciones' => $observaciones,
-            'asignado_por' => Auth::id(),
-        ]);
+        Database::transaccion(static function () use ($id, $bien, $espacioId, $fecha, $observaciones, $asignacionActiva): void {
+            Auditoria::registrar(Auth::id(), (int) $bien['institucion_id'], 'trasladar', 'bien', $id,
+                ['espacio_id' => $asignacionActiva['espacio_id'] ?? null],
+                ['espacio_id' => (int) $espacioId, 'fecha' => $fecha, 'observaciones' => $observaciones]);
+            Movimiento::crear([
+                'bien_id' => $id,
+                'tipo' => 'traslado',
+                'fecha' => $fecha,
+                'responsable_id' => Auth::id(),
+                'espacio_origen_id' => $asignacionActiva['espacio_id'] ?? null,
+                'espacio_destino_id' => (int) $espacioId,
+                'destino_texto' => null,
+                'observaciones' => $observaciones,
+            ]);
+
+            Asignacion::cerrarActivasDe($id);
+            Asignacion::crear([
+                'bien_id' => $id,
+                'espacio_id' => (int) $espacioId,
+                'fecha_asignacion' => $fecha,
+                'observaciones' => $observaciones,
+                'asignado_por' => Auth::id(),
+            ]);
+        });
 
         // Si el traslado viene de una discrepancia ("no esta aqui, se movio"), esa
         // discrepancia ya quedo atendida — corregir la ubicacion ES la resolucion.
@@ -180,27 +199,35 @@ final class MovimientoController
         $nota = 'Traslado entre sedes: ' . $sedeDestino['nombre'] . '.';
         $observacionesFinal = $observaciones !== null ? $nota . ' ' . $observaciones : $nota;
 
-        Movimiento::crear([
-            'bien_id' => $id,
-            'tipo' => 'traslado',
-            'fecha' => $fecha,
-            'responsable_id' => Auth::id(),
-            'espacio_origen_id' => $asignacionActiva['espacio_id'] ?? null,
-            'espacio_destino_id' => (int) $espacioId,
-            'destino_texto' => null,
-            'observaciones' => $observacionesFinal,
-        ]);
+        // Cuatro escrituras que van juntas: si una falla, el bien no puede quedar a medio
+        // camino entre dos sedes.
+        Database::transaccion(static function () use ($id, $bien, $fecha, $espacioId, $observacionesFinal, $asignacionActiva, $institucionDestinoId): void {
+            Movimiento::crear([
+                'bien_id' => $id,
+                'tipo' => 'traslado',
+                'fecha' => $fecha,
+                'responsable_id' => Auth::id(),
+                'espacio_origen_id' => $asignacionActiva['espacio_id'] ?? null,
+                'espacio_destino_id' => (int) $espacioId,
+                'destino_texto' => null,
+                'observaciones' => $observacionesFinal,
+            ]);
 
-        Asignacion::cerrarActivasDe($id);
-        Asignacion::crear([
-            'bien_id' => $id,
-            'espacio_id' => (int) $espacioId,
-            'fecha_asignacion' => $fecha,
-            'observaciones' => $observacionesFinal,
-            'asignado_por' => Auth::id(),
-        ]);
+            Asignacion::cerrarActivasDe($id);
+            Asignacion::crear([
+                'bien_id' => $id,
+                'espacio_id' => (int) $espacioId,
+                'fecha_asignacion' => $fecha,
+                'observaciones' => $observacionesFinal,
+                'asignado_por' => Auth::id(),
+            ]);
 
-        Bien::cambiarInstitucion($id, $institucionDestinoId);
+            Bien::cambiarInstitucion($id, $institucionDestinoId);
+
+            Auditoria::registrar(Auth::id(), (int) $bien['institucion_id'], 'trasladar_sede', 'bien', $id,
+                ['institucion_id' => (int) $bien['institucion_id'], 'espacio_id' => $asignacionActiva['espacio_id'] ?? null],
+                ['institucion_id' => $institucionDestinoId, 'espacio_id' => (int) $espacioId, 'fecha' => $fecha]);
+        });
 
         Session::flash('ok', 'Bien trasladado a ' . $sedeDestino['nombre'] . '.');
         header('Location: ' . Url::to('/bienes'));
@@ -212,16 +239,12 @@ final class MovimientoController
         $id = (int) $id;
         $bien = $this->bienDeLaInstitucion($id);
         $this->verificarAsignable($bien);
+        // Si no hay asignación activa, verificarAutoridadSobreMovimiento ya redirigió.
         $asignacionActiva = $this->verificarAutoridadSobreMovimiento($id);
 
-        if ($bien['categoria_id'] === null) {
-            Session::flash('error', 'Este bien no tiene categoría asignada; asígnale una antes de reintegrarlo.');
-            header('Location: ' . Url::to("/bienes/{$id}/editar"));
-            exit;
-        }
-
-        if ($bien['categoria_nombre'] === Categoria::NOMBRE_CATEGORIA_PROTEGIDA) {
-            Session::flash('error', "Los bienes de la categoría \"" . Categoria::NOMBRE_CATEGORIA_PROTEGIDA . "\" no admiten reintegro — solo pueden darse de baja.");
+        // Misma regla que el reintegro masivo y el escáner (Bien::motivoNoReintegrable).
+        if ($motivo = Bien::motivoNoReintegrable($bien, true)) {
+            Session::flash('error', 'No se puede reintegrar: ' . $motivo . '.');
             header('Location: ' . Url::to("/bienes/{$id}/editar"));
             exit;
         }
@@ -239,19 +262,13 @@ final class MovimientoController
             exit;
         }
 
-        Movimiento::crear([
-            'bien_id' => $id,
-            'tipo' => 'reintegro',
-            'fecha' => $fecha,
-            'responsable_id' => Auth::id(),
-            'espacio_origen_id' => $asignacionActiva['espacio_id'] ?? null,
-            'espacio_destino_id' => null,
-            'destino_texto' => $destino,
-            'observaciones' => $observaciones,
-        ]);
-
-        Asignacion::cerrarActivasDe($id);
-        Bien::update($id, array_merge($this->camposSinCambiar($bien), ['estado' => 'reintegrado']));
+        try {
+            ReintegroService::reintegrar($bien, $asignacionActiva, $fecha, $destino, $observaciones);
+        } catch (\DomainException $e) {
+            Session::flash('error', $e->getMessage());
+            header('Location: ' . Url::to("/bienes/{$id}/editar"));
+            exit;
+        }
 
         Session::flash('ok', 'Reintegro registrado. Cuando quieras, agrúpalo en un lote desde "Lotes de reintegro" para generar el formato.');
         header('Location: ' . Url::to("/bienes/{$id}/editar"));
@@ -289,18 +306,28 @@ final class MovimientoController
             exit;
         }
 
-        Movimiento::crear([
-            'bien_id' => $id,
-            'tipo' => 'reactivacion',
-            'fecha' => $fecha,
-            'responsable_id' => Auth::id(),
-            'espacio_origen_id' => null,
-            'espacio_destino_id' => null,
-            'destino_texto' => null,
-            'observaciones' => $motivo,
-        ]);
+        try {
+            Database::transaccion(static function () use ($id, $bien, $fecha, $motivo): void {
+                Movimiento::crear([
+                    'bien_id' => $id,
+                    'tipo' => 'reactivacion',
+                    'fecha' => $fecha,
+                    'responsable_id' => Auth::id(),
+                    'espacio_origen_id' => null,
+                    'espacio_destino_id' => null,
+                    'destino_texto' => null,
+                    'observaciones' => $motivo,
+                ]);
 
-        Bien::reactivarDesdeReintegro($id);
+                Bien::cambiarEstado($id, 'activo');
+                Auditoria::registrar(Auth::id(), (int) $bien['institucion_id'], 'reactivar', 'bien', $id,
+                    ['estado' => 'reintegrado'], ['estado' => 'activo', 'motivo' => $motivo, 'fecha' => $fecha]);
+            });
+        } catch (\DomainException $e) {
+            Session::flash('error', $e->getMessage());
+            header('Location: ' . Url::to("/bienes/{$id}/editar"));
+            exit;
+        }
 
         Session::flash('ok', 'Bien reactivado. Ahora puedes asignarlo a un espacio.');
         header('Location: ' . Url::to("/bienes/{$id}/editar"));
@@ -319,19 +346,6 @@ final class MovimientoController
             View::render('errors/403');
             exit;
         }
-    }
-
-    private function camposSinCambiar(array $bien): array
-    {
-        return [
-            'codigo_identificacion' => $bien['codigo_identificacion'],
-            'descripcion' => $bien['descripcion'],
-            'marca' => $bien['marca'],
-            'categoria_id' => $bien['categoria_id'],
-            'fecha_ingreso' => $bien['fecha_ingreso'],
-            'valor' => $bien['valor'],
-            'tiene_factura' => $bien['tiene_factura'],
-        ];
     }
 
     private function bienDeLaInstitucion(int $id): array
@@ -363,6 +377,19 @@ final class MovimientoController
      * candado. Reactivar un reintegro (el único de los dos casos con sentido de
      * revertirse) requiere la acción explícita y restringida reactivar(), no estas.
      */
+    /**
+     * El espacio de destino debe ser de la misma institución del bien, estar activo y
+     * fuera de la papelera (el formulario solo ofrece esos, pero el id llega del navegador).
+     */
+    private function verificarEspacio(int $espacioId, array $bien): void
+    {
+        if (!Espacio::perteneceYActivo($espacioId, (int) $bien['institucion_id'])) {
+            Session::flash('error', 'El espacio seleccionado no es válido para este bien (debe ser un espacio activo de su misma institución).');
+            header('Location: ' . Url::to("/bienes/{$bien['id']}/editar"));
+            exit;
+        }
+    }
+
     private function verificarAsignable(array $bien): void
     {
         if (in_array($bien['estado'], ['dado_de_baja', 'reintegrado'], true)) {

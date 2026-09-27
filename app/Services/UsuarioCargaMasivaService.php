@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Helpers\LectorExcel;
 use App\Models\Cargo;
 use App\Models\Usuario;
-use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
@@ -26,7 +26,7 @@ final class UsuarioCargaMasivaService
      */
     public static function analizar(string $rutaArchivo, int $institucionId, bool $permiteSuperusuario): array
     {
-        $sheet = IOFactory::load($rutaArchivo)->getActiveSheet();
+        $sheet = LectorExcel::hojaActiva($rutaArchivo);
         $filas = [];
         $documentosVistos = [];
         $correosVistos = [];

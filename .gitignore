@@ -21,6 +21,13 @@
 /storage/backups/*
 !/storage/backups/.gitkeep
 
+# Archivos de sesión de PHP (ver App\Core\Session::start)
+/storage/sesiones/
+
+# Informes de database/diagnostico_integridad.php y conteos de la prueba de humo:
+# contienen datos reales de producción, nunca se versionan.
+/storage/diagnosticos/
+
 # Registros de auditoría archivados por database/archivar_auditoria.php
 /storage/archivo_auditoria/*
 !/storage/archivo_auditoria/.gitkeep
@@ -36,3 +43,13 @@ Thumbs.db
 .vscode/
 *.swp
 .worktrees/
+
+# Archivos de espacio de trabajo de VS Code (no deben quedar dentro del proyecto versionado)
+*.code-workspace
+
+# Modo mantenimiento (lo crea y lo borra deploy-hostinger.sh durante cada despliegue)
+/public/mantenimiento.flag
+
+# Suite de pruebas: archivos subidos y datos generados en cada corrida
+/storage/pruebas/
+/playwright/.datos-prueba.json

@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Core\Auth;
+use App\Core\Session;
 use App\Core\View;
 use App\Models\Baja;
 use App\Models\Bien;
 use App\Models\Espacio;
 use App\Models\Hallazgo;
+use App\Models\SolicitudReintegro;
 
 final class DashboardController
 {
@@ -19,7 +21,32 @@ final class DashboardController
             'title' => 'Panel principal',
             'primerosPasos' => $this->primerosPasos(),
             'indicadores' => $this->indicadores(),
+            'cifras' => $this->cifras(),
+            'mensaje' => Session::pullFlash('ok'),
+            'error' => Session::pullFlash('error'),
         ]);
+    }
+
+    /**
+     * Cifras del inventario (tarjetas y gráficos del panel). Solo para quien administra
+     * el inventario (superusuario, rector, secretario): el docente ve únicamente los bienes
+     * de sus espacios, y estas cifras son de toda la institución.
+     */
+    private function cifras(): ?array
+    {
+        if (!Auth::esSuperusuario() && !Auth::tienePermiso('asignaciones.crear')) {
+            return null;
+        }
+
+        $institucionId = Auth::esSuperusuario() ? Auth::filtroInstitucionId() : Auth::institucionId();
+        $resumen = Bien::resumenPanel($institucionId);
+
+        return [
+            'resumen' => $resumen,
+            'categorias' => Bien::porCategoriaPanel($institucionId),
+            'bajasPendientes' => Baja::contarPendientes($institucionId),
+            'alcance' => $institucionId === null ? 'todas las instituciones' : (string) Auth::institucionNombre(),
+        ];
     }
 
     /**
@@ -40,6 +67,18 @@ final class DashboardController
                     'texto' => $pendientes === 1 ? '1 baja pendiente de aprobar' : "{$pendientes} bajas pendientes de aprobar",
                     'ruta' => '/bajas',
                     'color' => 'warning',
+                ];
+            }
+        }
+
+        if (Auth::esSuperusuario() || Auth::tienePermiso('asignaciones.crear')) {
+            $solicitudes = SolicitudReintegro::contar($institucionId, null, 'pendiente');
+            if ($solicitudes > 0) {
+                $indicadores[] = [
+                    'icono' => 'box-arrow-in-left',
+                    'texto' => $solicitudes === 1 ? '1 solicitud de reintegro por revisar' : "{$solicitudes} solicitudes de reintegro por revisar",
+                    'ruta' => '/reintegros/solicitudes?estado=pendiente',
+                    'color' => 'primary',
                 ];
             }
         }

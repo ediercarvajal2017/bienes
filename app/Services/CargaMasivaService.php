@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Helpers\LectorExcel;
 use App\Models\Asignacion;
 use App\Models\Bien;
 use App\Models\Categoria;
 use App\Models\Espacio;
-use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Shared\Date as FechaExcel;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
@@ -31,7 +31,7 @@ final class CargaMasivaService
      */
     public static function analizar(string $rutaArchivo, int $institucionId): array
     {
-        $sheet = IOFactory::load($rutaArchivo)->getActiveSheet();
+        $sheet = LectorExcel::hojaActiva($rutaArchivo);
         $filas = [];
         $codigosVistos = [];
         $espaciosPorCodigo = self::mapaEspaciosPorCodigo($institucionId);
@@ -205,6 +205,16 @@ final class CargaMasivaService
                 }
 
                 if ($fila['tipo'] === 'modificado') {
+                    // Se relee el bien: entre el análisis y la confirmación pudo cambiar (p. ej.
+                    // reintegrarse). El estado y la factura se toman de lo que hay AHORA, no de
+                    // la foto del análisis (antes se podía deshacer un reintegro así). Un bien
+                    // dado de baja no se toca: es de solo lectura.
+                    $actual = Bien::find((int) $fila['bien_id']);
+                    if (!$actual || $actual['estado'] === 'dado_de_baja') {
+                        $omitidas++;
+                        continue;
+                    }
+
                     Bien::update($fila['bien_id'], [
                         'codigo_identificacion' => $fila['datos']['codigo_identificacion'],
                         'descripcion' => $fila['datos']['descripcion'],
@@ -212,11 +222,14 @@ final class CargaMasivaService
                         'categoria_id' => $fila['datos']['categoria_id'],
                         'fecha_ingreso' => $fila['datos']['fecha_ingreso'],
                         'valor' => $fila['datos']['valor'],
-                        'tiene_factura' => $fila['datos']['tiene_factura'],
-                        'estado' => $fila['datos']['estado'],
+                        'tiene_factura' => $actual['tiene_factura'],
+                        'estado' => $actual['estado'],
                     ]);
 
-                    if ($fila['datos']['espacio_id'] !== null && isset($fila['cambios']['Ubicación'])) {
+                    // Solo se reubican bienes en circulación (un reintegrado no vuelve a un
+                    // espacio por una carga masiva: requiere "Reactivar").
+                    if ($fila['datos']['espacio_id'] !== null && isset($fila['cambios']['Ubicación'])
+                        && in_array($actual['estado'], ['activo', 'en_reparacion'], true)) {
                         Asignacion::cerrarActivasDe($fila['bien_id']);
                         Asignacion::crear([
                             'bien_id' => $fila['bien_id'],

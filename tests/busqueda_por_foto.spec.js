@@ -7,7 +7,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const fotoFixture = path.join(__dirname, 'fixtures', 'foto_busqueda.jpg');
 const CODIGO = 'PW-TEST-BUSQFOTO-001';
 
-test.use({ storageState: 'playwright/.auth/user.json' });
+test.use({ storageState: 'playwright/.auth/superusuario.json' });
 
 test('busca un bien por su foto y lo encuentra por parecido', async ({ page }) => {
     // El reconocimiento (cargar el modelo, calcular la huella de la imagen) ocurre en

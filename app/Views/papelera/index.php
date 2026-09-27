@@ -54,7 +54,8 @@ $etiquetasTipo = [
                     <td class="text-muted" data-label="Eliminado por"><?= htmlspecialchars($el['eliminado_por_nombre'] ?? '—', ENT_QUOTES) ?></td>
                     <td class="text-muted mono" data-label="Eliminado el"><?= htmlspecialchars($el['eliminado_en'], ENT_QUOTES) ?></td>
                     <td class="text-end">
-                        <form method="post" action="<?= Url::to('/papelera/' . $el['tipo'] . '/' . $el['id'] . '/restaurar') ?>" class="d-inline">
+                        <form method="post" action="<?= Url::to('/papelera/' . $el['tipo'] . '/' . $el['id'] . '/restaurar') ?>" class="d-inline"
+                              data-confirmar="¿Restaurar este elemento? Volverá a estar disponible en el sistema.">
                             <?= Csrf::field() ?>
                             <button type="submit" class="btn btn-sm btn-primary">
                                 <i class="bi bi-arrow-counterclockwise me-1"></i>Restaurar

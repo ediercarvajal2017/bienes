@@ -49,7 +49,7 @@ test('crear una jornada, verificar un bien y cerrarla', async ({ page }) => {
 
     // Confirmarlo también desde la jornada, en la pestaña "Verificados".
     await page.goto(urlJornada);
-    await page.getByRole('link', { name: /Verificados/ }).click();
+    await page.getByRole('tab', { name: /Verificados/ }).click();
     await page.locator('#buscadorOk').fill(codigoBien);
     await page.waitForURL(/qOk=/);
     await expect(page.locator('tr', { hasText: codigoBien })).toBeVisible();

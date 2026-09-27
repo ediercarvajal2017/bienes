@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { execFileSync } from 'node:child_process';
+import { PHP_BIN } from '../playwright.config.js';
 import path from 'node:path';
 import os from 'node:os';
 import { fileURLToPath } from 'node:url';
@@ -17,7 +18,7 @@ test('carga masiva de usuarios: la fila inválida no se crea, la válida sí', a
     const sufijo = String(Date.now());
     const emailValido = `pw-test-carga-${sufijo}@example.com`;
     const fixture = path.join(os.tmpdir(), `usuarios_carga_masiva_${sufijo}.xlsx`);
-    execFileSync('php', [path.join(__dirname, 'fixtures', 'generar_carga_masiva_usuarios.php'), sufijo, fixture]);
+    execFileSync(PHP_BIN, [path.join(__dirname, 'fixtures', 'generar_carga_masiva_usuarios.php'), sufijo, fixture]);
 
     await page.goto('usuarios/carga-masiva');
 

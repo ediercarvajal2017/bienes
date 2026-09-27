@@ -82,6 +82,21 @@ final class Espacio
         return $stmt->fetch() ?: null;
     }
 
+    /**
+     * ¿El espacio existe, es de esa institución, está activo y fuera de la papelera? Para
+     * validar cualquier espacio_id que llegue de un formulario antes de asignarle bienes
+     * (antes se aceptaba cualquier id, incluso de otra institución).
+     */
+    public static function perteneceYActivo(int $espacioId, int $institucionId): bool
+    {
+        $stmt = Database::connection()->prepare(
+            'SELECT 1 FROM espacios WHERE id = ? AND institucion_id = ? AND activo = 1 AND eliminado_en IS NULL'
+        );
+        $stmt->execute([$espacioId, $institucionId]);
+
+        return (bool) $stmt->fetchColumn();
+    }
+
     public static function listadoParaSelect(int $institucionId): array
     {
         $stmt = Database::connection()->prepare(

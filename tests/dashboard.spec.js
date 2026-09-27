@@ -7,7 +7,7 @@ import { test, expect } from '@playwright/test';
  * pasos" no rompa; esta prueba cubre el saludo, la cuadrícula de accesos y que sus
  * enlaces de verdad lleven a la pantalla correcta.
  */
-test.use({ storageState: 'playwright/.auth/user.json' });
+test.use({ storageState: 'playwright/.auth/superusuario.json' });
 
 test('el panel principal carga con el saludo y accesos funcionales', async ({ page }) => {
     await page.goto('dashboard');

@@ -45,8 +45,8 @@ $descripcionSugerida ??= '';
     <?php endif; ?>
 
     <div class="col-12">
-        <label class="form-label small requerido">Estado del bien</label>
-        <input type="text" name="estado_reportado" class="form-control" required list="sugerenciasEstado" placeholder="Ej. Dañado, Perdido, Obsoleto...">
+        <label for="campo-estado-reportado" class="form-label small requerido">Estado del bien</label>
+        <input id="campo-estado-reportado" type="text" name="estado_reportado" class="form-control" required list="sugerenciasEstado" placeholder="Ej. Dañado, Perdido, Obsoleto...">
         <datalist id="sugerenciasEstado">
             <option value="Dañado">
             <option value="Perdido">
@@ -56,14 +56,14 @@ $descripcionSugerida ??= '';
     </div>
 
     <div class="col-12">
-        <label class="form-label small">Ubicación</label>
-        <input type="text" name="ubicacion" class="form-control"
+        <label for="campo-ubicacion" class="form-label small">Ubicación</label>
+        <input id="campo-ubicacion" type="text" name="ubicacion" class="form-control"
                value="<?= htmlspecialchars($asignacion['espacio_nombre'] ?? '', ENT_QUOTES) ?>">
     </div>
 
     <div class="col-12">
-        <label class="form-label small requerido">Descripción de la baja</label>
-        <textarea name="descripcion" class="form-control" rows="3" required placeholder="Qué pasó y por qué se solicita la baja"><?= htmlspecialchars($descripcionSugerida, ENT_QUOTES) ?></textarea>
+        <label for="campo-descripcion" class="form-label small requerido">Descripción de la baja</label>
+        <textarea id="campo-descripcion" name="descripcion" class="form-control" rows="3" required placeholder="Qué pasó y por qué se solicita la baja"><?= htmlspecialchars($descripcionSugerida, ENT_QUOTES) ?></textarea>
     </div>
 
     <div class="col-12">

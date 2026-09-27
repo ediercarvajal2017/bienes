@@ -8,7 +8,7 @@ import { test, expect } from '@playwright/test';
  * verificaciones.spec.js para separación de roles). Esta prueba sí cubre que el candado
  * de rol se mantenga: un rol sin permiso debe recibir 403, no un error de servidor.
  */
-test.use({ storageState: 'playwright/.auth/user.json' });
+test.use({ storageState: 'playwright/.auth/superusuario.json' });
 
 test('cambiar de sede activa exige rol rector, no solo sesión iniciada', async ({ page }) => {
     await page.goto('dashboard');

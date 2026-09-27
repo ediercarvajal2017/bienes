@@ -29,8 +29,8 @@ $v = static fn (string $campo, mixed $porDefecto = '') => $viejo[$campo] ?? $esp
 
     <?php if (!$esEdicion && Auth::esSuperusuario()): ?>
         <div class="col-12">
-            <label class="form-label small requerido">Institución</label>
-            <select name="institucion_id" class="form-select selector-buscable" required>
+            <label for="campo-institucion-id" class="form-label small requerido">Institución</label>
+            <select id="campo-institucion-id" name="institucion_id" class="form-select selector-buscable" required>
                 <?php foreach ($instituciones as $i): ?>
                     <option value="<?= $i['id'] ?>" <?= (string) $v('institucion_id') === (string) $i['id'] ? 'selected' : '' ?>><?= htmlspecialchars($i['nombre'], ENT_QUOTES) ?></option>
                 <?php endforeach; ?>
@@ -39,15 +39,15 @@ $v = static fn (string $campo, mixed $porDefecto = '') => $viejo[$campo] ?? $esp
     <?php endif; ?>
 
     <div class="col-md-4">
-        <label class="form-label small requerido">Número de espacio</label>
-        <input type="text" name="codigo" class="form-control" required
+        <label for="campo-codigo" class="form-label small requerido">Número de espacio</label>
+        <input id="campo-codigo" type="text" name="codigo" class="form-control" required
                <?= $puedeEditar ? '' : 'disabled' ?>
                placeholder="Ej. 101 o A-101"
                value="<?= htmlspecialchars($v('codigo'), ENT_QUOTES) ?>">
     </div>
     <div class="col-md-8">
-        <label class="form-label small requerido">Nombre del espacio</label>
-        <input type="text" name="nombre" class="form-control" required <?= $puedeEditar ? '' : 'disabled' ?>
+        <label for="campo-nombre" class="form-label small requerido">Nombre del espacio</label>
+        <input id="campo-nombre" type="text" name="nombre" class="form-control" required <?= $puedeEditar ? '' : 'disabled' ?>
                placeholder="Ej. Sala de sistemas 1"
                value="<?= htmlspecialchars($v('nombre'), ENT_QUOTES) ?>">
     </div>

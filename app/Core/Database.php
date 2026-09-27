@@ -29,4 +29,32 @@ final class Database
 
         return self::$instance;
     }
+
+    /**
+     * Ejecuta $fn dentro de una transacción: si lanza cualquier excepción se deshace todo
+     * y la excepción sigue su curso. Si ya hay una transacción abierta, se reutiliza (no
+     * se anidan). Devuelve lo que devuelva $fn.
+     *
+     * @template T
+     * @param callable(PDO): T $fn
+     * @return T
+     */
+    public static function transaccion(callable $fn): mixed
+    {
+        $pdo = self::connection();
+        if ($pdo->inTransaction()) {
+            return $fn($pdo);
+        }
+
+        $pdo->beginTransaction();
+        try {
+            $resultado = $fn($pdo);
+            $pdo->commit();
+
+            return $resultado;
+        } catch (\Throwable $e) {
+            $pdo->rollBack();
+            throw $e;
+        }
+    }
 }

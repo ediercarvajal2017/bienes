@@ -1,0 +1,88 @@
+# Despliegue de SIGEBI a producción (Hostinger)
+
+**Regla:** se sube SOLO el software. La información de la base de producción es la correcta
+y no se carga, reemplaza ni corrige. Lo único que cambia en la base son las migraciones de
+estructura pendientes (columnas y tablas nuevas, vacías), que el script muestra y pide
+confirmar con "SI".
+
+Versión 1.1.2 → migraciones pendientes en producción: `029` a `033`. Ensayadas sobre una
+copia del volcado de producción: ninguna tabla perdió filas y las 24 tablas de datos
+conservaron su contenido idéntico, fila por fila (la única que cambia es `schema_migrations`,
+el registro de migraciones).
+
+## 1. GitHub (desde el equipo de desarrollo)
+
+```bash
+git push -u origin preparacion-presentacion
+git push origin v1.1.2
+```
+
+Abrir el Pull Request `preparacion-presentacion → main` en GitHub (queda el registro de todos
+los cambios). **No unirlo todavía** si en Hostinger está activo el "Auto Deploy" de Git: ver el
+paso 2.
+
+## 2. Revisión previa en Hostinger (solo lectura)
+
+- [ ] hPanel → Avanzado → **Git**: ¿está activo el "Auto Deploy"? Si lo está, **desactivarlo**
+      antes de unir el Pull Request. Si no, al unir a `main` se publicaría el código nuevo sin
+      respaldo, sin mantenimiento y sin las migraciones (el sitio fallaría).
+- [ ] hPanel → Avanzado → **Configuración de PHP**: versión 8.3 o 8.4.
+- [ ] Por SSH, en la carpeta del proyecto:
+      ```bash
+      php -v
+      grep -E '^(APP_DEBUG|APP_URL|STORAGE_PATH|BACKUP_EMAIL)=' .env   # APP_DEBUG=0 y APP_URL con el dominio de los QR impresos
+      git status --short --untracked-files=no                          # debe estar vacío
+      php database/migrate.php --pendientes                            # debe listar 029 a 033
+      ```
+- [ ] Agregar al `.env` (si faltan): `APP_URL=https://<dominio exacto de los QR>` y
+      `BACKUP_PASSWORD=<frase larga>` (guárdela también fuera del servidor). `APP_KEY` la genera el script.
+
+## 3. Respaldo adicional en tu equipo
+
+- [ ] hPanel → Bases de datos → phpMyAdmin → Exportar la base completa y descargarla.
+- [ ] Descargar la carpeta de archivos subidos (`STORAGE_PATH/uploads`) o hacer una copia en el servidor.
+
+## 4. Despliegue (horario de poca actividad)
+
+1. Unir el Pull Request a `main` en GitHub (con el Auto Deploy desactivado).
+2. Por SSH. **Importante:** el `deploy-hostinger.sh` que está en la carpeta del sitio es el de la
+   versión instalada (antigua). Se extrae el de la versión NUEVA a la carpeta personal y se
+   ejecuta con la ruta ABSOLUTA del proyecto (si se pasa otra cosa como primer parámetro, p. ej.
+   "SI", el script lo toma como carpeta y hace una instalación nueva allí):
+   ```bash
+   cd <ruta del proyecto>
+   git fetch --tags origin                                   # solo descarga; no cambia el sitio
+   git show v1.1.2:deploy-hostinger.sh > ~/deploy-v1.1.2.sh
+   bash ~/deploy-v1.1.2.sh <ruta ABSOLUTA del proyecto> v1.1.2
+   ```
+   El script: pone el sitio en mantenimiento → código v1.1.2 y dependencias (la base aún no se
+   toca) → respaldo verificado → conteo de filas → **lista las migraciones y pide escribir SI** → las aplica →
+   compara el conteo de filas y prueba el sitio → quita el mantenimiento.
+3. Si generó `APP_KEY`, la muestra una sola vez: **guárdela fuera del servidor**.
+
+## 5. Verificación posterior
+
+- [ ] Ingresar con un usuario de cada rol (todos deben iniciar sesión de nuevo una vez).
+- [ ] Panel principal, Bienes, Asignar, Reintegrar, Bajas, Verificación física, Reportes.
+- [ ] Escanear un QR ya impreso: abre la ficha del bien correcto.
+- [ ] Descargar un reporte de cartera.
+- [ ] `php database/diagnostico_integridad.php` (solo lectura) no muestra errores nuevos.
+- [ ] Registro de errores del día (`STORAGE_PATH/logs/app-AAAA-MM-DD.log`) sin fallas.
+
+## 6. Si algo falla
+
+El script deja el sitio en mantenimiento y muestra los comandos exactos. Como las
+migraciones son aditivas, normalmente basta con volver el código:
+
+```bash
+git checkout <commit anterior que muestra el script> && composer install --no-dev --optimize-autoloader
+rm public/mantenimiento.flag
+```
+
+Restaurar la base con el respaldo previo **solo si fuera necesario** (el script muestra el
+comando con `database/restaurar.php`).
+
+## Fuera de este despliegue
+
+Correcciones de datos del diagnóstico, mover al superusuario de institución y el entorno de
+demostración requieren, cada uno, una autorización aparte.

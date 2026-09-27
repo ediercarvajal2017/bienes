@@ -187,14 +187,14 @@ final class Verificacion
     }
 
     /**
-     * Universo de bienes que la jornada debe cubrir: todos los de la institución que no
-     * estén dados de baja (los dados de baja ya salieron de circulación, no aplica
-     * verificarlos físicamente).
+     * Universo de bienes que la jornada debe cubrir: todos los de la institución que sigan
+     * en ella (los dados de baja y los reintegrados ya salieron físicamente, no aplica
+     * verificarlos; antes los reintegrados inflaban el número de pendientes).
      */
     public static function contarUniverso(int $institucionId): int
     {
         $stmt = Database::connection()->prepare(
-            "SELECT COUNT(*) FROM bienes WHERE institucion_id = ? AND estado != 'dado_de_baja'"
+            "SELECT COUNT(*) FROM bienes WHERE institucion_id = ? AND estado NOT IN ('dado_de_baja', 'reintegrado')"
         );
         $stmt->execute([$institucionId]);
 
@@ -298,7 +298,7 @@ final class Verificacion
 
     private static function condicionesPendientes(int $institucionId, ?string $busqueda): array
     {
-        $condiciones = ['b.institucion_id = ?', "b.estado != 'dado_de_baja'", 'v.id IS NULL'];
+        $condiciones = ['b.institucion_id = ?', "b.estado NOT IN ('dado_de_baja', 'reintegrado')", 'v.id IS NULL'];
         $params = [$institucionId];
 
         if ($busqueda !== null && $busqueda !== '') {

@@ -97,15 +97,21 @@ $algunFiltroActivo = $busqueda !== '' || $categoriaId !== null || $estado !== nu
     <p class="text-muted small">Mostrando solo los bienes de los espacios donde eres responsable.</p>
 <?php endif; ?>
 
+<?php $filtrosActivos = ($categoriaId !== null ? 1 : 0) + ($estado !== null ? 1 : 0) + ($espacioId !== null ? 1 : 0); ?>
 <div class="mb-3 d-flex flex-wrap gap-3 align-items-end">
-    <div style="max-width: 420px; flex: 1 1 260px;">
-        <label class="form-label small mb-1">Buscar</label>
+    <div class="filtro-busqueda">
+        <label for="buscador" class="form-label small mb-1">Buscar</label>
         <input type="search" id="buscador" class="form-control form-control-sm"
                placeholder="Buscar por código, descripción, responsable, ubicación, estado o valor..."
                value="<?= htmlspecialchars($busqueda, ENT_QUOTES) ?>">
     </div>
-    <div style="max-width: 260px;">
-        <label class="form-label small mb-1">Categoría</label>
+    <button type="button" class="btn btn-sm btn-outline-secondary d-md-none" data-alternar="filtrosBienes"
+            aria-controls="filtrosBienes" aria-expanded="<?= $filtrosActivos > 0 ? 'true' : 'false' ?>">
+        <i class="bi bi-funnel me-1" aria-hidden="true"></i>Filtros<?= $filtrosActivos > 0 ? " ({$filtrosActivos} activo" . ($filtrosActivos === 1 ? '' : 's') . ')' : '' ?>
+    </button>
+    <div id="filtrosBienes" class="filtros-plegables d-flex flex-wrap gap-3 align-items-end<?= $filtrosActivos > 0 ? ' abierto' : '' ?>">
+    <div class="filtro-item">
+        <label for="filtroCategoria" class="form-label small mb-1">Categoría</label>
         <select id="filtroCategoria" class="form-select form-select-sm selector-buscable">
             <option value="">Todas las categorías</option>
             <?php foreach ($categorias as $c): ?>
@@ -115,8 +121,8 @@ $algunFiltroActivo = $busqueda !== '' || $categoriaId !== null || $estado !== nu
             <?php endforeach; ?>
         </select>
     </div>
-    <div style="max-width: 220px;">
-        <label class="form-label small mb-1">Estado</label>
+    <div class="filtro-item">
+        <label for="filtroEstado" class="form-label small mb-1">Estado</label>
         <select id="filtroEstado" class="form-select form-select-sm">
             <option value="">Todos los estados</option>
             <?php foreach ($etiquetasEstado as $valorEstado => $etiqueta): ?>
@@ -125,8 +131,8 @@ $algunFiltroActivo = $busqueda !== '' || $categoriaId !== null || $estado !== nu
         </select>
     </div>
     <?php if (!empty($espacios)): ?>
-        <div style="max-width: 260px;">
-            <label class="form-label small mb-1">Espacio</label>
+        <div class="filtro-item">
+            <label for="filtroEspacio" class="form-label small mb-1">Espacio</label>
             <select id="filtroEspacio" class="form-select form-select-sm selector-buscable">
                 <option value="">Todos los espacios</option>
                 <?php foreach ($espacios as $e): ?>
@@ -137,6 +143,7 @@ $algunFiltroActivo = $busqueda !== '' || $categoriaId !== null || $estado !== nu
             </select>
         </div>
     <?php endif; ?>
+    </div>
 </div>
 
 <?php View::render('partials/paginacion', [
@@ -205,10 +212,10 @@ $algunFiltroActivo = $busqueda !== '' || $categoriaId !== null || $estado !== nu
             <tr>
                 <td>
                     <?php if (!empty($b['foto_path'])): ?>
-                        <img src="<?= Url::to('/archivos/' . $b['foto_path']) ?>"
+                        <img src="<?= Url::to('/archivos/' . $b['foto_path']) ?>?w=96" loading="lazy"
                              data-lightbox-src="<?= Url::to('/archivos/' . $b['foto_path']) ?>"
                              alt="Foto de <?= htmlspecialchars($b['descripcion'], ENT_QUOTES) ?>"
-                             style="width:36px;height:36px;object-fit:cover;border-radius:4px;cursor:zoom-in;"
+                             class="miniatura-36 miniatura-ampliable"
                              title="Ver foto en grande" loading="lazy">
                     <?php else: ?>
                         <span class="d-inline-flex align-items-center justify-content-center bg-light text-muted" style="width:36px;height:36px;border-radius:4px;">

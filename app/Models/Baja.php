@@ -7,28 +7,37 @@ namespace App\Models;
 use App\Core\Database;
 use App\Helpers\Paginador;
 
+/**
+ * Reportes de baja. Ciclo de vida (migración 031):
+ *
+ *   [reportar] → pendiente ──aprobar──→ aprobada   (el bien pasa a dado_de_baja)
+ *                    └──────rechazar──→ rechazada  (con motivo; el reporte se conserva)
+ *
+ * La columna "aprobada" (0/1) se mantiene sincronizada por compatibilidad hasta que se
+ * retire en una versión posterior.
+ */
 final class Baja
 {
     /**
      * Pendientes primero (requieren atención), y dentro de cada grupo las más
-     * recientes primero.
+     * recientes primero. $soloDe: id del usuario cuyo listado se limita a sus propios
+     * reportes (quien reporta pero no aprueba bajas, p. ej. un docente).
      */
-    public static function listar(?int $institucionId = null, int $pagina = 1, int $porPagina = 50): array
+    public static function listar(?int $institucionId = null, int $pagina = 1, int $porPagina = 50, ?int $soloDe = null): array
     {
+        [$where, $params] = self::condiciones($institucionId, $soloDe);
+
         $sql = 'SELECT bb.*, b.descripcion AS bien_descripcion, b.codigo_identificacion, b.institucion_id,
-                       c.nombre AS categoria_nombre, u.nombres, u.apellidos
+                       c.nombre AS categoria_nombre, u.nombres, u.apellidos,
+                       CONCAT(ur.nombres, " ", ur.apellidos) AS resuelta_por_nombre
                 FROM bajas_bienes bb
                 JOIN bienes b ON b.id = bb.bien_id
                 LEFT JOIN categorias_bienes c ON c.id = b.categoria_id
-                JOIN usuarios u ON u.id = bb.responsable_id';
-        $params = [];
-
-        if ($institucionId !== null) {
-            $sql .= ' WHERE b.institucion_id = ?';
-            $params[] = $institucionId;
-        }
-
-        $sql .= ' ORDER BY bb.aprobada ASC, bb.fecha_reporte DESC, bb.id DESC' . Paginador::limitSql($pagina, $porPagina);
+                JOIN usuarios u ON u.id = bb.responsable_id
+                LEFT JOIN usuarios ur ON ur.id = bb.resuelta_por'
+            . $where
+            . " ORDER BY FIELD(bb.estado, 'pendiente', 'aprobada', 'rechazada'), bb.fecha_reporte DESC, bb.id DESC"
+            . Paginador::limitSql($pagina, $porPagina);
 
         $stmt = Database::connection()->prepare($sql);
         $stmt->execute($params);
@@ -36,17 +45,13 @@ final class Baja
         return $stmt->fetchAll();
     }
 
-    public static function contarListado(?int $institucionId = null): int
+    public static function contarListado(?int $institucionId = null, ?int $soloDe = null): int
     {
-        $sql = 'SELECT COUNT(*) FROM bajas_bienes bb JOIN bienes b ON b.id = bb.bien_id';
-        $params = [];
+        [$where, $params] = self::condiciones($institucionId, $soloDe);
 
-        if ($institucionId !== null) {
-            $sql .= ' WHERE b.institucion_id = ?';
-            $params[] = $institucionId;
-        }
-
-        $stmt = Database::connection()->prepare($sql);
+        $stmt = Database::connection()->prepare(
+            'SELECT COUNT(*) FROM bajas_bienes bb JOIN bienes b ON b.id = bb.bien_id' . $where
+        );
         $stmt->execute($params);
 
         return (int) $stmt->fetchColumn();
@@ -55,7 +60,7 @@ final class Baja
     /** Para el indicador del panel principal: cuántas bajas siguen a la espera de aprobación. */
     public static function contarPendientes(?int $institucionId = null): int
     {
-        $sql = 'SELECT COUNT(*) FROM bajas_bienes bb JOIN bienes b ON b.id = bb.bien_id WHERE bb.aprobada = 0';
+        $sql = "SELECT COUNT(*) FROM bajas_bienes bb JOIN bienes b ON b.id = bb.bien_id WHERE bb.estado = 'pendiente'";
         $params = [];
 
         if ($institucionId !== null) {
@@ -67,6 +72,17 @@ final class Baja
         $stmt->execute($params);
 
         return (int) $stmt->fetchColumn();
+    }
+
+    /** ¿El bien ya tiene un reporte de baja esperando aprobación? (evita reportes duplicados) */
+    public static function tienePendiente(int $bienId): bool
+    {
+        $stmt = Database::connection()->prepare(
+            "SELECT 1 FROM bajas_bienes WHERE bien_id = ? AND estado = 'pendiente' LIMIT 1"
+        );
+        $stmt->execute([$bienId]);
+
+        return (bool) $stmt->fetchColumn();
     }
 
     public static function find(int $id): ?array
@@ -100,13 +116,49 @@ final class Baja
         return (int) Database::connection()->lastInsertId();
     }
 
-    public static function aprobar(int $id): void
+    /**
+     * Aprueba la baja SOLO si sigue pendiente (la condición va en el UPDATE): dos clics o
+     * dos personas a la vez no pueden aprobarla dos veces. Devuelve si la aprobó.
+     */
+    public static function aprobarSiPendiente(int $id, int $usuarioId): bool
     {
-        Database::connection()->prepare('UPDATE bajas_bienes SET aprobada = 1 WHERE id = ?')->execute([$id]);
+        $stmt = Database::connection()->prepare(
+            "UPDATE bajas_bienes SET estado = 'aprobada', aprobada = 1, resuelta_por = ?, resuelta_en = NOW()
+             WHERE id = ? AND estado = 'pendiente'"
+        );
+        $stmt->execute([$usuarioId, $id]);
+
+        return $stmt->rowCount() === 1;
     }
 
-    public static function eliminar(int $id): void
+    /** Rechaza la baja SOLO si sigue pendiente; el reporte se conserva con su motivo. */
+    public static function rechazarSiPendiente(int $id, int $usuarioId, string $motivo): bool
     {
-        Database::connection()->prepare('DELETE FROM bajas_bienes WHERE id = ?')->execute([$id]);
+        $stmt = Database::connection()->prepare(
+            "UPDATE bajas_bienes SET estado = 'rechazada', motivo_rechazo = ?, resuelta_por = ?, resuelta_en = NOW()
+             WHERE id = ? AND estado = 'pendiente'"
+        );
+        $stmt->execute([$motivo, $usuarioId, $id]);
+
+        return $stmt->rowCount() === 1;
+    }
+
+    /** @return array{0: string, 1: array<int, int>} */
+    private static function condiciones(?int $institucionId, ?int $soloDe): array
+    {
+        $condiciones = [];
+        $params = [];
+
+        if ($institucionId !== null) {
+            $condiciones[] = 'b.institucion_id = ?';
+            $params[] = $institucionId;
+        }
+
+        if ($soloDe !== null) {
+            $condiciones[] = 'bb.responsable_id = ?';
+            $params[] = $soloDe;
+        }
+
+        return [$condiciones === [] ? '' : ' WHERE ' . implode(' AND ', $condiciones), $params];
     }
 }

@@ -15,6 +15,7 @@ use App\Models\Auditoria;
 use App\Models\Bien;
 use App\Models\Categoria;
 use App\Models\JornadaVerificacion;
+use App\Models\SolicitudReintegro;
 use App\Models\Verificacion;
 use Endroid\QrCode\Builder\Builder;
 use Endroid\QrCode\Color\Color;
@@ -50,12 +51,34 @@ final class QrController
             'puedeReportarBaja' => Auth::check()
                 && (Auth::esSuperusuario() || Auth::tienePermiso('bajas.crear'))
                 && $bien['categoria_nombre'] === Categoria::NOMBRE_CATEGORIA_PROTEGIDA,
+            'puedeSolicitarReintegro' => $this->puedeSolicitarReintegro($bien, $puedeGestionar),
+            'solicitudReintegroPendiente' => $puedeGestionar && SolicitudReintegro::tienePendiente((int) $bien['id']),
             'jornadaActiva' => $jornadaActiva,
             'puedeVerificar' => $puedeVerificar,
             'verificacionActual' => $verificacionActual,
             'mensaje' => Session::pullFlash('ok'),
             'error' => Session::pullFlash('error'),
         ]);
+    }
+
+    /**
+     * "Solicitar reintegro" se muestra a quien puede pedirlo pero no reintegrar
+     * directamente (el docente): si el bien está a su cargo, cumple la regla de reintegro
+     * y no tiene ya una solicitud pendiente. Quien sí reintegra (rector, secretario) lo
+     * hace desde "Gestionar este bien".
+     */
+    private function puedeSolicitarReintegro(array $bien, bool $puedeGestionar): bool
+    {
+        if (!$puedeGestionar || Auth::esSuperusuario() || !Auth::tienePermiso('reintegros.solicitar')
+            || Auth::tienePermiso('asignaciones.crear')) {
+            return false;
+        }
+
+        $bienId = (int) $bien['id'];
+
+        return Bien::esResponsableDe($bienId, (int) Auth::id())
+            && Bien::motivoNoReintegrable($bien, Asignacion::activaDe($bienId) !== null) === null
+            && !SolicitudReintegro::tienePendiente($bienId);
     }
 
     /**

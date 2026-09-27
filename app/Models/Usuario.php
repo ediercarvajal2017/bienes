@@ -12,14 +12,28 @@ final class Usuario
 {
     public static function findByEmail(string $email): ?array
     {
+        return self::buscarParaAcceso('u.email = ?', $email);
+    }
+
+    /**
+     * Mismos datos que findByEmail(), por id: los usa el segundo paso del inicio de sesión
+     * (verificación en dos pasos), cuando la contraseña ya se validó.
+     */
+    public static function findParaAcceso(int $id): ?array
+    {
+        return self::buscarParaAcceso('u.id = ?', $id);
+    }
+
+    private static function buscarParaAcceso(string $condicion, string|int $valor): ?array
+    {
         $stmt = Database::connection()->prepare(
             'SELECT u.*, r.nombre AS rol_nombre, i.activo AS institucion_activa, i.nombre AS institucion_nombre
              FROM usuarios u
              JOIN roles r ON r.id = u.rol_id
              JOIN instituciones i ON i.id = u.institucion_id
-             WHERE u.email = ? AND u.eliminado_en IS NULL'
+             WHERE ' . $condicion . ' AND u.eliminado_en IS NULL'
         );
-        $stmt->execute([$email]);
+        $stmt->execute([$valor]);
         $usuario = $stmt->fetch();
 
         return $usuario ?: null;
@@ -61,28 +75,56 @@ final class Usuario
         return $stmt->fetch() ?: null;
     }
 
-    public static function registrarIntentoFallido(int $usuarioId): void
-    {
-        $config = require dirname(__DIR__, 2) . '/config/app.php';
-        $pdo = Database::connection();
-
-        $pdo->prepare('UPDATE usuarios SET intentos_fallidos = intentos_fallidos + 1 WHERE id = ?')
-            ->execute([$usuarioId]);
-
-        $stmt = $pdo->prepare('SELECT intentos_fallidos FROM usuarios WHERE id = ?');
-        $stmt->execute([$usuarioId]);
-        $intentos = (int) $stmt->fetchColumn();
-
-        if ($intentos >= $config['login_max_attempts']) {
-            $hasta = date('Y-m-d H:i:s', time() + $config['login_lockout_minutes'] * 60);
-            $pdo->prepare('UPDATE usuarios SET bloqueado_hasta = ? WHERE id = ?')->execute([$hasta, $usuarioId]);
-        }
-    }
-
     public static function registrarLoginExitoso(int $usuarioId): void
     {
         Database::connection()
             ->prepare('UPDATE usuarios SET intentos_fallidos = 0, bloqueado_hasta = NULL, ultimo_login = NOW() WHERE id = ?')
+            ->execute([$usuarioId]);
+    }
+
+    /**
+     * Lo mínimo para revalidar una sesión abierta (Auth::check): si la cuenta sigue
+     * activa, no está en la papelera, su institución sigue activa, su rol actual y la
+     * versión de sesión vigente. null si el usuario ya no existe.
+     */
+    public static function estadoSesion(int $usuarioId): ?array
+    {
+        $stmt = Database::connection()->prepare(
+            'SELECT u.activo, u.eliminado_en, u.sesion_version, r.nombre AS rol_nombre, i.activo AS institucion_activa
+             FROM usuarios u
+             JOIN roles r ON r.id = u.rol_id
+             JOIN instituciones i ON i.id = u.institucion_id
+             WHERE u.id = ?'
+        );
+        $stmt->execute([$usuarioId]);
+
+        return $stmt->fetch() ?: null;
+    }
+
+    /**
+     * Cierra todas las sesiones abiertas del usuario: sube su versión de sesión, y
+     * Auth::check() rechaza en la siguiente revalidación (máx. 1 minuto) cualquier sesión
+     * con la versión anterior. Devuelve la versión nueva.
+     */
+    public static function invalidarSesiones(int $usuarioId): int
+    {
+        $pdo = Database::connection();
+        $pdo->prepare('UPDATE usuarios SET sesion_version = sesion_version + 1 WHERE id = ?')->execute([$usuarioId]);
+
+        $stmt = $pdo->prepare('SELECT sesion_version FROM usuarios WHERE id = ?');
+        $stmt->execute([$usuarioId]);
+
+        return (int) $stmt->fetchColumn();
+    }
+
+    /**
+     * Quita el bloqueo por intentos fallidos (tras restablecer la contraseña por correo:
+     * quien la restablece demostró ser el dueño de la cuenta).
+     */
+    public static function desbloquear(int $usuarioId): void
+    {
+        Database::connection()
+            ->prepare('UPDATE usuarios SET intentos_fallidos = 0, bloqueado_hasta = NULL WHERE id = ?')
             ->execute([$usuarioId]);
     }
 
@@ -115,9 +157,9 @@ final class Usuario
         return $stmt->fetch() ?: null;
     }
 
-    public static function listar(?int $institucionId = null, ?string $busqueda = null, int $pagina = 1, int $porPagina = 50): array
+    public static function listar(?int $institucionId = null, ?string $busqueda = null, int $pagina = 1, int $porPagina = 50, bool $incluirSuperusuarios = true): array
     {
-        [$whereSql, $params] = self::condicionesListado($institucionId, $busqueda);
+        [$whereSql, $params] = self::condicionesListado($institucionId, $busqueda, $incluirSuperusuarios);
 
         $sql = 'SELECT u.*, r.nombre AS rol_nombre, c.nombre AS cargo_nombre, i.nombre AS institucion_nombre
                 FROM usuarios u
@@ -133,9 +175,9 @@ final class Usuario
         return $stmt->fetchAll();
     }
 
-    public static function contarListado(?int $institucionId = null, ?string $busqueda = null): int
+    public static function contarListado(?int $institucionId = null, ?string $busqueda = null, bool $incluirSuperusuarios = true): int
     {
-        [$whereSql, $params] = self::condicionesListado($institucionId, $busqueda);
+        [$whereSql, $params] = self::condicionesListado($institucionId, $busqueda, $incluirSuperusuarios);
 
         $sql = 'SELECT COUNT(*)
                 FROM usuarios u
@@ -152,10 +194,18 @@ final class Usuario
      * Busca por nombre, apellido, documento, correo o cargo — las columnas visibles
      * en /usuarios.
      */
-    private static function condicionesListado(?int $institucionId, ?string $busqueda): array
+    /**
+     * $incluirSuperusuarios = false para quien no es superusuario: las cuentas de
+     * superusuario no se listan (ni se pueden editar, ver UsuarioController::verificarAcceso).
+     */
+    private static function condicionesListado(?int $institucionId, ?string $busqueda, bool $incluirSuperusuarios = true): array
     {
         $condiciones = ['u.eliminado_en IS NULL'];
         $params = [];
+
+        if (!$incluirSuperusuarios) {
+            $condiciones[] = "u.rol_id NOT IN (SELECT id FROM roles WHERE nombre = 'superusuario')";
+        }
 
         if ($institucionId !== null) {
             $condiciones[] = 'u.institucion_id = ?';
@@ -233,6 +283,40 @@ final class Usuario
     public static function updatePassword(int $id, string $passwordHash): void
     {
         Database::connection()->prepare('UPDATE usuarios SET password_hash = ? WHERE id = ?')->execute([$passwordHash, $id]);
+    }
+
+    /** Deja activa la verificación en dos pasos con la clave (ya cifrada) del autenticador. */
+    public static function activarTotp(int $id, string $secretoCifrado, int $pasoUsado): void
+    {
+        Database::connection()->prepare(
+            'UPDATE usuarios SET totp_secreto = ?, totp_activado_en = NOW(), totp_ultimo_paso = ?
+             WHERE id = ?'
+        )->execute([$secretoCifrado, $pasoUsado, $id]);
+    }
+
+    /** Quita la verificación en dos pasos. */
+    public static function desactivarTotp(int $id): void
+    {
+        Database::connection()->prepare(
+            'UPDATE usuarios SET totp_secreto = NULL, totp_activado_en = NULL, totp_ultimo_paso = NULL
+             WHERE id = ?'
+        )->execute([$id]);
+    }
+
+    /**
+     * Anti-repetición: acepta el paso de tiempo del código solo si es posterior al último
+     * usado. El UPDATE condicional hace que, si llegan dos peticiones con el mismo código
+     * a la vez, solo una lo consiga.
+     */
+    public static function registrarPasoTotp(int $id, int $paso): bool
+    {
+        $stmt = Database::connection()->prepare(
+            'UPDATE usuarios SET totp_ultimo_paso = ?
+             WHERE id = ? AND (totp_ultimo_paso IS NULL OR totp_ultimo_paso < ?)'
+        );
+        $stmt->execute([$paso, $id, $paso]);
+
+        return $stmt->rowCount() === 1;
     }
 
     public static function updateFoto(int $id, string $fotoPath): void

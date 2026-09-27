@@ -50,8 +50,8 @@ $etiquetasEntidad = [
 
 <form method="get" action="<?= Url::to('/auditoria') ?>" class="mb-3 d-flex flex-wrap gap-3 align-items-end">
     <div>
-        <label class="form-label small mb-1">Institución</label>
-        <select name="institucion_id" class="form-select form-select-sm selector-buscable" style="min-width: 200px;">
+        <label for="campo-institucion-id" class="form-label small mb-1">Institución</label>
+        <select id="campo-institucion-id" name="institucion_id" class="form-select form-select-sm selector-buscable" style="min-width: 200px;">
             <option value="">Todas</option>
             <?php foreach ($instituciones as $i): ?>
                 <option value="<?= $i['id'] ?>" <?= (string) ($filtros['institucion_id'] ?? '') === (string) $i['id'] ? 'selected' : '' ?>>
@@ -61,8 +61,8 @@ $etiquetasEntidad = [
         </select>
     </div>
     <div>
-        <label class="form-label small mb-1">Tipo</label>
-        <select name="entidad" class="form-select form-select-sm">
+        <label for="campo-entidad" class="form-label small mb-1">Tipo</label>
+        <select id="campo-entidad" name="entidad" class="form-select form-select-sm">
             <option value="">Todos</option>
             <?php foreach ($etiquetasEntidad as $valor => $etiqueta): ?>
                 <option value="<?= $valor ?>" <?= ($filtros['entidad'] ?? '') === $valor ? 'selected' : '' ?>><?= $etiqueta ?></option>
@@ -70,8 +70,8 @@ $etiquetasEntidad = [
         </select>
     </div>
     <div>
-        <label class="form-label small mb-1">Acción</label>
-        <select name="accion" class="form-select form-select-sm">
+        <label for="campo-accion" class="form-label small mb-1">Acción</label>
+        <select id="campo-accion" name="accion" class="form-select form-select-sm">
             <option value="">Todas</option>
             <?php foreach ($etiquetasAccion as $valor => $etiqueta): ?>
                 <option value="<?= $valor ?>" <?= ($filtros['accion'] ?? '') === $valor ? 'selected' : '' ?>><?= $etiqueta ?></option>
@@ -79,12 +79,12 @@ $etiquetasEntidad = [
         </select>
     </div>
     <div>
-        <label class="form-label small mb-1">Desde</label>
-        <input type="date" name="desde" class="form-control form-control-sm" value="<?= htmlspecialchars($filtros['desde'] ?? '', ENT_QUOTES) ?>">
+        <label for="campo-desde" class="form-label small mb-1">Desde</label>
+        <input id="campo-desde" type="date" name="desde" class="form-control form-control-sm" value="<?= htmlspecialchars($filtros['desde'] ?? '', ENT_QUOTES) ?>">
     </div>
     <div>
-        <label class="form-label small mb-1">Hasta</label>
-        <input type="date" name="hasta" class="form-control form-control-sm" value="<?= htmlspecialchars($filtros['hasta'] ?? '', ENT_QUOTES) ?>">
+        <label for="campo-hasta" class="form-label small mb-1">Hasta</label>
+        <input id="campo-hasta" type="date" name="hasta" class="form-control form-control-sm" value="<?= htmlspecialchars($filtros['hasta'] ?? '', ENT_QUOTES) ?>">
     </div>
     <div class="d-flex gap-2">
         <button type="submit" class="btn btn-sm btn-primary">Filtrar</button>

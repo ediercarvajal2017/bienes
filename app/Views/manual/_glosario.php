@@ -1,5 +1,5 @@
-<details class="border rounded p-3 bg-white">
-    <summary class="fw-semibold" style="cursor:pointer;">Glosario de términos</summary>
+<details class="border rounded p-3 bg-body">
+    <summary class="fw-semibold">Glosario de términos</summary>
     <div class="mt-2 small">
         <dl class="mb-0">
             <dt>Cartera (histórico)</dt>

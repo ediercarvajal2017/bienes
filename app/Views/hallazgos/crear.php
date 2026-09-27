@@ -33,8 +33,8 @@ $v = static fn (string $campo, mixed $porDefecto = '') => $viejo[$campo] ?? $por
     <?= Csrf::field() ?>
 
     <div class="col-12">
-        <label class="form-label small requerido">Espacio donde lo encontraste</label>
-        <select name="espacio_id" class="form-select selector-buscable" required>
+        <label for="campo-espacio-id" class="form-label small requerido">Espacio donde lo encontraste</label>
+        <select id="campo-espacio-id" name="espacio_id" class="form-select selector-buscable" required>
             <option value="">-- Selecciona --</option>
             <?php foreach ($espacios as $e): ?>
                 <option value="<?= $e['id'] ?>" <?= (string) $v('espacio_id') === (string) $e['id'] ? 'selected' : '' ?>>
@@ -45,8 +45,8 @@ $v = static fn (string $campo, mixed $porDefecto = '') => $viejo[$campo] ?? $por
     </div>
 
     <div class="col-12">
-        <label class="form-label small requerido">Descripción</label>
-        <input type="text" name="descripcion" class="form-control" required
+        <label for="campo-descripcion" class="form-label small requerido">Descripción</label>
+        <input id="campo-descripcion" type="text" name="descripcion" class="form-control" required
                placeholder="Ej. Ventilador de techo, silla plástica azul..."
                value="<?= htmlspecialchars($v('descripcion'), ENT_QUOTES) ?>">
     </div>

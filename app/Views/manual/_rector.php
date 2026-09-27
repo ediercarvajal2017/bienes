@@ -1,12 +1,12 @@
-<p class="text-muted" style="max-width: 720px;">
+<p class="text-muted contenedor-manual">
     Como rector tienes acceso a casi todo el sistema dentro de tu institución. Esta guía cubre los flujos
     principales de cada módulo; haz clic en cada tema para ver el detalle.
 </p>
 
-<div class="d-flex flex-column gap-2" style="max-width: 720px;">
+<div class="d-flex flex-column gap-2 contenedor-manual">
 
-    <details class="border rounded p-3 bg-white" open>
-        <summary class="fw-semibold" style="cursor:pointer;">1. Bienes: registrar y gestionar el ciclo de vida</summary>
+    <details class="border rounded p-3 bg-body" open>
+        <summary class="fw-semibold">1. Bienes: registrar y gestionar el ciclo de vida</summary>
         <div class="mt-2 small">
             <ol class="mb-0 ps-3">
                 <li><strong>Registrar un bien</strong> (Bienes &gt; Registrar bien): código, descripción, categoría,
@@ -23,8 +23,8 @@
         </div>
     </details>
 
-    <details class="border rounded p-3 bg-white">
-        <summary class="fw-semibold" style="cursor:pointer;">2. Espacios: crear y administrar</summary>
+    <details class="border rounded p-3 bg-body">
+        <summary class="fw-semibold">2. Espacios: crear y administrar</summary>
         <div class="mt-2 small">
             <ol class="mb-0 ps-3">
                 <li>Entra a <strong>Espacios</strong> para crear aulas, oficinas o bodegas, y asignarles un
@@ -34,8 +34,8 @@
         </div>
     </details>
 
-    <details class="border rounded p-3 bg-white">
-        <summary class="fw-semibold" style="cursor:pointer;">3. Usuarios: gestionar tu equipo</summary>
+    <details class="border rounded p-3 bg-body">
+        <summary class="fw-semibold">3. Usuarios: gestionar tu equipo</summary>
         <div class="mt-2 small">
             <ol class="mb-0 ps-3">
                 <li>Entra a <strong>Usuarios</strong> para crear secretarios, docentes u otros rectores de tu
@@ -43,6 +43,9 @@
                 <li>Puedes editar sus datos, desactivarlos o eliminarlos (si un usuario ya tiene movimientos
                     registrados, el sistema te pedirá desactivarlo en vez de eliminarlo).</li>
                 <li>Para cargar varios usuarios de una vez, usa la carga masiva.</li>
+                <li>Si alguien perdió el teléfono con el que entra (verificación en dos pasos), ábrelo en
+                    <strong>Usuarios</strong> y pulsa <strong>Restablecer</strong> en esa sección; te pedirá tu
+                    contraseña.</li>
             </ol>
             <p class="text-muted mb-0 mt-2">
                 No puedes crear usuarios con rol Superusuario, ni administrar el catálogo de "Cargos" (puestos de
@@ -51,8 +54,8 @@
         </div>
     </details>
 
-    <details class="border rounded p-3 bg-white">
-        <summary class="fw-semibold" style="cursor:pointer;">4. Categorías de bienes</summary>
+    <details class="border rounded p-3 bg-body">
+        <summary class="fw-semibold">4. Categorías de bienes</summary>
         <div class="mt-2 small">
             <ol class="mb-0 ps-3">
                 <li>Entra a <strong>Categorías</strong> para crear, renombrar o desactivar las categorías con las que
@@ -62,8 +65,8 @@
         </div>
     </details>
 
-    <details class="border rounded p-3 bg-white">
-        <summary class="fw-semibold" style="cursor:pointer;">5. Verificación física: jornadas completas</summary>
+    <details class="border rounded p-3 bg-body">
+        <summary class="fw-semibold">5. Verificación física: jornadas completas</summary>
         <div class="mt-2 small">
             <ol class="mb-0 ps-3">
                 <li>Entra a <strong>Verificación física</strong> y pulsa <strong>Nueva jornada</strong> para
@@ -78,18 +81,22 @@
         </div>
     </details>
 
-    <details class="border rounded p-3 bg-white">
-        <summary class="fw-semibold" style="cursor:pointer;">6. Bajas: aprobar o rechazar</summary>
+    <details class="border rounded p-3 bg-body">
+        <summary class="fw-semibold">6. Bajas: aprobar o rechazar</summary>
         <div class="mt-2 small">
             <ol class="mb-0 ps-3">
                 <li>Entra a <strong>Bajas</strong> para ver todas las bajas reportadas en tu institución.</li>
                 <li>Apruébalas o recházalas — mientras no se aprueben, el bien sigue activo en el sistema.</li>
+                <li>Al aprobar, el bien queda dado de baja y sale de su espacio. Al rechazar, escribe el motivo: el
+                    reporte se conserva con él y quien lo hizo puede verlo.</li>
+                <li>En <strong>Solicitudes de reintegro</strong> revisas los pedidos de los docentes: al aprobar uno
+                    (con la fecha y el destino) el bien se reintegra; al rechazarlo, escribe una respuesta.</li>
             </ol>
         </div>
     </details>
 
-    <details class="border rounded p-3 bg-white">
-        <summary class="fw-semibold" style="cursor:pointer;">7. Lotes de reintegro y el comprobante oficial (FO-ADMI-009)</summary>
+    <details class="border rounded p-3 bg-body">
+        <summary class="fw-semibold">7. Lotes de reintegro y el comprobante oficial (FO-ADMI-009)</summary>
         <div class="mt-2 small">
             <ol class="mb-0 ps-3">
                 <li>Después de reintegrar bienes, entra a <strong>Lotes de reintegro</strong> y genera un lote con
@@ -100,8 +107,8 @@
         </div>
     </details>
 
-    <details class="border rounded p-3 bg-white">
-        <summary class="fw-semibold" style="cursor:pointer;">8. Reportes y cartera</summary>
+    <details class="border rounded p-3 bg-body">
+        <summary class="fw-semibold">8. Reportes y cartera</summary>
         <div class="mt-2 small">
             <ol class="mb-0 ps-3">
                 <li>Entra a <strong>Reportes</strong> para descargar la cartera de bienes, los reintegros
@@ -112,8 +119,8 @@
         </div>
     </details>
 
-    <details class="border rounded p-3 bg-white">
-        <summary class="fw-semibold" style="cursor:pointer;">9. Formatos de reintegro, de plaqueteo y facturas</summary>
+    <details class="border rounded p-3 bg-body">
+        <summary class="fw-semibold">9. Formatos de reintegro, de plaqueteo y facturas</summary>
         <div class="mt-2 small">
             <p class="mb-1">
                 Estas tres secciones del menú son una biblioteca de evidencia: sirven para archivar en el sistema
@@ -128,15 +135,19 @@
         </div>
     </details>
 
-    <details class="border rounded p-3 bg-white">
-        <summary class="fw-semibold" style="cursor:pointer;">10. Lo que solo puede hacer el superusuario</summary>
+    <details class="border rounded p-3 bg-body">
+        <summary class="fw-semibold">10. Lo que solo puede hacer el superusuario</summary>
         <div class="mt-2 small">
             <ul class="mb-0 ps-3">
-                <li>Crear nuevas instituciones, o activarlas/desactivarlas.</li>
+                <li>Crear nuevas instituciones, o activarlas/desactivarlas, y cambiar la estructura de sedes
+                    (principal/sección) o el código DANE.</li>
                 <li>Administrar el catálogo de "Cargos" (puestos de trabajo).</li>
+                <li>Consultar la auditoría y la papelera.</li>
             </ul>
         </div>
     </details>
+
+    <?php require __DIR__ . '/_cuenta.php'; ?>
 
     <?php require __DIR__ . '/_glosario.php'; ?>
 

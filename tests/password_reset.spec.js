@@ -10,7 +10,7 @@ import { seleccionarPrimeraOpcionTomSelect } from './helpers/tomSelect.js';
  * un token inválido nunca muestre el formulario de nueva contraseña, y el flujo
  * completo de "¿Cuál es mi correo?" (que no depende de correo saliente).
  */
-test.use({ storageState: 'playwright/.auth/user.json' });
+test.use({ storageState: 'playwright/.auth/superusuario.json' });
 
 test('recuperación de contraseña y de correo', async ({ page }) => {
     const sufijo = Date.now();

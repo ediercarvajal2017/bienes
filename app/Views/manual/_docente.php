@@ -1,12 +1,12 @@
-<p class="text-muted" style="max-width: 720px;">
+<p class="text-muted contenedor-manual">
     Estos son los pasos para las tareas que puedes realizar en SIGEBI como docente. Haz clic en cada tema para
     ver el detalle.
 </p>
 
-<div class="d-flex flex-column gap-2" style="max-width: 720px;">
+<div class="d-flex flex-column gap-2 contenedor-manual">
 
-    <details class="border rounded p-3 bg-white" open>
-        <summary class="fw-semibold" style="cursor:pointer;">1. Ver los bienes de tu espacio</summary>
+    <details class="border rounded p-3 bg-body" open>
+        <summary class="fw-semibold">1. Ver los bienes de tu espacio</summary>
         <div class="mt-2 small">
             <ol class="mb-0 ps-3">
                 <li>En el menú lateral, entra a <strong>Bienes</strong>.</li>
@@ -16,8 +16,8 @@
         </div>
     </details>
 
-    <details class="border rounded p-3 bg-white">
-        <summary class="fw-semibold" style="cursor:pointer;">2. Escanear el código QR de un bien</summary>
+    <details class="border rounded p-3 bg-body">
+        <summary class="fw-semibold">2. Escanear el código QR de un bien</summary>
         <div class="mt-2 small">
             <ol class="mb-0 ps-3">
                 <li>Entra a <strong>Escanear QR</strong> desde el menú lateral o el panel principal.</li>
@@ -28,8 +28,8 @@
         </div>
     </details>
 
-    <details class="border rounded p-3 bg-white">
-        <summary class="fw-semibold" style="cursor:pointer;">3. Confirmar o reportar un bien durante una verificación</summary>
+    <details class="border rounded p-3 bg-body">
+        <summary class="fw-semibold">3. Confirmar o reportar un bien durante una verificación</summary>
         <div class="mt-2 small">
             <p class="mb-1">
                 Solo aplica cuando tu institución tiene una <strong>jornada de verificación activa</strong> y el
@@ -45,8 +45,8 @@
         </div>
     </details>
 
-    <details class="border rounded p-3 bg-white">
-        <summary class="fw-semibold" style="cursor:pointer;">4. Reportar un bien que no está registrado</summary>
+    <details class="border rounded p-3 bg-body">
+        <summary class="fw-semibold">4. Reportar un bien que no está registrado</summary>
         <div class="mt-2 small">
             <p class="mb-1">
                 Si durante una verificación encuentras algo que no tiene QR ni está registrado en el sistema:
@@ -61,17 +61,33 @@
         </div>
     </details>
 
-    <details class="border rounded p-3 bg-white">
-        <summary class="fw-semibold" style="cursor:pointer;">5. Reportar la baja de un bien</summary>
+    <details class="border rounded p-3 bg-body">
+        <summary class="fw-semibold">5. Reportar la baja de un bien</summary>
         <div class="mt-2 small">
             <ol class="mb-0 ps-3">
                 <li>Escanea el QR del bien (ver punto 2) y pulsa <strong>"Reportar baja"</strong>.</li>
                 <li>Indica el motivo, el estado actual del bien y, si quieres, agrega una foto.</li>
                 <li>El reporte queda <strong>pendiente de aprobación</strong>: alguien con autorización debe
                     revisarlo antes de que se dé de baja definitivamente.</li>
-                <li>Puedes consultar el estado de tus bajas reportadas en <strong>Bajas</strong>, en el menú lateral.</li>
+                <li>Puedes consultar el estado de tus bajas reportadas en <strong>Bajas</strong>, en el menú lateral.
+                    Si la rechazan, ahí verás el motivo.</li>
             </ol>
         </div>
     </details>
+
+    <details class="border rounded p-3 bg-body">
+        <summary class="fw-semibold">6. Solicitar el reintegro de un bien que ya no usas</summary>
+        <div class="mt-2 small">
+            <ol class="mb-0 ps-3">
+                <li>Escanea el QR del bien a tu cargo y pulsa <strong>"Solicitar reintegro"</strong>.</li>
+                <li>Explica el motivo (por ejemplo, que ya no se usa en el aula). La solicitud llega al rector o al
+                    secretario, que la aprueba —y el bien se reintegra— o la rechaza con una respuesta.</li>
+                <li>Consulta tus solicitudes y su respuesta en <strong>Solicitudes de reintegro</strong>, en el menú
+                    lateral. Mientras esté pendiente, puedes cancelarla.</li>
+            </ol>
+        </div>
+    </details>
+
+    <?php require __DIR__ . '/_cuenta.php'; ?>
 
 </div>

@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { datos } from './helpers/datos.js';
 
 test.describe('Login', () => {
     test('la página carga con los campos esperados', async ({ page }) => {
@@ -32,18 +33,19 @@ test.describe('Login', () => {
 
         const alerta = page.locator('.alert-danger');
         await expect(alerta).toBeVisible();
-        await expect(alerta).toContainText('Credenciales inválidas');
+        await expect(alerta).toContainText('Correo o contraseña incorrectos');
 
         await alerta.getByRole('button', { name: 'Cerrar mensaje' }).click();
         await expect(alerta).toBeHidden();
     });
 
     test('con credenciales válidas entra al panel principal', async ({ page }) => {
-        test.skip(!process.env.TEST_USER_EMAIL, 'Define TEST_USER_EMAIL/TEST_USER_PASSWORD en .env.test para esta prueba');
+        const cuenta = datos().usuarios.superusuario;
+        test.skip(!cuenta.email, 'Sin credenciales (modo remoto sin TEST_USER_EMAIL)');
 
         await page.goto('login');
-        await page.locator('input[name="email"]').fill(process.env.TEST_USER_EMAIL);
-        await page.locator('input[name="password"]').fill(process.env.TEST_USER_PASSWORD);
+        await page.locator('input[name="email"]').fill(cuenta.email);
+        await page.locator('input[name="password"]').fill(cuenta.clave);
         await page.getByRole('button', { name: 'Ingresar' }).click();
 
         await expect(page).toHaveURL(/\/dashboard/);

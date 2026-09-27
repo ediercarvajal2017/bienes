@@ -51,11 +51,15 @@ use App\Core\View;
         </tr>
         </thead>
         <tbody>
+        <?php if ($usuarios === []): ?>
+            <?php View::render('partials/tabla_vacia', ['colspan' => Auth::esSuperusuario() ? 8 : 7, 'icono' => 'people',
+                'mensaje' => !empty($busqueda) ? 'Ningún usuario coincide con la búsqueda.' : 'Todavía no hay usuarios registrados.']); ?>
+        <?php endif; ?>
         <?php foreach ($usuarios as $u): ?>
             <tr>
                 <td>
                     <?php if (!empty($u['foto_path'])): ?>
-                        <img src="<?= Url::to('/archivos/' . $u['foto_path']) ?>"
+                        <img src="<?= Url::to('/archivos/' . $u['foto_path']) ?>?w=96" loading="lazy"
                              alt="Foto de <?= htmlspecialchars($u['nombres'] . ' ' . $u['apellidos'], ENT_QUOTES) ?>"
                              class="rounded-circle" style="width:32px;height:32px;object-fit:cover;" loading="lazy">
                     <?php else: ?>
@@ -78,20 +82,24 @@ use App\Core\View;
                     <?php else: ?>
                         <span class="badge badge-inactivo">Inactivo</span>
                     <?php endif; ?>
+                    <?php if (!empty($u['totp_activado_en'])): ?>
+                        <span class="badge text-bg-light border" title="Tiene activa la verificación en dos pasos"><i class="bi bi-shield-check me-1" aria-hidden="true"></i>2 pasos</span>
+                    <?php endif; ?>
                 </td>
                 <td class="text-end text-nowrap">
                     <?php if (Auth::esSuperusuario() || Auth::tienePermiso('usuarios.editar')): ?>
                         <a href="<?= Url::to('/usuarios/' . $u['id'] . '/editar') ?>" class="btn btn-sm btn-outline-secondary">Editar</a>
                     <?php endif; ?>
                     <?php if ((Auth::esSuperusuario() || Auth::tienePermiso('usuarios.eliminar')) && (int) $u['id'] !== Auth::id()): ?>
-                        <form method="post" action="<?= Url::to('/usuarios/' . $u['id'] . '/estado') ?>" class="d-inline">
+                        <form method="post" action="<?= Url::to('/usuarios/' . $u['id'] . '/estado') ?>" class="d-inline"
+                              data-confirmar="<?= (int) $u['activo'] === 1 ? '¿Desactivar este usuario? No podrá ingresar y sus sesiones abiertas se cerrarán.' : '¿Activar este usuario?' ?>">
                             <?= Csrf::field() ?>
                             <button type="submit" class="btn btn-sm btn-outline-<?= (int) $u['activo'] === 1 ? 'danger' : 'success' ?>">
                                 <?= (int) $u['activo'] === 1 ? 'Desactivar' : 'Activar' ?>
                             </button>
                         </form>
                         <form method="post" action="<?= Url::to('/usuarios/' . $u['id'] . '/eliminar') ?>" class="d-inline"
-                              onsubmit="return confirm('¿Eliminar este usuario? Solo es posible si no tiene movimientos ni registros asociados. Un superusuario podrá restaurarlo desde la papelera si fue un error.');">
+                              data-confirmar="¿Eliminar este usuario? Solo es posible si no tiene movimientos ni registros asociados. Un superusuario podrá restaurarlo desde la papelera si fue un error.">
                             <?= Csrf::field() ?>
                             <button type="submit" class="btn btn-sm btn-outline-danger">Eliminar</button>
                         </form>

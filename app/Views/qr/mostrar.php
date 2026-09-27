@@ -26,11 +26,11 @@ $qrImpreso = !empty($bien['qr_impreso_en']);
     })();
     </script>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <title><?= htmlspecialchars($bien['descripcion'], ENT_QUOTES) ?> · SIGEBI</title>
-    <link rel="icon" type="image/jpeg" href="<?= Url::asset('/assets/img/favicon.jpg') ?>">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="icon" type="image/png" sizes="32x32" href="<?= Url::asset('/assets/img/favicon-32.png') ?>">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" integrity="sha384-tViUnnbYAV00FLIhhi3v/dWt3Jxw4gZQcNoSCxCIFNJVCx7/D55/wXsrNIRANwdD" crossorigin="anonymous" rel="stylesheet">
     <link href="<?= Url::asset('/assets/css/app.css') ?>" rel="stylesheet">
 </head>
 <body>
@@ -114,6 +114,15 @@ $qrImpreso = !empty($bien['qr_impreso_en']);
                         <i class="bi bi-exclamation-triangle me-1"></i>Reportar baja
                     </a>
                 <?php endif; ?>
+                <?php if (!empty($puedeSolicitarReintegro)): ?>
+                    <a href="<?= Url::to('/qr/' . $token . '/solicitar-reintegro') ?>" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-box-arrow-in-left me-1" aria-hidden="true"></i>Solicitar reintegro
+                    </a>
+                <?php elseif (!empty($solicitudReintegroPendiente)): ?>
+                    <div class="small text-muted text-center">
+                        <i class="bi bi-hourglass-split me-1" aria-hidden="true"></i>Tiene una solicitud de reintegro pendiente.
+                    </div>
+                <?php endif; ?>
             </div>
 
             <?php if (!$qrImpreso): ?>
@@ -163,7 +172,7 @@ $qrImpreso = !empty($bien['qr_impreso_en']);
                     <?= \App\Core\Csrf::field() ?>
                     <input type="hidden" name="resultado" value="ok">
                     <?php if (empty($bien['foto_path'])): ?>
-                        <label class="form-label small text-muted mb-1">Este bien no tiene foto — puedes tomarle una (opcional)</label>
+                        <label for="fotoVerificar" class="form-label small text-muted mb-1">Este bien no tiene foto — puedes tomarle una (opcional)</label>
                         <input type="file" name="foto" id="fotoVerificar" accept="image/*" capture="environment" class="form-control form-control-sm mb-2">
                     <?php endif; ?>
                     <button type="submit" class="btn btn-outline-success btn-sm w-100 mb-2">
@@ -177,7 +186,7 @@ $qrImpreso = !empty($bien['qr_impreso_en']);
                 <form method="post" action="<?= Url::to('/qr/' . $token . '/verificar') ?>" id="formDiscrepancia" style="display:none;" class="mt-2">
                     <?= \App\Core\Csrf::field() ?>
                     <input type="hidden" name="resultado" value="discrepancia">
-                    <label class="form-label small text-muted mb-1">¿Qué pasa con este bien?</label>
+                    <label for="motivoDiscrepancia" class="form-label small text-muted mb-1">¿Qué pasa con este bien?</label>
                     <select name="motivo" id="motivoDiscrepancia" class="form-select form-select-sm mb-2" required>
                         <option value="">-- Selecciona --</option>
                         <option value="no_se_encuentra">No se encuentra</option>

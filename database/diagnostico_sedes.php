@@ -14,6 +14,11 @@ declare(strict_types=1);
  * Uso: php database/diagnostico_sedes.php
  */
 
+if (PHP_SAPI !== 'cli') {
+    http_response_code(404);
+    exit;
+}
+
 require __DIR__ . '/../vendor/autoload.php';
 
 use App\Core\Database;

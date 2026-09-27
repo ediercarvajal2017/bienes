@@ -1,5 +1,5 @@
 /**
- * Overlay de "procesando..." para cualquier formulario de la aplicación — antes solo
+ * Confirmación (data-confirmar) y overlay de "procesando..." para cualquier formulario de la aplicación — antes solo
  * cubría los que suben archivos, dejando sin ninguna señal de progreso a los demás
  * (crear/editar sin foto, activar/desactivar, eliminar...). Se activa por delegación
  * de eventos en el documento — cualquier formulario nuevo lo obtiene automáticamente,
@@ -26,7 +26,7 @@
         ].join(';');
 
         overlay.innerHTML = [
-            '<div class="bg-white rounded-3 shadow p-4 text-center" style="max-width:320px;">',
+            '<div class="bg-body text-body rounded-3 shadow p-4 text-center" style="max-width:320px;">',
             '  <div class="spinner-border text-primary mb-3" role="status" style="width:2.5rem;height:2.5rem;"></div>',
             '  <div class="fw-semibold">Procesando…</div>',
             '  <div class="text-muted small mt-1">No cierres ni recargues esta página.</div>',
@@ -51,6 +51,14 @@
     document.addEventListener('submit', function (evento) {
         const form = evento.target;
         if (!(form instanceof HTMLFormElement)) { return; }
+
+        // Confirmación estándar: <form data-confirmar="¿...?">. Reemplaza los
+        // onsubmit="return confirm(...)" sueltos que había en cada vista.
+        const mensaje = form.getAttribute('data-confirmar');
+        if (mensaje && !window.confirm(mensaje)) {
+            evento.preventDefault();
+            return;
+        }
 
         if (!requiereOverlay(form)) {
             if (form.hasAttribute('target')) { manejarEnvioEnPestañaNueva(evento, form); }
@@ -128,5 +136,34 @@
             enlace.removeAttribute('aria-disabled');
             enlace.innerHTML = textoOriginal;
         }, 3000);
+    });
+
+    /**
+     * Selección masiva (asignar, QR masivo, generar lote): tocar cualquier parte de la
+     * celda marca la casilla (también la de "seleccionar todos" del encabezado). En el celular la celda ocupa todo el ancho de la tarjeta,
+     * así el área táctil pasa de 24 px a la fila completa.
+     */
+    document.addEventListener('click', function (evento) {
+        const celda = evento.target.closest('td, th');
+        if (!celda || evento.target.closest('input, a, button, label, select, textarea')) { return; }
+        // Casilla sola en la celda: de un bien o "seleccionar todos" del encabezado.
+        const casilla = celda.querySelector(':scope > input[type="checkbox"]');
+        if (!casilla || casilla.disabled) { return; }
+        casilla.checked = !casilla.checked;
+        casilla.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+
+    /**
+     * Botón que muestra/oculta un bloque (p. ej. los filtros en el celular):
+     * <button data-alternar="idDelBloque" aria-expanded="false">. El bloque usa la clase
+     * "abierto"; el CSS decide en qué tamaños se oculta.
+     */
+    document.addEventListener('click', function (evento) {
+        const boton = evento.target.closest('[data-alternar]');
+        if (!boton) { return; }
+        const bloque = document.getElementById(boton.getAttribute('data-alternar'));
+        if (!bloque) { return; }
+        const abierto = bloque.classList.toggle('abierto');
+        boton.setAttribute('aria-expanded', abierto ? 'true' : 'false');
     });
 })();

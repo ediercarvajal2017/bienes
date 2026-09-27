@@ -12,11 +12,11 @@
     })();
     </script>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <title>Restablecer contraseña · SIGEBI</title>
-    <link rel="icon" type="image/jpeg" href="<?= Url::asset('/assets/img/favicon.jpg') ?>">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="icon" type="image/png" sizes="32x32" href="<?= Url::asset('/assets/img/favicon-32.png') ?>">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" integrity="sha384-tViUnnbYAV00FLIhhi3v/dWt3Jxw4gZQcNoSCxCIFNJVCx7/D55/wXsrNIRANwdD" crossorigin="anonymous" rel="stylesheet">
     <link href="<?= Url::asset('/assets/css/app.css') ?>" rel="stylesheet">
 </head>
 <body>
@@ -41,11 +41,12 @@
                 <?= \App\Core\Csrf::field() ?>
                 <div class="mb-3">
                     <label class="form-label small" for="password">Nueva contraseña</label>
-                    <input type="password" name="password" id="password" class="form-control" required minlength="8" autofocus autocomplete="new-password">
+                    <input type="password" name="password" id="password" class="form-control" required minlength="10" autofocus autocomplete="new-password">
+                    <div class="form-text">Mínimo 10 caracteres, con letras y números. No use su nombre, documento ni correo.</div>
                 </div>
                 <div class="mb-3">
                     <label class="form-label small" for="password_confirmacion">Confirmar contraseña</label>
-                    <input type="password" name="password_confirmacion" id="password_confirmacion" class="form-control" required minlength="8" autocomplete="new-password">
+                    <input type="password" name="password_confirmacion" id="password_confirmacion" class="form-control" required minlength="10" autocomplete="new-password">
                 </div>
                 <button type="submit" class="btn btn-primary w-100">Guardar contraseña</button>
             </form>
@@ -58,6 +59,7 @@
 </div>
 
 <script src="<?= Url::asset('/assets/js/tema.js') ?>"></script>
+<script src="<?= Url::asset('/assets/js/cargando.js') ?>"></script>
 <script src="<?= Url::asset('/assets/js/alertas.js') ?>"></script>
 <script src="<?= Url::asset('/assets/js/mostrar-contrasena.js') ?>"></script>
 </body>

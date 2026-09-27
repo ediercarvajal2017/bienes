@@ -1,6 +1,8 @@
 import { test, expect } from '@playwright/test';
 
 test('crear, editar, desactivar y eliminar un usuario', async ({ page }) => {
+    // Activar/desactivar/eliminar piden confirmación (data-confirmar): se acepta.
+    page.on('dialog', (dialogo) => dialogo.accept());
     const sufijo = Date.now();
     const documento = `PWTEST${sufijo}`;
     const email = `pw-test-${sufijo}@example.com`;
@@ -38,8 +40,6 @@ test('crear, editar, desactivar y eliminar un usuario', async ({ page }) => {
     fila = page.locator('tr', { hasText: emailEditado });
     // La fila tiene dos badges (Rol y Estado) — hay que apuntar al de Estado.
     await expect(fila.locator('td[data-label="Estado"] .badge')).toHaveText('Inactivo');
-
-    page.once('dialog', (dialog) => dialog.accept());
     await fila.getByRole('button', { name: 'Eliminar' }).click();
 
     await expect(page.locator('tr', { hasText: emailEditado })).toHaveCount(0);

@@ -12,11 +12,11 @@
     })();
     </script>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <title>Iniciar sesión · SIGEBI</title>
-    <link rel="icon" type="image/jpeg" href="<?= Url::asset('/assets/img/favicon.jpg') ?>">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="icon" type="image/png" sizes="32x32" href="<?= Url::asset('/assets/img/favicon-32.png') ?>">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" integrity="sha384-tViUnnbYAV00FLIhhi3v/dWt3Jxw4gZQcNoSCxCIFNJVCx7/D55/wXsrNIRANwdD" crossorigin="anonymous" rel="stylesheet">
     <link href="<?= Url::asset('/assets/css/app.css') ?>" rel="stylesheet">
 </head>
 <body>
@@ -27,7 +27,7 @@
             <i class="bi bi-moon-stars"></i>
         </button>
         <div class="text-center mb-2">
-            <img src="<?= Url::asset('/assets/img/logo.png') ?>" alt="SIGEBI" class="auth-logo">
+            <img src="<?= Url::asset('/assets/img/logo.webp') ?>" width="600" height="206" alt="SIGEBI" class="auth-logo">
         </div>
         <div class="brand-sub text-center">Sistema de Gestión de Bienes Institucionales</div>
 
@@ -39,11 +39,12 @@
             <?= \App\Core\Csrf::field() ?>
             <div class="mb-3">
                 <label class="form-label small" for="email">Correo institucional</label>
-                <input type="email" name="email" id="email" class="form-control" required autofocus autocomplete="username">
+                <input type="email" name="email" id="email" class="form-control" required autocomplete="username"
+                       value="<?= htmlspecialchars($email ?? '', ENT_QUOTES) ?>" <?= empty($email) ? 'autofocus' : '' ?>>
             </div>
             <div class="mb-3">
                 <label class="form-label small" for="password">Contraseña</label>
-                <input type="password" name="password" id="password" class="form-control" required autocomplete="current-password">
+                <input type="password" name="password" id="password" class="form-control" required autocomplete="current-password" <?= !empty($email) ? 'autofocus' : '' ?>>
             </div>
             <div class="form-check mb-3">
                 <input type="checkbox" name="recordar" value="1" id="recordar" class="form-check-input">
@@ -60,6 +61,7 @@
 </div>
 
 <script src="<?= Url::asset('/assets/js/tema.js') ?>"></script>
+<script src="<?= Url::asset('/assets/js/cargando.js') ?>"></script>
 <script src="<?= Url::asset('/assets/js/alertas.js') ?>"></script>
 <script src="<?= Url::asset('/assets/js/mostrar-contrasena.js') ?>"></script>
 </body>

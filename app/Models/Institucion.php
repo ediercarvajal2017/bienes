@@ -72,6 +72,14 @@ final class Institucion
         return $stmt->fetchAll();
     }
 
+    public static function tieneSecciones(int $id): bool
+    {
+        $stmt = Database::connection()->prepare('SELECT 1 FROM instituciones WHERE institucion_padre_id = ? LIMIT 1');
+        $stmt->execute([$id]);
+
+        return (bool) $stmt->fetchColumn();
+    }
+
     public static function setActivo(int $id, bool $activo): void
     {
         Database::connection()->prepare('UPDATE instituciones SET activo = ? WHERE id = ?')->execute([(int) $activo, $id]);

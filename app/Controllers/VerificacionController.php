@@ -6,12 +6,14 @@ namespace App\Controllers;
 
 use App\Core\Auth;
 use App\Core\Csrf;
+use App\Core\Database;
 use App\Core\Request;
 use App\Core\Session;
 use App\Core\Url;
 use App\Core\View;
 use App\Helpers\Paginador;
 use App\Helpers\Uploader;
+use App\Models\Auditoria;
 use App\Models\Bien;
 use App\Models\Hallazgo;
 use App\Models\JornadaVerificacion;
@@ -88,12 +90,32 @@ final class VerificacionController
             exit;
         }
 
-        $id = JornadaVerificacion::crear([
-            'institucion_id' => $institucionId,
-            'nombre' => $nombre,
-            'fecha_inicio' => $fechaInicio,
-            'creada_por' => Auth::id(),
-        ]);
+        // Bloqueo de la fila de la institución: dos personas iniciando una jornada al mismo
+        // tiempo quedan en fila, y la segunda ve que ya existe una en progreso (antes el
+        // chequeo de arriba no bastaba y podían quedar dos jornadas abiertas).
+        try {
+            $id = Database::transaccion(static function (\PDO $pdo) use ($institucionId, $nombre, $fechaInicio): int {
+                $pdo->prepare('SELECT id FROM instituciones WHERE id = ? FOR UPDATE')->execute([$institucionId]);
+                if (JornadaVerificacion::activaPara($institucionId)) {
+                    throw new \DomainException('Ya hay una jornada de verificación en progreso. Ciérrala antes de iniciar otra.');
+                }
+
+                $id = JornadaVerificacion::crear([
+                    'institucion_id' => $institucionId,
+                    'nombre' => $nombre,
+                    'fecha_inicio' => $fechaInicio,
+                    'creada_por' => Auth::id(),
+                ]);
+                Auditoria::registrar(Auth::id(), $institucionId, 'iniciar', 'jornada_verificacion', $id, null,
+                    ['nombre' => $nombre, 'fecha_inicio' => $fechaInicio]);
+
+                return $id;
+            });
+        } catch (\DomainException $e) {
+            Session::flash('error', $e->getMessage());
+            header('Location: ' . Url::to('/verificaciones'));
+            exit;
+        }
 
         Session::flash('ok', 'Jornada de verificación iniciada. Ya puedes escanear los QR de los bienes para verificarlos.');
         header('Location: ' . Url::to("/verificaciones/{$id}"));
@@ -217,8 +239,20 @@ final class VerificacionController
             exit;
         }
 
+        // Los hallazgos sin resolver no se pierden al cerrar, pero se pide confirmarlo de
+        // forma explícita para que no queden pendientes por descuido.
+        $hallazgosPendientes = count(Hallazgo::pendientesDeJornada($id));
+        if ($hallazgosPendientes > 0 && $request->input('confirmar_hallazgos') !== '1') {
+            Session::flash('error', "Hay {$hallazgosPendientes} hallazgo(s) sin registrar ni descartar. Resuélvalos o confirme el cierre de todos modos.");
+            header('Location: ' . Url::to("/verificaciones/{$id}#seccion-hallazgos"));
+            exit;
+        }
+
         $observaciones = trim((string) $request->input('observaciones')) ?: null;
         JornadaVerificacion::cerrar($id, $observaciones);
+        Auditoria::registrar(Auth::id(), (int) $jornada['institucion_id'], 'cerrar', 'jornada_verificacion', $id,
+            ['estado' => 'en_progreso'],
+            ['estado' => 'cerrada', 'observaciones' => $observaciones, 'hallazgos_pendientes' => $hallazgosPendientes]);
 
         Session::flash('ok', 'Jornada de verificación cerrada.');
         header('Location: ' . Url::to("/verificaciones/{$id}"));
@@ -284,6 +318,14 @@ final class VerificacionController
 
         $request = new Request();
         $this->verificarCsrf($request, "/qr/{$token}");
+
+        // Dados de baja y reintegrados ya salieron físicamente de la institución: no forman
+        // parte del inventario que la jornada debe verificar.
+        if (in_array($bien['estado'], ['dado_de_baja', 'reintegrado'], true)) {
+            Session::flash('error', 'Este bien está "' . Bien::etiquetaEstado($bien['estado']) . '": no forma parte de la verificación física.');
+            header('Location: ' . Url::to("/qr/{$token}"));
+            exit;
+        }
 
         $jornada = JornadaVerificacion::activaPara($institucionId);
         if (!$jornada) {

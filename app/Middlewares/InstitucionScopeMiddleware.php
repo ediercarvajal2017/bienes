@@ -7,6 +7,7 @@ namespace App\Middlewares;
 use App\Core\Auth;
 use App\Core\MiddlewareInterface;
 use App\Core\Request;
+use App\Core\View;
 
 final class InstitucionScopeMiddleware implements MiddlewareInterface
 {
@@ -14,7 +15,14 @@ final class InstitucionScopeMiddleware implements MiddlewareInterface
     {
         if (!Auth::esSuperusuario() && !Auth::institucionId()) {
             http_response_code(403);
-            exit('Tu usuario no tiene una institución asignada.');
+            View::render('errors/_pagina', [
+                'codigo' => 403,
+                'titulo' => 'Usuario sin institución',
+                'mensaje' => 'Su usuario no tiene una institución asignada. Pida al rector o al administrador que la configure.',
+                'enlace' => '/login',
+                'textoEnlace' => 'Volver al inicio de sesión',
+            ]);
+            exit;
         }
 
         return $next();

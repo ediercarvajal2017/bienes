@@ -104,4 +104,12 @@ $listar = static function (array $items, int $limite = 40): string {
         <p class="small mb-0"><?= $listar($resultado['formato_invalido']) ?></p>
         <p class="small text-muted mt-1">Solo se aceptan imágenes JPG o PNG.</p>
     </div>
+
+    <?php if (!empty($resultado['demasiado_grandes'])): ?>
+        <div class="mb-3">
+            <h2 class="h6">Imágenes demasiado grandes (no se cargaron)</h2>
+            <p class="small mb-0"><?= $listar($resultado['demasiado_grandes']) ?></p>
+            <p class="small text-muted mt-1">Cada imagen puede pesar como máximo <?= (int) round(\App\Helpers\Uploader::TAMANO_MAXIMO_IMAGEN / 1024 / 1024) ?> MB. Redúzcalas y vuelva a subirlas.</p>
+        </div>
+    <?php endif; ?>
 <?php endif; ?>

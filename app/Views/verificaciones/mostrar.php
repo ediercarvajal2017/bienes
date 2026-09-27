@@ -60,11 +60,12 @@ $tabPorDefecto = !empty($hallazgos) ? 'hallazgos' : 'discrepancia';
 
 <?php if ($jornada['estado'] === 'en_progreso'): ?>
     <form method="post" action="<?= Url::to('/verificaciones/' . $jornada['id'] . '/cerrar') ?>" class="card mb-4" style="max-width: 480px;"
-          onsubmit="return confirm('¿Cerrar la jornada de verificación? Quedan <?= (int) $totalPendientes ?> bien(es) pendiente(s) por verificar.');">
+          onsubmit="<?php if (count($hallazgos) > 0): ?>if (!confirm('Hay <?= count($hallazgos) ?> hallazgo(s) sin registrar ni descartar. ¿Cerrar la jornada de todos modos?')) { return false; } this.confirmar_hallazgos.value = '1'; <?php endif; ?>return confirm('¿Cerrar la jornada de verificación? Quedan <?= (int) $totalPendientes ?> bien(es) pendiente(s) por verificar.');">
         <div class="card-body">
             <?= Csrf::field() ?>
-            <label class="form-label small">Observaciones de cierre (opcional)</label>
-            <textarea name="observaciones" class="form-control form-control-sm mb-2" rows="2"></textarea>
+            <input type="hidden" name="confirmar_hallazgos" value="0">
+            <label for="campo-observaciones" class="form-label small">Observaciones de cierre (opcional)</label>
+            <textarea id="campo-observaciones" name="observaciones" class="form-control form-control-sm mb-2" rows="2"></textarea>
             <button type="submit" class="btn btn-outline-danger btn-sm">
                 <i class="bi bi-lock me-1"></i>Cerrar jornada
             </button>
@@ -117,10 +118,10 @@ $tabPorDefecto = !empty($hallazgos) ? 'hallazgos' : 'discrepancia';
                     <td class="text-muted small" data-label="Espacio"><?= htmlspecialchars($h['espacio_nombre'], ENT_QUOTES) ?></td>
                     <td data-label="Foto">
                         <?php if (!empty($h['foto_path'])): ?>
-                            <img src="<?= Url::to('/archivos/' . $h['foto_path']) ?>"
+                            <img src="<?= Url::to('/archivos/' . $h['foto_path']) ?>?w=96" loading="lazy"
                                  data-lightbox-src="<?= Url::to('/archivos/' . $h['foto_path']) ?>"
                                  alt="Foto del hallazgo: <?= htmlspecialchars($h['descripcion'], ENT_QUOTES) ?>"
-                                 style="width:36px;height:36px;object-fit:cover;border-radius:4px;cursor:zoom-in;" loading="lazy">
+                                 class="miniatura-36 miniatura-ampliable" loading="lazy">
                         <?php else: ?>
                             <span class="text-muted small">—</span>
                         <?php endif; ?>
@@ -131,7 +132,7 @@ $tabPorDefecto = !empty($hallazgos) ? 'hallazgos' : 'discrepancia';
                         <div class="d-flex flex-column gap-1">
                             <a href="<?= Url::to('/bienes/crear') ?>?hallazgo_id=<?= (int) $h['id'] ?>" class="btn btn-sm btn-outline-primary">Registrar como bien</a>
                             <form method="post" action="<?= Url::to('/hallazgos/' . $h['id'] . '/descartar') ?>"
-                                  onsubmit="return confirm('¿Descartar este hallazgo? No se creará ningún bien.');">
+                                  data-confirmar="¿Descartar este hallazgo? No se creará ningún bien.">
                                 <?= Csrf::field() ?>
                                 <button type="submit" class="btn btn-sm btn-outline-secondary w-100">Descartar</button>
                             </form>
@@ -164,13 +165,13 @@ $tabPorDefecto = !empty($hallazgos) ? 'hallazgos' : 'discrepancia';
     <?php if ($verificadosDiscrepancia > 0): ?>
         <div class="mb-2 d-flex flex-wrap gap-3 align-items-end">
             <div style="max-width: 420px; flex: 1 1 260px;">
-                <label class="form-label small mb-1">Buscar</label>
+                <label for="buscadorDiscrepancia" class="form-label small mb-1">Buscar</label>
                 <input type="search" id="buscadorDiscrepancia" class="form-control form-control-sm"
                        placeholder="Buscar por código, descripción o ubicación..."
                        value="<?= htmlspecialchars($busquedaDiscrepancia, ENT_QUOTES) ?>">
             </div>
             <div>
-                <label class="form-label small mb-1">Estado</label>
+                <label for="selectorEstadoDiscrepancia" class="form-label small mb-1">Estado</label>
                 <select id="selectorEstadoDiscrepancia" class="form-select form-select-sm">
                     <option value="pendiente" <?= $estadoDiscrepancia === 'pendiente' ? 'selected' : '' ?>>Sin atender</option>
                     <option value="revisada" <?= $estadoDiscrepancia === 'revisada' ? 'selected' : '' ?>>Revisadas</option>
@@ -379,12 +380,43 @@ $tabPorDefecto = !empty($hallazgos) ? 'hallazgos' : 'discrepancia';
     const enlaces = Array.prototype.slice.call(document.querySelectorAll('[data-tab-link]'));
     const paneles = Array.prototype.slice.call(document.querySelectorAll('[data-tab-panel]'));
 
+    // Roles ARIA de pestañas: los lectores de pantalla anuncian "pestaña 2 de 4,
+    // seleccionada", y las flechas izquierda/derecha cambian de pestaña.
+    const lista = document.getElementById('tabsVerificacion');
+    if (lista) { lista.setAttribute('role', 'tablist'); lista.setAttribute('aria-label', 'Secciones de la jornada'); }
+    enlaces.forEach(function (enlace) {
+        const nombre = enlace.dataset.tabLink;
+        enlace.id = 'tab-' + nombre;
+        enlace.setAttribute('role', 'tab');
+        enlace.setAttribute('aria-controls', 'seccion-' + nombre);
+        if (enlace.parentElement) { enlace.parentElement.setAttribute('role', 'presentation'); }
+    });
+    paneles.forEach(function (panel) {
+        panel.setAttribute('role', 'tabpanel');
+        panel.setAttribute('aria-labelledby', 'tab-' + panel.dataset.tabPanel);
+    });
+
     function activarTab(nombre) {
         paneles.forEach(function (panel) {
             panel.classList.toggle('d-none', panel.dataset.tabPanel !== nombre);
         });
         enlaces.forEach(function (enlace) {
-            enlace.classList.toggle('active', enlace.dataset.tabLink === nombre);
+            const activa = enlace.dataset.tabLink === nombre;
+            enlace.classList.toggle('active', activa);
+            enlace.setAttribute('aria-selected', activa ? 'true' : 'false');
+            enlace.setAttribute('tabindex', activa ? '0' : '-1');
+        });
+    }
+
+    if (lista) {
+        lista.addEventListener('keydown', function (e) {
+            if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') { return; }
+            const actual = enlaces.indexOf(document.activeElement);
+            if (actual === -1) { return; }
+            e.preventDefault();
+            const siguiente = enlaces[(actual + (e.key === 'ArrowRight' ? 1 : enlaces.length - 1)) % enlaces.length];
+            siguiente.focus();
+            siguiente.click();
         });
     }
 
@@ -399,8 +431,7 @@ $tabPorDefecto = !empty($hallazgos) ? 'hallazgos' : 'discrepancia';
 
     const disponibles = enlaces.map(function (enlace) { return enlace.dataset.tabLink; });
     const hashInicial = window.location.hash.replace('#seccion-', '');
-    if (disponibles.indexOf(hashInicial) !== -1) {
-        activarTab(hashInicial);
-    }
+    const inicial = enlaces.filter(function (enlace) { return enlace.classList.contains('active'); })[0];
+    activarTab(disponibles.indexOf(hashInicial) !== -1 ? hashInicial : (inicial ? inicial.dataset.tabLink : disponibles[0]));
 })();
 </script>

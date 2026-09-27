@@ -21,6 +21,18 @@ if ($appConfig['debug']) {
     error_reporting(E_ALL);
 }
 
+App\Core\ErrorHandler::registrar($appConfig['debug'], $appConfig['storage_path'] . '/logs');
+
+// Modo mantenimiento: deploy-hostinger.sh crea este archivo antes de respaldar y migrar,
+// y lo borra al terminar. Mientras exista, nadie escribe en la base de datos.
+if (is_file(__DIR__ . '/mantenimiento.flag')) {
+    http_response_code(503);
+    header('Retry-After: 300');
+    header('Cache-Control: no-store');
+    App\Core\View::render('errors/mantenimiento');
+    exit;
+}
+
 use App\Controllers\ArchivoController;
 use App\Controllers\AsignacionController;
 use App\Controllers\AuditoriaController;
@@ -34,7 +46,9 @@ use App\Controllers\CargaMasivaController;
 use App\Controllers\CargoController;
 use App\Controllers\CarteraController;
 use App\Controllers\CategoriaController;
+use App\Controllers\CuentaController;
 use App\Controllers\DashboardController;
+use App\Controllers\DosFactoresController;
 use App\Controllers\EscaneoController;
 use App\Controllers\EspacioCargaMasivaController;
 use App\Controllers\EspacioController;
@@ -53,6 +67,7 @@ use App\Controllers\QrMasivoController;
 use App\Controllers\ReintegroController;
 use App\Controllers\ReporteController;
 use App\Controllers\SedeActivaController;
+use App\Controllers\SolicitudReintegroController;
 use App\Controllers\UsuarioCargaMasivaController;
 use App\Controllers\UsuarioController;
 use App\Controllers\VerificacionController;
@@ -72,6 +87,21 @@ $router->get('/', [AuthController::class, 'redirectRoot']);
 $router->get('/login', [AuthController::class, 'showLogin']);
 $router->post('/login', [AuthController::class, 'login']);
 $router->post('/logout', [AuthController::class, 'logout'], [AuthMiddleware::class]);
+
+// Verificación en dos pasos. /2fa/verificar es el segundo paso del login: todavía no hay
+// sesión completa (el controlador exige el estado intermedio que deja Auth::attempt).
+$router->get('/2fa/verificar', [DosFactoresController::class, 'verificar']);
+$router->post('/2fa/verificar', [DosFactoresController::class, 'validar']);
+$router->get('/2fa/configurar', [DosFactoresController::class, 'configurar'], [AuthMiddleware::class]);
+$router->post('/2fa/activar', [DosFactoresController::class, 'activar'], [AuthMiddleware::class]);
+$router->get('/2fa/codigos', [DosFactoresController::class, 'codigos'], [AuthMiddleware::class]);
+$router->post('/2fa/codigos', [DosFactoresController::class, 'regenerarCodigos'], [AuthMiddleware::class]);
+$router->post('/2fa/desactivar', [DosFactoresController::class, 'desactivar'], [AuthMiddleware::class]);
+$router->post('/2fa/dispositivos/{id}/revocar', [DosFactoresController::class, 'revocarDispositivo'], [AuthMiddleware::class]);
+
+// Mi cuenta: seguridad de la propia cuenta (todos los roles).
+$router->get('/mi-cuenta', [CuentaController::class, 'index'], [AuthMiddleware::class]);
+$router->post('/mi-cuenta/contrasena', [CuentaController::class, 'cambiarContrasena'], [AuthMiddleware::class]);
 
 $router->get('/olvide-contrasena', [PasswordController::class, 'formularioOlvideContrasena']);
 $router->post('/olvide-contrasena', [PasswordController::class, 'enviarEnlaceReset']);
@@ -148,6 +178,9 @@ $router->post('/usuarios/{id}', [UsuarioController::class, 'actualizar'], [
 ]);
 $router->post('/usuarios/{id}/estado', [UsuarioController::class, 'cambiarEstado'], [
     AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':usuarios.eliminar',
+]);
+$router->post('/usuarios/{id}/restablecer-2fa', [UsuarioController::class, 'restablecerDosFactores'], [
+    AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':usuarios.editar',
 ]);
 $router->post('/usuarios/{id}/eliminar', [UsuarioController::class, 'eliminar'], [
     AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':usuarios.eliminar',
@@ -298,6 +331,26 @@ $router->get('/reintegros/lotes/generar', [ReintegroController::class, 'pendient
 $router->post('/reintegros/lotes/generar', [ReintegroController::class, 'generarLote'], [
     AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':asignaciones.crear',
 ]);
+// Solicitudes de reintegro (docente solicita; rector/secretario aprueba o rechaza).
+$router->get('/qr/{token}/solicitar-reintegro', [SolicitudReintegroController::class, 'formulario'], [
+    AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':reintegros.solicitar',
+]);
+$router->post('/qr/{token}/solicitar-reintegro', [SolicitudReintegroController::class, 'guardar'], [
+    AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':reintegros.solicitar',
+]);
+// El listado lo ven quien solicita y quien aprueba (el controlador valida cualquiera de los dos permisos).
+$router->get('/reintegros/solicitudes', [SolicitudReintegroController::class, 'index'], [
+    AuthMiddleware::class, InstitucionScopeMiddleware::class,
+]);
+$router->post('/reintegros/solicitudes/{id}/aprobar', [SolicitudReintegroController::class, 'aprobar'], [
+    AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':asignaciones.crear',
+]);
+$router->post('/reintegros/solicitudes/{id}/rechazar', [SolicitudReintegroController::class, 'rechazar'], [
+    AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':asignaciones.crear',
+]);
+$router->post('/reintegros/solicitudes/{id}/cancelar', [SolicitudReintegroController::class, 'cancelar'], [
+    AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':reintegros.solicitar',
+]);
 $router->get('/reintegros/lotes', [ReintegroController::class, 'lotes'], [
     AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':asignaciones.crear',
 ]);
@@ -376,7 +429,7 @@ $router->post('/hallazgos', [HallazgoController::class, 'guardar'], [
     AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':bienes.ver',
 ]);
 $router->post('/hallazgos/{id}/descartar', [HallazgoController::class, 'descartar'], [
-    AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':bienes.crear',
+    AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':verificaciones.gestionar',
 ]);
 
 $router->get('/manual', [ManualController::class, 'index'], [AuthMiddleware::class]);

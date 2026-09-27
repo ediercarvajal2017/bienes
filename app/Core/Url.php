@@ -51,10 +51,22 @@ final class Url
 
     /**
      * URL completa (esquema + host) para casos donde se necesita fuera del navegador,
-     * como el contenido codificado dentro de un código QR.
+     * como el contenido codificado dentro de un código QR o el enlace del correo de
+     * "olvidé mi contraseña".
+     *
+     * En producción se arma con APP_URL (.env), NUNCA con la cabecera Host que envía el
+     * navegador: un atacante podía pedir el restablecimiento de contraseña de otra persona
+     * con "Host: sitio-del-atacante.com" y el correo legítimo le llegaba a la víctima con
+     * un enlace (y su token) apuntando al sitio del atacante. Sin APP_URL (desarrollo
+     * local) se mantiene el comportamiento anterior.
      */
     public static function absoluta(string $path): string
     {
+        $appUrl = rtrim((string) Env::get('APP_URL', ''), '/');
+        if ($appUrl !== '') {
+            return $appUrl . '/' . ltrim($path, '/');
+        }
+
         $esquema = (($_SERVER['HTTPS'] ?? '') === 'on') ? 'https' : 'http';
         $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
 

@@ -19,7 +19,7 @@ use App\Core\View;
 
 <?php if (Auth::esSuperusuario()): ?>
     <div class="mb-3" style="max-width: 320px;">
-        <label class="form-label small">Institución</label>
+        <label for="selectorInstitucion" class="form-label small">Institución</label>
         <select id="selectorInstitucion" class="form-select form-select-sm selector-buscable">
             <option value="">-- Selecciona una institución --</option>
             <?php foreach ($instituciones as $i): ?>
@@ -45,8 +45,8 @@ use App\Core\View;
         <input type="hidden" name="institucion_id" value="<?= $institucionId ?>">
 
         <div class="col-md-6">
-            <label class="form-label small requerido">Fecha de la factura</label>
-            <input type="date" name="fecha_factura" class="form-control" required value="<?= date('Y-m-d') ?>">
+            <label for="campo-fecha-factura" class="form-label small requerido">Fecha de la factura</label>
+            <input id="campo-fecha-factura" type="date" name="fecha_factura" class="form-control" required value="<?= date('Y-m-d') ?>">
         </div>
         <div class="col-12">
             <?php View::render('partials/campo_foto', [
@@ -58,8 +58,8 @@ use App\Core\View;
             ]); ?>
         </div>
         <div class="col-12">
-            <label class="form-label small requerido">Descripción breve</label>
-            <input type="text" name="descripcion" class="form-control" required placeholder="Ej. Compra de sillas para aula 101">
+            <label for="campo-descripcion" class="form-label small requerido">Descripción breve</label>
+            <input id="campo-descripcion" type="text" name="descripcion" class="form-control" required placeholder="Ej. Compra de sillas para aula 101">
         </div>
 
         <div class="col-12">

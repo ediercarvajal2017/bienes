@@ -277,6 +277,83 @@ final class Bien
         return (int) $stmt->fetchColumn();
     }
 
+    /**
+     * Cifras del panel principal. "En circulación" = activo o en reparación (lo que la
+     * institución tiene hoy); los reintegrados y dados de baja se cuentan aparte.
+     *
+     * @return array{total: int, en_circulacion: int, valor: float, asignados: int, qr_confirmados: int, por_estado: array<string, int>}
+     */
+    public static function resumenPanel(?int $institucionId): array
+    {
+        $filtro = $institucionId !== null ? ' WHERE b.institucion_id = ?' : '';
+        $params = $institucionId !== null ? [$institucionId] : [];
+
+        $stmt = Database::connection()->prepare(
+            "SELECT b.estado,
+                    COUNT(*) AS cantidad,
+                    COALESCE(SUM(b.valor), 0) AS valor,
+                    SUM(a.id IS NOT NULL) AS asignados,
+                    SUM(b.qr_confirmado_en IS NOT NULL) AS qr_confirmados
+             FROM bienes b
+             LEFT JOIN asignaciones a ON a.bien_id = b.id AND a.activa = 1
+             {$filtro}
+             GROUP BY b.estado"
+        );
+        $stmt->execute($params);
+
+        $resumen = ['total' => 0, 'en_circulacion' => 0, 'valor' => 0.0, 'asignados' => 0, 'qr_confirmados' => 0,
+            'por_estado' => array_fill_keys(array_keys(self::TRANSICIONES), 0)];
+
+        foreach ($stmt->fetchAll() as $fila) {
+            $cantidad = (int) $fila['cantidad'];
+            $resumen['total'] += $cantidad;
+            $resumen['por_estado'][$fila['estado']] = $cantidad;
+
+            if (in_array($fila['estado'], ['activo', 'en_reparacion'], true)) {
+                $resumen['en_circulacion'] += $cantidad;
+                $resumen['valor'] += (float) $fila['valor'];
+                $resumen['asignados'] += (int) $fila['asignados'];
+                $resumen['qr_confirmados'] += (int) $fila['qr_confirmados'];
+            }
+        }
+
+        return $resumen;
+    }
+
+    /**
+     * Bienes en circulación por categoría (las $limite con más bienes; el resto se suma
+     * en "Otras categorías").
+     *
+     * @return list<array{nombre: string, cantidad: int}>
+     */
+    public static function porCategoriaPanel(?int $institucionId, int $limite = 6): array
+    {
+        $filtro = $institucionId !== null ? ' AND b.institucion_id = ?' : '';
+        $params = $institucionId !== null ? [$institucionId] : [];
+
+        $stmt = Database::connection()->prepare(
+            "SELECT COALESCE(c.nombre, 'Sin categoría') AS nombre, COUNT(*) AS cantidad
+             FROM bienes b
+             LEFT JOIN categorias_bienes c ON c.id = b.categoria_id
+             WHERE b.estado IN ('activo', 'en_reparacion'){$filtro}
+             GROUP BY nombre
+             ORDER BY cantidad DESC, nombre"
+        );
+        $stmt->execute($params);
+        $filas = array_values(array_map(
+            static fn (array $f): array => ['nombre' => (string) $f['nombre'], 'cantidad' => (int) $f['cantidad']],
+            $stmt->fetchAll()
+        ));
+
+        if (count($filas) <= $limite) {
+            return $filas;
+        }
+
+        $resto = array_sum(array_column(array_slice($filas, $limite), 'cantidad'));
+
+        return [...array_slice($filas, 0, $limite), ['nombre' => 'Otras categorías', 'cantidad' => $resto]];
+    }
+
     /** Para el indicador del panel principal: bienes activos que hoy no están asignados a ningún espacio. */
     public static function contarSinAsignar(?int $institucionId = null): int
     {
@@ -411,9 +488,83 @@ final class Bien
         )->execute([$id]);
     }
 
-    public static function marcarDadoDeBaja(int $id): void
+    /**
+     * Ciclo de vida del bien: a qué estados puede pasar desde cada estado.
+     *
+     *   activo ⇄ en_reparacion ──reintegro──→ reintegrado ──reactivar (rector)──→ activo
+     *     └──────────┴────────baja aprobada────→ dado_de_baja (estado final)
+     *
+     * Toda transición pasa por cambiarEstado(), que la valida contra esta tabla.
+     */
+    public const TRANSICIONES = [
+        'activo' => ['en_reparacion', 'reintegrado', 'dado_de_baja'],
+        'en_reparacion' => ['activo', 'reintegrado', 'dado_de_baja'],
+        'reintegrado' => ['activo'],
+        'dado_de_baja' => [],
+    ];
+
+    /** Estados desde los que un bien se puede reintegrar. */
+    public const ESTADOS_REINTEGRABLES = ['activo', 'en_reparacion'];
+
+    /**
+     * Cambia el estado del bien solo si la transición está permitida (TRANSICIONES). La
+     * condición va en el propio UPDATE, así que dos peticiones simultáneas no pueden
+     * aplicar dos transiciones incompatibles. Lanza DomainException si no se permite.
+     */
+    public static function cambiarEstado(int $id, string $nuevo): void
     {
-        Database::connection()->prepare("UPDATE bienes SET estado = 'dado_de_baja' WHERE id = ?")->execute([$id]);
+        $origenes = array_keys(array_filter(
+            self::TRANSICIONES,
+            static fn (array $destinos): bool => in_array($nuevo, $destinos, true)
+        ));
+        if ($origenes === []) {
+            throw new \DomainException("Estado de destino no válido: {$nuevo}.");
+        }
+
+        $marcadores = implode(', ', array_fill(0, count($origenes), '?'));
+        $stmt = Database::connection()->prepare("UPDATE bienes SET estado = ? WHERE id = ? AND estado IN ({$marcadores})");
+        $stmt->execute([$nuevo, $id, ...$origenes]);
+
+        if ($stmt->rowCount() === 0) {
+            $actual = self::find($id)['estado'] ?? 'inexistente';
+            throw new \DomainException(
+                'El bien está "' . self::etiquetaEstado($actual) . '" y no puede pasar a "' . self::etiquetaEstado($nuevo) . '".'
+            );
+        }
+    }
+
+    public static function etiquetaEstado(string $estado): string
+    {
+        return match ($estado) {
+            'activo' => 'Activo',
+            'reintegrado' => 'Reintegrado',
+            'en_reparacion' => 'En reparación',
+            'dado_de_baja' => 'Dado de baja',
+            default => $estado,
+        };
+    }
+
+    /**
+     * Regla ÚNICA de reintegro (individual, masivo y escáner): null si el bien se puede
+     * reintegrar, o el motivo si no. Antes el reintegro individual y el masivo aplicaban
+     * reglas distintas (estados aceptados y categoría "Sin cartera").
+     */
+    public static function motivoNoReintegrable(array $bien, bool $tieneAsignacionActiva): ?string
+    {
+        if (!in_array($bien['estado'], self::ESTADOS_REINTEGRABLES, true)) {
+            return 'el bien está "' . self::etiquetaEstado($bien['estado']) . '"';
+        }
+        if (!$tieneAsignacionActiva) {
+            return 'el bien no tiene una asignación activa';
+        }
+        if ($bien['categoria_id'] === null) {
+            return 'el bien no tiene categoría asignada';
+        }
+        if (($bien['categoria_nombre'] ?? null) === Categoria::NOMBRE_CATEGORIA_PROTEGIDA) {
+            return 'los bienes de la categoría "' . Categoria::NOMBRE_CATEGORIA_PROTEGIDA . '" no admiten reintegro, solo baja';
+        }
+
+        return null;
     }
 
     /**
@@ -527,12 +678,6 @@ final class Bien
      * nunca por el formulario normal de edición: estadoPermitidoDesdeFormulario() bloquea
      * a propósito cualquier cambio de estado ahí para un bien reintegrado.
      */
-    public static function reactivarDesdeReintegro(int $id): void
-    {
-        Database::connection()
-            ->prepare("UPDATE bienes SET estado = 'activo' WHERE id = ? AND estado = 'reintegrado'")
-            ->execute([$id]);
-    }
 
     /**
      * Cambia el dueño (institucion_id) de un bien — usado solo por el traslado entre
@@ -546,9 +691,15 @@ final class Bien
             ->execute([$institucionId, $id]);
     }
 
+    /**
+     * Al cambiar la foto se borra la huella de la búsqueda por foto (foto_vector): así el
+     * bien vuelve a quedar "pendiente de indexar" (BienFotoVector::pendientesDeIndexar) y
+     * se calcula la huella de la foto NUEVA. Sin esto, la búsqueda seguía encontrando el
+     * bien por su foto anterior.
+     */
     public static function updateFoto(int $id, string $path): void
     {
-        Database::connection()->prepare('UPDATE bienes SET foto_path = ? WHERE id = ?')->execute([$path, $id]);
+        Database::connection()->prepare('UPDATE bienes SET foto_path = ?, foto_vector = NULL WHERE id = ?')->execute([$path, $id]);
     }
 
     public static function updateFactura(int $id, string $path): void
@@ -767,9 +918,9 @@ final class Bien
              FROM bienes b
              JOIN asignaciones a ON a.bien_id = b.id AND a.activa = 1
              LEFT JOIN espacios e ON e.id = a.espacio_id
-             WHERE b.qr_token = ? AND b.institucion_id = ? AND b.estado = "activo"'
+             WHERE b.qr_token = ? AND b.institucion_id = ?' . self::sqlReglaReintegrable()
         );
-        $stmt->execute([$token, $institucionId]);
+        $stmt->execute([$token, $institucionId, Categoria::NOMBRE_CATEGORIA_PROTEGIDA]);
 
         return $stmt->fetch() ?: null;
     }
@@ -801,8 +952,8 @@ final class Bien
      */
     private static function condicionesReintegrables(?int $institucionId, ?string $busqueda, ?array $soloIds = null, ?int $categoriaId = null): array
     {
-        $condiciones = ['b.estado = "activo"'];
-        $params = [];
+        $condiciones = ['1 = 1' . self::sqlReglaReintegrable()];
+        $params = [Categoria::NOMBRE_CATEGORIA_PROTEGIDA];
 
         if ($institucionId !== null) {
             $condiciones[] = 'b.institucion_id = ?';
@@ -904,5 +1055,15 @@ final class Bien
         $data[8] = chr((ord($data[8]) & 0x3f) | 0x80);
 
         return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($data), 4));
+    }
+
+    /**
+     * Condición SQL de motivoNoReintegrable() (sin la asignación activa, que los listados
+     * ya exigen con su JOIN). Espera un parámetro: el nombre de la categoría protegida.
+     */
+    private static function sqlReglaReintegrable(): string
+    {
+        return " AND b.estado IN ('activo', 'en_reparacion') AND b.categoria_id IS NOT NULL"
+            . ' AND b.categoria_id NOT IN (SELECT id FROM categorias_bienes WHERE nombre = ?)';
     }
 }

@@ -6,12 +6,14 @@ namespace App\Controllers;
 
 use App\Core\Auth;
 use App\Core\Csrf;
+use App\Core\ErrorHandler;
 use App\Core\Request;
 use App\Core\Session;
 use App\Core\Url;
 use App\Core\View;
 use App\Helpers\Paginador;
 use App\Helpers\Uploader;
+use App\Models\Auditoria;
 use App\Models\CargaMasiva;
 use App\Services\UsuarioCargaMasivaService;
 
@@ -81,8 +83,13 @@ final class UsuarioCargaMasivaController
                 $institucionId,
                 Auth::esSuperusuario()
             );
+        } catch (\RuntimeException $e) {
+            Session::flash('error', $e->getMessage());
+            header('Location: ' . Url::to('/usuarios/carga-masiva'));
+            exit;
         } catch (\Throwable $e) {
-            Session::flash('error', 'No se pudo leer el archivo: ' . $e->getMessage());
+            $incidente = ErrorHandler::reportar($e, __METHOD__);
+            Session::flash('error', 'No se pudo leer el archivo. Verifique que sea la plantilla de Excel (.xlsx) descargada del sistema. (Código: ' . $incidente . ')');
             header('Location: ' . Url::to('/usuarios/carga-masiva'));
             exit;
         }
@@ -139,8 +146,24 @@ final class UsuarioCargaMasivaController
         }
 
         $filas = json_decode($carga['resultado_diff_json'], true) ?? [];
-        $omitidas = UsuarioCargaMasivaService::aplicar($filas, (int) $carga['institucion_id']);
-        CargaMasiva::marcarAplicada($id);
+        try {
+            $omitidas = CargaMasiva::aplicarUnaVez($id, static function () use ($filas, $carga, $id): int {
+                $omitidas = UsuarioCargaMasivaService::aplicar($filas, (int) $carga['institucion_id']);
+                Auditoria::registrar(Auth::id(), (int) $carga['institucion_id'], 'aplicar', 'carga_masiva', $id, null, [
+                    'tipo' => 'usuarios',
+                    'filas' => count($filas),
+                    'nuevos' => count(array_filter($filas, static fn (array $f): bool => $f['tipo'] === 'nuevo')),
+                    'modificados' => count(array_filter($filas, static fn (array $f): bool => $f['tipo'] === 'modificado')),
+                    'omitidas' => $omitidas,
+                ]);
+
+                return $omitidas;
+            });
+        } catch (\DomainException $e) {
+            Session::flash('error', $e->getMessage());
+            header('Location: ' . Url::to("/usuarios/carga-masiva/{$id}"));
+            exit;
+        }
 
         $nota = ' Los usuarios nuevos deben entrar a "¿Olvidaste tu contraseña?" con su correo registrado para activarse la primera vez.';
         Session::flash('ok', $omitidas > 0

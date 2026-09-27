@@ -1,12 +1,12 @@
-<p class="text-muted" style="max-width: 720px;">
+<p class="text-muted contenedor-manual">
     Como secretario tienes acceso operativo casi igual al del rector, con algunas excepciones (ver el último tema).
     Haz clic en cada tema para ver el detalle.
 </p>
 
-<div class="d-flex flex-column gap-2" style="max-width: 720px;">
+<div class="d-flex flex-column gap-2 contenedor-manual">
 
-    <details class="border rounded p-3 bg-white" open>
-        <summary class="fw-semibold" style="cursor:pointer;">1. Bienes: registrar y gestionar el ciclo de vida</summary>
+    <details class="border rounded p-3 bg-body" open>
+        <summary class="fw-semibold">1. Bienes: registrar y gestionar el ciclo de vida</summary>
         <div class="mt-2 small">
             <ol class="mb-0 ps-3">
                 <li><strong>Registrar un bien</strong> (Bienes &gt; Registrar bien): código, descripción, categoría,
@@ -23,8 +23,8 @@
         </div>
     </details>
 
-    <details class="border rounded p-3 bg-white">
-        <summary class="fw-semibold" style="cursor:pointer;">2. Espacios: crear y administrar</summary>
+    <details class="border rounded p-3 bg-body">
+        <summary class="fw-semibold">2. Espacios: crear y administrar</summary>
         <div class="mt-2 small">
             <ol class="mb-0 ps-3">
                 <li>Entra a <strong>Espacios</strong> para crear aulas, oficinas o bodegas, y asignarles un
@@ -34,8 +34,8 @@
         </div>
     </details>
 
-    <details class="border rounded p-3 bg-white">
-        <summary class="fw-semibold" style="cursor:pointer;">3. Verificación física: jornadas completas</summary>
+    <details class="border rounded p-3 bg-body">
+        <summary class="fw-semibold">3. Verificación física: jornadas completas</summary>
         <div class="mt-2 small">
             <ol class="mb-0 ps-3">
                 <li>Entra a <strong>Verificación física</strong> y pulsa <strong>Nueva jornada</strong> para
@@ -50,19 +50,23 @@
         </div>
     </details>
 
-    <details class="border rounded p-3 bg-white">
-        <summary class="fw-semibold" style="cursor:pointer;">4. Bajas: reportar y aprobar</summary>
+    <details class="border rounded p-3 bg-body">
+        <summary class="fw-semibold">4. Bajas: reportar y aprobar</summary>
         <div class="mt-2 small">
             <ol class="mb-0 ps-3">
                 <li>Reporta la baja de un bien desde su ficha o su código QR.</li>
                 <li>Entra a <strong>Bajas</strong> para ver todas las reportadas en tu institución y aprobarlas o
                     rechazarlas — mientras no se aprueben, el bien sigue activo en el sistema.</li>
+                <li>Al aprobar, el bien queda dado de baja y sale de su espacio. Al rechazar, escribe el motivo: el
+                    reporte se conserva con él y quien lo hizo puede verlo.</li>
+                <li>En <strong>Solicitudes de reintegro</strong> revisas los pedidos de los docentes: al aprobar uno
+                    (con la fecha y el destino) el bien se reintegra; al rechazarlo, escribe una respuesta.</li>
             </ol>
         </div>
     </details>
 
-    <details class="border rounded p-3 bg-white">
-        <summary class="fw-semibold" style="cursor:pointer;">5. Lotes de reintegro y el comprobante oficial (FO-ADMI-009)</summary>
+    <details class="border rounded p-3 bg-body">
+        <summary class="fw-semibold">5. Lotes de reintegro y el comprobante oficial (FO-ADMI-009)</summary>
         <div class="mt-2 small">
             <ol class="mb-0 ps-3">
                 <li>Después de reintegrar bienes, entra a <strong>Lotes de reintegro</strong> y genera un lote con
@@ -73,8 +77,8 @@
         </div>
     </details>
 
-    <details class="border rounded p-3 bg-white">
-        <summary class="fw-semibold" style="cursor:pointer;">6. Reportes y cartera</summary>
+    <details class="border rounded p-3 bg-body">
+        <summary class="fw-semibold">6. Reportes y cartera</summary>
         <div class="mt-2 small">
             <ol class="mb-0 ps-3">
                 <li>Entra a <strong>Reportes</strong> para descargar la cartera de bienes, los reintegros
@@ -85,8 +89,8 @@
         </div>
     </details>
 
-    <details class="border rounded p-3 bg-white">
-        <summary class="fw-semibold" style="cursor:pointer;">7. Formatos de reintegro, de plaqueteo y facturas</summary>
+    <details class="border rounded p-3 bg-body">
+        <summary class="fw-semibold">7. Formatos de reintegro, de plaqueteo y facturas</summary>
         <div class="mt-2 small">
             <p class="mb-1">
                 Estas tres secciones del menú son una biblioteca de evidencia: sirven para archivar en el sistema
@@ -101,8 +105,8 @@
         </div>
     </details>
 
-    <details class="border rounded p-3 bg-white">
-        <summary class="fw-semibold" style="cursor:pointer;">8. Lo que no puedes hacer</summary>
+    <details class="border rounded p-3 bg-body">
+        <summary class="fw-semibold">8. Lo que no puedes hacer</summary>
         <div class="mt-2 small">
             <ul class="mb-0 ps-3">
                 <li><strong>Usuarios:</strong> puedes verlos en el listado, pero no crearlos, editarlos ni
@@ -114,6 +118,8 @@
             </ul>
         </div>
     </details>
+
+    <?php require __DIR__ . '/_cuenta.php'; ?>
 
     <?php require __DIR__ . '/_glosario.php'; ?>
 

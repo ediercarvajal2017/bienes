@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Helpers\BinderSinFormulas;
 use App\Models\Bien;
 use App\Models\Movimiento;
 use App\Models\Verificacion;
@@ -24,7 +25,7 @@ final class ReporteService
 {
     public static function carteraBienes(?int $institucionId): Spreadsheet
     {
-        $spreadsheet = new Spreadsheet();
+        $spreadsheet = self::libroNuevo();
         $sheet = $spreadsheet->getActiveSheet();
         $sheet->setTitle('Cartera de bienes');
 
@@ -59,7 +60,7 @@ final class ReporteService
 
     public static function planillaReintegros(?int $institucionId): Spreadsheet
     {
-        $spreadsheet = new Spreadsheet();
+        $spreadsheet = self::libroNuevo();
         $sheet = $spreadsheet->getActiveSheet();
         $sheet->setTitle('Reintegros pendientes');
 
@@ -87,7 +88,7 @@ final class ReporteService
 
     public static function historialReintegros(?int $institucionId): Spreadsheet
     {
-        $spreadsheet = new Spreadsheet();
+        $spreadsheet = self::libroNuevo();
         $sheet = $spreadsheet->getActiveSheet();
         $sheet->setTitle('Bienes reintegrados');
 
@@ -138,7 +139,7 @@ final class ReporteService
      */
     public static function comprobanteReintegroLote(array $lote, array $bienes, array $rector): Spreadsheet
     {
-        $spreadsheet = new Spreadsheet();
+        $spreadsheet = self::libroNuevo();
         $spreadsheet->removeSheetByIndex(0);
 
         $grupos = [];
@@ -424,7 +425,7 @@ final class ReporteService
     public static function jornadaVerificacion(array $jornada, int $institucionId): Spreadsheet
     {
         $jornadaId = (int) $jornada['id'];
-        $spreadsheet = new Spreadsheet();
+        $spreadsheet = self::libroNuevo();
 
         $sheetOk = $spreadsheet->getActiveSheet();
         $sheetOk->setTitle('Sin novedad');
@@ -513,6 +514,7 @@ final class ReporteService
 
     public static function enviarCsv(Spreadsheet $spreadsheet, string $nombreArchivo): void
     {
+        self::neutralizarFormulasCsv($spreadsheet);
         header('Content-Type: text/csv; charset=UTF-8');
         header('Content-Disposition: attachment; filename="' . $nombreArchivo . '.csv"');
         header('Cache-Control: max-age=0');
@@ -520,6 +522,42 @@ final class ReporteService
         $writer->setDelimiter(',');
         $writer->save('php://output');
         exit;
+    }
+
+    /**
+     * Libro nuevo para un reporte: los textos que empiezan con "=" se guardan como texto,
+     * no como fórmula (ver BinderSinFormulas).
+     */
+    private static function libroNuevo(): Spreadsheet
+    {
+        $spreadsheet = new Spreadsheet();
+        $spreadsheet->setValueBinder(new BinderSinFormulas());
+
+        return $spreadsheet;
+    }
+
+    /**
+     * En un CSV no hay tipos: Excel interpreta como fórmula cualquier texto que empiece con
+     * = + - @ tabulación o retorno de carro. Se antepone un apóstrofo a esos textos (el
+     * apóstrofo le indica a Excel que es texto). Solo se tocan celdas de TEXTO: un número
+     * negativo sigue siendo un número.
+     */
+    private static function neutralizarFormulasCsv(Spreadsheet $spreadsheet): void
+    {
+        foreach ($spreadsheet->getWorksheetIterator() as $hoja) {
+            foreach ($hoja->getRowIterator() as $fila) {
+                foreach ($fila->getCellIterator() as $celda) {
+                    $valor = $celda->getValue();
+                    if ($celda->getDataType() === DataType::TYPE_STRING
+                        && is_string($valor)
+                        && $valor !== ''
+                        && in_array($valor[0], ['=', '+', '-', '@', "\t", "\r"], true)
+                    ) {
+                        $celda->setValueExplicit("'" . $valor, DataType::TYPE_STRING);
+                    }
+                }
+            }
+        }
     }
 
     private static function autoajustarColumnas(\PhpOffice\PhpSpreadsheet\Worksheet\Worksheet $sheet, string $desde, string $hasta): void

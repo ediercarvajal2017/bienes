@@ -28,13 +28,13 @@ $movimientosSeleccionados = $viejo['movimientos'] ?? [];
                 <h2 class="h6 mb-3">Datos del lote (opcional)</h2>
                 <div class="row g-3">
                     <div class="col-md-6">
-                        <label class="form-label small">Descripción</label>
-                        <input type="text" name="descripcion" class="form-control form-control-sm" placeholder="Ej. Entregas de la semana del 20 de julio"
+                        <label for="campo-descripcion" class="form-label small">Descripción</label>
+                        <input id="campo-descripcion" type="text" name="descripcion" class="form-control form-control-sm" placeholder="Ej. Entregas de la semana del 20 de julio"
                                value="<?= htmlspecialchars($viejo['descripcion'] ?? '', ENT_QUOTES) ?>">
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label small">Observaciones</label>
-                        <input type="text" name="observaciones" class="form-control form-control-sm" value="<?= htmlspecialchars($viejo['observaciones'] ?? '', ENT_QUOTES) ?>">
+                        <label for="campo-observaciones" class="form-label small">Observaciones</label>
+                        <input id="campo-observaciones" type="text" name="observaciones" class="form-control form-control-sm" value="<?= htmlspecialchars($viejo['observaciones'] ?? '', ENT_QUOTES) ?>">
                     </div>
                 </div>
             </div>
@@ -50,7 +50,7 @@ $movimientosSeleccionados = $viejo['movimientos'] ?? [];
             <table class="table table-sm table-hover align-middle bg-white tabla-cards">
                 <thead>
                 <tr>
-                    <th style="width: 32px;"><input type="checkbox" id="seleccionarTodos" class="form-check-input"></th>
+                    <th style="width: 32px;"><input type="checkbox" id="seleccionarTodos" class="form-check-input" aria-label="Seleccionar todos"></th>
                     <th></th>
                     <th>Código</th>
                     <th>Descripción</th>
@@ -67,10 +67,10 @@ $movimientosSeleccionados = $viejo['movimientos'] ?? [];
                         <td data-label="Seleccionar"><input type="checkbox" name="movimientos[]" value="<?= $p['id'] ?>" class="form-check-input casilla-bien" <?= in_array((int) $p['id'], $movimientosSeleccionados, true) ? 'checked' : '' ?>></td>
                         <td data-label="Foto">
                             <?php if (!empty($p['foto_path'])): ?>
-                                <img src="<?= Url::to('/archivos/' . $p['foto_path']) ?>"
+                                <img src="<?= Url::to('/archivos/' . $p['foto_path']) ?>?w=96" loading="lazy"
                                      data-lightbox-src="<?= Url::to('/archivos/' . $p['foto_path']) ?>"
                                      alt="Foto de <?= htmlspecialchars($p['descripcion'], ENT_QUOTES) ?>"
-                                     style="width:36px;height:36px;object-fit:cover;border-radius:4px;cursor:zoom-in;"
+                                     class="miniatura-36 miniatura-ampliable"
                                      title="Ver foto en grande" loading="lazy">
                             <?php else: ?>
                                 <span class="d-inline-flex align-items-center justify-content-center bg-light text-muted" style="width:36px;height:36px;border-radius:4px;">
@@ -84,7 +84,7 @@ $movimientosSeleccionados = $viejo['movimientos'] ?? [];
                         <td class="text-muted small" data-label="Reintegrado por">
                             <?= !empty($p['responsable_nombre']) ? htmlspecialchars($p['responsable_nombre'], ENT_QUOTES) : '—' ?>
                         </td>
-                        <td class="text-muted" data-label="Destino"><?= htmlspecialchars($p['destino_texto'], ENT_QUOTES) ?></td>
+                        <td class="text-muted" data-label="Destino"><?= !empty($p['destino_texto']) ? htmlspecialchars($p['destino_texto'], ENT_QUOTES) : '—' ?></td>
                         <td class="text-muted small" data-label="Espacio de origen">
                             <?= !empty($p['espacio_origen_nombre']) ? htmlspecialchars($p['espacio_origen_nombre'], ENT_QUOTES) : '—' ?>
                         </td>
@@ -104,9 +104,11 @@ $movimientosSeleccionados = $viejo['movimientos'] ?? [];
             <p class="text-muted small mt-2">La selección solo aplica a los reintegros visibles en esta página; genera el lote antes de pasar de página si quieres incluir más.</p>
         <?php endif; ?>
 
-        <button type="submit" class="btn btn-primary mt-2" id="botonGenerar" disabled>
-            <i class="bi bi-file-earmark-plus me-1"></i>Generar lote (<span id="contadorSeleccionados">0</span>)
-        </button>
+        <div class="accion-fija-movil">
+            <button type="submit" class="btn btn-primary mt-2" id="botonGenerar" disabled>
+                <i class="bi bi-file-earmark-plus me-1"></i>Generar lote (<span id="contadorSeleccionados">0</span>)
+            </button>
+        </div>
     </form>
 
     <script>

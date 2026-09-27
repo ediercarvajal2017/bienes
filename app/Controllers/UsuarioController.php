@@ -11,11 +11,15 @@ use App\Core\Session;
 use App\Core\Url;
 use App\Core\View;
 use App\Helpers\Paginador;
+use App\Helpers\PoliticaContrasena;
 use App\Helpers\Uploader;
 use App\Models\Auditoria;
 use App\Models\Cargo;
+use App\Models\CodigoRecuperacion;
+use App\Models\DispositivoConfiable;
 use App\Models\Institucion;
 use App\Models\Usuario;
+use App\Services\DosFactoresService;
 
 final class UsuarioController
 {
@@ -33,11 +37,11 @@ final class UsuarioController
             $porPagina = self::POR_PAGINA_DEFECTO;
         }
 
-        $total = Usuario::contarListado($institucionId, $terminoBusqueda);
+        $total = Usuario::contarListado($institucionId, $terminoBusqueda, Auth::esSuperusuario());
 
         View::layout('partials/layout', 'usuarios/index', [
             'title' => 'Usuarios',
-            'usuarios' => Usuario::listar($institucionId, $terminoBusqueda, $pagina, $porPagina),
+            'usuarios' => Usuario::listar($institucionId, $terminoBusqueda, $pagina, $porPagina, Auth::esSuperusuario()),
             'busqueda' => $busqueda,
             'pagina' => $pagina,
             'porPagina' => $porPagina,
@@ -107,10 +111,58 @@ final class UsuarioController
             'roles' => Usuario::rolesParaSelect(Auth::esSuperusuario()),
             'instituciones' => Auth::esSuperusuario() ? $this->institucionesParaFormulario($usuario) : [],
             'familiaSedes' => $this->familiaSedesDelRector(),
+            'dosFactoresActiva' => DosFactoresService::tieneActiva($usuario),
             'error' => Session::pullFlash('error'),
             'errorCampo' => Session::pullFlash('error_campo'),
+            'mensaje' => Session::pullFlash('ok'),
             'viejo' => Session::pullOld(),
         ]);
+    }
+
+    /**
+     * Para quien perdió el teléfono: quita su verificación en dos pasos, sus códigos de
+     * recuperación y sus dispositivos de confianza, y cierra sus sesiones. En su próximo
+     * ingreso entra con la contraseña y, si su rol la exige, la configura de nuevo.
+     * Se pide la contraseña de quien lo hace (una sesión abierta y olvidada no basta).
+     */
+    public function restablecerDosFactores(string $id): void
+    {
+        $id = (int) $id;
+        $usuario = Usuario::find($id);
+        $this->verificarAcceso($usuario);
+
+        $request = new Request();
+        $this->verificarCsrf($request, "/usuarios/{$id}/editar");
+
+        $volver = static function (string $tipo, string $mensaje) use ($id): never {
+            Session::flash($tipo, $mensaje);
+            header('Location: ' . Url::to("/usuarios/{$id}/editar"));
+            exit;
+        };
+
+        if ($id === Auth::id()) {
+            $volver('error', 'Tu propia verificación en dos pasos se administra desde «Mi cuenta».');
+        }
+
+        $administrador = Usuario::findParaAcceso((int) Auth::id());
+        if ($administrador === null || !password_verify((string) $request->input('password_confirmacion'), (string) $administrador['password_hash'])) {
+            $volver('error', 'Tu contraseña no es correcta: no se restableció la verificación en dos pasos.');
+        }
+
+        if (!DosFactoresService::tieneActiva($usuario)) {
+            $volver('error', 'Este usuario no tiene la verificación en dos pasos activa.');
+        }
+
+        Usuario::desactivarTotp($id);
+        CodigoRecuperacion::borrarDe($id);
+        DispositivoConfiable::revocarTodosDe($id);
+        Usuario::invalidarSesiones($id);
+
+        Auditoria::registrar(Auth::id(), (int) $usuario['institucion_id'], '2fa_restablecer', 'usuario', $id);
+        DosFactoresService::avisarPorCorreo($usuario, 'verificación en dos pasos restablecida',
+            'Un administrador restableció la verificación en dos pasos de su cuenta de SIGEBI. En su próximo ingreso podrá configurarla de nuevo.');
+
+        $volver('ok', 'Verificación en dos pasos restablecida. Sus sesiones abiertas se cerrarán en menos de un minuto.');
     }
 
     public function actualizar(string $id): void
@@ -144,6 +196,19 @@ final class UsuarioController
             Usuario::updatePassword($id, password_hash($password, PASSWORD_BCRYPT));
         }
 
+        // Con otra contraseña, otro rol u otra institución, las sesiones abiertas de ese
+        // usuario ya no corresponden a la cuenta: se cierran (si es el propio usuario, la
+        // sesión actual sigue con la versión nueva).
+        $cambioSensible = $password !== ''
+            || (int) $datos['rol_id'] !== (int) $usuario['rol_id']
+            || (int) $datos['institucion_id'] !== (int) $usuario['institucion_id'];
+        if ($cambioSensible) {
+            $version = Usuario::invalidarSesiones($id);
+            if ($id === Auth::id()) {
+                Auth::actualizarVersionSesion($version);
+            }
+        }
+
         if ($archivo = $request->file('foto')) {
             $this->subirFoto($id, $archivo);
         }
@@ -168,9 +233,22 @@ final class UsuarioController
         $request = new Request();
         $this->verificarCsrf($request, '/usuarios');
 
-        Usuario::setActivo($id, !((bool) $usuario['activo']));
+        $activar = !((bool) $usuario['activo']);
+        Usuario::setActivo($id, $activar);
+        if (!$activar) {
+            Usuario::invalidarSesiones($id); // sale del sistema en máximo un minuto
+        }
+        Auditoria::registrar(
+            Auth::id(),
+            (int) $usuario['institucion_id'],
+            $activar ? 'activar' : 'desactivar',
+            'usuario',
+            $id,
+            ['activo' => (int) $usuario['activo']],
+            ['activo' => (int) $activar]
+        );
 
-        Session::flash('ok', 'Estado del usuario actualizado.');
+        Session::flash('ok', $activar ? 'Usuario activado.' : 'Usuario desactivado. Si tenía una sesión abierta, se cerrará en menos de un minuto.');
         header('Location: ' . Url::to('/usuarios'));
         exit;
     }
@@ -196,6 +274,7 @@ final class UsuarioController
             $snapshot = $usuario;
             unset($snapshot['password_hash']);
             Usuario::eliminar($id, Auth::id());
+            Usuario::invalidarSesiones($id);
             Auditoria::registrar(Auth::id(), (int) $usuario['institucion_id'], 'eliminar', 'usuario', $id, $snapshot);
             Session::flash('ok', 'Usuario enviado a la papelera. Un superusuario puede restaurarlo si fue un error.');
         }
@@ -297,12 +376,15 @@ final class UsuarioController
             return ['campo' => 'email', 'mensaje' => 'El correo electrónico no es válido.'];
         }
 
-        if (!$esEdicion && strlen($password) < 8) {
-            return ['campo' => 'password', 'mensaje' => 'La contraseña debe tener al menos 8 caracteres.'];
-        }
-
-        if ($esEdicion && $password !== '' && strlen($password) < 8) {
-            return ['campo' => 'password', 'mensaje' => 'La nueva contraseña debe tener al menos 8 caracteres.'];
+        // Al crear es obligatoria; al editar solo se valida si se escribió una nueva.
+        if (!$esEdicion || $password !== '') {
+            $errorContrasena = PoliticaContrasena::validar(
+                $password,
+                [$datos['email'], $datos['documento'], $datos['nombres'], $datos['apellidos']]
+            );
+            if ($errorContrasena !== null) {
+                return ['campo' => 'password', 'mensaje' => $errorContrasena];
+            }
         }
 
         if (!$this->rolPermitido($datos['rol_id'])) {
@@ -353,6 +435,16 @@ final class UsuarioController
         }
 
         if (!Auth::esSuperusuario() && (int) $usuario['institucion_id'] !== Auth::institucionId()) {
+            http_response_code(403);
+            View::render('errors/403');
+            exit;
+        }
+
+        // Una cuenta de superusuario solo la administra otro superusuario. Sin esto, un
+        // rector que comparta institución con el superusuario (el sembrado vive en la
+        // institución Demo) podría cambiarle la contraseña, desactivarlo, eliminarlo o
+        // degradarlo a otro rol.
+        if (!Auth::esSuperusuario() && ($usuario['rol_nombre'] ?? '') === 'superusuario') {
             http_response_code(403);
             View::render('errors/403');
             exit;

@@ -6,22 +6,55 @@ namespace App\Core;
 
 final class Session
 {
+    /** Duración de "Recordarme" (y vida máxima de un archivo de sesión en el servidor). */
+    public const DIAS_RECORDARME = 30;
+
     public static function start(): void
     {
         if (session_status() === PHP_SESSION_ACTIVE) {
             return;
         }
 
+        // Las sesiones se guardan en la carpeta propia de la app, con una vida máxima
+        // definida aquí. Con la configuración por defecto del hosting (carpeta compartida,
+        // gc_maxlifetime de 24 minutos) el servidor borraba la sesión mucho antes: ni
+        // "Recordarme" ni el límite de inactividad de config/app.php se cumplían. El
+        // cierre por inactividad lo aplica Auth::check().
+        $config = require dirname(__DIR__, 2) . '/config/app.php';
+        $dirSesiones = $config['storage_path'] . '/sesiones';
+        if ((is_dir($dirSesiones) || @mkdir($dirSesiones, 0700, true)) && is_writable($dirSesiones)) {
+            session_save_path($dirSesiones);
+        }
+        ini_set('session.gc_maxlifetime', (string) (self::DIAS_RECORDARME * 86400));
+        ini_set('session.gc_probability', '1');
+        ini_set('session.gc_divisor', '100');
+        // Rechaza ids de sesión que el servidor no creó (evita la fijación de sesión).
+        ini_set('session.use_strict_mode', '1');
+
         session_set_cookie_params([
             'lifetime' => 0,
             'path' => '/',
             'httponly' => true,
             'samesite' => 'Strict',
-            'secure' => (($_SERVER['HTTPS'] ?? '') === 'on'),
+            'secure' => self::esHttps(),
         ]);
 
         session_name('sigebi_session');
         session_start();
+    }
+
+    /**
+     * ¿La petición llegó por HTTPS? Además de $_SERVER['HTTPS'], se consideran el puerto
+     * 443 y la cabecera X-Forwarded-Proto: si el hosting termina el HTTPS en un proxy
+     * delante de PHP, $_SERVER['HTTPS'] puede venir vacío y la cookie de sesión quedaba sin
+     * la marca "secure". (Confiar en esa cabecera aquí es inofensivo: en el peor caso la
+     * cookie se marca secure en una conexión HTTP y simplemente no se envía.)
+     */
+    public static function esHttps(): bool
+    {
+        return strtolower((string) ($_SERVER['HTTPS'] ?? '')) === 'on'
+            || (string) ($_SERVER['SERVER_PORT'] ?? '') === '443'
+            || strtolower((string) ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '')) === 'https';
     }
 
     public static function regenerate(): void
@@ -45,7 +78,7 @@ final class Session
             'path' => '/',
             'httponly' => true,
             'samesite' => 'Strict',
-            'secure' => (($_SERVER['HTTPS'] ?? '') === 'on'),
+            'secure' => self::esHttps(),
         ]);
     }
 
@@ -98,36 +131,19 @@ final class Session
     public static function destroy(): void
     {
         $_SESSION = [];
-        session_destroy();
-    }
 
-    /**
-     * Bloqueo de intentos para acciones sin un usuario identificado de antemano
-     * (ej. "¿olvidé mi correo?", que se prueba con un número de documento que puede
-     * no existir). A diferencia del bloqueo de login -que vive en la tabla `usuarios`
-     * porque ahí sí hay una cuenta concreta a la que asociarlo-, este se guarda en la
-     * sesión: la mayoría de intentos fallidos aquí no corresponden a ninguna cuenta
-     * real, así que no hay una fila de BD natural donde contarlos.
-     */
-    public static function registrarIntentoFallido(string $clave, int $maxIntentos, int $minutosBloqueo): void
-    {
-        $intentos = ((int) ($_SESSION['_intentos'][$clave]['n'] ?? 0)) + 1;
-        $_SESSION['_intentos'][$clave]['n'] = $intentos;
-
-        if ($intentos >= $maxIntentos) {
-            $_SESSION['_intentos'][$clave]['bloqueado_hasta'] = time() + $minutosBloqueo * 60;
+        // Expira también la cookie en el navegador (session_destroy() solo borra los datos
+        // del servidor y dejaba la cookie viva, incluida la de "Recordarme" a 30 días).
+        if (!headers_sent()) {
+            setcookie(session_name() ?: 'sigebi_session', '', [
+                'expires' => time() - 3600,
+                'path' => '/',
+                'httponly' => true,
+                'samesite' => 'Strict',
+                'secure' => self::esHttps(),
+            ]);
         }
-    }
 
-    public static function bloqueadoPorIntentos(string $clave): bool
-    {
-        $hasta = $_SESSION['_intentos'][$clave]['bloqueado_hasta'] ?? null;
-
-        return $hasta !== null && $hasta > time();
-    }
-
-    public static function resetearIntentos(string $clave): void
-    {
-        unset($_SESSION['_intentos'][$clave]);
+        session_destroy();
     }
 }

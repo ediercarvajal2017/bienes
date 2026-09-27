@@ -60,8 +60,8 @@ final class BuscarController
             }
 
             if ($puedeVerUsuarios) {
-                $totalUsuarios = Usuario::contarListado($institucionId, $termino);
-                $usuarios = Usuario::listar($institucionId, $termino, 1, self::LIMITE_POR_SECCION);
+                $totalUsuarios = Usuario::contarListado($institucionId, $termino, Auth::esSuperusuario());
+                $usuarios = Usuario::listar($institucionId, $termino, 1, self::LIMITE_POR_SECCION, Auth::esSuperusuario());
             }
         }
 

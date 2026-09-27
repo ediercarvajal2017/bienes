@@ -11,6 +11,7 @@ use App\Core\Session;
 use App\Core\Url;
 use App\Core\View;
 use App\Helpers\Uploader;
+use App\Models\Auditoria;
 use App\Models\Espacio;
 use App\Models\Hallazgo;
 use App\Models\JornadaVerificacion;
@@ -134,6 +135,8 @@ final class HallazgoController
 
         $observaciones = trim((string) $request->input('observaciones')) ?: null;
         Hallazgo::marcarDescartado((int) $hallazgo['id'], (int) Auth::id(), $observaciones);
+        Auditoria::registrar(Auth::id(), (int) $hallazgo['institucion_id'], 'descartar', 'hallazgo', (int) $hallazgo['id'],
+            ['estado' => 'pendiente'], ['estado' => 'descartado', 'observaciones' => $observaciones]);
 
         Session::flash('ok', 'Hallazgo descartado.');
         header('Location: ' . Url::to('/verificaciones/' . $hallazgo['jornada_id']) . '#seccion-hallazgos');

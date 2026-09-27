@@ -17,18 +17,18 @@ use App\Core\Url;
     <?= Csrf::field() ?>
 
     <div class="col-md-6">
-        <label class="form-label small requerido">Funcionario que realizó el envío</label>
-        <input type="text" name="nombre_funcionario" class="form-control" required
+        <label for="campo-nombre-funcionario" class="form-label small requerido">Funcionario que realizó el envío</label>
+        <input id="campo-nombre-funcionario" type="text" name="nombre_funcionario" class="form-control" required
                value="<?= htmlspecialchars($registro['nombre_funcionario'], ENT_QUOTES) ?>">
     </div>
     <div class="col-md-6">
-        <label class="form-label small requerido">Correo del remitente</label>
-        <input type="email" name="correo_remitente" class="form-control" required
+        <label for="campo-correo-remitente" class="form-label small requerido">Correo del remitente</label>
+        <input id="campo-correo-remitente" type="email" name="correo_remitente" class="form-control" required
                value="<?= htmlspecialchars($registro['correo_remitente'], ENT_QUOTES) ?>">
     </div>
     <div class="col-md-6">
-        <label class="form-label small requerido">Fecha de envío</label>
-        <input type="date" name="fecha_envio" class="form-control" required
+        <label for="campo-fecha-envio" class="form-label small requerido">Fecha de envío</label>
+        <input id="campo-fecha-envio" type="date" name="fecha_envio" class="form-control" required
                value="<?= htmlspecialchars($registro['fecha_envio'], ENT_QUOTES) ?>">
     </div>
     <div class="col-md-6">
@@ -38,8 +38,8 @@ use App\Core\Url;
         </a>
     </div>
     <div class="col-12">
-        <label class="form-label small">Reemplazar archivo (opcional, Excel)</label>
-        <input type="file" name="archivo" accept=".xlsx,.xls" class="form-control">
+        <label for="campo-archivo" class="form-label small">Reemplazar archivo (opcional, Excel)</label>
+        <input id="campo-archivo" type="file" name="archivo" accept=".xlsx,.xls" class="form-control">
     </div>
 
     <div class="col-12">

@@ -1,164 +1,83 @@
-# Pruebas de navegador (Playwright)
+# Pruebas automáticas de SIGEBI
 
-Cubre los flujos con JavaScript de SIGEBI (login, catálogos, formularios, evidencias,
-carga masiva, papelera/auditoría, ciclo de vida de un bien, bajas, verificación física,
-reintegros por lote) contra tu WAMP local. No reemplaza los scripts de prueba en PHP
-contra la base de datos — los complementa, cubriendo lo que pasa en el navegador, que
-`php -l`/PHPStan no pueden ver.
+Hay tres niveles, y ninguno toca la base de desarrollo ni la de producción:
+
+| Nivel | Qué revisa | Comando |
+|---|---|---|
+| **PHPStan** (nivel 7) | Errores de tipos y de lógica en todo `app/` | `composer analyse` |
+| **PHPUnit** (`tests/Unit`) | Lógica pura: TOTP, contraseñas, estados del bien, fórmulas, cifrado | `composer test` |
+| **Playwright** (`tests/*.spec.js`) | El sistema completo en el navegador, con cada rol | `npm test` |
 
 ## Primera vez
 
 ```
+composer install
 npm install
-npx playwright install chromium
-cp .env.test.example .env.test
+npx playwright install chromium     # o, sin descargar navegadores: PW_CANAL=msedge en .env.test
 ```
 
-Edita `.env.test` con una cuenta real de tu SIGEBI **local** (no de producción):
-- `TEST_USER_EMAIL` / `TEST_USER_PASSWORD`: necesarias para todas las pruebas del
-  proyecto `authenticated`. Sin ellas, fallan con un mensaje explicando qué falta.
-- Esa cuenta tiene que ser **superusuario** — `papelera.spec.js`, `instituciones.spec.js`
-  y varias otras lo requieren (`/papelera` y `/auditoria` están protegidas por
-  `SuperusuarioMiddleware`, y varios formularios piden elegir institución solo para
-  superusuario).
-- `login.spec.js` corre completo sin necesidad de `.env.test` (usa credenciales
-  inválidas a propósito para tres de sus cuatro pruebas).
+En Windows con XAMPP no hace falta configurar nada más. Para otros entornos, copia
+`.env.test.example` a `.env.test` y ajusta `PHP_BIN`, `MYSQL_BIN` y, si tu base tiene
+contraseña, `DB_HOST` / `DB_USERNAME` / `DB_PASSWORD`.
 
-## Correr las pruebas
+## Cómo funciona Playwright aquí
+
+- **Base desechable:** antes de cada corrida, `tests/global-setup.js` BORRA y recrea
+  `sigebi_test` (migraciones + `seed.php` + `database/seeders/pruebas.php`). Se niega a
+  tocar una base cuyo nombre no contenga `test`.
+- **Servidor propio:** Playwright levanta `php -S 127.0.0.1:8090` conectado a esa base,
+  con los archivos subidos en `storage/pruebas`. No usa Apache.
+- **Un usuario por rol**, con contraseña conocida (ver `database/seeders/pruebas.php`):
+  superusuario, rector, secretario y docente de la institución A, y rector de la B.
+  `auth.setup.js` inicia sesión con cada uno una vez.
+- **En serie a propósito** (`workers: 1`): el servidor embebido de PHP atiende una
+  petición a la vez y las sesiones guardan el token CSRF en el servidor.
+
+Ayudantes para escribir pruebas (`tests/helpers/datos.js`): `datos()` (identificadores
+sembrados), `comoRol(browser, 'rector')`, `sinSesion(browser)`, `bd(sql)` (consulta la
+base de pruebas) y `totp(secreto)`.
+
+## Comandos útiles
 
 ```
-npm test                                       # toda la suite
-npx playwright test --project=guest            # solo login.spec.js (no necesita sesión)
-npx playwright test --project=authenticated     # todo lo que necesita sesión
-npm run test:ui                                # modo interactivo, ve el navegador paso a paso
-npm run test:report                            # abre el último reporte HTML
+npm test                                          # todo (funcionales + responsive)
+npx playwright test --project=guest --project=setup --project=authenticated   # sin responsive
+npx playwright test --project="responsive-*"      # 7 dispositivos (320 px a 1920 px)
+npx playwright test tests/permisos.spec.js        # un archivo
+npm run test:ui                                   # modo interactivo
+npm run test:report                               # último reporte HTML
 ```
-
-**La suite corre en serie a propósito (`workers: 1`)**: SIGEBI usa sesiones PHP
-tradicionales con un token CSRF guardado en la sesión del servidor, y todas las
-pruebas autenticadas reutilizan la misma sesión (ver `auth.setup.js` +
-`storageState`). Si dos corrieran en paralelo, una podría regenerar el token CSRF
-justo cuando la otra lo estaba por usar, y esa fallaría con "Tu sesión expiró" sin
-que la app tenga ningún problema real. No lo cambies a paralelo sin resolver esto
-primero (por ejemplo, dándole a cada prueba su propia sesión con `auth.setup.js`
-corriendo una vez por archivo en vez de una vez para toda la suite).
 
 ## Qué cubre cada archivo
 
 | Archivo | Qué prueba |
 |---|---|
-| `login.spec.js` | Carga de la página, mostrar/ocultar contraseña, alerta de credenciales inválidas cerrable, login exitoso. |
-| `categorias.spec.js` | Crear, editar, desactivar/activar y eliminar (papelera) una categoría. |
-| `cargos.spec.js` | Igual que categorías, para `/cargos`. |
-| `espacios.spec.js` | Crear (con responsable vía Tom Select), editar y eliminar un espacio. |
-| `usuarios.spec.js` | Crear, editar, desactivar y eliminar un usuario (rol "Docente" a propósito). |
-| `instituciones.spec.js` | El listado carga; editar una institución **existente** guardando los mismos datos (no crea una nueva — ver advertencia abajo). |
-| `facturas.spec.js` | Registrar (con PDF), editar y eliminar una factura. |
-| `formatos_reintegro.spec.js` | Igual, para `/formatos-reintegro`. |
-| `formatos_plaqueteo.spec.js` | Igual, para `/formatos-plaqueteo` (incluye "Funcionario que asistió"). |
-| `cartera.spec.js` | Igual, para `/cartera` (adjunto en Excel en vez de PDF). |
-| `carga_masiva.spec.js` | Sube un `.xlsx` de bienes con una fila válida y una inválida a propósito, confirma que el mensaje final diga *"aplicada parcialmente"* en rojo — regresión directa de un bug corregido en esta misma sesión. |
-| `espacios_carga_masiva.spec.js` | Igual, para la carga masiva de `/espacios`. |
-| `bienes_carga_masiva_fotos.spec.js` | Sube un `.zip` con una foto nombrada como el código de un bien y confirma que se empareje (idempotente: código fijo, reutilizable entre corridas). |
-| `bienes_ciclo_vida.spec.js` | Un bien recorre crear → asignar a un espacio → trasladar a otro → reintegrar, de punta a punta. |
-| `reintegros_lote.spec.js` | Reintegra un bien desde la selección masiva `/reintegros` (no el panel individual) y lo agrupa en un lote nuevo hasta el comprobante FO-ADMI-009. |
-| `bajas.spec.js` | Reporta una baja desde la ficha pública del bien y la aprueba desde `/bajas`. |
-| `verificaciones.spec.js` | Crea una jornada de verificación, verifica un bien escaneando su ficha pública, y cierra la jornada. |
-| `reportes.spec.js` | La pantalla carga y descarga de verdad el reporte de cartera de bienes (.xlsx). |
-| `papelera.spec.js` | `/papelera` y `/auditoria` cargan con sus elementos esperados para un superusuario. |
-| `casos_limite.spec.js` | Regresiones puntuales de una auditoría de bugs (2026-08-17): valor de un bien limitado a 10 dígitos (individual y en lote), dos registros con el mismo código casi simultáneos sin dar 500, alta masiva conectada a la Bodega de impresión de QR, borde rojo de un `<select>` inválido convertido en Tom Select, búsqueda en carga masiva con palabras "pendiente"/"aplicada" (regresión de un error de colación de MySQL), buscador global, y que "Primeros pasos" no rompa con una institución que ya tiene bienes. |
-| `password_reset.spec.js` | Protección contra enumeración de correos en "olvidé mi contraseña" (mismo mensaje exista o no la cuenta), que un token inválido nunca muestre el formulario de nueva contraseña, y el flujo completo de "¿Cuál es mi correo?". No cubre el cambio de contraseña en sí (el enlace real solo llega por correo, no hay forma de leerlo desde el navegador). |
-| `usuarios_carga_masiva.spec.js` | Igual que `carga_masiva.spec.js`/`espacios_carga_masiva.spec.js`, pero para `/usuarios/carga-masiva` — a diferencia de esas dos, esta pantalla siempre confirma con mensaje de éxito (verde), nunca "aplicada parcialmente"; la prueba confirma ese comportamiento real y que la fila inválida no se crea. El fixture se genera en cada corrida (`fixtures/generar_carga_masiva_usuarios.php`), no es un `.xlsx` estático — ver la nota correspondiente más abajo. |
-| `dashboard.spec.js` | El panel principal carga con el saludo, el rol, y que los accesos (incluidos los exclusivos de superusuario) lleven a la pantalla correcta. |
-| `escaneo.spec.js` | Búsqueda manual de un bien por código desde `/escanear` (alternativa a la cámara): sin institución en el filtro avisa en vez de fallar en silencio, con institución encuentra el bien real y redirige a su ficha pública, y un código inexistente también avisa. |
-| `hallazgos.spec.js` | Reportar un "hallazgo" (bien físico sin código/QR) durante una jornada de verificación activa, verlo en la jornada y descartarlo. |
-| `manual.spec.js` | `/manual` carga con el aviso de repliegue a la guía de Docente para un rol sin guía propia (superusuario). |
-| `archivos.spec.js` | `/archivos/{tipo}/{archivo}` sirve un archivo real y rechaza carpeta o nombre inválidos (path traversal). |
-| `asignaciones.spec.js` | Asignar un bien desde la selección masiva de `/asignaciones` (distinto del panel individual, ya cubierto por `bienes_ciclo_vida.spec.js`). |
-| `sede_activa.spec.js` | `/sede-activa` exige rol "rector" — un rol distinto (aunque tenga sesión iniciada) recibe 403, no un error de servidor. |
-| `busqueda_por_foto.spec.js` | Sube la foto de un bien, espera a que el navegador la indexe en segundo plano (huella visual vía MobileNet/TensorFlow.js por CDN) y confirma que subir esa misma foto como consulta lo encuentra primero con ≥90% de similitud. |
+| `permisos.spec.js` | **Matriz de permisos:** cada rol contra cada ruta (leídas de `public/index.php`) comparado con los permisos sembrados; sin sesión, todo lleva al login. |
+| `aislamiento.spec.js` | El rector de una institución no ve ni modifica nada de otra, no escala a otra sede ni toca al superusuario. |
+| `ciclos_seguridad.spec.js` | Baja (reportar → aprobar una sola vez / rechazar con motivo), solicitud de reintegro, usuario desactivado fuera al instante, bloqueo por intentos. |
+| `dos_factores.spec.js` | Verificación en dos pasos (opcional): activar, segundo paso, anti-repetición, códigos de recuperación, restablecimiento. |
+| `responsive.spec.js` | Sin desbordes ni controles cortados y zonas táctiles de 44 px en 34 pantallas × 7 dispositivos. |
+| `login.spec.js` | Pantalla de acceso, mostrar contraseña, error cerrable, ingreso correcto. |
+| `dashboard.spec.js`, `manual.spec.js` | Panel principal y guía rápida. |
+| `bienes_ciclo_vida.spec.js` | Crear → asignar → trasladar → reintegrar un bien. |
+| `asignaciones.spec.js`, `reintegros_lote.spec.js` | Asignación masiva y lotes de reintegro. |
+| `bajas.spec.js`, `verificaciones.spec.js`, `hallazgos.spec.js`, `escaneo.spec.js` | Bajas, verificación física, hallazgos y escáner. |
+| `carga_masiva.spec.js`, `espacios_carga_masiva.spec.js`, `usuarios_carga_masiva.spec.js`, `bienes_carga_masiva_fotos.spec.js` | Cargas masivas desde Excel y de fotos. |
+| `categorias.spec.js`, `cargos.spec.js`, `espacios.spec.js`, `usuarios.spec.js`, `instituciones.spec.js` | Catálogos y administración. |
+| `facturas.spec.js`, `formatos_reintegro.spec.js`, `formatos_plaqueteo.spec.js`, `cartera.spec.js`, `reportes.spec.js` | Evidencias y reportes. |
+| `archivos.spec.js` | Archivos subidos: miniaturas, lista blanca, path traversal y aislamiento por institución. |
+| `papelera.spec.js`, `password_reset.spec.js`, `sede_activa.spec.js`, `busqueda_por_foto.spec.js`, `casos_limite.spec.js` | Papelera, recuperación de contraseña, sedes, búsqueda por foto y casos límite. |
 
-`tests/helpers/tomSelect.js` tiene el helper para interactuar con los `<select>`
-que SIGEBI convierte en Tom Select (buscador con menú) — reutilízalo en cualquier
-prueba nueva que necesite elegir una opción de uno de esos campos. Documenta un bug
-real que encontramos armando estas pruebas (ver más abajo).
+## Modo remoto (opcional)
 
-## Bugs y reglas reales que salieron de armar esta suite (no defectos de las pruebas)
+Para correr contra un entorno de **ensayo o demo** ya publicado (nunca producción):
+`TEST_BASE_URL` con un dominio que contenga `staging`, `ensayo` o `demo`,
+`TEST_PERMITIR_REMOTO=1` y `TEST_USER_EMAIL` / `TEST_USER_PASSWORD` de un superusuario de
+ese entorno. En este modo no se recrea ninguna base y solo corren las pruebas del
+superusuario.
 
-- **El input de búsqueda de un Tom Select "single" con valor ya elegido se saca de
-  la pantalla** (coordenada X negativa) hasta que se clickea el control visible —
-  intentar escribirle directo falla con "element is outside of the viewport" aunque
-  el elemento "exista". El helper ya lo resuelve clickeando el contenedor visible
-  primero, nunca el input directo.
-- **Un bien necesita categoría asignada para poder reintegrarse** (individualmente o
-  en lote) — SIGEBI lo bloquea con un mensaje claro si no la tiene. No es un bug, es
-  una regla real que `bienes_ciclo_vida.spec.js` y `reintegros_lote.spec.js` tuvieron
-  que aprender a respetar (por eso ambos eligen una categoría al crear el bien,
-  aunque el formulario no la marque obligatoria).
-- **Solo puede haber una jornada de verificación activa por institución** — si una
-  corrida anterior de `verificaciones.spec.js` quedó a medias (falló antes de cerrar
-  la jornada), la siguiente no podría crear una nueva. La prueba se protege sola:
-  busca y cierra cualquier jornada activa antes de empezar.
-- **Un fixture `.xlsx` con documento/correo fijos no es reproducible entre corridas**:
-  se detectó porque `Usuario::findByDocumento()` no filtraba `eliminado_en IS NULL`
-  (ya corregido), así que un documento usado una vez, aunque el usuario terminara en
-  la papelera, se trataba como "ya existe" en la siguiente carga masiva en vez de
-  crear un usuario activo de verdad. `usuarios_carga_masiva.spec.js` sigue generando
-  su fixture en cada corrida (`fixtures/generar_carga_masiva_usuarios.php`) de todas
-  formas — es la práctica correcta para cualquier fixture con datos de usuarios, con
-  o sin ese bug.
-- **El filtro de institución del encabezado (superusuario) es sesión de servidor, no
-  estado de la página** — si una prueba lo cambia (`#filtroInstitucionSelect`) y no lo
-  regresa a "Ver todas las instituciones" al terminar, cualquier prueba que corra
-  después en la misma sesión lo hereda. `hallazgos.spec.js` y `escaneo.spec.js` ya lo
-  manejan (una lo resetea al final, la otra lo fuerza a blanco al empezar, por si
-  acaso) — sigue el mismo criterio en pruebas nuevas que lo toquen.
-- **Dos fixtures de imagen con el mismo contenido de bytes producen la misma huella
-  visual** (obvio en retrospectiva, mordió al armar `busqueda_por_foto.spec.js`): al
-  reutilizar el mismo `.jpg` que ya usa `bienes_carga_masiva_fotos.spec.js`, la
-  búsqueda por foto encontraba **ese** bien en vez del propio, porque ambos quedaban
-  con similitud 100% y el desempate no era el esperado. Cualquier prueba nueva de
-  búsqueda por foto necesita una imagen de fixture con contenido realmente distinto a
-  las demás (no basta con otro nombre de archivo).
+## Integración continua
 
-## Advertencias de este arranque (léelas antes de confiar ciegamente en la suite)
-
-- **No hay base de datos de pruebas aislada.** Las pruebas escriben de verdad en tu
-  BD de desarrollo. La mayoría se limpia sola:
-  - categorías/cargos/usuarios terminan en la papelera, igual que si lo hicieras a mano;
-  - los espacios de apoyo de `bienes_ciclo_vida.spec.js` y `reintegros_lote.spec.js`
-    se desactivan (no eliminan) al final, porque para entonces ya tienen historial de
-    asignación/traslado y SIGEBI rechaza borrarlos igual que se lo rechazaría a una
-    persona real;
-  - `bienes_carga_masiva_fotos.spec.js` usa un código de bien **fijo a propósito**
-    (`PW-TEST-FOTO-001`, no con timestamp) para que coincida siempre con el nombre
-    del archivo dentro de `fixtures/fotos_bienes.zip` — ese bien queda para siempre,
-    es intencional, no hace falta limpiarlo.
-  - `busqueda_por_foto.spec.js` hace lo mismo con `PW-TEST-BUSQFOTO-001` y
-    `fixtures/foto_busqueda.jpg` (una imagen generada, no una foto real) — también
-    queda para siempre a propósito.
-  - `carga_masiva.spec.js`, `espacios_carga_masiva.spec.js`, `bienes_ciclo_vida.spec.js`,
-    `reintegros_lote.spec.js`, `bajas.spec.js` y `verificaciones.spec.js` dejan bienes
-    y/o filas en `cargas_masivas` que **no** se autolimpian, porque SIGEBI nunca borra
-    un bien ni siquiera a mano. Bórralos de vez en cuando si te molesta el ruido en
-    `/bienes` — todos usan el prefijo `PW-TEST-` para que sea fácil identificarlos.
-
-  Nunca corras esto contra producción.
-- **`instituciones.spec.js` no crea una institución nueva a propósito**: a diferencia
-  de los demás catálogos, una institución no se puede enviar a la papelera ni borrar,
-  solo desactivar — cualquiera que creáramos quedaría para siempre. En su lugar edita
-  una existente guardando los mismos datos, para probar el formulario sin ensuciar nada.
-- **`bajas.spec.js` y `verificaciones.spec.js` solo prueban el flujo funcional, no la
-  separación de roles.** Con una sola cuenta (superusuario, que puede reportar Y
-  aprobar/verificar) no se puede comprobar que un rol sin permiso quede realmente
-  bloqueado — haría falta una segunda cuenta de prueba con un rol distinto.
-- **El escaneo de QR con cámara no está cubierto.** Simular una cámara en Playwright
-  exige configuración adicional (dispositivo de video falso); quedó fuera a propósito.
-  `bajas.spec.js` y `verificaciones.spec.js` llegan a la ficha pública navegando
-  directo a su URL (con el token extraído del enlace "Ver ficha pública"), no
-  escaneando de verdad.
-- **Solo se instaló el navegador Chromium**, no Firefox/WebKit, para mantener el
-  arranque liviano — `npx playwright install` (sin argumento) los agrega si más
-  adelante quieres probar en los tres.
-- **Esto no corre en Hostinger.** Es una herramienta de desarrollo/CI (por ejemplo,
-  GitHub Actions antes de mergear a `main`), no algo que se despliegue al servidor.
+`.github/workflows/ci.yml` corre todo lo anterior en cada push: sintaxis, PHPStan,
+PHPUnit y `composer audit` con PHP 8.3 y 8.4, y Playwright contra un MariaDB 11.8
+desechable.

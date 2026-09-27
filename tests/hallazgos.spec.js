@@ -17,7 +17,7 @@ async function cerrarJornadaActivaSiExiste(page) {
     await page.getByRole('button', { name: 'Cerrar jornada' }).click();
 }
 
-test.use({ storageState: 'playwright/.auth/user.json' });
+test.use({ storageState: 'playwright/.auth/superusuario.json' });
 
 test('reportar un hallazgo durante una jornada y descartarlo', async ({ page }) => {
     await cerrarJornadaActivaSiExiste(page);

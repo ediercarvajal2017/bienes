@@ -17,8 +17,8 @@ use App\Core\Url;
     <?= Csrf::field() ?>
 
     <div class="col-md-6">
-        <label class="form-label small requerido">Fecha del reintegro</label>
-        <input type="date" name="fecha_reintegro" class="form-control" required
+        <label for="campo-fecha-reintegro" class="form-label small requerido">Fecha del reintegro</label>
+        <input id="campo-fecha-reintegro" type="date" name="fecha_reintegro" class="form-control" required
                value="<?= htmlspecialchars($registro['fecha_reintegro'], ENT_QUOTES) ?>">
     </div>
     <div class="col-md-6">
@@ -28,12 +28,12 @@ use App\Core\Url;
         </a>
     </div>
     <div class="col-12">
-        <label class="form-label small">Reemplazar archivo (opcional, PDF)</label>
-        <input type="file" name="archivo" accept="application/pdf" class="form-control">
+        <label for="campo-archivo" class="form-label small">Reemplazar archivo (opcional, PDF)</label>
+        <input id="campo-archivo" type="file" name="archivo" accept="application/pdf" class="form-control">
     </div>
     <div class="col-12">
-        <label class="form-label small">Descripción (opcional)</label>
-        <input type="text" name="descripcion" class="form-control"
+        <label for="campo-descripcion" class="form-label small">Descripción (opcional)</label>
+        <input id="campo-descripcion" type="text" name="descripcion" class="form-control"
                value="<?= htmlspecialchars($registro['descripcion'] ?? '', ENT_QUOTES) ?>">
     </div>
 

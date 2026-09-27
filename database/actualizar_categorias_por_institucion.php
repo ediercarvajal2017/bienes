@@ -22,6 +22,11 @@ declare(strict_types=1);
  *   php database/actualizar_categorias_por_institucion.php --aplicar  (aplica de verdad)
  */
 
+if (PHP_SAPI !== 'cli') {
+    http_response_code(404);
+    exit;
+}
+
 require __DIR__ . '/../vendor/autoload.php';
 
 use App\Core\Database;
