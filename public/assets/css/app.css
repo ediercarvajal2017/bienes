@@ -725,3 +725,7 @@ summary { cursor: pointer; }
 [data-bs-theme="dark"] .badge-solicitud-aprobada { background: #16301f; color: #86d7a4; border-color: #2f6b46; }
 [data-bs-theme="dark"] .badge-solicitud-rechazada { background: #262c33; color: #c3cad2; border-color: #4a535d; }
 [data-bs-theme="dark"] .badge-solicitud-cancelada { color: #9aa3ad; border-color: #4a535d; }
+
+/* Miniaturas de los listados (servidas a 96 px con ?w=96) */
+.miniatura-36 { width: 36px; height: 36px; object-fit: cover; border-radius: 4px; }
+.miniatura-ampliable { cursor: zoom-in; }

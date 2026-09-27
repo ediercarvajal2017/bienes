@@ -53,9 +53,9 @@ use App\Models\Categoria;
             <tr>
                 <td>
                     <?php if (!empty($b['foto_path'])): ?>
-                        <img src="<?= Url::to('/archivos/' . $b['foto_path']) ?>"
+                        <img src="<?= Url::to('/archivos/' . $b['foto_path']) ?>?w=96" loading="lazy"
                              alt="Foto del reporte de baja de <?= htmlspecialchars($b['bien_descripcion'], ENT_QUOTES) ?>"
-                             style="width:36px;height:36px;object-fit:cover;border-radius:4px;" loading="lazy">
+                             class="miniatura-36" loading="lazy">
                     <?php endif; ?>
                 </td>
                 <td data-label="Bien">

@@ -118,10 +118,10 @@ $tabPorDefecto = !empty($hallazgos) ? 'hallazgos' : 'discrepancia';
                     <td class="text-muted small" data-label="Espacio"><?= htmlspecialchars($h['espacio_nombre'], ENT_QUOTES) ?></td>
                     <td data-label="Foto">
                         <?php if (!empty($h['foto_path'])): ?>
-                            <img src="<?= Url::to('/archivos/' . $h['foto_path']) ?>"
+                            <img src="<?= Url::to('/archivos/' . $h['foto_path']) ?>?w=96" loading="lazy"
                                  data-lightbox-src="<?= Url::to('/archivos/' . $h['foto_path']) ?>"
                                  alt="Foto del hallazgo: <?= htmlspecialchars($h['descripcion'], ENT_QUOTES) ?>"
-                                 style="width:36px;height:36px;object-fit:cover;border-radius:4px;cursor:zoom-in;" loading="lazy">
+                                 class="miniatura-36 miniatura-ampliable" loading="lazy">
                         <?php else: ?>
                             <span class="text-muted small">—</span>
                         <?php endif; ?>
