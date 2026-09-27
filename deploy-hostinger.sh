@@ -105,11 +105,14 @@ if [ ! -d ".git" ]; then
     read -rsp "    MAIL_PASSWORD: " MAIL_PASSWORD
     echo ""
 
+    APP_KEY="$($PHP_BIN -r 'echo base64_encode(random_bytes(32));')"
+
     cat > .env <<EOF
 APP_ENV=production
 APP_DEBUG=0
 APP_TIMEZONE=America/Bogota
 APP_URL=${APP_URL}
+APP_KEY=${APP_KEY}
 
 DB_HOST=${DB_HOST}
 DB_PORT=3306
@@ -135,6 +138,9 @@ EOF
         mkdir -p "$STORAGE_PATH"/{uploads,logs,backups,archivo_auditoria,diagnosticos}
     fi
     echo ".env creado."
+    echo "IMPORTANTE: guarde también FUERA del servidor (gestor de contraseñas) esta llave APP_KEY:"
+    echo "  ${APP_KEY}"
+    echo "Protege las claves de la verificación en dos pasos; si se pierde, cada usuario debe configurarla de nuevo."
     echo ""
 
     $PHP_BIN database/migrate.php
@@ -172,6 +178,18 @@ fi
 if [ -z "$(leer_env APP_URL)" ]; then
     echo "ADVERTENCIA: falta APP_URL en el .env (el enlace de 'olvidé mi contraseña' se arma con el"
     echo "dominio que envía el navegador). Agrégalo, ej.: APP_URL=https://sigebi.midominio.com"
+fi
+
+# APP_KEY cifra las claves de la verificación en dos pasos. Si falta, se genera y se AGREGA
+# al final del .env (no se toca nada más). Sin ella, la verificación en dos pasos no está
+# disponible y no se exige a nadie.
+if [ -z "$(leer_env APP_KEY)" ]; then
+    NUEVA_APP_KEY="$($PHP_BIN -r 'echo base64_encode(random_bytes(32));')"
+    printf '\n# Llave de cifrado (verificación en dos pasos). Respaldarla FUERA del servidor.\nAPP_KEY=%s\n' "$NUEVA_APP_KEY" >> .env
+    echo "AVISO: se generó APP_KEY y se agregó al .env. Guárdela también FUERA del servidor:"
+    echo "  ${NUEVA_APP_KEY}"
+    echo "Desde ahora la verificación en dos pasos queda disponible (ver la política por rol en"
+    echo "Administración > Verificación en dos pasos)."
 fi
 
 if [ -n "$(leer_env BACKUP_EMAIL)" ] && [ -z "$(leer_env BACKUP_PASSWORD)" ]; then

@@ -12,14 +12,28 @@ final class Usuario
 {
     public static function findByEmail(string $email): ?array
     {
+        return self::buscarParaAcceso('u.email = ?', $email);
+    }
+
+    /**
+     * Mismos datos que findByEmail(), por id: los usa el segundo paso del inicio de sesión
+     * (verificación en dos pasos), cuando la contraseña ya se validó.
+     */
+    public static function findParaAcceso(int $id): ?array
+    {
+        return self::buscarParaAcceso('u.id = ?', $id);
+    }
+
+    private static function buscarParaAcceso(string $condicion, string|int $valor): ?array
+    {
         $stmt = Database::connection()->prepare(
             'SELECT u.*, r.nombre AS rol_nombre, i.activo AS institucion_activa, i.nombre AS institucion_nombre
              FROM usuarios u
              JOIN roles r ON r.id = u.rol_id
              JOIN instituciones i ON i.id = u.institucion_id
-             WHERE u.email = ? AND u.eliminado_en IS NULL'
+             WHERE ' . $condicion . ' AND u.eliminado_en IS NULL'
         );
-        $stmt->execute([$email]);
+        $stmt->execute([$valor]);
         $usuario = $stmt->fetch();
 
         return $usuario ?: null;
@@ -269,6 +283,69 @@ final class Usuario
     public static function updatePassword(int $id, string $passwordHash): void
     {
         Database::connection()->prepare('UPDATE usuarios SET password_hash = ? WHERE id = ?')->execute([$passwordHash, $id]);
+    }
+
+    /** Deja activa la verificación en dos pasos con la clave (ya cifrada) del autenticador. */
+    public static function activarTotp(int $id, string $secretoCifrado, int $pasoUsado): void
+    {
+        Database::connection()->prepare(
+            'UPDATE usuarios SET totp_secreto = ?, totp_activado_en = NOW(), totp_ultimo_paso = ?, dosfa_gracia_hasta = NULL
+             WHERE id = ?'
+        )->execute([$secretoCifrado, $pasoUsado, $id]);
+    }
+
+    /**
+     * Quita la verificación en dos pasos. El plazo de gracia vuelve a vacío: si el rol la
+     * exige, se le vuelve a contar desde su siguiente inicio de sesión.
+     */
+    public static function desactivarTotp(int $id): void
+    {
+        Database::connection()->prepare(
+            'UPDATE usuarios SET totp_secreto = NULL, totp_activado_en = NULL, totp_ultimo_paso = NULL, dosfa_gracia_hasta = NULL
+             WHERE id = ?'
+        )->execute([$id]);
+    }
+
+    /**
+     * Anti-repetición: acepta el paso de tiempo del código solo si es posterior al último
+     * usado. El UPDATE condicional hace que, si llegan dos peticiones con el mismo código
+     * a la vez, solo una lo consiga.
+     */
+    public static function registrarPasoTotp(int $id, int $paso): bool
+    {
+        $stmt = Database::connection()->prepare(
+            'UPDATE usuarios SET totp_ultimo_paso = ?
+             WHERE id = ? AND (totp_ultimo_paso IS NULL OR totp_ultimo_paso < ?)'
+        );
+        $stmt->execute([$paso, $id, $paso]);
+
+        return $stmt->rowCount() === 1;
+    }
+
+    /** Fija el plazo de gracia solo si aún no tenía uno. Devuelve el plazo vigente. */
+    public static function iniciarGraciaDosFactores(int $id, int $dias): string
+    {
+        $pdo = Database::connection();
+        $pdo->prepare(
+            'UPDATE usuarios SET dosfa_gracia_hasta = DATE_ADD(NOW(), INTERVAL ? DAY)
+             WHERE id = ? AND dosfa_gracia_hasta IS NULL'
+        )->execute([$dias, $id]);
+
+        $stmt = $pdo->prepare('SELECT dosfa_gracia_hasta FROM usuarios WHERE id = ?');
+        $stmt->execute([$id]);
+
+        return (string) $stmt->fetchColumn();
+    }
+
+    /** Al cambiar la política de un rol, los plazos de quienes aún no la configuran se vuelven a contar. */
+    public static function reiniciarGraciaDeRol(int $rolId): int
+    {
+        $stmt = Database::connection()->prepare(
+            'UPDATE usuarios SET dosfa_gracia_hasta = NULL WHERE rol_id = ? AND totp_activado_en IS NULL'
+        );
+        $stmt->execute([$rolId]);
+
+        return $stmt->rowCount();
     }
 
     public static function updateFoto(int $id, string $fotoPath): void

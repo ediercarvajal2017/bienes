@@ -78,6 +78,9 @@ use App\Core\View;
                     <?php else: ?>
                         <span class="badge badge-inactivo">Inactivo</span>
                     <?php endif; ?>
+                    <?php if (!empty($u['totp_activado_en'])): ?>
+                        <span class="badge text-bg-light border" title="Tiene activa la verificación en dos pasos"><i class="bi bi-shield-check me-1" aria-hidden="true"></i>2 pasos</span>
+                    <?php endif; ?>
                 </td>
                 <td class="text-end text-nowrap">
                     <?php if (Auth::esSuperusuario() || Auth::tienePermiso('usuarios.editar')): ?>

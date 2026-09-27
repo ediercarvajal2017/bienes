@@ -15,8 +15,11 @@ use App\Helpers\PoliticaContrasena;
 use App\Helpers\Uploader;
 use App\Models\Auditoria;
 use App\Models\Cargo;
+use App\Models\CodigoRecuperacion;
+use App\Models\DispositivoConfiable;
 use App\Models\Institucion;
 use App\Models\Usuario;
+use App\Services\DosFactoresService;
 
 final class UsuarioController
 {
@@ -108,10 +111,58 @@ final class UsuarioController
             'roles' => Usuario::rolesParaSelect(Auth::esSuperusuario()),
             'instituciones' => Auth::esSuperusuario() ? $this->institucionesParaFormulario($usuario) : [],
             'familiaSedes' => $this->familiaSedesDelRector(),
+            'dosFactoresActiva' => DosFactoresService::tieneActiva($usuario),
             'error' => Session::pullFlash('error'),
             'errorCampo' => Session::pullFlash('error_campo'),
+            'mensaje' => Session::pullFlash('ok'),
             'viejo' => Session::pullOld(),
         ]);
+    }
+
+    /**
+     * Para quien perdió el teléfono: quita su verificación en dos pasos, sus códigos de
+     * recuperación y sus dispositivos de confianza, y cierra sus sesiones. En su próximo
+     * ingreso entra con la contraseña y, si su rol la exige, la configura de nuevo.
+     * Se pide la contraseña de quien lo hace (una sesión abierta y olvidada no basta).
+     */
+    public function restablecerDosFactores(string $id): void
+    {
+        $id = (int) $id;
+        $usuario = Usuario::find($id);
+        $this->verificarAcceso($usuario);
+
+        $request = new Request();
+        $this->verificarCsrf($request, "/usuarios/{$id}/editar");
+
+        $volver = static function (string $tipo, string $mensaje) use ($id): never {
+            Session::flash($tipo, $mensaje);
+            header('Location: ' . Url::to("/usuarios/{$id}/editar"));
+            exit;
+        };
+
+        if ($id === Auth::id()) {
+            $volver('error', 'Tu propia verificación en dos pasos se administra desde «Mi cuenta».');
+        }
+
+        $administrador = Usuario::findParaAcceso((int) Auth::id());
+        if ($administrador === null || !password_verify((string) $request->input('password_confirmacion'), (string) $administrador['password_hash'])) {
+            $volver('error', 'Tu contraseña no es correcta: no se restableció la verificación en dos pasos.');
+        }
+
+        if (!DosFactoresService::tieneActiva($usuario)) {
+            $volver('error', 'Este usuario no tiene la verificación en dos pasos activa.');
+        }
+
+        Usuario::desactivarTotp($id);
+        CodigoRecuperacion::borrarDe($id);
+        DispositivoConfiable::revocarTodosDe($id);
+        Usuario::invalidarSesiones($id);
+
+        Auditoria::registrar(Auth::id(), (int) $usuario['institucion_id'], '2fa_restablecer', 'usuario', $id);
+        DosFactoresService::avisarPorCorreo($usuario, 'verificación en dos pasos restablecida',
+            'Un administrador restableció la verificación en dos pasos de su cuenta de SIGEBI. En su próximo ingreso podrá configurarla de nuevo.');
+
+        $volver('ok', 'Verificación en dos pasos restablecida. Sus sesiones abiertas se cerrarán en menos de un minuto.');
     }
 
     public function actualizar(string $id): void

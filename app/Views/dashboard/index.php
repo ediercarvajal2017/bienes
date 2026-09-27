@@ -47,6 +47,13 @@ $puedeVer = static function (array $item): bool {
 <h1 class="h4 mb-1">Hola, <?= htmlspecialchars(Auth::nombreCompleto() ?? '', ENT_QUOTES) ?></h1>
 <p class="text-muted mb-4">Rol: <?= htmlspecialchars(Auth::rol() ?? '', ENT_QUOTES) ?></p>
 
+<?php if (!empty($mensaje)): ?>
+    <div class="alert alert-success py-2 small" style="max-width: 980px;"><?= htmlspecialchars($mensaje, ENT_QUOTES) ?></div>
+<?php endif; ?>
+<?php if (!empty($error)): ?>
+    <div class="alert alert-danger py-2 small" style="max-width: 980px;"><?= htmlspecialchars($error, ENT_QUOTES) ?></div>
+<?php endif; ?>
+
 <?php if (!empty($indicadores)): ?>
     <div class="row g-3 mb-4" style="max-width: 980px;">
         <?php foreach ($indicadores as $ind): ?>

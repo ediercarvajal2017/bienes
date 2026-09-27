@@ -46,7 +46,9 @@ use App\Controllers\CargaMasivaController;
 use App\Controllers\CargoController;
 use App\Controllers\CarteraController;
 use App\Controllers\CategoriaController;
+use App\Controllers\CuentaController;
 use App\Controllers\DashboardController;
+use App\Controllers\DosFactoresController;
 use App\Controllers\EscaneoController;
 use App\Controllers\EspacioCargaMasivaController;
 use App\Controllers\EspacioController;
@@ -85,6 +87,27 @@ $router->get('/', [AuthController::class, 'redirectRoot']);
 $router->get('/login', [AuthController::class, 'showLogin']);
 $router->post('/login', [AuthController::class, 'login']);
 $router->post('/logout', [AuthController::class, 'logout'], [AuthMiddleware::class]);
+
+// Verificación en dos pasos. /2fa/verificar es el segundo paso del login: todavía no hay
+// sesión completa (el controlador exige el estado intermedio que deja Auth::attempt).
+$router->get('/2fa/verificar', [DosFactoresController::class, 'verificar']);
+$router->post('/2fa/verificar', [DosFactoresController::class, 'validar']);
+$router->get('/2fa/configurar', [DosFactoresController::class, 'configurar'], [AuthMiddleware::class]);
+$router->post('/2fa/activar', [DosFactoresController::class, 'activar'], [AuthMiddleware::class]);
+$router->get('/2fa/codigos', [DosFactoresController::class, 'codigos'], [AuthMiddleware::class]);
+$router->post('/2fa/codigos', [DosFactoresController::class, 'regenerarCodigos'], [AuthMiddleware::class]);
+$router->post('/2fa/desactivar', [DosFactoresController::class, 'desactivar'], [AuthMiddleware::class]);
+$router->post('/2fa/dispositivos/{id}/revocar', [DosFactoresController::class, 'revocarDispositivo'], [AuthMiddleware::class]);
+$router->get('/seguridad/verificacion-dos-pasos', [DosFactoresController::class, 'politica'], [
+    AuthMiddleware::class, SuperusuarioMiddleware::class,
+]);
+$router->post('/seguridad/verificacion-dos-pasos', [DosFactoresController::class, 'guardarPolitica'], [
+    AuthMiddleware::class, SuperusuarioMiddleware::class,
+]);
+
+// Mi cuenta: seguridad de la propia cuenta (todos los roles).
+$router->get('/mi-cuenta', [CuentaController::class, 'index'], [AuthMiddleware::class]);
+$router->post('/mi-cuenta/contrasena', [CuentaController::class, 'cambiarContrasena'], [AuthMiddleware::class]);
 
 $router->get('/olvide-contrasena', [PasswordController::class, 'formularioOlvideContrasena']);
 $router->post('/olvide-contrasena', [PasswordController::class, 'enviarEnlaceReset']);
@@ -161,6 +184,9 @@ $router->post('/usuarios/{id}', [UsuarioController::class, 'actualizar'], [
 ]);
 $router->post('/usuarios/{id}/estado', [UsuarioController::class, 'cambiarEstado'], [
     AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':usuarios.eliminar',
+]);
+$router->post('/usuarios/{id}/restablecer-2fa', [UsuarioController::class, 'restablecerDosFactores'], [
+    AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':usuarios.editar',
 ]);
 $router->post('/usuarios/{id}/eliminar', [UsuarioController::class, 'eliminar'], [
     AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':usuarios.eliminar',

@@ -618,3 +618,19 @@ select.selector-buscable.is-invalid + .ts-wrapper .ts-control {
     height: 160px !important;
   }
 }
+
+/* ── Verificación en dos pasos y Mi cuenta ── */
+.contenedor-2fa { max-width: 640px; }
+.contenedor-cuenta { max-width: 720px; }
+.usuario-navbar-enlace { color: inherit; text-decoration: none; border-radius: .5rem; padding: .15rem .35rem; }
+.usuario-navbar-enlace:hover, .usuario-navbar-enlace:focus-visible { background: rgba(255, 255, 255, .12); color: inherit; }
+.qr-2fa { max-width: 100%; height: auto; background: #fff; padding: .5rem; border-radius: .5rem; }
+/* 16px o más: iOS no hace zoom al enfocar; dígitos espaciados y legibles. */
+.campo-codigo-2fa { font-size: 1.5rem; letter-spacing: .3em; font-variant-numeric: tabular-nums; }
+.campo-codigo-2fa::placeholder { letter-spacing: .3em; opacity: .35; }
+.codigos-recuperacion span { font-size: 1.05rem; letter-spacing: .05em; }
+@media print {
+    .navbar, .sidebar, .breadcrumb, .d-print-none { display: none !important; }
+    .codigos-recuperacion span { border: 1px solid #999; }
+}
+

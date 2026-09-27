@@ -42,15 +42,17 @@ final class AuthController
         $email = trim((string) $request->input('email'));
         $password = (string) $request->input('password');
 
-        if ($email !== '' && $password !== '' && Auth::attempt($email, $password)) {
-            if ($request->input('recordar')) {
-                Session::extender(Session::DIAS_RECORDARME);
-                // Con "Recordarme" no aplica el cierre por inactividad (ver Auth::check);
-                // la revalidación contra la base de datos sí sigue aplicando.
-                Session::put('recordarme', true);
-            }
+        $resultado = $email !== '' && $password !== ''
+            ? Auth::attempt($email, $password, (bool) $request->input('recordar'))
+            : Auth::INGRESO_FALLIDO;
 
-            header('Location: ' . Url::to('/dashboard'));
+        if ($resultado === Auth::INGRESO_REQUIERE_2FA) {
+            header('Location: ' . Url::to('/2fa/verificar'));
+            exit;
+        }
+
+        if ($resultado === Auth::INGRESO_OK) {
+            header('Location: ' . Url::to(Auth::debeConfigurarDosFactores() ? '/2fa/configurar' : '/dashboard'));
             exit;
         }
 

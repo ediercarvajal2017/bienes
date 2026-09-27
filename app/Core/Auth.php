@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace App\Core;
 
 use App\Helpers\LimiteIntentos;
+use App\Models\Auditoria;
 use App\Models\Institucion;
 use App\Models\Usuario;
+use App\Services\DosFactoresService;
 
 final class Auth
 {
@@ -27,6 +29,12 @@ final class Auth
      */
     private const HASH_FICTICIO = '$2y$10$quaqN3SjV2U6mqra4tY.FORwKsEVi5E2JIZFS13b41EHT47FYX9E2';
 
+    /** Resultados de attempt(). */
+    public const INGRESO_OK = 'ok';
+    /** Contraseña correcta, falta el código de la verificación en dos pasos (/2fa/verificar). */
+    public const INGRESO_REQUIERE_2FA = 'requiere_2fa';
+    public const INGRESO_FALLIDO = 'fallido';
+
     /** Por qué falló el último attempt(): 'credenciales' o 'bloqueado'. */
     private static string $motivoFallo = 'credenciales';
 
@@ -43,8 +51,12 @@ final class Auth
      *    bloqueo era de la cuenta entera: cualquiera podía dejar sin acceso a otra persona
      *    (p. ej. al superusuario) fallando 5 veces con su correo;
      *  - por cuenta desde cualquier IP: tope alto contra ataques distribuidos.
+     *
+     * Si la cuenta tiene la verificación en dos pasos activa (y este navegador no es un
+     * dispositivo de confianza), la contraseña correcta NO abre la sesión: solo deja un
+     * estado '2fa_pendiente' que ningún middleware acepta (check() mira solo usuario_id).
      */
-    public static function attempt(string $email, string $password): bool
+    public static function attempt(string $email, string $password, bool $recordar = false): string
     {
         self::$motivoFallo = 'credenciales';
         $v = self::VENTANA_MINUTOS;
@@ -55,7 +67,7 @@ final class Auth
         ) {
             self::$motivoFallo = 'bloqueado';
 
-            return false;
+            return self::INGRESO_FALLIDO;
         }
 
         $usuario = Usuario::findByEmail($email);
@@ -64,21 +76,58 @@ final class Auth
         if (!$usuario || !$claveCorrecta) {
             LimiteIntentos::registrar('login', $email);
 
-            return false;
+            return self::INGRESO_FALLIDO;
         }
 
         // Cuenta o institución desactivada: se responde igual que con una contraseña
         // incorrecta (no cuenta como intento fallido: la contraseña era la correcta).
-        if (!(int) $usuario['activo']
-            || ($usuario['rol_nombre'] !== 'superusuario' && !(int) $usuario['institucion_activa'])
-        ) {
-            return false;
+        if (!self::puedeIngresar($usuario)) {
+            return self::INGRESO_FALLIDO;
         }
 
         LimiteIntentos::limpiar('login', $email);
+
+        if (DosFactoresService::tieneActiva($usuario)) {
+            if (DosFactoresService::esDispositivoConfiable((int) $usuario['id'])) {
+                self::iniciarSesionCompleta($usuario, 'dispositivo_confiable', $recordar);
+
+                return self::INGRESO_OK;
+            }
+
+            Session::regenerate();
+            Session::put('2fa_pendiente', [
+                'usuario_id' => (int) $usuario['id'],
+                'expira' => time() + DosFactoresService::SEGUNDOS_PARA_VERIFICAR,
+                'intentos' => 0,
+                'recordar' => $recordar,
+            ]);
+
+            return self::INGRESO_REQUIERE_2FA;
+        }
+
+        self::iniciarSesionCompleta($usuario, 'contrasena', $recordar);
+
+        return self::INGRESO_OK;
+    }
+
+    /** Cuenta activa y, salvo el superusuario, con su institución activa. */
+    public static function puedeIngresar(array $usuario): bool
+    {
+        return (int) $usuario['activo'] === 1
+            && ($usuario['rol_nombre'] === 'superusuario' || (int) $usuario['institucion_activa'] === 1);
+    }
+
+    /**
+     * Abre la sesión (tras la contraseña, o tras la contraseña + el segundo paso). Aplica
+     * además la política de verificación en dos pasos del rol: aviso con el plazo de
+     * gracia, o configuración obligatoria antes de seguir (ver AuthMiddleware).
+     */
+    public static function iniciarSesionCompleta(array $usuario, string $metodo, bool $recordar = false): void
+    {
         Usuario::registrarLoginExitoso((int) $usuario['id']);
 
         Session::regenerate();
+        unset($_SESSION['2fa_pendiente']);
         // Token CSRF nuevo: el anterior se generó antes de iniciar sesión (formulario de
         // login) y no debe seguir sirviendo para la sesión autenticada.
         Session::put('_csrf_token', bin2hex(random_bytes(32)));
@@ -91,7 +140,68 @@ final class Auth
         Session::put('institucion_nombre', $usuario['institucion_nombre']);
         Session::put('nombre_completo', trim($usuario['nombres'] . ' ' . $usuario['apellidos']));
 
-        return true;
+        $dosFactores = DosFactoresService::evaluarAlIniciarSesion($usuario);
+        Session::put('2fa_gracia_hasta', $dosFactores['obligatoria'] ? $dosFactores['gracia_hasta'] : null);
+        Session::put('2fa_configuracion_obligatoria', $dosFactores['debe_configurar']);
+
+        if ($recordar) {
+            Session::extender(Session::DIAS_RECORDARME);
+            // Con "Recordarme" no aplica el cierre por inactividad (ver check()); la
+            // revalidación contra la base de datos sí sigue aplicando.
+            Session::put('recordarme', true);
+        }
+
+        Auditoria::registrar((int) $usuario['id'], (int) $usuario['institucion_id'], 'login_ok', 'usuario',
+            (int) $usuario['id'], null, ['metodo' => $metodo]);
+    }
+
+    /** Estado intermedio del inicio de sesión (contraseña correcta, falta el código), si sigue vigente. */
+    public static function ingresoPendiente(): ?array
+    {
+        $pendiente = Session::get('2fa_pendiente');
+        if (!is_array($pendiente)) {
+            return null;
+        }
+
+        if ((int) $pendiente['expira'] < time()) {
+            unset($_SESSION['2fa_pendiente']);
+
+            return null;
+        }
+
+        return $pendiente;
+    }
+
+    /** Guarda el contador de códigos incorrectos del ingreso pendiente. */
+    public static function actualizarIngresoPendiente(array $pendiente): void
+    {
+        Session::put('2fa_pendiente', $pendiente);
+    }
+
+    public static function descartarIngresoPendiente(): void
+    {
+        unset($_SESSION['2fa_pendiente']);
+    }
+
+    /** Tras configurar la verificación en dos pasos, se quitan el aviso y la obligación. */
+    public static function marcarDosFactoresConfigurada(): void
+    {
+        Session::put('2fa_gracia_hasta', null);
+        Session::put('2fa_configuracion_obligatoria', false);
+    }
+
+    /** ¿Debe configurar la verificación en dos pasos antes de usar el sistema? */
+    public static function debeConfigurarDosFactores(): bool
+    {
+        return (bool) Session::get('2fa_configuracion_obligatoria', false);
+    }
+
+    /** Plazo (timestamp) para configurar la verificación en dos pasos, si su rol la exige. */
+    public static function graciaDosFactores(): ?int
+    {
+        $gracia = Session::get('2fa_gracia_hasta');
+
+        return $gracia !== null ? (int) $gracia : null;
     }
 
     public static function logout(): void
