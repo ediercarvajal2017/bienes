@@ -1,6 +1,8 @@
 <?php
 // Ejecuta, en orden, los .sql de database/migrations/ que aún no se hayan aplicado.
 // Uso: php database/migrate.php
+//      php database/migrate.php --pendientes   (SOLO LECTURA: lista lo que falta aplicar,
+//                                               sin ejecutar nada ni crear tablas)
 //
 // Cada archivo se registra en schema_migrations solo si TODAS sus sentencias corrieron
 // bien. Si una falla, el script se detiene con código de salida 1 e indica el archivo y
@@ -24,6 +26,23 @@ $pdo = new PDO(
     $dbConfig['password'],
     [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
 );
+
+$soloListar = in_array('--pendientes', $argv, true);
+
+if ($soloListar) {
+    // Solo lectura: no crea la base ni schema_migrations si no existen.
+    $pdo->exec("USE `{$dbConfig['database']}`");
+    $existeTabla = (int) $pdo->query(
+        "SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'schema_migrations'"
+    )->fetchColumn() > 0;
+    $aplicadas = $existeTabla ? $pdo->query('SELECT migracion FROM schema_migrations')->fetchAll(PDO::FETCH_COLUMN) : [];
+    $archivos = glob(__DIR__ . '/migrations/*.sql') ?: [];
+    sort($archivos);
+    $pendientes = array_values(array_filter(array_map('basename', $archivos), static fn ($n) => !in_array($n, $aplicadas, true)));
+
+    echo $pendientes === [] ? "No hay migraciones pendientes.\n" : "Migraciones pendientes (" . count($pendientes) . "):\n  - " . implode("\n  - ", $pendientes) . "\n";
+    exit(0);
+}
 
 $pdo->exec("CREATE DATABASE IF NOT EXISTS `{$dbConfig['database']}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
 $pdo->exec("USE `{$dbConfig['database']}`");

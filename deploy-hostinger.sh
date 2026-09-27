@@ -9,13 +9,17 @@
 #   version            etiqueta de git a desplegar (ej. v1.4.0). Si no se indica, despliega
 #                      lo último de la rama main.
 #
-# SIGEBI YA ESTÁ EN PRODUCCIÓN CON INFORMACIÓN REAL. En una actualización este script:
+# SIGEBI YA ESTÁ EN PRODUCCIÓN CON INFORMACIÓN REAL, y esa información es la correcta:
+# una actualización sube SOLO el software. No carga, reemplaza ni corrige datos (no
+# ejecuta seeders); lo único que toca en la base son las migraciones de ESTRUCTURA
+# pendientes, que muestra y pide confirmar antes de aplicarlas. En una actualización:
 #   1. pone el sitio en mantenimiento (nadie escribe mientras se actualiza),
 #   2. hace un respaldo COMPLETO y VERIFICADO de la base de datos,
 #   3. guarda el conteo de filas de cada tabla,
-#   4. actualiza código y dependencias, y aplica las migraciones,
-#   5. compara el conteo de filas (si alguna tabla perdió filas, se detiene),
-#   6. saca el sitio de mantenimiento.
+#   4. actualiza código y dependencias,
+#   5. lista las migraciones pendientes, pide confirmación escrita y las aplica,
+#   6. compara el conteo de filas (si alguna tabla perdió filas, se detiene),
+#   7. saca el sitio de mantenimiento.
 # Si algo falla ANTES de tocar la base de datos, se cancela sin cambios. Si falla DESPUÉS,
 # el sitio queda en mantenimiento y se muestran los comandos exactos para volver atrás.
 
@@ -271,10 +275,21 @@ fi
 composer install --no-dev --optimize-autoloader
 echo "Código actualizado: $COMMIT_ANTERIOR -> $(git rev-parse HEAD)"
 
-# --- 5. Migraciones (a partir de aquí la base puede cambiar) ---
-BASE_TOCADA=1
-$PHP_BIN database/migrate.php
-$PHP_BIN database/seeders/seed.php
+# --- 5. Migraciones de estructura (a partir de aquí la base puede cambiar) ---
+# Solo estructura; NO se ejecuta seed.php: la información de producción no se toca.
+echo ""
+$PHP_BIN database/migrate.php --pendientes
+if ! $PHP_BIN database/migrate.php --pendientes | grep -q "No hay migraciones pendientes"; then
+    echo ""
+    echo "Estas migraciones SOLO cambian la estructura (columnas/tablas nuevas); no cargan datos."
+    read -rp "Escriba SI para aplicarlas (cualquier otra respuesta cancela sin tocar la base): " CONFIRMA
+    if [ "$CONFIRMA" != "SI" ]; then
+        echo "Cancelado por el operador antes de modificar la base."
+        false
+    fi
+    BASE_TOCADA=1
+    $PHP_BIN database/migrate.php
+fi
 
 # --- 6. Prueba de humo: ninguna tabla perdió filas y el sitio responde ---
 APP_URL_ENV="$(leer_env APP_URL)"
@@ -291,3 +306,9 @@ echo "=== Actualización completada ==="
 echo "Versión anterior: $COMMIT_ANTERIOR"
 echo "Versión actual:   $(git rev-parse HEAD)"
 echo "Respaldo previo:  $RESPALDO   (guárdalo al menos hasta confirmar que todo funciona)"
+echo ""
+echo "Tareas programadas recomendadas (hPanel > Avanzado > Cron Jobs), si aún no existen:"
+echo "  0 2 * * *  $PHP_BIN $PROYECTO_DIR/database/respaldo.php"
+echo "  0 3 * * *  $PHP_BIN $PROYECTO_DIR/database/purgar_papelera.php"
+echo "  0 4 1 * *  $PHP_BIN $PROYECTO_DIR/database/archivar_auditoria.php"
+echo "Recuerde: todos los usuarios deberán iniciar sesión de nuevo una vez."

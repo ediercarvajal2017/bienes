@@ -109,7 +109,23 @@ foreach ($cargos as $nombre) {
     $cargoIds[$nombre] = insertIfMissing($pdo, 'cargos', 'nombre', $nombre, ['nombre' => $nombre]);
 }
 
-// --- Institución demo ---
+// --- Institución inicial y superusuario: SOLO en una instalación nueva ---
+// Este seed corre en cada despliegue (para sembrar permisos o cargos nuevos). En una base
+// que ya tiene instituciones/superusuario NO crea nada de esto: antes, si la institución
+// "demo" o el correo del superusuario se hubieran cambiado, un despliegue habría creado
+// una institución de prueba entre las reales o un superusuario nuevo con su contraseña
+// impresa en el registro del despliegue.
+$instalacionNueva = (int) $pdo->query('SELECT COUNT(*) FROM instituciones')->fetchColumn() === 0;
+$haySuperusuario = (int) $pdo->query(
+    "SELECT COUNT(*) FROM usuarios u JOIN roles r ON r.id = u.rol_id WHERE r.nombre = 'superusuario' AND u.eliminado_en IS NULL"
+)->fetchColumn() > 0;
+
+if (!$instalacionNueva && $haySuperusuario) {
+    echo "Base con datos: no se crean institución inicial ni superusuario.\n";
+    echo "Seed completado.\n";
+    exit(0);
+}
+
 $institucionId = insertIfMissing($pdo, 'instituciones', 'codigo_dane', '000000000000', [
     'codigo_dane' => '000000000000',
     'nombre' => 'Institución Educativa Demo',
@@ -124,12 +140,12 @@ $institucionId = insertIfMissing($pdo, 'instituciones', 'codigo_dane', '00000000
 // arranca cualquier institución nueva creada desde la UI (ver Categoria::sembrarPorDefecto) ---
 App\Models\Categoria::sembrarPorDefecto($institucionId);
 
-// --- Superusuario inicial ---
+// --- Superusuario inicial (solo si no existe ninguno) ---
 $superEmail = 'ediercarvajal@gmail.com';
 $stmt = $pdo->prepare('SELECT id FROM usuarios WHERE email = ?');
 $stmt->execute([$superEmail]);
 
-if (!$stmt->fetchColumn()) {
+if (!$haySuperusuario && !$stmt->fetchColumn()) {
     $passwordPlano = bin2hex(random_bytes(6));
     $pdo->prepare(
         'INSERT INTO usuarios (documento, nombres, apellidos, cargo_id, email, password_hash, institucion_id, rol_id, activo)
@@ -150,7 +166,7 @@ if (!$stmt->fetchColumn()) {
     echo "  Password: $passwordPlano\n";
     echo "  (Cámbiala después de tu primer inicio de sesión)\n";
 } else {
-    echo "El superusuario $superEmail ya existía; no se modificó.\n";
+    echo "Ya existe un superusuario; no se creó otro.\n";
 }
 
 echo "Seed completado.\n";
