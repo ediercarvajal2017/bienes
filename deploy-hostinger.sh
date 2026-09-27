@@ -64,10 +64,11 @@ if ! command -v composer &> /dev/null; then
     exit 1
 fi
 
-# Lee una variable del .env (sin comillas), o devuelve vacío.
+# Lee una variable del .env (sin comillas), o devuelve vacío. Siempre termina con éxito:
+# con "set -eo pipefail", un grep sin coincidencias haría fallar VAR="$(leer_env X)".
 leer_env() {
-    [ -f .env ] || { echo ""; return; }
-    grep -E "^$1=" .env | tail -1 | cut -d= -f2- | sed -e 's/^["'\'']//' -e 's/["'\'']$//'
+    [ -f .env ] || { echo ""; return 0; }
+    { grep -E "^$1=" .env || true; } | tail -1 | cut -d= -f2- | sed -e 's/^["'\'']//' -e 's/["'\'']$//'
 }
 
 # =====================================================================================
