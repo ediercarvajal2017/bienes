@@ -32,6 +32,10 @@ test('imprimir pasa el bien a "Impresos, por pegar" y confirmar lo saca de la bo
     await fila.locator('.casilla-bien').check();
     const [hoja] = await Promise.all([page.waitForEvent('popup'), page.locator('#botonGenerar').click()]);
     await hoja.waitForLoadState();
+    // Los QR vienen dentro de la página (no una petición por imagen) y ya se ven completos.
+    await expect(hoja.locator('img').first()).toHaveAttribute('src', /^data:image\/svg\+xml/);
+    await expect(hoja.getByRole('button', { name: 'Imprimir' })).toBeEnabled();
+    expect(await hoja.locator('img').first().evaluate((img) => img.complete && img.naturalWidth > 0)).toBe(true);
     await hoja.close();
 
     // La bodega se recarga sola: ya no está por imprimir, sino por pegar.
