@@ -5,7 +5,7 @@ y no se carga, reemplaza ni corrige. Lo único que cambia en la base son las mig
 estructura pendientes (columnas y tablas nuevas, vacías), que el script muestra y pide
 confirmar con "SI".
 
-Versión 1.1.1 → migraciones pendientes en producción: `029` a `033`. Ensayadas sobre una
+Versión 1.1.2 → migraciones pendientes en producción: `029` a `033`. Ensayadas sobre una
 copia del volcado de producción: ninguna tabla perdió filas y las 24 tablas de datos
 conservaron su contenido idéntico, fila por fila (la única que cambia es `schema_migrations`,
 el registro de migraciones).
@@ -14,7 +14,7 @@ el registro de migraciones).
 
 ```bash
 git push -u origin preparacion-presentacion
-git push origin v1.1.1
+git push origin v1.1.2
 ```
 
 Abrir el Pull Request `preparacion-presentacion → main` en GitHub (queda el registro de todos
@@ -52,10 +52,10 @@ paso 2.
    ```bash
    cd <ruta del proyecto>
    git fetch --tags origin                                   # solo descarga; no cambia el sitio
-   git show v1.1.1:deploy-hostinger.sh > ~/deploy-v1.1.1.sh
-   bash ~/deploy-v1.1.1.sh <ruta ABSOLUTA del proyecto> v1.1.1
+   git show v1.1.2:deploy-hostinger.sh > ~/deploy-v1.1.2.sh
+   bash ~/deploy-v1.1.2.sh <ruta ABSOLUTA del proyecto> v1.1.2
    ```
-   El script: pone el sitio en mantenimiento → código v1.1.1 y dependencias (la base aún no se
+   El script: pone el sitio en mantenimiento → código v1.1.2 y dependencias (la base aún no se
    toca) → respaldo verificado → conteo de filas → **lista las migraciones y pide escribir SI** → las aplica →
    compara el conteo de filas y prueba el sitio → quita el mantenimiento.
 3. Si generó `APP_KEY`, la muestra una sola vez: **guárdela fuera del servidor**.

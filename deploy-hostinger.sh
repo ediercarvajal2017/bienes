@@ -287,11 +287,18 @@ $PHP_BIN database/migrate.php --pendientes
 if ! $PHP_BIN database/migrate.php --pendientes | grep -q "No hay migraciones pendientes"; then
     echo ""
     echo "Estas migraciones SOLO cambian la estructura (columnas/tablas nuevas); no cargan datos."
-    read -rp "Escriba SI para aplicarlas (cualquier otra respuesta cancela sin tocar la base): " CONFIRMA
-    if [ "$CONFIRMA" != "SI" ]; then
-        echo "Cancelado por el operador antes de modificar la base."
-        false
-    fi
+    CONFIRMA=""
+    read -rp "Escriba SI para aplicarlas (cualquier otra respuesta cancela sin tocar la base): " CONFIRMA || true
+    # Se ignoran espacios, el retorno de carro que agregan algunas terminales de Windows y
+    # las mayúsculas/tilde: valen "SI", "si", "Sí".
+    RESPUESTA="$(printf '%s' "$CONFIRMA" | tr -d '[:space:]' | tr '[:lower:]' '[:upper:]')"
+    case "$RESPUESTA" in
+        SI|SÍ|Sí|sí) ;;
+        *)
+            echo "Cancelado por el operador antes de modificar la base (respuesta recibida: '$(printf '%s' "$CONFIRMA" | cat -v)')."
+            false
+            ;;
+    esac
     BASE_TOCADA=1
     $PHP_BIN database/migrate.php
 fi
