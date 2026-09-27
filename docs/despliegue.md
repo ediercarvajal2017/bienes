@@ -103,6 +103,31 @@ rm public/mantenimiento.flag
 Restaurar la base con el respaldo previo **solo si fuera necesario** (el script muestra el
 comando con `database/restaurar.php`). Los respaldos quedan en `storage_sigebi/backups/`.
 
+## Respaldos en Google Drive
+
+Todos los días a las 2:00 a. m. (hPanel > Avanzado > Cron Jobs) se ejecuta
+`~/scripts/backup_sigebi.sh` (plantilla: `database/herramientas/respaldo_drive.sh`):
+
+- **Base de datos:** respaldo completo y verificado, cifrado con `BACKUP_PASSWORD` y subido a
+  `Mi unidad/sigebi-respaldos/base-de-datos/` (se conservan 60 días en Drive y 14 en el servidor).
+- **Fotos y documentos:** copia incremental cifrada en `Mi unidad/sigebi-respaldos/archivos/`
+  (remoto `sigebi-cifrado` de rclone; los nombres se ven, el contenido va cifrado).
+- **Si falla:** correo de alerta a `BACKUP_EMAIL` y registro en `storage_sigebi/logs/respaldo-drive.log`.
+
+La contraseña de los respaldos (`BACKUP_PASSWORD`) está en el `.env` del servidor y en
+`Documentos/SIGEBI_produccion/SECRETOS_SIGEBI_NO_COMPARTIR.txt`. **Sin ella no se pueden abrir.**
+
+Restaurar la base desde Drive:
+
+```bash
+~/bin/rclone copy gdrive:sigebi-respaldos/base-de-datos/<archivo>.sql.gz.enc ~/restaurar/
+openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -md sha256     -in ~/restaurar/<archivo>.sql.gz.enc -out ~/restaurar/<archivo>.sql.gz   # pide BACKUP_PASSWORD
+php database/restaurar.php ~/restaurar/<archivo>.sql.gz --base=<base> --reemplazar
+```
+
+Recuperar los archivos: `~/bin/rclone copy sigebi-cifrado: ~/restaurar/uploads` (rclone los
+descifra solo; en otro equipo hay que crear el remoto `sigebi-cifrado` con la misma contraseña).
+
 ## Historial
 
 | Fecha | Versión | Migraciones | Notas |
@@ -110,6 +135,8 @@ comando con `database/restaurar.php`). Los respaldos quedan en `storage_sigebi/b
 | 2026-09-27 | 1.1.2 | 029–033 | Seguridad, 2FA opcional, ciclos de vida. Las 24 tablas de datos quedaron idénticas fila por fila |
 | 2026-09-27 | 1.1.3 | — | Fotos: se liberan sesión y conexión antes de enviar; reintento de conexión |
 | 2026-09-27 | 1.1.4 | — | Auditoría con todas las acciones en español; demostración local (`demo.bat`) y guion de presentación |
+| 2026-09-27 | 1.1.5 | — | Respaldo diario a Google Drive (plantilla); scripts de corrección de datos R05 y R06 (`database/correcciones/`) |
+| 2026-09-27 | 1.1.6 | — | Script de regularización R12. Aplicadas en producción: R06 (9 asignaciones cerradas), R05 (superusuario a la institución técnica) y R12 (sillas 200033042-178). R04 confirmado como autorizado; R07, R16 y R18 se dejan por decisión del responsable |
 
 ## Fuera del despliegue
 
