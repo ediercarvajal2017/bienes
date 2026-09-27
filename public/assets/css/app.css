@@ -659,3 +659,4 @@ summary { cursor: pointer; }
 .barra-categoria span { display: block; height: 100%; background: var(--sigebi-primary); border-radius: .3rem; }
 @media (prefers-reduced-motion: reduce) { .tarjeta-cifra { transition: none; } .tarjeta-cifra:hover { transform: none; } }
 .tarjeta-cifra-unidad { font-size: .8rem; color: var(--bs-secondary-color); font-weight: 600; }
+.contenedor-manual { max-width: 760px; }

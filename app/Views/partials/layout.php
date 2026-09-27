@@ -172,6 +172,7 @@ foreach ($gruposBreadcrumb as $g) {
         <nav class="nav flex-column">
             <a class="nav-link<?= $esActiva('/dashboard') ?>" href="<?= Url::to('/dashboard') ?>"><i class="bi bi-grid-1x2 me-2"></i>Panel principal</a>
             <a class="nav-link<?= $esActiva('/buscar') ?>" href="<?= Url::to('/buscar') ?>"><i class="bi bi-search me-2"></i>Buscar</a>
+            <a class="nav-link<?= $esActiva('/manual') ?>" href="<?= Url::to('/manual') ?>"><i class="bi bi-question-circle me-2"></i>Guía rápida</a>
 
             <details class="nav-grupo"<?= $grupoAbierto(['/bienes', '/espacios', '/asignaciones', '/reintegros', '/escanear']) ?>>
                 <summary class="nav-grupo-titulo">Operación diaria<i class="bi bi-chevron-right nav-grupo-chevron"></i></summary>

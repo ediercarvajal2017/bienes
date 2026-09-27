@@ -6,6 +6,7 @@ $titulosPorRol = [
     'docente' => 'Docente',
     'rector' => 'Rector',
     'secretario' => 'Secretario',
+    'superusuario' => 'Superusuario',
 ];
 $tieneGuiaPropia = isset($titulosPorRol[$rol]);
 $tituloRol = $tieneGuiaPropia ? $titulosPorRol[$rol] : 'Docente';
@@ -16,8 +17,8 @@ $tituloRol = $tieneGuiaPropia ? $titulosPorRol[$rol] : 'Docente';
 </div>
 
 <?php if (!$tieneGuiaPropia): ?>
-    <div class="alert alert-info py-2 small" style="max-width: 720px;">
-        Estás viendo la guía del rol Docente. La guía para tu rol llegará en una próxima fase.
+    <div class="alert alert-info py-2 small contenedor-manual">
+        Estás viendo la guía del rol Docente.
     </div>
 <?php endif; ?>
 
