@@ -136,6 +136,7 @@ descifra solo; en otro equipo hay que crear el remoto `sigebi-cifrado` con la mi
 | 2026-09-27 | 1.1.3 | — | Fotos: se liberan sesión y conexión antes de enviar; reintento de conexión |
 | 2026-09-27 | 1.1.4 | — | Auditoría con todas las acciones en español; demostración local (`demo.bat`) y guion de presentación |
 | 2026-09-27 | 1.1.5 | — | Respaldo diario a Google Drive (plantilla); scripts de corrección de datos R05 y R06 (`database/correcciones/`) |
+| 2026-09-27 | 1.1.6 | — | Script de regularización R12. Aplicadas en producción: R06 (9 asignaciones cerradas), R05 (superusuario a la institución técnica) y R12 (sillas 200033042-178). R04 confirmado como autorizado; R07, R16 y R18 se dejan por decisión del responsable |
 
 ## Fuera del despliegue
 
