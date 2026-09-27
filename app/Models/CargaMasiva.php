@@ -55,17 +55,25 @@ final class CargaMasiva
         }
 
         if ($busqueda !== null && $busqueda !== '') {
-            // COLLATE explícito en cada comparación: sin esto, comparar los literales
-            // 'aplicada'/'pendiente' contra el parámetro puede chocar con la colación de
-            // usuarios/cargas_masivas si difieren entre sí (error de MySQL 1267 "Illegal
-            // mix of collations"), algo que puede pasar aunque en el código nunca se haya
-            // fijado una colación distinta a propósito.
+            // Sin COLLATE sobre los parámetros: con consultas preparadas reales, MariaDB
+            // 10.4 recibe el parámetro como "binary" y "? COLLATE utf8mb4_unicode_ci" daba
+            // error 1253 (la pantalla respondía 500). Las columnas se comparan con su propia
+            // colación, y "aplicada"/"pendiente" se resuelven aquí, en PHP, en vez de
+            // comparar literales contra el parámetro en SQL (lo que causaba el error 1267
+            // "Illegal mix of collations" que el COLLATE intentaba evitar).
             $termino = '%' . $busqueda . '%';
-            $condiciones[] = "(u.nombres LIKE ? COLLATE utf8mb4_unicode_ci OR u.apellidos LIKE ? COLLATE utf8mb4_unicode_ci
-                OR DATE_FORMAT(cm.created_at, '%Y-%m-%d %H:%i') LIKE ? COLLATE utf8mb4_unicode_ci
-                OR (cm.aplicada = 1 AND 'aplicada' LIKE ? COLLATE utf8mb4_unicode_ci)
-                OR (cm.aplicada = 0 AND 'pendiente' LIKE ? COLLATE utf8mb4_unicode_ci))";
-            array_push($params, $termino, $termino, $termino, $termino, $termino);
+            $estado = [];
+            $minuscula = mb_strtolower($busqueda);
+            if (str_contains('aplicada', $minuscula)) {
+                $estado[] = 'cm.aplicada = 1';
+            }
+            if (str_contains('pendiente', $minuscula)) {
+                $estado[] = 'cm.aplicada = 0';
+            }
+            $condiciones[] = "(u.nombres LIKE ? OR u.apellidos LIKE ?
+                OR DATE_FORMAT(cm.created_at, '%Y-%m-%d %H:%i') LIKE ?"
+                . ($estado !== [] ? ' OR ' . implode(' OR ', $estado) : '') . ')';
+            array_push($params, $termino, $termino, $termino);
         }
 
         return [' WHERE ' . implode(' AND ', $condiciones), $params];
