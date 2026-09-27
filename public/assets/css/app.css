@@ -730,3 +730,13 @@ summary { cursor: pointer; }
 .miniatura-36 { width: 36px; height: 36px; object-fit: cover; border-radius: 4px; }
 .miniatura-ampliable { cursor: zoom-in; }
 .foto-resultado { height: 140px; object-fit: cover; }
+
+/* Paginación con los colores de la marca */
+.pagination { --bs-pagination-active-bg: var(--sigebi-primary); --bs-pagination-active-border-color: var(--sigebi-primary); --bs-pagination-color: var(--sigebi-primary); --bs-pagination-hover-color: var(--sigebi-secondary); --bs-pagination-focus-box-shadow: 0 0 0 .2rem rgba(31, 111, 84, .25); }
+[data-bs-theme="dark"] .pagination { --bs-pagination-active-bg: #23805d; --bs-pagination-active-border-color: #23805d; --bs-pagination-color: #6fd3a6; --bs-pagination-hover-color: #8fe3bc; }
+/* Foto que no carga (archivo faltante): el texto alternativo no desborda la celda de
+   36 px (sigue disponible para lectores de pantalla). */
+.miniatura-36 { overflow: hidden; font-size: 0; background: var(--bs-secondary-bg); }
+/* Selectores con buscador (Tom Select) de filtros y formularios: la flecha no tapa el texto. */
+.ts-wrapper.single .ts-control { padding-right: 2rem !important; flex-wrap: nowrap; }
+.ts-wrapper.single .ts-control > .item { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
