@@ -729,3 +729,4 @@ summary { cursor: pointer; }
 /* Miniaturas de los listados (servidas a 96 px con ?w=96) */
 .miniatura-36 { width: 36px; height: 36px; object-fit: cover; border-radius: 4px; }
 .miniatura-ampliable { cursor: zoom-in; }
+.foto-resultado { height: 140px; object-fit: cover; }

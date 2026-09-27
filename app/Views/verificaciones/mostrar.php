@@ -380,12 +380,43 @@ $tabPorDefecto = !empty($hallazgos) ? 'hallazgos' : 'discrepancia';
     const enlaces = Array.prototype.slice.call(document.querySelectorAll('[data-tab-link]'));
     const paneles = Array.prototype.slice.call(document.querySelectorAll('[data-tab-panel]'));
 
+    // Roles ARIA de pestañas: los lectores de pantalla anuncian "pestaña 2 de 4,
+    // seleccionada", y las flechas izquierda/derecha cambian de pestaña.
+    const lista = document.getElementById('tabsVerificacion');
+    if (lista) { lista.setAttribute('role', 'tablist'); lista.setAttribute('aria-label', 'Secciones de la jornada'); }
+    enlaces.forEach(function (enlace) {
+        const nombre = enlace.dataset.tabLink;
+        enlace.id = 'tab-' + nombre;
+        enlace.setAttribute('role', 'tab');
+        enlace.setAttribute('aria-controls', 'seccion-' + nombre);
+        if (enlace.parentElement) { enlace.parentElement.setAttribute('role', 'presentation'); }
+    });
+    paneles.forEach(function (panel) {
+        panel.setAttribute('role', 'tabpanel');
+        panel.setAttribute('aria-labelledby', 'tab-' + panel.dataset.tabPanel);
+    });
+
     function activarTab(nombre) {
         paneles.forEach(function (panel) {
             panel.classList.toggle('d-none', panel.dataset.tabPanel !== nombre);
         });
         enlaces.forEach(function (enlace) {
-            enlace.classList.toggle('active', enlace.dataset.tabLink === nombre);
+            const activa = enlace.dataset.tabLink === nombre;
+            enlace.classList.toggle('active', activa);
+            enlace.setAttribute('aria-selected', activa ? 'true' : 'false');
+            enlace.setAttribute('tabindex', activa ? '0' : '-1');
+        });
+    }
+
+    if (lista) {
+        lista.addEventListener('keydown', function (e) {
+            if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') { return; }
+            const actual = enlaces.indexOf(document.activeElement);
+            if (actual === -1) { return; }
+            e.preventDefault();
+            const siguiente = enlaces[(actual + (e.key === 'ArrowRight' ? 1 : enlaces.length - 1)) % enlaces.length];
+            siguiente.focus();
+            siguiente.click();
         });
     }
 
@@ -400,8 +431,7 @@ $tabPorDefecto = !empty($hallazgos) ? 'hallazgos' : 'discrepancia';
 
     const disponibles = enlaces.map(function (enlace) { return enlace.dataset.tabLink; });
     const hashInicial = window.location.hash.replace('#seccion-', '');
-    if (disponibles.indexOf(hashInicial) !== -1) {
-        activarTab(hashInicial);
-    }
+    const inicial = enlaces.filter(function (enlace) { return enlace.classList.contains('active'); })[0];
+    activarTab(disponibles.indexOf(hashInicial) !== -1 ? hashInicial : (inicial ? inicial.dataset.tabLink : disponibles[0]));
 })();
 </script>

@@ -154,7 +154,7 @@ use App\Core\Url;
                 return (
                     '<div class="col-6 col-md-4 col-lg-3">' +
                         '<div class="card h-100">' +
-                            (foto ? '<img src="' + foto + '" class="card-img-top" style="height:140px;object-fit:cover;" loading="lazy">' : '') +
+                            (foto ? '<img src="' + foto + '?w=480" class="card-img-top foto-resultado" alt="' + escapeHtml('Foto de ' + (b.descripcion || b.codigo_identificacion)) + '" loading="lazy">' : '') +
                             '<div class="card-body p-2">' +
                                 '<div class="small text-muted">' + pct + '% parecido</div>' +
                                 '<div class="fw-semibold small text-truncate">' + escapeHtml(b.codigo_identificacion) + '</div>' +
