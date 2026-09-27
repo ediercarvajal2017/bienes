@@ -2,17 +2,17 @@
   --sigebi-primary: #1F6F54;
   --sigebi-secondary: #145C43;
   --sigebi-accent: #F2B134;
-  --sigebi-success: #2E9E5B;
-  --sigebi-danger: #D64545;
+  --sigebi-success: #237A46; /* 5,3:1 con texto blanco (antes #2E9E5B, 3,4:1) */
+  --sigebi-danger: #C0392B; /* 5,4:1 con texto blanco (antes #D64545, 4,4:1) */
   --sigebi-bg: #F5F7FA;
   --sigebi-text: #1F2937;
 
   --bs-primary: var(--sigebi-primary);
   --bs-primary-rgb: 31, 111, 84;
   --bs-success: var(--sigebi-success);
-  --bs-success-rgb: 46, 158, 91;
+  --bs-success-rgb: 35, 122, 70;
   --bs-danger: var(--sigebi-danger);
-  --bs-danger-rgb: 214, 69, 69;
+  --bs-danger-rgb: 192, 57, 43;
   --bs-link-color: var(--sigebi-primary);
   --bs-link-color-rgb: 31, 111, 84;
   --bs-link-hover-color: var(--sigebi-secondary);
@@ -430,7 +430,7 @@ select.selector-buscable.is-invalid + .ts-wrapper .ts-control {
 }
 
 [data-bs-theme="dark"] .sidebar .nav-grupo-titulo {
-  color: #64748b;
+  color: #8b98a8; /* 6:1 sobre el fondo del menú (antes 3,7:1) */
 }
 
 [data-bs-theme="dark"] .auth-shell {
@@ -669,3 +669,46 @@ summary { cursor: pointer; }
 /* Selector de institución (Tom Select): la flecha ya no se monta sobre el texto. */
 .filtro-institucion-form .ts-control { padding-right: 1.9rem !important; flex-wrap: nowrap; }
 .filtro-institucion-form .ts-control .item { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ── Botones con los colores de la marca ──
+   Bootstrap 5.3 fija el color de .btn-primary en su azul (#0d6efd) sin mirar
+   --bs-primary: por eso los botones principales salían azules en una interfaz verde.
+   Todos los pares cumplen WCAG AA (4,5:1) con su texto. */
+.btn-primary {
+  --bs-btn-bg: var(--sigebi-primary); --bs-btn-border-color: var(--sigebi-primary);
+  --bs-btn-hover-bg: var(--sigebi-secondary); --bs-btn-hover-border-color: var(--sigebi-secondary);
+  --bs-btn-active-bg: var(--sigebi-secondary); --bs-btn-active-border-color: var(--sigebi-secondary);
+  --bs-btn-disabled-bg: var(--sigebi-primary); --bs-btn-disabled-border-color: var(--sigebi-primary);
+  --bs-btn-focus-shadow-rgb: 31, 111, 84;
+}
+.btn-outline-primary {
+  --bs-btn-color: var(--sigebi-primary); --bs-btn-border-color: var(--sigebi-primary);
+  --bs-btn-hover-bg: var(--sigebi-primary); --bs-btn-hover-border-color: var(--sigebi-primary);
+  --bs-btn-active-bg: var(--sigebi-primary); --bs-btn-active-border-color: var(--sigebi-primary);
+  --bs-btn-disabled-color: var(--sigebi-primary); --bs-btn-disabled-border-color: var(--sigebi-primary);
+  --bs-btn-focus-shadow-rgb: 31, 111, 84;
+}
+.btn-success { --bs-btn-bg: var(--sigebi-success); --bs-btn-border-color: var(--sigebi-success); --bs-btn-hover-bg: #1c6439; --bs-btn-hover-border-color: #1c6439; }
+.btn-outline-success { --bs-btn-color: var(--sigebi-success); --bs-btn-border-color: var(--sigebi-success); --bs-btn-hover-bg: var(--sigebi-success); --bs-btn-hover-border-color: var(--sigebi-success); }
+.btn-danger { --bs-btn-bg: var(--sigebi-danger); --bs-btn-border-color: var(--sigebi-danger); --bs-btn-hover-bg: #a13024; --bs-btn-hover-border-color: #a13024; }
+.btn-outline-danger { --bs-btn-color: var(--sigebi-danger); --bs-btn-border-color: var(--sigebi-danger); --bs-btn-hover-bg: var(--sigebi-danger); --bs-btn-hover-border-color: var(--sigebi-danger); }
+.progress-bar { background-color: var(--sigebi-primary); }
+.form-check-input:checked { background-color: var(--sigebi-primary); border-color: var(--sigebi-primary); }
+.form-control:focus, .form-select:focus { border-color: var(--sigebi-primary); box-shadow: 0 0 0 .2rem rgba(31, 111, 84, .25); }
+
+/* Modo oscuro: el verde de los botones se oscurece (4,9:1 con texto blanco) y los
+   contornos se aclaran para leerse sobre el fondo oscuro. */
+[data-bs-theme="dark"] .btn-primary {
+  --bs-btn-bg: #23805d; --bs-btn-border-color: #23805d;
+  --bs-btn-hover-bg: #1d6b4e; --bs-btn-hover-border-color: #1d6b4e;
+  --bs-btn-active-bg: #1d6b4e; --bs-btn-active-border-color: #1d6b4e;
+  --bs-btn-disabled-bg: #23805d; --bs-btn-disabled-border-color: #23805d;
+}
+[data-bs-theme="dark"] .btn-outline-primary {
+  --bs-btn-color: #6fd3a6; --bs-btn-border-color: #3fae82;
+  --bs-btn-hover-bg: #23805d; --bs-btn-hover-border-color: #23805d; --bs-btn-hover-color: #fff;
+  --bs-btn-active-bg: #23805d; --bs-btn-active-border-color: #23805d;
+}
+[data-bs-theme="dark"] .btn-outline-success { --bs-btn-color: #5fcf8e; --bs-btn-border-color: #3f9e66; }
+[data-bs-theme="dark"] .btn-outline-danger { --bs-btn-color: #f08a80; --bs-btn-border-color: #d25a4e; }
+[data-bs-theme="dark"] .form-check-input:checked { background-color: #23805d; border-color: #23805d; }

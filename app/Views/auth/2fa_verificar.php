@@ -76,6 +76,7 @@
 </div>
 
 <script src="<?= Url::asset('/assets/js/tema.js') ?>"></script>
+<script src="<?= Url::asset('/assets/js/cargando.js') ?>"></script>
 <script>
 // Con 6 dígitos escritos (o pegados desde la aplicación), se envía solo.
 (function () {
