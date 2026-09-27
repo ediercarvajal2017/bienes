@@ -14,9 +14,9 @@
 # ejecuta seeders); lo único que toca en la base son las migraciones de ESTRUCTURA
 # pendientes, que muestra y pide confirmar antes de aplicarlas. En una actualización:
 #   1. pone el sitio en mantenimiento (nadie escribe mientras se actualiza),
-#   2. hace un respaldo COMPLETO y VERIFICADO de la base de datos,
-#   3. guarda el conteo de filas de cada tabla,
-#   4. actualiza código y dependencias,
+#   2. actualiza código y dependencias (la base aún no se toca),
+#   3. hace un respaldo COMPLETO y VERIFICADO de la base de datos,
+#   4. guarda el conteo de filas de cada tabla,
 #   5. lista las migraciones pendientes, pide confirmación escrita y las aplica,
 #   6. compara el conteo de filas (si alguna tabla perdió filas, se detiene),
 #   7. saca el sitio de mantenimiento.
@@ -255,16 +255,11 @@ trap al_fallar ERR
 touch "$MANTENIMIENTO"
 echo "Sitio en modo mantenimiento."
 
-# --- 2. Respaldo completo y verificado ---
-echo "Respaldando la base de datos..."
-$PHP_BIN database/respaldo.php --salida="$RESPALDO" --sin-correo --sin-limpieza
-gzip -t "$RESPALDO"
-echo "Respaldo verificado: $RESPALDO"
-
-# --- 3. Conteo de filas previo ---
-$PHP_BIN database/herramientas/humo.php --guardar="$CONTEO"
-
-# --- 4. Código y dependencias ---
+# --- 2. Código y dependencias (la base todavía NO se toca) ---
+# Va ANTES del respaldo: así el respaldo y el conteo usan las herramientas de la versión
+# nueva (una versión anterior puede no tenerlas; p. ej. 1.0 sin --salida ni humo.php) y
+# el modo mantenimiento ya lo aplica el index.php nuevo. Si algo falla aquí, al_fallar
+# vuelve al commit anterior.
 git fetch --tags origin
 if [ -n "$VERSION" ]; then
     git checkout -q "tags/$VERSION"
@@ -274,6 +269,15 @@ else
 fi
 composer install --no-dev --optimize-autoloader
 echo "Código actualizado: $COMMIT_ANTERIOR -> $(git rev-parse HEAD)"
+
+# --- 3. Respaldo completo y verificado ---
+echo "Respaldando la base de datos..."
+$PHP_BIN database/respaldo.php --salida="$RESPALDO" --sin-correo --sin-limpieza
+gzip -t "$RESPALDO"
+echo "Respaldo verificado: $RESPALDO"
+
+# --- 4. Conteo de filas previo ---
+$PHP_BIN database/herramientas/humo.php --guardar="$CONTEO"
 
 # --- 5. Migraciones de estructura (a partir de aquí la base puede cambiar) ---
 # Solo estructura; NO se ejecuta seed.php: la información de producción no se toca.
