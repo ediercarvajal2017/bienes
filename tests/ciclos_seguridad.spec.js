@@ -1,6 +1,9 @@
 import { test, expect } from '@playwright/test';
 import { datos, comoRol, sinSesion, bd } from './helpers/datos.js';
 
+// Solo en modo local: en modo remoto no existen los usuarios de cada rol.
+test.beforeEach(() => test.skip(datos().remoto === true, 'Necesita la base de pruebas local (usuarios por rol)'));
+
 /**
  * Regresiones de los ciclos de vida (fase 2) y de la seguridad de las sesiones (fase 1),
  * con los roles reales: docente que reporta/solicita y rector que aprueba.

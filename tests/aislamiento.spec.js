@@ -1,6 +1,9 @@
 import { test, expect } from '@playwright/test';
 import { datos, comoRol, bd } from './helpers/datos.js';
 
+// Solo en modo local: en modo remoto no existen los usuarios de cada rol.
+test.beforeEach(() => test.skip(datos().remoto === true, 'Necesita la base de pruebas local (usuarios por rol)'));
+
 /**
  * AISLAMIENTO ENTRE INSTITUCIONES: un rector de la institución A no puede ver, modificar
  * ni tomar el control de nada de la institución B, ni de la cuenta del superusuario.

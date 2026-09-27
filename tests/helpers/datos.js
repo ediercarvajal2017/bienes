@@ -35,7 +35,13 @@ export function bd(sql) {
     }
     // En Windows mysql.exe devuelve CRLF: se normaliza para que split() por salto de línea
     // no deje un retorno de carro pegado a cada valor.
-    return execFileSync(MYSQL_BIN, ['-uroot', '-N', '--default-character-set=utf8mb4', BD_PRUEBAS, '-e', sql], { encoding: 'utf8' })
+    const argumentos = ['-u', process.env.DB_USERNAME || 'root', '-N', '--default-character-set=utf8mb4'];
+    if (process.env.DB_HOST) {
+        argumentos.push('-h', process.env.DB_HOST);
+    }
+    // La contraseña va por MYSQL_PWD (no en la línea de comandos).
+    const entorno = { ...process.env, ...(process.env.DB_PASSWORD ? { MYSQL_PWD: process.env.DB_PASSWORD } : {}) };
+    return execFileSync(MYSQL_BIN, [...argumentos, BD_PRUEBAS, '-e', sql], { encoding: 'utf8', env: entorno })
         .replace(/\r\n/g, '\n').trim();
 }
 

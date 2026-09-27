@@ -1,0 +1,73 @@
+# Integración continua: en cada push o pull request corre las mismas verificaciones que
+# en local. Nunca se conecta a producción: la base de pruebas es un contenedor desechable.
+name: Pruebas
+
+on:
+  push:
+    branches: [main, preparacion-presentacion]
+  pull_request:
+
+jobs:
+  php:
+    name: Sintaxis, PHPStan y PHPUnit (PHP ${{ matrix.php }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        php: ['8.3', '8.4'] # 8.4 es la versión de Hostinger
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: pdo_mysql, mbstring, gd, zip, intl, sodium, fileinfo
+          coverage: none
+      - run: composer install --no-interaction --no-progress
+      - name: Sintaxis de todos los archivos PHP
+        run: find app config database public tests/Unit -name '*.php' -print0 | xargs -0 -n1 php -l > /dev/null
+      - run: composer analyse
+      - run: composer test
+      - run: composer audit
+
+  navegador:
+    name: Playwright (base de pruebas desechable)
+    runs-on: ubuntu-latest
+    needs: php
+    services:
+      mariadb:
+        image: mariadb:11.8 # la misma serie que Hostinger
+        env:
+          MARIADB_ROOT_PASSWORD: raiz-pruebas
+        ports: ['3306:3306']
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=5s --health-timeout=5s --health-retries=20
+    env:
+      DB_HOST: 127.0.0.1
+      DB_USERNAME: root
+      DB_PASSWORD: raiz-pruebas
+      TEST_DB_DATABASE: sigebi_test
+      PHP_BIN: php
+      MYSQL_BIN: mysql
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: pdo_mysql, mbstring, gd, zip, intl, sodium, fileinfo
+          coverage: none
+      - run: composer install --no-interaction --no-progress
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Pruebas funcionales, por rol y de permisos
+        run: npx playwright test --project=guest --project=setup --project=authenticated
+      - name: Pruebas responsive (7 dispositivos)
+        run: npx playwright test --project="responsive-*"
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: reporte-playwright
+          path: playwright-report/
+          retention-days: 7
