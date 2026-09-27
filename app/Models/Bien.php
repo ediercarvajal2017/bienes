@@ -340,10 +340,10 @@ final class Bien
              ORDER BY cantidad DESC, nombre"
         );
         $stmt->execute($params);
-        $filas = array_map(
+        $filas = array_values(array_map(
             static fn (array $f): array => ['nombre' => (string) $f['nombre'], 'cantidad' => (int) $f['cantidad']],
             $stmt->fetchAll()
-        );
+        ));
 
         if (count($filas) <= $limite) {
             return $filas;
