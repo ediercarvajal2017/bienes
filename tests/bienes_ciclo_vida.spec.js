@@ -45,35 +45,33 @@ test('un bien recorre crear → asignar → trasladar → reintegrar', async ({ 
 
     await filaBien.getByRole('link', { name: 'Editar' }).click();
     await expect(page).toHaveURL(/\/bienes\/\d+\/editar/);
+    const urlFicha = page.url();
+
+    // Cada acción se elige en "¿Qué desea hacer con este bien?" y se guarda junto con los
+    // datos con un solo botón; al guardar se vuelve al listado y se reabre la ficha.
+    async function hacer(accion, completar, boton) {
+        await page.selectOption('#accionBien', accion);
+        await completar();
+        await page.getByRole('button', { name: boton }).click();
+        await expect(page).toHaveURL(/\/bienes(\?|$)/);
+        await expect(page.locator('.alert-success')).toContainText('Bien actualizado');
+        await page.goto(urlFicha);
+    }
 
     // --- Asignar al espacio A ---
-    await page.locator('#panelAsignar summary').click();
-    await seleccionarTomSelect(page, 'espacioAsignar', nombreEspacioA);
-    await page.locator('#panelAsignar').getByRole('button', { name: 'Asignar' }).click();
-
-    await expect(page.locator('.alert-success')).toBeVisible();
-    // .fw-semibold es el nombre del espacio en la tarjeta "Asignación activa" -sin
-    // acotar ahí, getByText también matchea la misma opción dentro de los <select>
-    // (ocultos, pero con el mismo texto) de los paneles Asignar/Trasladar.
+    await hacer('asignar', () => seleccionarTomSelect(page, 'accionEspacio', nombreEspacioA), 'Guardar y asignar');
+    // .fw-semibold es el nombre del espacio en la tarjeta de la asignación activa.
     await expect(page.locator('.fw-semibold', { hasText: nombreEspacioA })).toBeVisible();
 
     // --- Trasladar al espacio B ---
-    await page.locator('#panelTrasladar summary').click();
-    await seleccionarTomSelect(page, 'espacioTrasladar', nombreEspacioB);
-    await page.locator('#panelTrasladar').getByRole('button', { name: 'Registrar traslado' }).click();
-
-    await expect(page.locator('.alert-success')).toBeVisible();
+    await hacer('trasladar', () => seleccionarTomSelect(page, 'accionEspacio', nombreEspacioB), 'Guardar y trasladar');
     await expect(page.locator('.fw-semibold', { hasText: nombreEspacioB })).toBeVisible();
 
     // --- Reintegrar ---
-    await page.locator('#panelReintegrar summary').click();
-    await page.locator('#panelReintegrar input[name="destino_texto"]').fill('PW-TEST Almacén institucional');
-    await page.locator('#panelReintegrar').getByRole('button', { name: 'Registrar reintegro' }).click();
-
-    await expect(page.locator('.alert-success')).toBeVisible();
+    await hacer('reintegrar', () => page.locator('#accionDestino').fill('PW-TEST Almacén institucional'), 'Guardar y reintegrar');
     // Un bien reintegrado muestra el estado como texto deshabilitado, no como badge
     // (esa clase solo existe en el listado de /bienes, no en esta pantalla de edición).
-    await expect(page.locator('input[disabled]')).toHaveValue('Reintegrado');
+    await expect(page.locator('input[disabled]').first()).toHaveValue('Reintegrado');
 
     // --- Limpieza de los espacios de apoyo ---
     // A esta altura ya tienen historial (asignación y/o traslado), así que SIGEBI

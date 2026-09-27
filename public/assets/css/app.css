@@ -846,3 +846,6 @@ main.flex-fill { padding-bottom: max(1.5rem, env(safe-area-inset-bottom)) !impor
 #lector-qr video { width: 100% !important; height: auto !important; object-fit: cover; }
 td:has(> input[type="checkbox"]), th:has(> input[type="checkbox"]) { cursor: pointer; }
 @media (pointer: coarse) { th:has(> input[type="checkbox"]), td:has(> input[type="checkbox"]) { min-width: 44px; height: 44px; } }
+
+/* Fila del bien recién editado en el listado (ver bienes/index.php). */
+tr.fila-editada > td { background-color: rgba(var(--bs-warning-rgb), .22) !important; transition: background-color .6s; }

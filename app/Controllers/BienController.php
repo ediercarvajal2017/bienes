@@ -23,6 +23,7 @@ use App\Models\Hallazgo;
 use App\Models\Institucion;
 use App\Models\Movimiento;
 use App\Models\Verificacion;
+use App\Services\CicloVidaBien;
 
 final class BienController
 {
@@ -81,6 +82,12 @@ final class BienController
         // en la vista sin filtrar, y llevan al mismo filtro de Estado que ya existe.
         $bodegaReintegroTotal = $vistaSinFiltrar ? Bien::contarListado($institucionId, null, false, null, 'reintegrado') : 0;
         $bodegaBajaTotal = $vistaSinFiltrar ? Bien::contarListado($institucionId, null, false, null, 'dado_de_baja') : 0;
+
+        // Se recuerda la consulta del listado (búsqueda, filtros, página) para volver a
+        // ella al guardar un bien o pulsar "Volver" en su ficha.
+        Session::put('bienes_listado', http_build_query(array_intersect_key(
+            $_GET, array_flip(['q', 'categoria', 'estado', 'espacio', 'pagina', 'porPagina'])
+        )));
 
         View::layout('partials/layout', 'bienes/index', [
             'title' => 'Bienes',
@@ -429,11 +436,15 @@ final class BienController
             }
         }
 
+        $asignacionActiva = Asignacion::activaDe($id);
+
         View::layout('partials/layout', 'bienes/form', [
             'title' => 'Editar bien',
             'bien' => $bien,
+            'acciones' => CicloVidaBien::accionesDisponibles($bien, $asignacionActiva, $familiaSedesDestino),
+            'urlVolver' => self::urlListado(),
             'categorias' => $this->categoriasParaFormulario($bien),
-            'asignacionActiva' => Asignacion::activaDe($id),
+            'asignacionActiva' => $asignacionActiva,
             'historialMovimientos' => Movimiento::historialDe($id),
             'espaciosInstitucion' => Espacio::listadoParaSelect((int) $bien['institucion_id']),
             'familiaSedesDestino' => $familiaSedesDestino,
@@ -477,21 +488,65 @@ final class BienController
         }
 
         $imprimirQr = $datos['imprimir_qr'] === '1';
-        $datosParaReintentar = $datos;
+        $datosParaReintentar = $datos + $this->camposAccion($request);
         unset($datos['imprimir_qr']);
 
+        // Acción elegida en "¿Qué desea hacer con este bien?" (por defecto, ninguna).
+        $accion = (string) $request->input('accion');
+        $asignacionActiva = Asignacion::activaDe($id);
+        $familia = Auth::rol() === 'rector' ? array_filter(
+            Institucion::familiaDe((int) $bien['institucion_id']),
+            static fn (array $sede): bool => (int) $sede['id'] !== (int) $bien['institucion_id']
+        ) : [];
+        if ($accion !== '' && $accion !== 'ninguna'
+            && !array_key_exists($accion, CicloVidaBien::accionesDisponibles($bien, $asignacionActiva, $familia))) {
+            $this->volverConError($id, 'Esa acción no está disponible para este bien.', $datosParaReintentar);
+        }
+
+        // La foto de un reporte de baja se guarda antes (fuera de la transacción).
+        $fotoBaja = null;
+        if ($accion === 'reportar_baja' && ($archivo = $request->file('accion_foto_baja'))) {
+            try {
+                $fotoBaja = Uploader::storeImage($archivo, 'bajas');
+            } catch (\RuntimeException $e) {
+                $this->volverConError($id, $e->getMessage(), $datosParaReintentar);
+            }
+        }
+
+        // Datos y acción van juntos: si la acción no se puede hacer, tampoco se guardan los
+        // datos (y viceversa), y el formulario vuelve con lo que se había escrito.
         try {
-            Bien::update($id, $datos);
+            $mensajeAccion = Database::transaccion(function () use ($id, $datos, $accion, $request, $fotoBaja, $asignacionActiva): string {
+                Bien::update($id, $datos);
+                $actualizado = (array) Bien::find($id);
+                $fecha = (string) ($request->input('accion_fecha') ?: date('Y-m-d'));
+                $observaciones = trim((string) $request->input('accion_observaciones')) ?: null;
+                $verificacionId = Verificacion::idValidoParaBien($id, (string) $request->input('verificacion_id'));
+
+                return match ($accion) {
+                    'asignar', 'trasladar' => CicloVidaBien::asignarOTrasladar(
+                        $actualizado, (int) $request->input('accion_espacio_id'), $fecha, $observaciones, $verificacionId),
+                    'trasladar_sede' => CicloVidaBien::trasladarSede(
+                        $actualizado, (int) $request->input('accion_sede_id'), (int) $request->input('accion_espacio_sede_id'), $fecha, $observaciones),
+                    'reintegrar' => CicloVidaBien::reintegrar(
+                        $actualizado, $fecha, (string) $request->input('accion_destino'), $observaciones),
+                    'reactivar' => CicloVidaBien::reactivar(
+                        $actualizado, $fecha, (string) $request->input('accion_motivo')),
+                    'reportar_baja' => CicloVidaBien::reportarBaja(
+                        $actualizado, (string) $request->input('accion_estado_reportado'),
+                        $asignacionActiva['espacio_nombre'] ?? null, (string) $request->input('accion_descripcion_baja'),
+                        $fotoBaja, $verificacionId),
+                    default => '',
+                };
+            });
+        } catch (\DomainException $e) {
+            $this->volverConError($id, $e->getMessage(), $datosParaReintentar);
         } catch (\PDOException $e) {
             if (!$this->esViolacionCodigoDuplicado($e)) {
                 throw $e;
             }
-
-            Session::flash('error', 'Ya existe un bien con ese código en la institución.');
             Session::flash('error_campo', 'codigo_identificacion');
-            Session::flashOld($datosParaReintentar);
-            header('Location: ' . Url::to("/bienes/{$id}/editar"));
-            exit;
+            $this->volverConError($id, 'Ya existe un bien con ese código en la institución.', $datosParaReintentar);
         }
 
         Auditoria::registrar(Auth::id(), (int) $datos['institucion_id'], 'editar', 'bien', $id, $bien, $datos);
@@ -499,8 +554,50 @@ final class BienController
         $this->procesarArchivos($id, $request, $datos['codigo_identificacion']);
         $this->procesarSolicitudQr($id, $imprimirQr);
 
-        Session::flash('ok', 'Bien actualizado.');
-        header('Location: ' . Url::to('/bienes'));
+        Session::flash('ok', trim('Bien actualizado. ' . $mensajeAccion));
+
+        // Al asignar un bien de un lote de alta masiva se sigue en el listado de ese lote
+        // (para asignar el resto); si no, se vuelve al listado tal como estaba.
+        if ($accion === 'asignar' && !empty($bien['lote'])) {
+            header('Location: ' . Url::to('/bienes?q=' . urlencode($bien['lote'])));
+        } else {
+            header('Location: ' . self::urlListado($id));
+        }
+        exit;
+    }
+
+    /**
+     * Dirección del listado de bienes con la búsqueda, filtros y página que tenía (ver
+     * index()). Con $editado, el listado resalta ese bien.
+     */
+    public static function urlListado(?int $editado = null): string
+    {
+        parse_str((string) Session::get('bienes_listado', ''), $consulta);
+        if ($editado !== null) {
+            $consulta['editado'] = $editado;
+        }
+
+        return Url::to('/bienes' . ($consulta !== [] ? '?' . http_build_query($consulta) : ''));
+    }
+
+    /** Campos de la acción elegida, para devolverlos al formulario si algo falla. */
+    private function camposAccion(Request $request): array
+    {
+        $campos = [];
+        foreach (['accion', 'accion_espacio_id', 'accion_sede_id', 'accion_espacio_sede_id', 'accion_fecha',
+                  'accion_observaciones', 'accion_destino', 'accion_motivo', 'accion_estado_reportado',
+                  'accion_descripcion_baja'] as $campo) {
+            $campos[$campo] = (string) $request->input($campo);
+        }
+
+        return $campos;
+    }
+
+    private function volverConError(int $id, string $mensaje, array $datosParaReintentar): never
+    {
+        Session::flash('error', $mensaje);
+        Session::flashOld($datosParaReintentar);
+        header('Location: ' . Url::to("/bienes/{$id}/editar"));
         exit;
     }
 

@@ -19,6 +19,7 @@ use App\Models\Baja;
 use App\Models\Bien;
 use App\Models\Categoria;
 use App\Models\Verificacion;
+use App\Services\CicloVidaBien;
 
 final class BajaController
 {
@@ -52,28 +53,6 @@ final class BajaController
             exit;
         }
 
-        if ($bien['estado'] === 'dado_de_baja') {
-            Session::flash('error', 'Este bien ya está dado de baja.');
-            header('Location: ' . Url::to("/qr/{$token}"));
-            exit;
-        }
-
-        if (Baja::tienePendiente((int) $bien['id'])) {
-            Session::flash('error', 'Este bien ya tiene un reporte de baja pendiente de aprobación.');
-            header('Location: ' . Url::to("/qr/{$token}"));
-            exit;
-        }
-
-        $estadoReportado = trim((string) $request->input('estado_reportado'));
-        $ubicacion = trim((string) $request->input('ubicacion')) ?: null;
-        $descripcion = trim((string) $request->input('descripcion'));
-
-        if ($estadoReportado === '' || $descripcion === '') {
-            Session::flash('error', 'Describe el estado del bien y el motivo de la baja.');
-            header('Location: ' . Url::to("/qr/{$token}/baja"));
-            exit;
-        }
-
         // El id de verificacion viaja como campo oculto del formulario; se revalida aqui
         // igual que en formulario() para que nadie pueda vincular la baja a la discrepancia
         // de OTRO bien manipulando el valor a mano.
@@ -84,37 +63,28 @@ final class BajaController
             if ($archivo = $request->file('foto')) {
                 $fotoPath = Uploader::storeImage($archivo, 'bajas');
             }
+            $mensaje = CicloVidaBien::reportarBaja(
+                $bien,
+                (string) $request->input('estado_reportado'),
+                trim((string) $request->input('ubicacion')) ?: null,
+                (string) $request->input('descripcion'),
+                $fotoPath,
+                $verificacionId
+            );
+        } catch (\DomainException $e) {
+            // Ya dado de baja o con un reporte pendiente: se vuelve a la ficha; datos
+            // incompletos: se vuelve al formulario.
+            Session::flash('error', $e->getMessage());
+            $volverA = str_starts_with($e->getMessage(), 'Describe') ? "/qr/{$token}/baja" : "/qr/{$token}";
+            header('Location: ' . Url::to($volverA));
+            exit;
         } catch (\RuntimeException $e) {
             Session::flash('error', $e->getMessage());
             header('Location: ' . Url::to("/qr/{$token}/baja"));
             exit;
         }
 
-        Database::transaccion(static function () use ($bien, $verificacionId, $estadoReportado, $ubicacion, $descripcion, $fotoPath): void {
-            $bajaId = Baja::crear([
-                'bien_id' => $bien['id'],
-                'verificacion_id' => $verificacionId,
-                'estado_reportado' => $estadoReportado,
-                'ubicacion' => $ubicacion,
-                'responsable_id' => Auth::id(),
-                'descripcion' => $descripcion,
-                'foto_path' => $fotoPath,
-            ]);
-
-            // Si la baja viene de una discrepancia reportada en una jornada, ya quedó atendida
-            // — se ahorra al administrador el paso extra de volver a la jornada a marcarla.
-            if ($verificacionId !== null) {
-                Verificacion::marcarRevisada($verificacionId, (int) Auth::id());
-            }
-
-            Auditoria::registrar(Auth::id(), (int) $bien['institucion_id'], 'reportar', 'baja', $bajaId, null, [
-                'bien_id' => (int) $bien['id'],
-                'estado_reportado' => $estadoReportado,
-                'descripcion' => $descripcion,
-            ]);
-        });
-
-        Session::flash('ok', 'Reporte de baja enviado. Queda pendiente de aprobación.');
+        Session::flash('ok', $mensaje);
         header('Location: ' . Url::to("/qr/{$token}"));
         exit;
     }

@@ -37,9 +37,9 @@ test('reintegrar un bien y agruparlo en un lote', async ({ page }) => {
 
     const filaBien = page.locator('tr', { hasText: codigoBien });
     await filaBien.getByRole('link', { name: 'Editar' }).click();
-    await page.locator('#panelAsignar summary').click();
-    await seleccionarTomSelect(page, 'espacioAsignar', nombreEspacio);
-    await page.locator('#panelAsignar').getByRole('button', { name: 'Asignar' }).click();
+    await page.selectOption('#accionBien', 'asignar');
+    await seleccionarTomSelect(page, 'accionEspacio', nombreEspacio);
+    await page.getByRole('button', { name: 'Guardar y asignar' }).click();
     await expect(page.locator('.alert-success')).toBeVisible();
 
     // --- Reintegrar desde /reintegros (selección masiva, no el panel individual) ---

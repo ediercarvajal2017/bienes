@@ -208,8 +208,9 @@ $algunFiltroActivo = $busqueda !== '' || $categoriaId !== null || $estado !== nu
                 </td>
             </tr>
         <?php endforeach; ?>
+        <?php $bienEditado = (int) ($_GET['editado'] ?? 0); ?>
         <?php foreach ($bienes as $b): ?>
-            <tr>
+            <tr<?= (int) $b['id'] === $bienEditado ? ' id="bienEditado" class="fila-editada"' : '' ?>>
                 <td>
                     <?php if (!empty($b['foto_path'])): ?>
                         <img src="<?= Url::to('/archivos/' . $b['foto_path']) ?>?w=96" loading="lazy"
@@ -313,5 +314,16 @@ $algunFiltroActivo = $busqueda !== '' || $categoriaId !== null || $estado !== nu
             window.location = url.toString();
         });
     });
+})();
+</script>
+
+<script>
+// Tras guardar un bien se vuelve a este listado (con su búsqueda y página): se muestra
+// la fila del bien editado, resaltada unos segundos.
+(function () {
+    var fila = document.getElementById('bienEditado');
+    if (!fila) { return; }
+    fila.scrollIntoView({ block: 'center' });
+    window.setTimeout(function () { fila.classList.remove('fila-editada'); }, 4000);
 })();
 </script>
