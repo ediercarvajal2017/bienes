@@ -31,30 +31,54 @@ $invalido = static fn (string $campo) => $errorCampo === $campo ? ' is-invalid' 
     <a href="<?= htmlspecialchars($urlVolver, ENT_QUOTES) ?>" class="btn btn-sm btn-outline-secondary">Volver</a>
 </div>
 
-<?php if ($esEdicion): ?>
-    <nav class="nav nav-pills small mb-3">
-        <a class="nav-link" href="#datosBien">Datos del bien</a>
-        <a class="nav-link" href="#asignacionMovimientos">Asignación y movimientos</a>
-    </nav>
-<?php endif; ?>
+
 
 <?php if ($esEdicion): ?>
-    <div class="card mb-4" style="max-width: 680px;">
+    <?php
+    $etiquetasEstado = ['activo' => 'Activo', 'reintegrado' => 'Reintegrado', 'en_reparacion' => 'En reparación', 'dado_de_baja' => 'Dado de baja'];
+    ?>
+    <div class="card mb-3" style="max-width: 680px;">
         <div class="card-body d-flex align-items-center gap-3 py-3">
-            <img src="<?= Url::to('/qr/' . $bien['qr_token'] . '/imagen') ?>" alt="Código QR" style="width:80px;height:80px;">
-            <div>
-                <div class="fw-semibold small mb-1">Código QR de este bien</div>
-                <a href="<?= Url::to('/qr/' . $bien['qr_token']) ?>" target="_blank" class="small d-block">
-                    <i class="bi bi-box-arrow-up-right me-1"></i>Ver ficha pública
-                </a>
-                <a href="<?= Url::to('/qr/' . $bien['qr_token'] . '/imagen') ?>" download="qr-<?= htmlspecialchars($bien['codigo_identificacion'], ENT_QUOTES) ?>.png" class="small d-block">
-                    <i class="bi bi-download me-1"></i>Descargar para imprimir
-                </a>
+            <a href="<?= Url::to('/qr/' . $bien['qr_token']) ?>" target="_blank" title="Ver la ficha pública del código QR" class="flex-shrink-0">
+                <img src="<?= Url::to('/qr/' . $bien['qr_token'] . '/imagen') ?>" alt="Código QR del bien" style="width:64px;height:64px;">
+            </a>
+            <div class="flex-grow-1" style="min-width: 0;">
+                <div class="d-flex flex-wrap align-items-center gap-2">
+                    <span class="mono fw-semibold"><?= htmlspecialchars($bien['codigo_identificacion'], ENT_QUOTES) ?></span>
+                    <span class="badge badge-estado-<?= htmlspecialchars($bien['estado'], ENT_QUOTES) ?>"><?= $etiquetasEstado[$bien['estado']] ?? $bien['estado'] ?></span>
+                </div>
+                <div class="text-truncate"><?= htmlspecialchars($bien['descripcion'], ENT_QUOTES) ?></div>
+                <div class="small text-muted" id="ubicacionActual">
+                    <i class="bi bi-geo-alt me-1" aria-hidden="true"></i>
+                    <?php if ($asignacionActiva && !empty($asignacionActiva['espacio_nombre'])): ?>
+                        <span class="fw-semibold text-body"><?= htmlspecialchars($asignacionActiva['espacio_nombre'], ENT_QUOTES) ?></span>
+                        <?php if (!empty($asignacionActiva['responsables_nombres'])): ?>
+                            · <?= htmlspecialchars($asignacionActiva['responsables_nombres'], ENT_QUOTES) ?>
+                        <?php endif; ?>
+                        · desde <?= htmlspecialchars($asignacionActiva['fecha_asignacion'], ENT_QUOTES) ?>
+                    <?php elseif ($bienFueraDeCirculacion): ?>
+                        Ya no está en la institución (<?= $etiquetasEstado[$bien['estado']] ?? $bien['estado'] ?>).
+                    <?php else: ?>
+                        Sin espacio asignado
+                    <?php endif; ?>
+                </div>
             </div>
+            <a href="<?= Url::to('/qr/' . $bien['qr_token'] . '/imagen') ?>" download="qr-<?= htmlspecialchars($bien['codigo_identificacion'], ENT_QUOTES) ?>.png"
+               class="btn btn-sm btn-outline-secondary flex-shrink-0" title="Descargar el código QR para imprimir" aria-label="Descargar el código QR">
+                <i class="bi bi-download" aria-hidden="true"></i>
+            </a>
         </div>
     </div>
 <?php endif; ?>
 
+<?php if (!empty($mensaje)): ?>
+    <div class="alert alert-success py-2 small" style="max-width: 680px;"><?= htmlspecialchars($mensaje, ENT_QUOTES) ?></div>
+<?php endif; ?>
+<?php if (!empty($verificacionId)): ?>
+    <div class="alert alert-info py-2 small" style="max-width: 680px;">
+        <i class="bi bi-info-circle me-1"></i>Corrigiendo la ubicación a partir de una discrepancia de la verificación física: elija el nuevo espacio y guarde.
+    </div>
+<?php endif; ?>
 <?php if (!empty($error)): ?>
     <div class="alert alert-danger py-2 small"><?= htmlspecialchars($error, ENT_QUOTES) ?></div>
 <?php endif; ?>
@@ -75,7 +99,7 @@ $invalido = static fn (string $campo) => $errorCampo === $campo ? ' is-invalid' 
     </div>
 <?php endif; ?>
 
-<?php if ($puedeEditar): ?>
+<?php if ($puedeEditar && !$esEdicion): ?>
     <p class="text-muted small mb-2">Los campos marcados con <span class="text-danger">*</span> son obligatorios.</p>
 <?php endif; ?>
 
@@ -85,6 +109,109 @@ $invalido = static fn (string $campo) => $errorCampo === $campo ? ' is-invalid' 
     <?= Csrf::field() ?>
     <?php if (!$esEdicion && $hallazgo !== null): ?>
         <input type="hidden" name="hallazgo_id" value="<?= (int) $hallazgo['id'] ?>">
+    <?php endif; ?>
+
+    <?php if ($esEdicion && $puedeEditar && $acciones !== []): ?>
+        <?php
+        // Al llegar desde una discrepancia de la verificación física, la acción de corregir
+        // la ubicación viene ya elegida (y la discrepancia queda resuelta al guardar).
+        $accionElegida = (string) ($viejo['accion'] ?? '');
+        if ($accionElegida === '' && $verificacionId !== null) {
+            $accionElegida = isset($acciones['trasladar']) ? 'trasladar' : (isset($acciones['asignar']) ? 'asignar' : '');
+        }
+        $va = static fn (string $campo, string $porDefecto = '') => (string) ($viejo[$campo] ?? $porDefecto);
+        ?>
+        <div class="col-12">
+            <fieldset class="border rounded p-3" id="seccionAccion">
+                <legend class="float-none w-auto px-2 fs-6 fw-semibold mb-0">¿Qué desea hacer con este bien?</legend>
+                <?php if ($verificacionId !== null): ?>
+                    <input type="hidden" name="verificacion_id" value="<?= (int) $verificacionId ?>">
+                <?php endif; ?>
+                <label for="accionBien" class="visually-hidden">Acción</label>
+                <select id="accionBien" name="accion" class="form-select mb-2">
+                    <option value="ninguna">Solo guardar los datos</option>
+                    <?php foreach ($acciones as $clave => $texto): ?>
+                        <option value="<?= $clave ?>" <?= $accionElegida === $clave ? 'selected' : '' ?>><?= htmlspecialchars($texto, ENT_QUOTES) ?></option>
+                    <?php endforeach; ?>
+                </select>
+
+                <?php if (isset($acciones['asignar']) || isset($acciones['trasladar'])): ?>
+                    <div data-campos-accion="asignar trasladar" class="mb-2" hidden>
+                        <label class="form-label small requerido" for="accionEspacio"><?= isset($acciones['trasladar']) ? 'Nuevo espacio' : 'Espacio' ?></label>
+                        <select id="accionEspacio" name="accion_espacio_id" class="form-select form-select-sm selector-buscable" required disabled>
+                            <option value="">-- Selecciona --</option>
+                            <?php foreach ($espaciosInstitucion as $e): ?>
+                                <?php if ((int) $e['id'] === (int) ($asignacionActiva['espacio_id'] ?? 0)) { continue; } ?>
+                                <option value="<?= $e['id'] ?>" <?= $va('accion_espacio_id') === (string) $e['id'] ? 'selected' : '' ?>><?= htmlspecialchars($e['codigo'] . ' - ' . $e['nombre'], ENT_QUOTES) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                <?php endif; ?>
+
+                <?php if (isset($acciones['trasladar_sede'])): ?>
+                    <div data-campos-accion="trasladar_sede" class="mb-2" hidden>
+                        <label class="form-label small requerido" for="accionSede">Sede destino</label>
+                        <select id="accionSede" name="accion_sede_id" class="form-select form-select-sm mb-2" required disabled>
+                            <option value="">-- Selecciona una sede --</option>
+                            <?php foreach ($familiaSedesDestino as $sede): ?>
+                                <option value="<?= (int) $sede['id'] ?>" <?= $va('accion_sede_id') === (string) $sede['id'] ? 'selected' : '' ?>><?= htmlspecialchars($sede['nombre'], ENT_QUOTES) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                        <label class="form-label small requerido" for="accionEspacioSede">Espacio en la sede destino</label>
+                        <select id="accionEspacioSede" name="accion_espacio_sede_id" class="form-select form-select-sm" required disabled>
+                            <option value="">-- Primero selecciona una sede --</option>
+                        </select>
+                    </div>
+                <?php endif; ?>
+
+                <?php if (isset($acciones['reintegrar'])): ?>
+                    <div data-campos-accion="reintegrar" class="mb-2" hidden>
+                        <label class="form-label small requerido" for="accionDestino">Destino del reintegro</label>
+                        <input id="accionDestino" type="text" name="accion_destino" class="form-control form-control-sm" required disabled
+                               placeholder="Ej. Almacén institucional" value="<?= htmlspecialchars($va('accion_destino'), ENT_QUOTES) ?>">
+                    </div>
+                <?php endif; ?>
+
+                <?php if (isset($acciones['reportar_baja'])): ?>
+                    <div data-campos-accion="reportar_baja" class="mb-2" hidden>
+                        <p class="small text-muted mb-2">El reporte queda <strong>pendiente de aprobación</strong>: el bien no se da de baja hasta que alguien autorizado lo apruebe.</p>
+                        <label class="form-label small requerido" for="accionEstadoReportado">Estado del bien</label>
+                        <input id="accionEstadoReportado" type="text" name="accion_estado_reportado" class="form-control form-control-sm mb-2" required disabled
+                               list="sugerenciasEstadoBaja" value="<?= htmlspecialchars($va('accion_estado_reportado'), ENT_QUOTES) ?>">
+                        <datalist id="sugerenciasEstadoBaja">
+                            <option value="Dañado"><option value="Inservible"><option value="Deteriorado"><option value="Obsoleto"><option value="Perdido">
+                        </datalist>
+                        <label class="form-label small requerido" for="accionDescripcionBaja">Qué pasó y por qué se da de baja</label>
+                        <textarea id="accionDescripcionBaja" name="accion_descripcion_baja" class="form-control form-control-sm mb-2" rows="2" required disabled><?= htmlspecialchars($va('accion_descripcion_baja'), ENT_QUOTES) ?></textarea>
+                        <label class="form-label small" for="accionFotoBaja">Foto del estado (opcional)</label>
+                        <input id="accionFotoBaja" type="file" name="accion_foto_baja" accept="image/*" capture="environment" class="form-control form-control-sm" disabled>
+                    </div>
+                <?php endif; ?>
+
+                <?php if (isset($acciones['reactivar'])): ?>
+                    <div data-campos-accion="reactivar" class="mb-2" hidden>
+                        <p class="small text-muted mb-2">Úsalo solo si el bien de verdad volvió a la institución (por ejemplo, la Alcaldía lo devolvió) o si el reintegro fue un error.</p>
+                        <label class="form-label small requerido" for="accionMotivo">Motivo</label>
+                        <textarea id="accionMotivo" name="accion_motivo" class="form-control form-control-sm" rows="2" required disabled><?= htmlspecialchars($va('accion_motivo'), ENT_QUOTES) ?></textarea>
+                    </div>
+                <?php endif; ?>
+
+                <div data-campos-accion="asignar trasladar trasladar_sede reintegrar reactivar reportar_baja" hidden>
+                    <div class="row g-2">
+                        <div class="col-sm-5">
+                            <label class="form-label small requerido" for="accionFecha">Fecha</label>
+                            <input id="accionFecha" type="date" name="accion_fecha" class="form-control form-control-sm" required disabled
+                                   value="<?= htmlspecialchars($va('accion_fecha', date('Y-m-d')), ENT_QUOTES) ?>">
+                        </div>
+                        <div class="col-sm-7" data-campos-accion="asignar trasladar trasladar_sede reintegrar">
+                            <label class="form-label small" for="accionObservaciones">Observación</label>
+                            <input id="accionObservaciones" type="text" name="accion_observaciones" class="form-control form-control-sm" disabled
+                                   value="<?= htmlspecialchars($va('accion_observaciones'), ENT_QUOTES) ?>">
+                        </div>
+                    </div>
+                </div>
+            </fieldset>
+        </div>
     <?php endif; ?>
 
     <?php if (!$esEdicion && Auth::esSuperusuario()): ?>
@@ -226,108 +353,6 @@ $invalido = static fn (string $campo) => $errorCampo === $campo ? ' is-invalid' 
         <?php endif; ?>
     </div>
 
-    <?php if ($esEdicion && $puedeEditar && $acciones !== []): ?>
-        <?php
-        // Al llegar desde una discrepancia de la verificación física, la acción de corregir
-        // la ubicación viene ya elegida (y la discrepancia queda resuelta al guardar).
-        $accionElegida = (string) ($viejo['accion'] ?? '');
-        if ($accionElegida === '' && $verificacionId !== null) {
-            $accionElegida = isset($acciones['trasladar']) ? 'trasladar' : (isset($acciones['asignar']) ? 'asignar' : '');
-        }
-        $va = static fn (string $campo, string $porDefecto = '') => (string) ($viejo[$campo] ?? $porDefecto);
-        ?>
-        <div class="col-12">
-            <fieldset class="border rounded p-3" id="seccionAccion">
-                <legend class="float-none w-auto px-2 fs-6 fw-semibold mb-0">¿Qué desea hacer con este bien?</legend>
-                <?php if ($verificacionId !== null): ?>
-                    <input type="hidden" name="verificacion_id" value="<?= (int) $verificacionId ?>">
-                <?php endif; ?>
-                <label for="accionBien" class="visually-hidden">Acción</label>
-                <select id="accionBien" name="accion" class="form-select mb-2">
-                    <option value="ninguna">Solo guardar los datos</option>
-                    <?php foreach ($acciones as $clave => $texto): ?>
-                        <option value="<?= $clave ?>" <?= $accionElegida === $clave ? 'selected' : '' ?>><?= htmlspecialchars($texto, ENT_QUOTES) ?></option>
-                    <?php endforeach; ?>
-                </select>
-
-                <?php if (isset($acciones['asignar']) || isset($acciones['trasladar'])): ?>
-                    <div data-campos-accion="asignar trasladar" class="mb-2" hidden>
-                        <label class="form-label small requerido" for="accionEspacio"><?= isset($acciones['trasladar']) ? 'Nuevo espacio' : 'Espacio' ?></label>
-                        <select id="accionEspacio" name="accion_espacio_id" class="form-select form-select-sm selector-buscable" required disabled>
-                            <option value="">-- Selecciona --</option>
-                            <?php foreach ($espaciosInstitucion as $e): ?>
-                                <?php if ((int) $e['id'] === (int) ($asignacionActiva['espacio_id'] ?? 0)) { continue; } ?>
-                                <option value="<?= $e['id'] ?>" <?= $va('accion_espacio_id') === (string) $e['id'] ? 'selected' : '' ?>><?= htmlspecialchars($e['codigo'] . ' - ' . $e['nombre'], ENT_QUOTES) ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                <?php endif; ?>
-
-                <?php if (isset($acciones['trasladar_sede'])): ?>
-                    <div data-campos-accion="trasladar_sede" class="mb-2" hidden>
-                        <label class="form-label small requerido" for="accionSede">Sede destino</label>
-                        <select id="accionSede" name="accion_sede_id" class="form-select form-select-sm mb-2" required disabled>
-                            <option value="">-- Selecciona una sede --</option>
-                            <?php foreach ($familiaSedesDestino as $sede): ?>
-                                <option value="<?= (int) $sede['id'] ?>" <?= $va('accion_sede_id') === (string) $sede['id'] ? 'selected' : '' ?>><?= htmlspecialchars($sede['nombre'], ENT_QUOTES) ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                        <label class="form-label small requerido" for="accionEspacioSede">Espacio en la sede destino</label>
-                        <select id="accionEspacioSede" name="accion_espacio_sede_id" class="form-select form-select-sm" required disabled>
-                            <option value="">-- Primero selecciona una sede --</option>
-                        </select>
-                    </div>
-                <?php endif; ?>
-
-                <?php if (isset($acciones['reintegrar'])): ?>
-                    <div data-campos-accion="reintegrar" class="mb-2" hidden>
-                        <label class="form-label small requerido" for="accionDestino">Destino del reintegro</label>
-                        <input id="accionDestino" type="text" name="accion_destino" class="form-control form-control-sm" required disabled
-                               placeholder="Ej. Almacén institucional" value="<?= htmlspecialchars($va('accion_destino'), ENT_QUOTES) ?>">
-                    </div>
-                <?php endif; ?>
-
-                <?php if (isset($acciones['reportar_baja'])): ?>
-                    <div data-campos-accion="reportar_baja" class="mb-2" hidden>
-                        <p class="small text-muted mb-2">El reporte queda <strong>pendiente de aprobación</strong>: el bien no se da de baja hasta que alguien autorizado lo apruebe.</p>
-                        <label class="form-label small requerido" for="accionEstadoReportado">Estado del bien</label>
-                        <input id="accionEstadoReportado" type="text" name="accion_estado_reportado" class="form-control form-control-sm mb-2" required disabled
-                               list="sugerenciasEstadoBaja" value="<?= htmlspecialchars($va('accion_estado_reportado'), ENT_QUOTES) ?>">
-                        <datalist id="sugerenciasEstadoBaja">
-                            <option value="Dañado"><option value="Inservible"><option value="Deteriorado"><option value="Obsoleto"><option value="Perdido">
-                        </datalist>
-                        <label class="form-label small requerido" for="accionDescripcionBaja">Qué pasó y por qué se da de baja</label>
-                        <textarea id="accionDescripcionBaja" name="accion_descripcion_baja" class="form-control form-control-sm mb-2" rows="2" required disabled><?= htmlspecialchars($va('accion_descripcion_baja'), ENT_QUOTES) ?></textarea>
-                        <label class="form-label small" for="accionFotoBaja">Foto del estado (opcional)</label>
-                        <input id="accionFotoBaja" type="file" name="accion_foto_baja" accept="image/*" capture="environment" class="form-control form-control-sm" disabled>
-                    </div>
-                <?php endif; ?>
-
-                <?php if (isset($acciones['reactivar'])): ?>
-                    <div data-campos-accion="reactivar" class="mb-2" hidden>
-                        <p class="small text-muted mb-2">Úsalo solo si el bien de verdad volvió a la institución (por ejemplo, la Alcaldía lo devolvió) o si el reintegro fue un error.</p>
-                        <label class="form-label small requerido" for="accionMotivo">Motivo</label>
-                        <textarea id="accionMotivo" name="accion_motivo" class="form-control form-control-sm" rows="2" required disabled><?= htmlspecialchars($va('accion_motivo'), ENT_QUOTES) ?></textarea>
-                    </div>
-                <?php endif; ?>
-
-                <div data-campos-accion="asignar trasladar trasladar_sede reintegrar reactivar reportar_baja" hidden>
-                    <div class="row g-2">
-                        <div class="col-sm-5">
-                            <label class="form-label small requerido" for="accionFecha">Fecha</label>
-                            <input id="accionFecha" type="date" name="accion_fecha" class="form-control form-control-sm" required disabled
-                                   value="<?= htmlspecialchars($va('accion_fecha', date('Y-m-d')), ENT_QUOTES) ?>">
-                        </div>
-                        <div class="col-sm-7" data-campos-accion="asignar trasladar trasladar_sede reintegrar">
-                            <label class="form-label small" for="accionObservaciones">Observación</label>
-                            <input id="accionObservaciones" type="text" name="accion_observaciones" class="form-control form-control-sm" disabled
-                                   value="<?= htmlspecialchars($va('accion_observaciones'), ENT_QUOTES) ?>">
-                        </div>
-                    </div>
-                </div>
-            </fieldset>
-        </div>
-    <?php endif; ?>
 
     <?php if ($puedeEditar): ?>
         <div class="col-12 d-flex flex-wrap gap-2">
@@ -570,50 +595,10 @@ document.addEventListener('DOMContentLoaded', function () {
 </script>
 <?php endif; ?>
 
-<?php if ($esEdicion): ?>
-    <hr class="my-4" style="max-width: 680px;">
-
-    <h2 id="asignacionMovimientos" class="h5 mb-3">Asignación y movimientos</h2>
-
-    <?php if (!empty($mensaje)): ?>
-        <div class="alert alert-success py-2 small" style="max-width: 680px;"><?= htmlspecialchars($mensaje, ENT_QUOTES) ?></div>
-    <?php endif; ?>
-
-    <div class="card mb-3" style="max-width: 680px;">
-        <div class="card-body py-3">
-            <?php if ($asignacionActiva): ?>
-                <div class="d-flex justify-content-between align-items-start">
-                    <div>
-                        <div class="fw-semibold"><?= $asignacionActiva['espacio_nombre'] ? htmlspecialchars($asignacionActiva['espacio_nombre'], ENT_QUOTES) : 'Sin espacio asignado' ?></div>
-                        <?php if (!empty($asignacionActiva['responsables_nombres'])): ?>
-                            <div class="small text-muted">Responsable(s): <?= htmlspecialchars($asignacionActiva['responsables_nombres'], ENT_QUOTES) ?></div>
-                        <?php endif; ?>
-                        <div class="small text-muted">desde <?= htmlspecialchars($asignacionActiva['fecha_asignacion'], ENT_QUOTES) ?></div>
-                        <?php if (!empty($asignacionActiva['observaciones'])): ?>
-                            <div class="small text-muted mt-1"><?= htmlspecialchars($asignacionActiva['observaciones'], ENT_QUOTES) ?></div>
-                        <?php endif; ?>
-                    </div>
-                    <span class="badge badge-estado-activo">Asignado</span>
-                </div>
-            <?php else: ?>
-                <span class="text-muted">Este bien no tiene una asignación activa.</span>
-                <?php if ($bienFueraDeCirculacion): ?>
-                    <div class="small text-muted mt-1">
-                        <i class="bi bi-info-circle me-1"></i>Está <?= str_replace('_', ' ', $bien['estado']) ?>, ya no está físicamente en la institución — por eso no se puede asignar.
-                    </div>
-                <?php endif; ?>
-            <?php endif; ?>
-        </div>
-    </div>
-
-    <?php if ($verificacionId !== null): ?>
-        <div class="alert alert-info py-2 small" style="max-width: 680px;">
-            <i class="bi bi-info-circle me-1"></i>Corrigiendo la ubicación a partir de una discrepancia reportada en una jornada de verificación: elija el nuevo espacio en <a href="#seccionAccion">¿Qué desea hacer con este bien?</a> y guarde.
-        </div>
-    <?php endif; ?>
-
-    <?php if (!empty($historialMovimientos)): ?>
-        <h3 class="h6">Historial de movimientos</h3>
+<?php if ($esEdicion && !empty($historialMovimientos)): ?>
+    <details class="mt-4" style="max-width: 680px;">
+        <summary class="small fw-semibold text-muted">Ver historial de movimientos (<?= count($historialMovimientos) ?>)</summary>
+        <div class="mt-2">
         <div class="table-responsive" style="max-width: 680px;">
             <table class="table table-sm bg-white tabla-cards">
                 <thead>
@@ -632,5 +617,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 </tbody>
             </table>
         </div>
-    <?php endif; ?>
+        </div>
+    </details>
 <?php endif; ?>
