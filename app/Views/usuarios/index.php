@@ -25,7 +25,7 @@ use App\Core\View;
 <?php endif; ?>
 
 <div class="mb-3" style="max-width: 420px;">
-    <input type="search" id="buscador" class="form-control form-control-sm"
+    <input type="search" id="buscador" data-buscar="q" class="form-control form-control-sm"
            placeholder="Buscar por nombre, documento, correo o cargo..."
            value="<?= htmlspecialchars($busqueda, ENT_QUOTES) ?>">
 </div>
@@ -119,22 +119,5 @@ use App\Core\View;
 
 <script>
 (function () {
-    const input = document.getElementById('buscador');
-    let temporizador = null;
-
-    input.addEventListener('input', function () {
-        clearTimeout(temporizador);
-        temporizador = setTimeout(function () {
-            const url = new URL(window.location.href);
-            const valor = input.value.trim();
-            if (valor !== '') {
-                url.searchParams.set('q', valor);
-            } else {
-                url.searchParams.delete('q');
-            }
-            url.searchParams.set('pagina', '1');
-            window.location = url.toString();
-        }, 600);
-    });
 })();
 </script>

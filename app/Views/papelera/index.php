@@ -29,7 +29,7 @@ $etiquetasTipo = [
     <p class="text-muted">La papelera está vacía.</p>
 <?php else: ?>
     <div class="mb-3" style="max-width: 420px;">
-        <input type="search" id="buscadorPapelera" class="form-control form-control-sm"
+        <input type="search" id="buscadorPapelera" data-buscar-local class="form-control form-control-sm"
                placeholder="Buscar por tipo, elemento, institución o quién lo eliminó...">
     </div>
     <p id="papeleraSinResultados" class="text-muted" style="display:none;">Ningún elemento coincide con la búsqueda.</p>
@@ -75,8 +75,8 @@ $etiquetasTipo = [
         const sinResultados = document.getElementById('papeleraSinResultados');
         const envoltorio = document.getElementById('envoltorioTablaPapelera');
 
-        input.addEventListener('input', function () {
-            const valor = input.value.trim().toLowerCase();
+        input.addEventListener('sigebi:buscar', function (evento) {
+            const valor = String(evento.detail).toLowerCase();
             let visibles = 0;
             filas.forEach(function (fila) {
                 const coincide = fila.textContent.toLowerCase().includes(valor);

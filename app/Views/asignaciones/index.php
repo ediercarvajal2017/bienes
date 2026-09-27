@@ -89,7 +89,7 @@ $bienesSeleccionados = $viejo['bienes'] ?? [];
         <h2 class="h6 mb-2">Bienes (<?= $total ?>)</h2>
         <div class="d-flex flex-wrap justify-content-between align-items-end gap-2 mb-2">
             <div style="max-width: 420px; flex: 1 1 260px;">
-                <input type="search" id="buscador" class="form-control form-control-sm"
+                <input type="search" id="buscador" data-buscar="q" class="form-control form-control-sm"
                        placeholder="Buscar por código, descripción, responsable, ubicación, estado o valor..."
                        value="<?= htmlspecialchars($q, ENT_QUOTES) ?>">
             </div>
@@ -188,23 +188,6 @@ $bienesSeleccionados = $viejo['bienes'] ?? [];
 
         actualizarContador();
 
-        // --- Búsqueda con reload debounceado ---
-        const buscador = document.getElementById('buscador');
-        let temporizador = null;
-        buscador.addEventListener('input', function () {
-            clearTimeout(temporizador);
-            temporizador = setTimeout(function () {
-                const url = new URL(window.location.href);
-                const valor = buscador.value.trim();
-                if (valor !== '') {
-                    url.searchParams.set('q', valor);
-                } else {
-                    url.searchParams.delete('q');
-                }
-                url.searchParams.set('pagina', '1');
-                window.location = url.toString();
-            }, 600);
-        });
     })();
     </script>
 <?php endif; ?>

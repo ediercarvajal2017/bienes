@@ -107,7 +107,7 @@ foreach ($gruposBreadcrumb as $g) {
     ?>
     <form method="get" action="<?= Url::to('/buscar') ?>" class="d-none d-lg-block ms-3" style="width: 220px;">
         <label for="buscadorGlobal" class="visually-hidden">Buscar bienes, espacios o usuarios</label>
-        <input type="search" id="buscadorGlobal" name="q" class="form-control form-control-sm"
+        <input type="search" data-buscar-form id="buscadorGlobal" name="q" class="form-control form-control-sm"
                placeholder="Buscar en todo SIGEBI...">
     </form>
     <div class="ms-auto d-flex align-items-center gap-2 gap-sm-3">

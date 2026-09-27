@@ -101,7 +101,7 @@ $algunFiltroActivo = $busqueda !== '' || $categoriaId !== null || $estado !== nu
 <div class="mb-3 d-flex flex-wrap gap-3 align-items-end">
     <div class="filtro-busqueda">
         <label for="buscador" class="form-label small mb-1">Buscar</label>
-        <input type="search" id="buscador" class="form-control form-control-sm"
+        <input type="search" id="buscador" data-buscar="q" class="form-control form-control-sm"
                placeholder="Buscar por código, descripción, responsable, ubicación, estado o valor..."
                value="<?= htmlspecialchars($busqueda, ENT_QUOTES) ?>">
     </div>
@@ -292,23 +292,6 @@ $algunFiltroActivo = $busqueda !== '' || $categoriaId !== null || $estado !== nu
 })();
 
 (function () {
-    const input = document.getElementById('buscador');
-    let temporizador = null;
-
-    input.addEventListener('input', function () {
-        clearTimeout(temporizador);
-        temporizador = setTimeout(function () {
-            const url = new URL(window.location.href);
-            const valor = input.value.trim();
-            if (valor !== '') {
-                url.searchParams.set('q', valor);
-            } else {
-                url.searchParams.delete('q');
-            }
-            url.searchParams.set('pagina', '1');
-            window.location = url.toString();
-        }, 600);
-    });
 
     const filtrosSelect = [
         ['filtroCategoria', 'categoria'],
