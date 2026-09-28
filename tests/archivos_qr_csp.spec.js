@@ -98,7 +98,8 @@ test('ninguna pantalla incumple la política de seguridad de contenido', async (
 });
 
 test('los avisos de la CSP se guardan en el registro del día (sin extensiones ni datos de la URL)', async ({ request }) => {
-    const hoy = new Date().toLocaleDateString('en-CA');
+    // El registro lleva la fecha de Colombia (APP_TIMEZONE), no la del equipo (GitHub corre en UTC).
+    const hoy = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Bogota' });
     const archivo = path.resolve('storage/pruebas/logs', `csp-${hoy}.log`);
     const antes = fs.existsSync(archivo) ? fs.readFileSync(archivo, 'utf8') : '';
     const marca = `https://externo.test/prueba-${Date.now()}.js`;

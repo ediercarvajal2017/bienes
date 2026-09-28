@@ -8,8 +8,9 @@ import { datos, bd, csrf } from './helpers/datos.js';
 test.beforeEach(() => test.skip(datos().remoto === true, 'Necesita la base de pruebas local'));
 test.use({ storageState: 'playwright/.auth/rector.json' });
 
-// Fecha local del equipo (la misma zona horaria que usa el servidor de pruebas), no UTC.
-const fechaLocal = (dias = 0) => new Date(Date.now() + dias * 86400000).toLocaleDateString('en-CA');
+// "Hoy" en la hora de Colombia (APP_TIMEZONE, la que usa MIA), no la del equipo: GitHub
+// corre las pruebas en UTC y de 7 p. m. a medianoche allá ya es el día siguiente.
+const fechaLocal = (dias = 0) => new Date(Date.now() + dias * 86400000).toLocaleDateString('en-CA', { timeZone: 'America/Bogota' });
 const hoy = () => fechaLocal(0);
 const manana = () => fechaLocal(1);
 
