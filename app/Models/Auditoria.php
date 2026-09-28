@@ -15,6 +15,14 @@ use App\Helpers\Paginador;
  */
 final class Auditoria
 {
+    /**
+     * Campos internos de la cuenta que nunca se copian a la auditoría (que además se descarga
+     * en "Descargar toda la información"): secretos y contadores de seguridad. totp_secreto es
+     * binario: además de ser un secreto, hacía fallar json_encode y el registro quedaba vacío.
+     */
+    private const CAMPOS_EXCLUIDOS = ['password_hash', 'totp_secreto', 'totp_ultimo_paso', 'sesion_version',
+        'intentos_fallidos', 'bloqueado_hasta'];
+
     public static function registrar(
         ?int $usuarioId,
         ?int $institucionId,
@@ -34,10 +42,26 @@ final class Auditoria
             'accion' => $accion,
             'entidad' => $entidad,
             'entidad_id' => $entidadId,
-            'datos_antes' => $datosAntes !== null ? json_encode($datosAntes, JSON_UNESCAPED_UNICODE) : null,
-            'datos_despues' => $datosDespues !== null ? json_encode($datosDespues, JSON_UNESCAPED_UNICODE) : null,
+            'datos_antes' => self::aJson($datosAntes),
+            'datos_despues' => self::aJson($datosDespues),
             'ip' => $_SERVER['REMOTE_ADDR'] ?? null,
         ]);
+    }
+
+    /**
+     * JSON de los datos sin los campos internos. Si queda algún texto binario, se reemplaza
+     * por "�" en vez de perder el registro completo (json_encode devolvía false).
+     */
+    private static function aJson(?array $datos): ?string
+    {
+        if ($datos === null) {
+            return null;
+        }
+
+        return (string) json_encode(
+            array_diff_key($datos, array_flip(self::CAMPOS_EXCLUIDOS)),
+            JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE
+        );
     }
 
     public static function listar(array $filtros = [], int $pagina = 1, int $porPagina = 50): array

@@ -44,3 +44,29 @@ test('crear, editar, desactivar y eliminar un usuario', async ({ page }) => {
 
     await expect(page.locator('tr', { hasText: emailEditado })).toHaveCount(0);
 });
+
+test('editar un usuario con verificación en dos pasos deja la auditoría completa y sin secretos', async ({ page }) => {
+    const { datos, bd } = await import('./helpers/datos.js');
+    const marca = Date.now();
+    const correo = `pw-2fa-${marca}@prueba.test`;
+    // Usuario con la verificación activa: totp_secreto es binario (cifrado) y antes hacía
+    // fallar json_encode, así que la auditoría quedaba con "datos antes" vacío.
+    bd(`INSERT INTO usuarios (documento, nombres, apellidos, cargo_id, email, password_hash, institucion_id, rol_id, activo, totp_secreto, totp_activado_en)
+        SELECT 'PW2FA-${marca}', 'Ana', 'Dos Pasos', cargo_id, '${correo}', password_hash, institucion_id, rol_id, 1, UNHEX('00FF10E2C3A4FFEE99'), NOW()
+        FROM usuarios WHERE id = ${datos().usuarios.docente.id}`);
+    const id = Number(bd(`SELECT id FROM usuarios WHERE email = '${correo}'`));
+
+    await page.goto(`usuarios/${id}/editar`);
+    await page.locator('input[name="apellidos"]').fill('Dos Pasos Editada');
+    await page.getByRole('button', { name: 'Guardar cambios' }).click();
+    await expect(page).toHaveURL(/\/usuarios(\?.*)?$/);
+
+    const antes = bd(`SELECT datos_antes FROM auditoria WHERE entidad = 'usuario' AND accion = 'editar' AND entidad_id = ${id} ORDER BY id DESC LIMIT 1`);
+    const json = JSON.parse(antes);
+    expect(json.apellidos).toBe('Dos Pasos');
+    for (const campo of ['totp_secreto', 'password_hash', 'totp_ultimo_paso', 'sesion_version']) {
+        expect(json, campo).not.toHaveProperty(campo);
+    }
+
+    bd(`DELETE FROM auditoria WHERE entidad = 'usuario' AND entidad_id = ${id}; DELETE FROM usuarios WHERE id = ${id}`);
+});
