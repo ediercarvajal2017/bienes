@@ -468,6 +468,10 @@ $router->get('/reportes/reintegros.xlsx', [ReporteController::class, 'reintegros
 $router->get('/reportes/reintegros-historial.xlsx', [ReporteController::class, 'reintegrosHistorialXlsx'], [
     AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':reportes.generar',
 ]);
+// Solo rector y superusuario (lo verifica el controlador): trae datos personales y la auditoría.
+$router->get('/reportes/exportacion-completa.zip', [ReporteController::class, 'exportacionCompleta'], [
+    AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':reportes.generar',
+]);
 
 $router->get('/cartera/enviar', [CarteraController::class, 'formulario'], [
     AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':cartera.gestionar',
