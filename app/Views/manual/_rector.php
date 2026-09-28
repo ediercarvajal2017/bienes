@@ -12,10 +12,11 @@
                 <li><strong>Registrar un bien</strong> (Bienes &gt; Registrar bien): código, descripción, categoría,
                     marca, valor y, si aplica, foto y factura. La categoría es obligatoria — sin ella, el bien no se
                     podrá reintegrar más adelante.</li>
-                <li><strong>Asignar</strong> un bien a un espacio y a un responsable, desde la ficha del bien.</li>
+                <li><strong>Asignar</strong> un bien a un espacio y a un responsable, desde la ficha del bien (o varios a la vez en
+                    <strong>Bienes &gt; Acciones masivas &gt; Asignar bienes</strong>).</li>
                 <li><strong>Trasladar</strong> un bien asignado a otro espacio.</li>
-                <li><strong>Reintegrar</strong> un bien (individual, o selecciona varios desde Bienes y reintégralos
-                    juntos).</li>
+                <li><strong>Reintegrar</strong> un bien desde su ficha, o varios a la vez en
+                    <strong>Bienes &gt; Acciones masivas &gt; Reintegrar bienes</strong>.</li>
                 <li><strong>Dar de baja</strong> un bien, o aprobar/rechazar bajas que otros reporten (ver tema 6).</li>
                 <li>Para cargar muchos bienes o fotos de una vez, usa <strong>Carga masiva</strong> en el menú
                     lateral.</li>

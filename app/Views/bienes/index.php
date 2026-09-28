@@ -47,6 +47,9 @@ $algunFiltroActivo = $busqueda !== '' || $categoriaId !== null || $estado !== nu
                         <li><a class="dropdown-item" href="<?= Url::to('/asignaciones') ?>">
                             <i class="bi bi-person-check me-1"></i>Asignar bienes
                         </a></li>
+                        <li><a class="dropdown-item" href="<?= Url::to('/reintegros') ?>">
+                            <i class="bi bi-box-arrow-in-left me-1"></i>Reintegrar bienes
+                        </a></li>
                     <?php endif; ?>
                     <?php if ($puedeQr): ?>
                         <li><a class="dropdown-item" href="<?= Url::to('/bienes/qr-masivo') ?>">

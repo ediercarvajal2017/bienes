@@ -225,7 +225,7 @@ foreach ($gruposBreadcrumb as $g) {
                 <summary class="nav-grupo-titulo">Operación diaria<i class="bi bi-chevron-right nav-grupo-chevron"></i></summary>
 
                 <?php if (Auth::esSuperusuario() || Auth::tienePermiso('bienes.ver')): ?>
-                    <a class="nav-link<?= $esActiva('/bienes') ?>" href="<?= Url::to('/bienes') ?>"><i class="bi bi-box-seam me-2"></i>Bienes</a>
+                    <a class="nav-link<?= $esActiva('/bienes') ?: (in_array($rutaActual, ['/asignaciones', '/reintegros'], true) ? $marcaActiva : '') ?>" href="<?= Url::to('/bienes') ?>"><i class="bi bi-box-seam me-2"></i>Bienes</a>
                 <?php endif; ?>
 
                 <?php if (Auth::esSuperusuario() || Auth::tienePermiso('espacios.ver')): ?>
@@ -233,8 +233,6 @@ foreach ($gruposBreadcrumb as $g) {
                 <?php endif; ?>
 
                 <?php if (Auth::esSuperusuario() || Auth::tienePermiso('asignaciones.crear')): ?>
-                    <a class="nav-link<?= $esActiva('/asignaciones') ?>" href="<?= Url::to('/asignaciones') ?>"><i class="bi bi-person-check me-2"></i>Asignar bienes</a>
-                    <a class="nav-link<?= $rutaActual === '/reintegros' ? $marcaActiva : '' ?>" href="<?= Url::to('/reintegros') ?>"><i class="bi bi-box-arrow-in-left me-2"></i>Reintegrar bienes</a>
                     <a class="nav-link<?= $esActiva('/reintegros/lotes') ?>" href="<?= Url::to('/reintegros/lotes') ?>"><i class="bi bi-file-earmark-spreadsheet me-2"></i>Lotes de reintegro</a>
                 <?php endif; ?>
 
