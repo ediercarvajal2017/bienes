@@ -96,6 +96,9 @@ test('el secretario y el docente no pueden descargarla, y el superusuario debe e
     await expect(soloDatos).toHaveClass(/disabled/);
     const respuesta = await page.request.get('reportes/exportacion-completa.zip', { maxRedirects: 0 });
     expect(respuesta.status()).toBe(302);
+    // Una institución que no existe tampoco rompe nada: vuelve a Reportes con el aviso.
+    const inexistente = await page.request.get('reportes/exportacion-completa.zip?institucion=999999', { maxRedirects: 0 });
+    expect(inexistente.status()).toBe(302);
 
     // Con la institución B elegida, descarga la B (y no la A).
     const zip = leerZip(await (await page.request.get(`reportes/exportacion-completa.zip?institucion=${datos().instituciones.B}`)).body(), ['Bienes']);

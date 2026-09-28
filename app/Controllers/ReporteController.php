@@ -11,6 +11,7 @@ use App\Core\Url;
 use App\Core\View;
 use App\Helpers\LimiteIntentos;
 use App\Models\Auditoria;
+use App\Models\Institucion;
 use App\Services\ExportacionInstitucion;
 use App\Services\ReporteService;
 
@@ -60,7 +61,7 @@ final class ReporteController
         }
 
         $institucionId = $this->institucionAExportar();
-        if ($institucionId === null) {
+        if ($institucionId === null || Institucion::find($institucionId) === null) {
             Session::flash('error', 'Elige la institución que quieres descargar.');
             header('Location: ' . Url::to('/reportes'));
             exit;
