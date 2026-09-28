@@ -37,6 +37,13 @@ if (is_file(__DIR__ . '/mantenimiento.flag')) {
     exit;
 }
 
+// Avisos de la política de contenido (CSP) que envía el navegador: se atienden antes de abrir
+// la sesión, que no necesitan (así no se crea un archivo de sesión por cada aviso).
+if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && (new App\Core\Request())->uri === '/csp-reporte') {
+    App\Helpers\ReporteCsp::recibir($appConfig['storage_path'] . '/logs');
+    exit;
+}
+
 use App\Controllers\ArchivoController;
 use App\Controllers\AsignacionController;
 use App\Controllers\AuditoriaController;

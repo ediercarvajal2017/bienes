@@ -141,6 +141,30 @@ php database/restaurar.php ~/restaurar/<archivo>.sql.gz --base=<base> --reemplaz
 Recuperar los archivos: `~/bin/rclone copy sigebi-cifrado: ~/restaurar/uploads` (rclone los
 descifra solo; en otro equipo hay que crear el remoto `sigebi-cifrado` con la misma contraseña).
 
+## Resumen diario de errores
+
+`database/herramientas/resumen_errores.php` revisa los registros del día anterior en
+`storage_sigebi/logs/`:
+
+- errores (páginas 500) y avisos de PHP, agrupados por mensaje;
+- avisos de la política de contenido (CSP, `csp-AAAA-MM-DD.log`);
+- si el respaldo nocturno terminó bien.
+
+Si encuentra algo, envía un correo a `BACKUP_EMAIL`. Si todo está limpio, no envía nada.
+
+Se programa en hPanel > Avanzado > Cron Jobs:
+
+```
+30 6 * * *  cd /home/u397951547/domains/ediertech.com/public_html/bienes && php database/herramientas/resumen_errores.php
+```
+
+Para probarlo a mano: `php database/herramientas/resumen_errores.php --fecha=AAAA-MM-DD --sin-correo`
+(solo lo muestra) o con `--siempre` (lo envía aunque no haya nada).
+
+**CSP obligatoria:** hoy la política va en modo "solo reportar". Cuando el resumen lleve
+unos 7 días sin avisos de CSP reales, se cambia en `App\Helpers\PoliticaContenido`
+`Content-Security-Policy-Report-Only` por `Content-Security-Policy`.
+
 ## Historial
 
 | Fecha | Versión | Migraciones | Notas |

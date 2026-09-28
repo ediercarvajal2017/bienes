@@ -33,6 +33,8 @@ final class PoliticaContenido
             "base-uri 'self'",
             "form-action 'self'",
             "frame-ancestors 'self'",
+            // Los avisos llegan a ReporteCsp y salen en el resumen diario de errores.
+            'report-uri ' . \App\Core\Url::to('/csp-reporte'),
         ]));
     }
 }

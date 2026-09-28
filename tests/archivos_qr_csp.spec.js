@@ -96,3 +96,24 @@ test('ninguna pantalla incumple la política de seguridad de contenido', async (
 
     expect(avisos, avisos.join('\n')).toEqual([]);
 });
+
+test('los avisos de la CSP se guardan en el registro del día (sin extensiones ni datos de la URL)', async ({ request }) => {
+    const hoy = new Date().toLocaleDateString('en-CA');
+    const archivo = path.resolve('storage/pruebas/logs', `csp-${hoy}.log`);
+    const antes = fs.existsSync(archivo) ? fs.readFileSync(archivo, 'utf8') : '';
+    const marca = `https://externo.test/prueba-${Date.now()}.js`;
+    const aviso = (bloqueado) => ({
+        headers: { 'Content-Type': 'application/csp-report' },
+        data: JSON.stringify({ 'csp-report': {
+            'document-uri': 'http://127.0.0.1/bienes?token=secreto', 'effective-directive': 'script-src-elem', 'blocked-uri': bloqueado,
+        } }),
+    });
+
+    expect((await request.post('csp-reporte', aviso(marca))).status()).toBe(204);
+    expect((await request.post('csp-reporte', aviso('chrome-extension://abc/x.js'))).status()).toBe(204);
+
+    const nuevas = fs.readFileSync(archivo, 'utf8').slice(antes.length);
+    expect(nuevas).toContain(`directiva=script-src-elem bloqueado=${marca} pagina=http://127.0.0.1/bienes `);
+    expect(nuevas).not.toContain('secreto');
+    expect(nuevas).not.toContain('chrome-extension');
+});
