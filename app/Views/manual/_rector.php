@@ -18,8 +18,8 @@
                 <li><strong>Reintegrar</strong> un bien desde su ficha, o varios a la vez en
                     <strong>Bienes &gt; Acciones masivas &gt; Reintegrar bienes</strong>.</li>
                 <li><strong>Dar de baja</strong> un bien, o aprobar/rechazar bajas que otros reporten (ver tema 6).</li>
-                <li>Para cargar muchos bienes o fotos de una vez, usa <strong>Carga masiva</strong> en el menú
-                    lateral.</li>
+                <li>Para cargar muchos bienes o fotos de una vez, usa <strong>Bienes &gt; Acciones masivas &gt; Carga
+                    masiva de bienes</strong>.</li>
             </ol>
         </div>
     </details>

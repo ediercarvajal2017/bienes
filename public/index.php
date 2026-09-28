@@ -84,6 +84,11 @@ use App\Middlewares\PermissionMiddleware;
 use App\Middlewares\SuperusuarioMiddleware;
 
 Session::start();
+// Tras enviar un formulario (aprobar una baja, revisar una solicitud...) los contadores del
+// menú se recalculan en la siguiente página, en vez de esperar su minuto de vigencia.
+if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
+    App\Services\ContadoresMenu::invalidar();
+}
 
 $router = new Router();
 

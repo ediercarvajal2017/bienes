@@ -193,15 +193,6 @@ select.selector-buscable.is-invalid + .ts-wrapper .ts-control {
   border-radius: 6px;
 }
 
-.sidebar {
-  width: 230px;
-  flex: 0 0 230px;
-  min-height: calc(100vh - 56px);
-  background-color: #ffffff;
-  border-right: 1px solid #e2e8f0;
-  padding: 1rem 0.75rem;
-}
-
 /* Paneles de acción (Asignar, Trasladar, Reintegrar, Dar de baja): fila con
    varias tarjetas de 300px en escritorio, apiladas a ancho completo en móvil. */
 .panel-accion {
@@ -209,51 +200,6 @@ select.selector-buscable.is-invalid + .ts-wrapper .ts-control {
   max-width: 100%;
 }
 
-.sidebar .nav-link {
-  color: var(--sigebi-text);
-  border-radius: 6px;
-  padding: 0.55rem 0.9rem;
-  font-size: 0.92rem;
-}
-
-.sidebar .nav-link.active,
-.sidebar .nav-link:hover {
-  background-color: rgba(31, 111, 84, 0.1);
-  color: var(--sigebi-primary);
-}
-
-/* Grupo plegable del menú lateral (ej. "Operación diaria", "Administración"):
-   <details>/<summary> nativos, igual que los paneles de Asignar/Trasladar de la
-   ficha de un bien -sin depender del JS de Bootstrap, que este proyecto no carga-.
-   Por defecto cada grupo empieza plegado, salvo el que contiene la página actual
-   (ver $grupoAbierto en layout.php), así el usuario siempre ve su contexto sin
-   tener que desplegar los otros 3 para encontrarlo. */
-.sidebar .nav-grupo-titulo {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  cursor: pointer;
-  list-style: none;
-  font-size: 0.72rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: #5b6b7f; /* 5,4:1 sobre el menú blanco (antes #94a3b8, 2,6:1) */
-  padding: 0.9rem 0.9rem 0.3rem;
-}
-
-.sidebar .nav-grupo-titulo::-webkit-details-marker {
-  display: none;
-}
-
-.sidebar .nav-grupo-chevron {
-  font-size: 0.68rem;
-  transition: transform 0.15s ease;
-}
-
-.sidebar details[open] > .nav-grupo-titulo .nav-grupo-chevron {
-  transform: rotate(90deg);
-}
 
 .btn-accent {
   background-color: var(--sigebi-accent);
@@ -417,24 +363,6 @@ select.selector-buscable.is-invalid + .ts-wrapper .ts-control {
   border-bottom: 1px solid var(--sigebi-border);
 }
 
-[data-bs-theme="dark"] .sidebar {
-  background-color: #12181f;
-  border-right-color: var(--sigebi-border);
-}
-
-[data-bs-theme="dark"] .sidebar .nav-link {
-  color: #c2ccd6;
-}
-
-[data-bs-theme="dark"] .sidebar .nav-link.active,
-[data-bs-theme="dark"] .sidebar .nav-link:hover {
-  background-color: rgba(47, 156, 114, 0.2);
-  color: #7fe6b0;
-}
-
-[data-bs-theme="dark"] .sidebar .nav-grupo-titulo {
-  color: #8b98a8; /* 6:1 sobre el fondo del menú (antes 3,7:1) */
-}
 
 /* Rojo de aviso legible sobre el fondo oscuro (el rojo del modo claro no alcanza 4,5:1). */
 [data-bs-theme="dark"] .text-danger {
@@ -528,31 +456,6 @@ select.selector-buscable.is-invalid + .ts-wrapper .ts-control {
 }
 
 @media (max-width: 991.98px) {
-  .sidebar {
-    position: fixed;
-    top: 56px;
-    left: 0;
-    bottom: 0;
-    width: 250px;
-    max-width: 82vw;
-    z-index: 1045;
-    overflow-y: auto;
-    transform: translateX(-100%);
-    transition: transform 0.22s ease;
-    box-shadow: 3px 0 16px rgba(0, 0, 0, 0.2);
-  }
-
-  .sidebar.abierto {
-    transform: translateX(0);
-  }
-
-  .sidebar-overlay.visible {
-    display: block;
-    position: fixed;
-    inset: 56px 0 0 0;
-    background: rgba(0, 0, 0, 0.4);
-    z-index: 1040;
-  }
 
   main.flex-fill {
     padding: 1.25rem !important;
@@ -560,11 +463,6 @@ select.selector-buscable.is-invalid + .ts-wrapper .ts-control {
   }
 }
 
-@media (min-width: 992px) {
-  .navbar-toggle {
-    display: none;
-  }
-}
 
 /* ---------- Tabla que se convierte en tarjetas apiladas en pantallas angostas ----------
    Antes el quiebre era 576px, dejando una "zona gris" entre 576-992px (tablets, o una
@@ -670,10 +568,6 @@ summary { cursor: pointer; }
 .tarjeta-cifra-unidad { font-size: .8rem; color: var(--bs-secondary-color); font-weight: 600; }
 .contenedor-manual { max-width: 760px; }
 
-/* ── Menú lateral: la página actual se distingue del simple paso del mouse ── */
-.sidebar .nav-link { border-left: 3px solid transparent; }
-.sidebar .nav-link.active { border-left-color: var(--sigebi-primary); font-weight: 600; }
-[data-bs-theme="dark"] .sidebar .nav-link.active { border-left-color: #7fe6b0; }
 
 /* Selector de institución (Tom Select): la flecha ya no se monta sobre el texto. */
 .filtro-institucion-form .ts-control { padding-right: 1.9rem !important; flex-wrap: nowrap; }
@@ -756,8 +650,6 @@ summary { cursor: pointer; }
 @media (pointer: coarse) {
   .btn, .btn-sm, .page-link { min-height: 44px; min-width: 44px; display: inline-flex; align-items: center; justify-content: center; }
   .btn-group > .btn { min-width: 44px; }
-  .sidebar .nav-link { min-height: 44px; display: flex; align-items: center; }
-  .sidebar .nav-grupo-titulo { min-height: 44px; }
   .nav-tabs .nav-link, .nav-pills .nav-link { min-height: 44px; display: flex; align-items: center; }
   .theme-toggle, .navbar-toggle { width: 44px; height: 44px; }
   .form-select, .form-select-sm, .form-control, .form-control-sm, .ts-control { min-height: 44px; }
@@ -783,7 +675,6 @@ td:has(> .casilla-bien) { cursor: pointer; }
 /* ── Barra superior en celular: nada se sale ni aleja la página ── */
 .navbar-sigebi .navbar-brand { flex-shrink: 0; }
 .navbar-sigebi .ms-auto { min-width: 0; }
-.sidebar-movil { padding: .25rem .5rem .75rem; margin-bottom: .5rem; border-bottom: 1px solid var(--bs-border-color); display: grid; gap: .5rem; }
 .sidebar-movil .filtro-institucion-select, .sidebar-movil .form-select { max-width: none; width: 100%; }
 @media (max-width: 575.98px) {
   .navbar-sigebi { padding-left: .75rem !important; padding-right: .75rem !important; }
@@ -857,3 +748,176 @@ td:has(> input[type="checkbox"]), th:has(> input[type="checkbox"]) { cursor: poi
 
 /* Fila del bien recién editado en el listado (ver bienes/index.php). */
 tr.fila-editada > td { background-color: rgba(var(--bs-warning-rgb), .22) !important; transition: background-color .6s; }
+
+/* ══════════ Menú de navegación (verde institucional) ══════════
+   Definición única del menú en app/Views/partials/menu_definicion.php; comportamiento en
+   public/assets/js/menu.js. Escritorio: columna fija bajo la barra superior (que queda
+   pegada arriba), con modo compacto de solo íconos. Celular/tableta: panel deslizable y,
+   en celular, barra inferior con los accesos más usados. */
+:root {
+  --alto-navbar: 56px;
+  --alto-barra-inferior: 0px;
+  --menu-ancho: 252px;
+  --menu-ancho-compacto: 72px;
+  --menu-fondo: #14503d;
+  --menu-texto: #dbe8e2;          /* 7,2:1 sobre el fondo */
+  --menu-texto-suave: #b9d3c9;    /* 5,8:1 */
+  --menu-hover: rgba(255, 255, 255, 0.08);
+  --menu-activo-fondo: rgba(255, 255, 255, 0.14);
+  --menu-activo-texto: #ffffff;
+  --menu-acento: #f2b134;
+  --menu-borde: rgba(255, 255, 255, 0.12);
+}
+[data-bs-theme="dark"] {
+  --menu-fondo: #0f1a16;
+  --menu-texto: #c9d6d0;
+  --menu-texto-suave: #9fb5ab;
+  --menu-hover: rgba(127, 230, 176, 0.08);
+  --menu-activo-fondo: rgba(127, 230, 176, 0.14);
+  --menu-activo-texto: #eafff4;
+  --menu-borde: rgba(255, 255, 255, 0.07);
+}
+
+html { scroll-padding-top: calc(var(--alto-navbar) + 0.75rem); }
+.navbar-sigebi { position: sticky; top: 0; z-index: 1030; }
+.navbar-marca-texto { color: #fff; font-weight: 700; font-size: 1.1rem; letter-spacing: 0.08em; margin-left: 0.6rem; }
+
+.sidebar {
+  width: var(--menu-ancho);
+  flex: 0 0 var(--menu-ancho);
+  display: flex;
+  flex-direction: column;
+  background: var(--menu-fondo);
+  color: var(--menu-texto);
+  position: sticky;
+  top: var(--alto-navbar);
+  align-self: flex-start;
+  height: calc(100vh - var(--alto-navbar));
+  height: calc(100dvh - var(--alto-navbar));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.25) transparent;
+  transition: width 0.2s ease, flex-basis 0.2s ease;
+}
+
+.menu-encabezado { display: flex; align-items: center; gap: 0.7rem; padding: 1rem 1rem 0.9rem; border-bottom: 1px solid var(--menu-borde); }
+.menu-encabezado-icono {
+  width: 36px; height: 36px; flex: 0 0 auto; border-radius: 10px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: rgba(255, 255, 255, 0.12); color: #fff; font-size: 1.05rem;
+}
+.menu-encabezado-texto { display: grid; min-width: 0; line-height: 1.25; }
+.menu-encabezado-nombre {
+  color: #fff; font-weight: 600; font-size: 0.86rem;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.menu-encabezado-rol { color: var(--menu-texto-suave); font-size: 0.74rem; }
+
+.sidebar .sidebar-movil { padding: 0.75rem 1rem; border-bottom: 1px solid var(--menu-borde); display: grid; gap: 0.5rem; }
+.sidebar .sidebar-movil .form-label { color: var(--menu-texto-suave); }
+
+.menu-nav { flex: 1 1 auto; display: flex; flex-direction: column; padding: 0.6rem 0.6rem 1rem; }
+.menu-seccion { margin-top: 0.6rem; }
+.menu-seccion-titulo {
+  list-style: none; cursor: pointer; user-select: none;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0.45rem 0.75rem 0.35rem; border-radius: 6px;
+  font-size: 0.68rem; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase;
+  color: var(--menu-texto-suave);
+}
+.menu-seccion-titulo::-webkit-details-marker { display: none; }
+.menu-seccion-titulo:hover, .menu-seccion-titulo.activa { color: #fff; }
+.menu-seccion-titulo:focus-visible { outline: 2px solid var(--menu-acento); outline-offset: -2px; }
+.menu-seccion-chevron { font-size: 0.7rem; opacity: 0.8; transition: transform 0.15s ease; }
+.menu-seccion:not([open]) .menu-seccion-chevron { transform: rotate(-90deg); }
+.menu-seccion-opciones { display: flex; flex-direction: column; gap: 2px; }
+
+.menu-opcion {
+  position: relative; display: flex; align-items: center; gap: 0.75rem;
+  width: 100%; min-height: 40px; padding: 0.5rem 0.75rem;
+  border: 0; border-radius: 8px; background: transparent; text-align: left;
+  color: var(--menu-texto); font-size: 0.9rem; line-height: 1.2; text-decoration: none;
+}
+.menu-opcion:hover { background: var(--menu-hover); color: #fff; }
+.menu-opcion:focus-visible { outline: 2px solid var(--menu-acento); outline-offset: -2px; }
+.menu-opcion.active { background: var(--menu-activo-fondo); color: var(--menu-activo-texto); font-weight: 600; }
+.menu-opcion.active::before {
+  content: ""; position: absolute; left: -0.6rem; top: 8px; bottom: 8px; width: 4px;
+  border-radius: 0 4px 4px 0; background: var(--menu-acento);
+}
+.menu-icono { flex: 0 0 auto; width: 1.25rem; font-size: 1.05rem; text-align: center; }
+.menu-texto { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.menu-contador {
+  flex: 0 0 auto; min-width: 1.35rem; height: 1.35rem; padding: 0 0.4rem; border-radius: 999px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--menu-acento); color: #2b2103; font-size: 0.72rem; font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.menu-pie { display: flex; flex-direction: column; gap: 2px; padding: 0.6rem; border-top: 1px solid var(--menu-borde); }
+
+@media (pointer: coarse) {
+  .menu-opcion, .menu-seccion-titulo { min-height: 44px; }
+}
+
+/* Escritorio: modo compacto (solo íconos; el nombre aparece al pasar el mouse). */
+@media (min-width: 992px) {
+  .menu-compacto .sidebar { width: var(--menu-ancho-compacto); flex-basis: var(--menu-ancho-compacto); }
+  .menu-compacto .menu-texto, .menu-compacto .menu-encabezado-texto, .menu-compacto .menu-seccion-chevron { display: none; }
+  .menu-compacto .menu-encabezado { justify-content: center; padding-inline: 0; }
+  .menu-compacto .menu-seccion-titulo { justify-content: center; padding: 0.35rem 0; font-size: 0; pointer-events: none; }
+  .menu-compacto .menu-seccion-titulo::after { content: ""; width: 24px; height: 1px; background: var(--menu-borde); }
+  .menu-compacto .menu-opcion { justify-content: center; padding-inline: 0; }
+  .menu-compacto .menu-contador { position: absolute; top: 5px; right: 12px; min-width: 0.6rem; height: 0.6rem; padding: 0; font-size: 0; }
+}
+
+/* Celular y tableta: panel deslizable. */
+@media (max-width: 991.98px) {
+  .sidebar {
+    position: fixed; top: var(--alto-navbar); left: 0; bottom: var(--alto-barra-inferior);
+    /* align-self: auto: con flex-start (lo que lo deja fijo en escritorio) el navegador
+       ignora top/bottom en un elemento fijo dentro de un flex y lo pega arriba del todo. */
+    align-self: auto; height: auto; width: 280px; max-width: 86vw; z-index: 1045;
+    transform: translateX(-100%); transition: transform 0.22s ease;
+    box-shadow: 4px 0 20px rgba(0, 0, 0, 0.25);
+  }
+  .sidebar.abierto { transform: translateX(0); }
+  .sidebar-overlay.visible {
+    display: block; position: fixed; inset: var(--alto-navbar) 0 var(--alto-barra-inferior) 0;
+    background: rgba(0, 0, 0, 0.45); z-index: 1040;
+  }
+}
+
+/* Celular: barra inferior con los accesos más usados. */
+.menu-inferior { display: none; }
+@media (max-width: 767.98px) {
+  :root { --alto-barra-inferior: calc(60px + env(safe-area-inset-bottom, 0px)); }
+  .menu-inferior {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 1050;
+    display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr);
+    height: var(--alto-barra-inferior); padding-bottom: env(safe-area-inset-bottom, 0px);
+    background: var(--menu-fondo); border-top: 1px solid var(--menu-borde);
+    box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.15);
+  }
+  .menu-inferior-boton {
+    position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+    min-height: 44px; border: 0; background: transparent; text-decoration: none;
+    color: var(--menu-texto); font-size: 0.7rem; font-weight: 600;
+  }
+  .menu-inferior-boton i { font-size: 1.3rem; line-height: 1; }
+  .menu-inferior-boton.active { color: #fff; }
+  .menu-inferior-boton.active i { color: var(--menu-acento); }
+  .menu-inferior-boton:focus-visible { outline: 2px solid var(--menu-acento); outline-offset: -4px; }
+  .menu-inferior-aviso {
+    position: absolute; top: 9px; left: calc(50% + 8px); width: 9px; height: 9px; border-radius: 50%;
+    background: var(--menu-acento); box-shadow: 0 0 0 2px var(--menu-fondo);
+  }
+  main.flex-fill { padding-bottom: calc(var(--alto-barra-inferior) + 1.5rem) !important; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebar, .menu-seccion-chevron { transition: none; }
+}
+@media print {
+  .menu-inferior { display: none !important; }
+}

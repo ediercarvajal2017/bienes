@@ -6,45 +6,38 @@ use App\Core\Url;
 use App\Models\Institucion;
 
 $rutaActual = (new Request())->uri;
-// Se imprime dentro de class="nav-link...": además de la clase, cierra el atributo y
-// agrega aria-current="page" para que los lectores de pantalla anuncien la página actual.
-$marcaActiva = ' active" aria-current="page';
-$esActiva = static fn (string $prefijo): string => str_starts_with($rutaActual, $prefijo) ? $marcaActiva : '';
-
 /**
- * Un grupo del menú se abre por defecto solo si la página actual pertenece a él —
- * así el usuario siempre ve el contexto de dónde está, y el resto queda plegado
- * hasta que le da clic, en vez de mostrar los 4 grupos siempre expandidos.
+ * Menú de navegación: definición única en partials/menu_definicion.php. Aquí se busca la
+ * opción de la página actual (la primera cuyo prefijo coincide; "=" delante = ruta exacta)
+ * y su sección, que también nombra el paso intermedio de la ruta de navegación.
  */
-$grupoAbierto = static function (array $prefijos) use ($rutaActual): string {
+$menu = require __DIR__ . '/menu_definicion.php';
+$coincideRuta = static function (array $prefijos) use ($rutaActual): bool {
     foreach ($prefijos as $prefijo) {
-        if (str_starts_with($rutaActual, $prefijo)) {
-            return ' open';
+        if (str_starts_with($prefijo, '=') ? $rutaActual === substr($prefijo, 1) : str_starts_with($rutaActual, $prefijo)) {
+            return true;
         }
     }
 
-    return '';
+    return false;
 };
-
-/**
- * Mismos grupos y prefijos que $grupoAbierto() más abajo, pero solo para nombrar el
- * grupo en el breadcrumb — se mantienen separados a propósito: unificarlos obligaría
- * a tocar el árbol del menú lateral (con sus permisos por ítem) solo para resolver un
- * texto, más riesgo que la pequeña duplicación de estas 4 listas de prefijos.
- */
-$gruposBreadcrumb = [
-    ['prefijos' => ['/bienes', '/espacios', '/asignaciones', '/reintegros', '/escanear'], 'titulo' => 'Operación diaria'],
-    ['prefijos' => ['/bajas', '/verificaciones'], 'titulo' => 'Verificación y control'],
-    ['prefijos' => ['/reportes', '/cartera', '/formatos-reintegro', '/formatos-plaqueteo', '/facturas'], 'titulo' => 'Reportes y evidencia'],
-    ['prefijos' => ['/cargas-masivas', '/usuarios', '/instituciones', '/cargos', '/categorias', '/papelera', '/auditoria'], 'titulo' => 'Administración'],
-];
-$grupoActual = null;
-foreach ($gruposBreadcrumb as $g) {
-    foreach ($g['prefijos'] as $prefijo) {
-        if (str_starts_with($rutaActual, $prefijo)) {
-            $grupoActual = $g['titulo'];
+$opcionActiva = null;
+$seccionActiva = null;
+$tituloSeccionActiva = null;
+foreach ($menu as $seccionMenu) {
+    foreach ($seccionMenu['opciones'] as $opcionMenu) {
+        if ($opcionMenu['visible'] && $coincideRuta($opcionMenu['activo'])) {
+            $opcionActiva = $opcionMenu;
+            $seccionActiva = $seccionMenu['clave'];
+            $tituloSeccionActiva = $seccionMenu['titulo'];
             break 2;
         }
+    }
+}
+// Opciones del pie del menú (no pertenecen a ninguna sección).
+foreach (['/manual', '/mi-cuenta'] as $rutaPie) {
+    if ($opcionActiva === null && str_starts_with($rutaActual, $rutaPie)) {
+        $opcionActiva = ['ruta' => $rutaPie];
     }
 }
 
@@ -57,6 +50,9 @@ foreach ($gruposBreadcrumb as $g) {
             var guardado = localStorage.getItem('sigebi-theme');
             var tema = guardado || 'dark';
             document.documentElement.setAttribute('data-bs-theme', tema);
+            if (localStorage.getItem('mia-menu-compacto') === '1') {
+                document.documentElement.classList.add('menu-compacto');
+            }
         } catch (e) {}
     })();
     </script>
@@ -83,11 +79,12 @@ foreach ($gruposBreadcrumb as $g) {
 <a class="visually-hidden-focusable" href="#contenidoPrincipal">Saltar al contenido</a>
 
 <nav class="navbar navbar-sigebi navbar-expand px-3">
-    <button type="button" id="btnMenu" class="navbar-toggle me-2" aria-label="Abrir menú">
+    <button type="button" id="btnMenu" class="navbar-toggle me-2" aria-label="Abrir menú" aria-expanded="false">
         <i class="bi bi-list"></i>
     </button>
     <a class="navbar-brand d-flex align-items-center" href="<?= Url::to('/dashboard') ?>">
-        <img src="<?= Url::asset('/assets/img/logo.webp') ?>" width="400" height="400" alt="MIA" class="navbar-logo">
+        <img src="<?= Url::asset('/assets/img/logo.webp') ?>" width="400" height="400" alt="" class="navbar-logo">
+        <span class="navbar-marca-texto">MIA</span>
     </a>
     <?php
     $nombreUsuarioNavbar = Auth::nombreCompleto() ?? '';
@@ -175,154 +172,15 @@ foreach ($gruposBreadcrumb as $g) {
 
 <div class="d-flex">
     <div id="sidebarOverlay" class="sidebar-overlay"></div>
-    <aside id="sidebar" class="sidebar">
-        <?php if (count($familiaSedes) > 1 || Auth::esSuperusuario()): ?>
-            <div class="sidebar-movil d-md-none">
-                <?php if (count($familiaSedes) > 1): ?>
-                    <form method="post" action="<?= Url::to('/sede-activa') ?>">
-                        <?= \App\Core\Csrf::field() ?>
-                        <input type="hidden" name="volver" value="<?= htmlspecialchars($rutaActual, ENT_QUOTES) ?>">
-                        <label for="sedeActivaSelectMovil" class="form-label small mb-1">Sede activa</label>
-                        <select id="sedeActivaSelectMovil" name="institucion_id" class="form-select form-select-sm" onchange="this.form.submit()">
-                            <?php foreach ($familiaSedes as $sede): ?>
-                                <option value="<?= (int) $sede['id'] ?>" <?= (int) $sede['id'] === Auth::sedeActivaId() ? 'selected' : '' ?>><?= htmlspecialchars($sede['nombre'], ENT_QUOTES) ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </form>
-                <?php endif; ?>
-                <?php if (Auth::esSuperusuario()): ?>
-                    <form method="post" action="<?= Url::to('/filtro-institucion') ?>"
-                          class="filtro-institucion-form<?= Auth::filtroInstitucionId() !== null ? ' filtro-institucion-form--activo' : '' ?>">
-                        <?= \App\Core\Csrf::field() ?>
-                        <input type="hidden" name="volver" value="<?= htmlspecialchars($rutaActual, ENT_QUOTES) ?>">
-                        <label for="filtroInstitucionSelectMovil" class="form-label small mb-1">Ver institución</label>
-                        <select id="filtroInstitucionSelectMovil" name="institucion_id" class="form-select form-select-sm filtro-institucion-select" onchange="this.form.submit()">
-                            <option value="">Ver todas las instituciones</option>
-                            <?php foreach ($institucionesFiltro as $i): ?>
-                                <option value="<?= (int) $i['id'] ?>" <?= Auth::filtroInstitucionId() === (int) $i['id'] ? 'selected' : '' ?>><?= htmlspecialchars($i['nombre'], ENT_QUOTES) ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </form>
-                <?php endif; ?>
-            </div>
-        <?php endif; ?>
-        <div class="sidebar-movil d-sm-none">
-            <button type="button" class="btn btn-sm btn-outline-secondary w-100" data-tema-toggle>
-                <i class="bi bi-moon-stars me-1" aria-hidden="true"></i><span data-tema-texto>Cambiar tema</span>
-            </button>
-        </div>
-        <?php
-        $mostrarVerificacion = Auth::esSuperusuario() || Auth::tienePermiso('bajas.crear') || Auth::tienePermiso('bajas.aprobar') || Auth::tienePermiso('verificaciones.gestionar');
-        $mostrarReportes = Auth::esSuperusuario() || Auth::tienePermiso('reportes.generar') || Auth::tienePermiso('cartera.gestionar') || Auth::tienePermiso('formatos_reintegro.gestionar') || Auth::tienePermiso('formatos_plaqueteo.gestionar') || Auth::tienePermiso('facturas_admin.gestionar');
-        $mostrarAdmin = Auth::esSuperusuario() || Auth::tienePermiso('cargas.masivas') || Auth::tienePermiso('usuarios.ver') || Auth::tienePermiso('instituciones.ver') || Auth::tienePermiso('categorias.gestionar');
-        ?>
-        <nav class="nav flex-column">
-            <a class="nav-link<?= $esActiva('/dashboard') ?>" href="<?= Url::to('/dashboard') ?>"><i class="bi bi-grid-1x2 me-2"></i>Panel principal</a>
-            <a class="nav-link<?= $esActiva('/buscar') ?>" href="<?= Url::to('/buscar') ?>"><i class="bi bi-search me-2"></i>Buscar</a>
-            <a class="nav-link<?= $esActiva('/manual') ?>" href="<?= Url::to('/manual') ?>"><i class="bi bi-question-circle me-2"></i>Guía rápida</a>
-
-            <details class="nav-grupo"<?= $grupoAbierto(['/bienes', '/espacios', '/asignaciones', '/reintegros', '/escanear']) ?>>
-                <summary class="nav-grupo-titulo">Operación diaria<i class="bi bi-chevron-right nav-grupo-chevron"></i></summary>
-
-                <?php if (Auth::esSuperusuario() || Auth::tienePermiso('bienes.ver')): ?>
-                    <a class="nav-link<?= $esActiva('/bienes') ?: (in_array($rutaActual, ['/asignaciones', '/reintegros'], true) ? $marcaActiva : '') ?>" href="<?= Url::to('/bienes') ?>"><i class="bi bi-box-seam me-2"></i>Bienes</a>
-                <?php endif; ?>
-
-                <?php if (Auth::esSuperusuario() || Auth::tienePermiso('espacios.ver')): ?>
-                    <a class="nav-link<?= $esActiva('/espacios') ?>" href="<?= Url::to('/espacios') ?>"><i class="bi bi-door-open me-2"></i>Espacios</a>
-                <?php endif; ?>
-
-                <?php if (Auth::esSuperusuario() || Auth::tienePermiso('asignaciones.crear')): ?>
-                    <a class="nav-link<?= $esActiva('/reintegros/lotes') ?>" href="<?= Url::to('/reintegros/lotes') ?>"><i class="bi bi-file-earmark-spreadsheet me-2"></i>Lotes de reintegro</a>
-                <?php endif; ?>
-
-                <?php if (Auth::esSuperusuario() || Auth::tienePermiso('asignaciones.crear') || Auth::tienePermiso('reintegros.solicitar')): ?>
-                    <a class="nav-link<?= $esActiva('/reintegros/solicitudes') ?>" href="<?= Url::to('/reintegros/solicitudes') ?>"><i class="bi bi-inbox me-2"></i>Solicitudes de reintegro</a>
-                <?php endif; ?>
-
-                <a class="nav-link<?= $esActiva('/escanear') ?>" href="<?= Url::to('/escanear') ?>"><i class="bi bi-qr-code-scan me-2"></i>Escanear QR</a>
-            </details>
-
-            <?php if ($mostrarVerificacion): ?>
-                <details class="nav-grupo"<?= $grupoAbierto(['/bajas', '/verificaciones']) ?>>
-                    <summary class="nav-grupo-titulo">Verificación y control<i class="bi bi-chevron-right nav-grupo-chevron"></i></summary>
-
-                    <?php if (Auth::esSuperusuario() || Auth::tienePermiso('bajas.crear') || Auth::tienePermiso('bajas.aprobar')): ?>
-                        <a class="nav-link<?= $esActiva('/bajas') ?>" href="<?= Url::to('/bajas') ?>"><i class="bi bi-exclamation-triangle me-2"></i>Bajas</a>
-                    <?php endif; ?>
-
-                    <?php if (Auth::esSuperusuario() || Auth::tienePermiso('verificaciones.gestionar')): ?>
-                        <a class="nav-link<?= $esActiva('/verificaciones') ?>" href="<?= Url::to('/verificaciones') ?>"><i class="bi bi-clipboard2-check me-2"></i>Verificación física</a>
-                    <?php endif; ?>
-                </details>
-            <?php endif; ?>
-
-            <?php if ($mostrarReportes): ?>
-                <details class="nav-grupo"<?= $grupoAbierto(['/reportes', '/cartera', '/formatos-reintegro', '/formatos-plaqueteo', '/facturas']) ?>>
-                    <summary class="nav-grupo-titulo">Reportes y evidencia<i class="bi bi-chevron-right nav-grupo-chevron"></i></summary>
-
-                    <?php if (Auth::esSuperusuario() || Auth::tienePermiso('reportes.generar')): ?>
-                        <a class="nav-link<?= $esActiva('/reportes') ?>" href="<?= Url::to('/reportes') ?>"><i class="bi bi-file-earmark-spreadsheet me-2"></i>Reportes</a>
-                    <?php endif; ?>
-
-                    <?php if (Auth::esSuperusuario() || Auth::tienePermiso('cartera.gestionar')): ?>
-                        <a class="nav-link<?= $esActiva('/cartera') ?>" href="<?= Url::to('/cartera/enviar') ?>"><i class="bi bi-archive me-2"></i>Cartera (histórico)</a>
-                    <?php endif; ?>
-
-                    <?php if (Auth::esSuperusuario() || Auth::tienePermiso('formatos_reintegro.gestionar')): ?>
-                        <a class="nav-link<?= $esActiva('/formatos-reintegro') ?>" href="<?= Url::to('/formatos-reintegro') ?>"><i class="bi bi-file-earmark-check me-2"></i>Formatos de reintegro</a>
-                    <?php endif; ?>
-
-                    <?php if (Auth::esSuperusuario() || Auth::tienePermiso('formatos_plaqueteo.gestionar')): ?>
-                        <a class="nav-link<?= $esActiva('/formatos-plaqueteo') ?>" href="<?= Url::to('/formatos-plaqueteo') ?>"><i class="bi bi-tag me-2"></i>Formatos de plaqueteo</a>
-                    <?php endif; ?>
-
-                    <?php if (Auth::esSuperusuario() || Auth::tienePermiso('facturas_admin.gestionar')): ?>
-                        <a class="nav-link<?= $esActiva('/facturas') ?>" href="<?= Url::to('/facturas') ?>"><i class="bi bi-receipt me-2"></i>Facturas</a>
-                    <?php endif; ?>
-                </details>
-            <?php endif; ?>
-
-            <?php if ($mostrarAdmin): ?>
-                <details class="nav-grupo"<?= $grupoAbierto(['/cargas-masivas', '/usuarios', '/instituciones', '/cargos', '/categorias', '/papelera', '/auditoria']) ?>>
-                    <summary class="nav-grupo-titulo">Administración<i class="bi bi-chevron-right nav-grupo-chevron"></i></summary>
-
-                    <?php if (Auth::esSuperusuario() || Auth::tienePermiso('cargas.masivas')): ?>
-                        <a class="nav-link<?= $esActiva('/cargas-masivas') ?>" href="<?= Url::to('/cargas-masivas') ?>"><i class="bi bi-upload me-2"></i>Carga masiva</a>
-                    <?php endif; ?>
-
-                    <?php if (Auth::esSuperusuario() || Auth::tienePermiso('usuarios.ver')): ?>
-                        <a class="nav-link<?= $esActiva('/usuarios') ?>" href="<?= Url::to('/usuarios') ?>"><i class="bi bi-people me-2"></i>Usuarios</a>
-                    <?php endif; ?>
-
-                    <?php if (Auth::esSuperusuario() || Auth::tienePermiso('instituciones.ver')): ?>
-                        <a class="nav-link<?= $esActiva('/instituciones') ?>" href="<?= Url::to('/instituciones') ?>"><i class="bi bi-building me-2"></i>Instituciones</a>
-                    <?php endif; ?>
-
-                    <?php if (Auth::esSuperusuario()): ?>
-                        <a class="nav-link<?= $esActiva('/cargos') ?>" href="<?= Url::to('/cargos') ?>"><i class="bi bi-person-badge me-2"></i>Cargos</a>
-                    <?php endif; ?>
-
-                    <?php if (Auth::esSuperusuario() || Auth::tienePermiso('categorias.gestionar')): ?>
-                        <a class="nav-link<?= $esActiva('/categorias') ?>" href="<?= Url::to('/categorias') ?>"><i class="bi bi-tags me-2"></i>Categorías</a>
-                    <?php endif; ?>
-
-                    <?php if (Auth::esSuperusuario()): ?>
-                        <a class="nav-link<?= $esActiva('/papelera') ?>" href="<?= Url::to('/papelera') ?>"><i class="bi bi-trash3 me-2"></i>Papelera de reciclaje</a>
-                        <a class="nav-link<?= $esActiva('/auditoria') ?>" href="<?= Url::to('/auditoria') ?>"><i class="bi bi-journal-text me-2"></i>Auditoría</a>
-                    <?php endif; ?>
-                </details>
-            <?php endif; ?>
-        </nav>
-    </aside>
+    <?php require __DIR__ . '/menu_lateral.php'; ?>
 
     <main id="contenidoPrincipal" class="flex-fill p-4">
         <?php if ($rutaActual !== '/dashboard'): ?>
             <nav aria-label="Ruta de navegación" class="mb-3">
                 <ol class="breadcrumb small mb-0">
                     <li class="breadcrumb-item"><a href="<?= Url::to('/dashboard') ?>">Panel principal</a></li>
-                    <?php if ($grupoActual !== null): ?>
-                        <li class="breadcrumb-item text-muted"><?= htmlspecialchars($grupoActual, ENT_QUOTES) ?></li>
+                    <?php if ($tituloSeccionActiva !== null): ?>
+                        <li class="breadcrumb-item text-muted"><?= htmlspecialchars($tituloSeccionActiva, ENT_QUOTES) ?></li>
                     <?php endif; ?>
                     <li class="breadcrumb-item active" aria-current="page"><?= htmlspecialchars($title ?? '', ENT_QUOTES) ?></li>
                 </ol>
@@ -342,40 +200,14 @@ foreach ($gruposBreadcrumb as $g) {
 <script src="<?= Url::asset('/assets/js/alertas.js') ?>"></script>
 <script src="<?= Url::asset('/assets/js/mostrar-contrasena.js') ?>"></script>
 <script src="<?= Url::asset('/assets/js/camara.js') ?>"></script>
+<?php require __DIR__ . '/menu_inferior.php'; ?>
+<script src="<?= Url::asset('/assets/js/menu.js') ?>"></script>
 <script src="<?= Url::asset('/assets/js/lightbox.js') ?>"></script>
 <script src="<?= Url::asset('/assets/js/cargando.js') ?>"></script>
 <script src="<?= Url::asset('/assets/js/buscador-vivo.js') ?>"></script>
 <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js" integrity="sha384-cnROoUgVILyibe3J0zhzWoJ9p2WmdnK7j/BOTSWqVDbC1pVw2d+i6Q/1ESKJKCYf" crossorigin="anonymous"></script>
 <script src="<?= Url::asset('/assets/js/selector-buscable.js') ?>"></script>
 <script>
-(function () {
-    var boton = document.getElementById('btnMenu');
-    var sidebar = document.getElementById('sidebar');
-    var overlay = document.getElementById('sidebarOverlay');
-    if (!boton || !sidebar || !overlay) { return; }
-
-    function abrir() {
-        sidebar.classList.add('abierto');
-        overlay.classList.add('visible');
-    }
-
-    function cerrar() {
-        sidebar.classList.remove('abierto');
-        overlay.classList.remove('visible');
-    }
-
-    boton.addEventListener('click', function () {
-        sidebar.classList.contains('abierto') ? cerrar() : abrir();
-    });
-    overlay.addEventListener('click', cerrar);
-    sidebar.querySelectorAll('a').forEach(function (enlace) {
-        enlace.addEventListener('click', cerrar);
-    });
-    document.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape') { cerrar(); }
-    });
-})();
-
 if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register(<?= json_encode(Url::to('/sw.js')) ?>).catch(function () {});
 }

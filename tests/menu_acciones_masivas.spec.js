@@ -21,7 +21,7 @@ test('asignar y reintegrar en lote se abren desde Acciones masivas, no desde el 
     await expect(page).toHaveURL(/\/reintegros$/);
 
     // En esa pantalla el menú lateral sigue indicando que se está dentro de Bienes.
-    await expect(menuLateral.locator('a.nav-link[href$="/bienes"]')).toHaveAttribute('aria-current', 'page');
+    await expect(menuLateral.locator('a.menu-opcion[href$="/bienes"]')).toHaveAttribute('aria-current', 'page');
 });
 
 test('el docente no ve asignar ni reintegrar en Acciones masivas', async ({ browser }) => {
