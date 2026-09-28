@@ -66,6 +66,7 @@ use App\Controllers\ManualController;
 use App\Controllers\MovimientoController;
 use App\Controllers\PapeleraController;
 use App\Controllers\PasswordController;
+use App\Controllers\PoliticaController;
 use App\Controllers\QrController;
 use App\Controllers\QrMasivoController;
 use App\Controllers\ReintegroController;
@@ -111,6 +112,12 @@ $router->post('/2fa/dispositivos/{id}/revocar', [DosFactoresController::class, '
 // Mi cuenta: seguridad de la propia cuenta (todos los roles).
 $router->get('/mi-cuenta', [CuentaController::class, 'index'], [AuthMiddleware::class]);
 $router->post('/mi-cuenta/contrasena', [CuentaController::class, 'cambiarContrasena'], [AuthMiddleware::class]);
+
+// Política de datos: la página es pública; la aceptación es obligatoria en el primer ingreso
+// (AuthMiddleware redirige a /politica/aceptar mientras esté pendiente).
+$router->get('/politica-de-datos', [PoliticaController::class, 'mostrar']);
+$router->get('/politica/aceptar', [PoliticaController::class, 'formularioAceptar'], [AuthMiddleware::class]);
+$router->post('/politica/aceptar', [PoliticaController::class, 'aceptar'], [AuthMiddleware::class]);
 
 $router->get('/olvide-contrasena', [PasswordController::class, 'formularioOlvideContrasena']);
 $router->post('/olvide-contrasena', [PasswordController::class, 'enviarEnlaceReset']);

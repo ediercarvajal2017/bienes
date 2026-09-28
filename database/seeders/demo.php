@@ -593,6 +593,11 @@ foreach ([$rector, $secretario, $docente, $rector, $secretario, $secretario, $do
     $auditar($u, $losAndes, 'login_ok', 'usuario', $u, $haceDias($i, mt_rand(7, 11)));
 }
 
+// Los usuarios sembrados ya aceptaron la política de datos (si no, cada ingreso pasaría
+// primero por /politica/aceptar). tests/politica_datos.spec.js prueba la aceptación.
+$pdo->prepare('UPDATE usuarios SET politica_version = ?, politica_aceptada_en = NOW()')
+    ->execute([\App\Helpers\PoliticaDatos::VERSION]);
+
 $total = (int) $valor('SELECT COUNT(*) FROM bienes');
 fwrite(STDERR, "Datos de demostración cargados: {$total} bienes, " . count($espacios) . " espacios, 4 instituciones.\n");
 echo json_encode([

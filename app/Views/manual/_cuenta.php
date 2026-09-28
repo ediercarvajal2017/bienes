@@ -23,5 +23,8 @@
         <p class="mb-0 text-muted"><strong>¿Perdiste el teléfono y los códigos?</strong> Pide a tu rector (o al
             superusuario) que restablezca tu verificación en dos pasos desde Usuarios; luego entras con tu contraseña
             y la configuras de nuevo.</p>
+        <p class="mb-0 mt-2"><strong>Política de datos:</strong> la primera vez que ingresas, MIA te pide leer y aceptar
+            la política de tratamiento de datos personales. En Mi cuenta ves cuándo la aceptaste, y siempre puedes
+            leerla desde el enlace del pie de página.</p>
     </div>
 </details>

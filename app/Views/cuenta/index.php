@@ -142,4 +142,20 @@ $fecha = static fn (?string $valor): string => $valor ? date('d/m/Y', strtotime(
             </form>
         </div>
     </section>
+
+    <section class="card mb-3" aria-labelledby="tituloPrivacidad">
+        <div class="card-body">
+            <h2 class="h6 mb-2" id="tituloPrivacidad"><i class="bi bi-file-earmark-lock me-1" aria-hidden="true"></i>Tus datos y privacidad</h2>
+            <p class="small text-muted mb-2">
+                <?php if (!empty($usuario['politica_aceptada_en'])): ?>
+                    <?php $aceptadaEn = strtotime((string) $usuario['politica_aceptada_en']) ?: time(); ?>
+                    Aceptaste la política de tratamiento de datos el <?= date('d/m/Y', $aceptadaEn) ?> a las <?= date('g:i a', $aceptadaEn) ?>.
+                <?php else: ?>
+                    Aún no hay registro de que hayas aceptado la política de tratamiento de datos.
+                <?php endif; ?>
+                Para corregir tus datos, pídeselo al administrador de MIA de tu institución.
+            </p>
+            <a href="<?= Url::to('/politica-de-datos') ?>" class="btn btn-outline-secondary btn-sm">Ver la política de datos</a>
+        </div>
+    </section>
 </div>

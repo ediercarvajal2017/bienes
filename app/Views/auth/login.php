@@ -57,6 +57,9 @@
             <a href="<?= Url::to('/olvide-contrasena') ?>" class="small">¿Olvidaste tu contraseña?</a>
             <a href="<?= Url::to('/olvide-correo') ?>" class="small">¿Olvidaste tu correo?</a>
         </div>
+        <p class="text-center mt-3 mb-0">
+            <a href="<?= Url::to('/politica-de-datos') ?>" class="small text-muted">Política de tratamiento de datos</a>
+        </p>
     </div>
 </div>
 

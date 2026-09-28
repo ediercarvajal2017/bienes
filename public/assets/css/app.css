@@ -314,6 +314,62 @@ select.selector-buscable.is-invalid + .ts-wrapper .ts-control {
   margin-bottom: 1.75rem;
 }
 
+/* Política de datos (páginas legal/politica.php y legal/aceptar.php): tarjeta ancha y
+   texto largo legible; en la aceptación, el texto va en una caja con su propio scroll. */
+.auth-shell-legal {
+  align-items: flex-start;
+  padding: 2rem 16px;
+}
+
+.auth-card-ancha {
+  max-width: 760px;
+}
+
+.auth-logo-mini {
+  height: 44px;
+  width: auto;
+  border-radius: 6px;
+}
+
+.auth-card-ancha h1 {
+  padding-right: 2.5rem; /* que el título no quede debajo del botón de tema */
+  text-wrap: balance;
+}
+
+.texto-legal {
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.texto-legal h2 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin: 1.25rem 0 0.5rem;
+}
+
+.texto-legal ul {
+  padding-left: 1.25rem;
+}
+
+.texto-legal li + li {
+  margin-top: 0.25rem;
+}
+
+.caja-texto-legal {
+  max-height: 45vh;
+  overflow-y: auto;
+  padding: 0.25rem 1rem 0.5rem;
+  border: 1px solid var(--bs-border-color);
+  border-radius: 8px;
+  background: var(--bs-tertiary-bg);
+}
+
+@media (max-width: 575.98px) {
+  .auth-card-ancha {
+    padding: 1.5rem 1.1rem;
+  }
+}
+
 .mono {
   font-family: ui-monospace, "Cascadia Code", "SF Mono", Consolas, monospace;
   font-size: 0.85em;

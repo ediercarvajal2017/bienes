@@ -162,6 +162,11 @@ $bienesB = [
     'silla' => $bien($instB, 'PB-0001', 'Silla de otra institución', 'activo', $aulaB),
 ];
 
+// Los usuarios sembrados ya aceptaron la política de datos (si no, cada ingreso pasaría
+// primero por /politica/aceptar). tests/politica_datos.spec.js prueba la aceptación.
+$pdo->prepare('UPDATE usuarios SET politica_version = ?, politica_aceptada_en = NOW()')
+    ->execute([\App\Helpers\PoliticaDatos::VERSION]);
+
 echo json_encode([
     'base' => $base,
     'instituciones' => ['A' => $instA, 'A2' => $instA2, 'B' => $instB],

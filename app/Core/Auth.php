@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Core;
 
 use App\Helpers\LimiteIntentos;
+use App\Helpers\PoliticaDatos;
 use App\Models\Auditoria;
 use App\Models\Institucion;
 use App\Models\Usuario;
@@ -135,6 +136,8 @@ final class Auth
         Session::put('institucion_id', (int) $usuario['institucion_id']);
         Session::put('institucion_nombre', $usuario['institucion_nombre']);
         Session::put('nombre_completo', trim($usuario['nombres'] . ' ' . $usuario['apellidos']));
+        // Sin la política de datos aceptada, AuthMiddleware solo deja ver la pantalla de aceptación.
+        Session::put('politica_pendiente', PoliticaDatos::pendiente($usuario));
 
         if ($recordar) {
             Session::extender(Session::DIAS_RECORDARME);
@@ -222,6 +225,8 @@ final class Auth
             }
 
             Session::put('validado_en', $ahora);
+            // Las sesiones abiertas antes de publicar una versión nueva de la política también la piden.
+            Session::put('politica_pendiente', PoliticaDatos::pendiente($estado));
         }
 
         Session::put('ultimo_acceso', $ahora);
