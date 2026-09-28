@@ -205,6 +205,9 @@
                 const lista = new DataTransfer();
                 lista.items.add(archivo);
                 input.files = lista.files;
+                // Como si se hubiera elegido el archivo: la página que escucha "change"
+                // (p. ej. Buscar por foto) reacciona igual a una foto tomada en vivo.
+                input.dispatchEvent(new Event('change', { bubbles: true }));
 
                 preview.src = URL.createObjectURL(archivo);
                 preview.classList.remove('d-none');

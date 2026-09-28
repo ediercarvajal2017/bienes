@@ -2,6 +2,7 @@
 
 use App\Core\Csrf;
 use App\Core\Url;
+use App\Core\View;
 
 ?>
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
@@ -19,8 +20,15 @@ use App\Core\Url;
 <?php else: ?>
 
     <div style="max-width: 420px;">
-        <label for="inputFotoBusqueda" class="form-label small">Foto a buscar</label>
-        <input type="file" id="inputFotoBusqueda" accept="image/*" class="form-control form-control-sm">
+        <?php View::render('partials/campo_foto', [
+            // Mismo componente de los formularios: elegir una foto o "Tomar foto" con la cámara
+            // del equipo. Sin capture, para que en el celular se pueda elegir cámara o galería.
+            'nombreCampo' => 'foto_busqueda',
+            'etiqueta' => 'Foto a buscar',
+            'idCampo' => 'inputFotoBusqueda',
+            'accept' => 'image/*',
+            'capturaNativa' => false,
+        ]); ?>
         <p id="notaIndexado" class="small text-muted mt-2 mb-0"></p>
         <p id="estadoBusqueda" class="small mt-2 mb-0"></p>
     </div>

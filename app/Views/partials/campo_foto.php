@@ -15,12 +15,17 @@
  *   se omite el atributo capture, porque el navegador no ofrece la cámara de forma
  *   confiable cuando el accept mezcla imágenes con otros tipos de archivo. El botón
  *   "Tomar foto" (JS) sigue funcionando igual en ambos casos.
+ * - $idCampo: string, opcional: id fijo del <input> (si la página lo usa desde su propio JS).
+ * - $capturaNativa: bool, opcional (default true). Con false se omite capture: en el
+ *   celular el campo ofrece cámara Y galería (con capture solo abre la cámara).
  */
 
 $requerido = !empty($required);
 $accept = $accept ?? 'image/jpeg,image/png';
-$soloImagen = !str_contains($accept, 'pdf');
-$idCampoFoto = 'campoFoto-' . preg_replace('/[^a-z0-9_-]/i', '', (string) $nombreCampo) . '-' . bin2hex(random_bytes(3));
+$soloImagen = !str_contains($accept, 'pdf') && ($capturaNativa ?? true);
+$idCampoFoto = !empty($idCampo)
+    ? preg_replace('/[^a-z0-9_-]/i', '', (string) $idCampo)
+    : 'campoFoto-' . preg_replace('/[^a-z0-9_-]/i', '', (string) $nombreCampo) . '-' . bin2hex(random_bytes(3));
 ?>
 <div class="campo-foto" data-campo-foto>
     <label for="<?= $idCampoFoto ?>" class="form-label small d-block<?= $requerido ? ' requerido' : '' ?>"><?= htmlspecialchars($etiqueta ?? 'Fotografía', ENT_QUOTES) ?></label>
