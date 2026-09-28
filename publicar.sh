@@ -15,20 +15,22 @@
 #     ./publicar.sh "Qué cambia en esta versión"
 #     ./publicar.sh "…" --completo           (incluye las pruebas de navegador, ~6 min)
 #     ./publicar.sh "…" --con-migraciones    (aplica las migraciones mostradas antes)
+#     ./publicar.sh "…" --menor              (versión con novedades importantes: 1.1.19 -> 1.2.0)
 # =====================================================================================
 set -euo pipefail
 cd "$(dirname "$0")"
 
 MENSAJE="${1:-}"
-COMPLETO=0; MIGRAR=0
+COMPLETO=0; MIGRAR=0; MENOR=0
 for arg in "${@:2}"; do
     case "$arg" in
         --completo) COMPLETO=1 ;;
         --con-migraciones) MIGRAR=1 ;;
+        --menor) MENOR=1 ;;
         *) echo "Opción desconocida: $arg"; exit 1 ;;
     esac
 done
-[ -n "$MENSAJE" ] || { echo "Uso: ./publicar.sh \"Qué cambia\" [--completo] [--con-migraciones]"; exit 1; }
+[ -n "$MENSAJE" ] || { echo "Uso: ./publicar.sh \"Qué cambia\" [--completo] [--con-migraciones] [--menor]"; exit 1; }
 
 PHP="${PHP_BIN:-/c/xampp/php/php.exe}"
 SERVIDOR="sigebi-hostinger"
@@ -82,7 +84,12 @@ fi
 # --- 3. Versión y etiqueta ---
 paso "Versión"
 ACTUAL=$(grep -oE "'version' => '[0-9]+\.[0-9]+\.[0-9]+'" config/app.php | grep -oE "[0-9]+\.[0-9]+\.[0-9]+")
-NUEVA="${ACTUAL%.*}.$(( ${ACTUAL##*.} + 1 ))"
+if [ "$MENOR" = 1 ]; then
+    IFS=. read -r MAYOR_V MENOR_V _ <<< "$ACTUAL"
+    NUEVA="$MAYOR_V.$(( MENOR_V + 1 )).0"
+else
+    NUEVA="${ACTUAL%.*}.$(( ${ACTUAL##*.} + 1 ))"
+fi
 sed -i "s/'version' => '$ACTUAL'/'version' => '$NUEVA'/" config/app.php
 git -c core.safecrlf=false add config/app.php 2>/dev/null
 git commit -q -m "Versión $NUEVA: $MENSAJE" -m "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
