@@ -86,7 +86,7 @@ $v = static fn (string $campo, mixed $porDefecto = '') => $viejo[$campo] ?? $ins
     <div class="col-12">
         <label for="campo-logo" class="form-label small d-block">Logo institucional (JPG o PNG)</label>
         <?php if (!empty($institucion['logo_path'])): ?>
-            <img src="<?= Url::to('/archivos/' . $institucion['logo_path']) ?>" alt="Logo actual" class="mb-2 d-block" style="height:56px;">
+            <img src="<?= \App\Helpers\EnlaceArchivo::url($institucion['logo_path']) ?>" alt="Logo actual" class="mb-2 d-block" style="height:56px;">
         <?php endif; ?>
         <?php if ($puedeEditar): ?>
             <input id="campo-logo" type="file" name="logo" accept="image/jpeg,image/png" class="form-control">

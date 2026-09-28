@@ -61,7 +61,7 @@ $viejo ??= [];
                     </div>
                     <div class="col-md-6">
                         <label for="campo-fecha" class="form-label small">Fecha del reintegro</label>
-                        <input id="campo-fecha" type="date" name="fecha" class="form-control form-control-sm" value="<?= htmlspecialchars($viejo['fecha'] ?? date('Y-m-d'), ENT_QUOTES) ?>" required>
+                        <input id="campo-fecha" type="date" min="<?= \App\Helpers\FechaMovimiento::MINIMA ?>" max="<?= \App\Helpers\FechaMovimiento::hoy() ?>" name="fecha" class="form-control form-control-sm" value="<?= htmlspecialchars($viejo['fecha'] ?? date('Y-m-d'), ENT_QUOTES) ?>" required>
                     </div>
                 </div>
 
@@ -91,13 +91,13 @@ $viejo ??= [];
         </h2>
         <div class="mb-2 d-flex flex-wrap gap-3 align-items-center">
             <div style="max-width: 420px; flex: 1 1 260px;">
-                <input type="search" id="buscador" class="form-control form-control-sm"
+                <input type="search" id="buscador" data-buscar="q" class="form-control form-control-sm"
                        placeholder="Buscar por código, descripción, responsable, ubicación o valor..."
                        value="<?= htmlspecialchars($q, ENT_QUOTES) ?>">
             </div>
             <?php if (!empty($categorias)): ?>
                 <div style="max-width: 260px;">
-                    <select id="filtroCategoria" class="form-select form-select-sm selector-buscable">
+                    <select id="filtroCategoria" class="form-select form-select-sm selector-buscable" aria-label="Filtrar por categoría">
                         <option value="">Todas las categorías</option>
                         <?php foreach ($categorias as $c): ?>
                             <option value="<?= $c['id'] ?>" <?= $categoriaId === (int) $c['id'] ? 'selected' : '' ?>>
@@ -156,11 +156,11 @@ $viejo ??= [];
                 <tbody>
                 <?php foreach ($bienes as $b): ?>
                     <tr class="fila-bien" style="cursor:pointer;">
-                        <td data-label="Seleccionar"><input type="checkbox" name="bienes[]" value="<?= $b['id'] ?>" class="form-check-input casilla-bien"></td>
+                        <td data-label="Seleccionar"><input type="checkbox" name="bienes[]" value="<?= $b['id'] ?>" class="form-check-input casilla-bien" aria-label="Seleccionar <?= htmlspecialchars((string) $b['codigo_identificacion'], ENT_QUOTES) ?>"></td>
                         <td data-label="Foto">
                             <?php if (!empty($b['foto_path'])): ?>
-                                <img src="<?= Url::to('/archivos/' . $b['foto_path']) ?>?w=96" loading="lazy"
-                                     data-lightbox-src="<?= Url::to('/archivos/' . $b['foto_path']) ?>"
+                                <img src="<?= \App\Helpers\EnlaceArchivo::url($b['foto_path'], 96) ?>" loading="lazy"
+                                     data-lightbox-src="<?= \App\Helpers\EnlaceArchivo::url($b['foto_path']) ?>"
                                      alt="Foto de <?= htmlspecialchars($b['descripcion'], ENT_QUOTES) ?>"
                                      class="miniatura-36 miniatura-ampliable"
                                      title="Ver foto en grande" loading="lazy">
@@ -446,23 +446,6 @@ $viejo ??= [];
             botonDetenerEscaneo.addEventListener('click', detenerEscaneo);
         }
 
-        // --- Búsqueda con reload debounceado ---
-        const buscador = document.getElementById('buscador');
-        let temporizador = null;
-        buscador.addEventListener('input', function () {
-            clearTimeout(temporizador);
-            temporizador = setTimeout(function () {
-                const url = new URL(window.location.href);
-                const valor = buscador.value.trim();
-                if (valor !== '') {
-                    url.searchParams.set('q', valor);
-                } else {
-                    url.searchParams.delete('q');
-                }
-                url.searchParams.set('pagina', '1');
-                window.location = url.toString();
-            }, 600);
-        });
 
         const filtroCategoria = document.getElementById('filtroCategoria');
         if (filtroCategoria) {

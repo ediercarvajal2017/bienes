@@ -59,7 +59,7 @@ export function totp(secretoBase32, paso = Math.floor(Date.now() / 30000)) {
     return String((h.readUInt32BE(o) & 0x7fffffff) % 1000000).padStart(6, '0');
 }
 
-/** Token CSRF de la página actual (formularios de SIGEBI). */
+/** Token CSRF de la página actual (formularios de MIA). */
 export async function csrf(page) {
     return page.locator('input[name="_csrf"]').first().inputValue();
 }

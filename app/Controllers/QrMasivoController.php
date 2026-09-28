@@ -6,11 +6,13 @@ namespace App\Controllers;
 
 use App\Core\Auth;
 use App\Core\Csrf;
+use App\Core\Database;
 use App\Core\Request;
 use App\Core\Session;
 use App\Core\Url;
 use App\Core\View;
 use App\Helpers\Paginador;
+use App\Models\Auditoria;
 use App\Models\Bien;
 use App\Models\Institucion;
 
@@ -55,20 +57,82 @@ final class QrMasivoController
      * Bodega de impresión de QR: bienes que alguien marcó con la casilla "Imprimir QR"
      * en el formulario de crear/editar (ver BienController::procesarSolicitudQr()), sin
      * importar quién los creó ni cuándo — así nadie tiene que buscarlos a mano.
+     *
+     * Dos pestañas: "Por imprimir" y "Impresos, por pegar". Al imprimir, el bien pasa a la
+     * segunda (no se reimprime por descuido); al confirmar que el sticker quedó pegado,
+     * sale de la bodega.
      */
     public function bodega(): void
     {
         $this->verificarAcceso();
 
         $institucionId = $this->institucionSeleccionada();
+        $porImprimir = $institucionId !== null ? Bien::solicitadosQr($institucionId, 'por_imprimir') : [];
+        $porPegar = $institucionId !== null ? Bien::solicitadosQr($institucionId, 'por_pegar') : [];
+
+        $pestana = (string) ($_GET['pestana'] ?? '');
+        if (!in_array($pestana, ['por_imprimir', 'por_pegar'], true)) {
+            $pestana = $porImprimir === [] && $porPegar !== [] ? 'por_pegar' : 'por_imprimir';
+        }
 
         View::layout('partials/layout', 'bienes/qr_masivo_bodega', [
             'title' => 'Bodega de impresión de QR',
             'instituciones' => Auth::esSuperusuario() ? Institucion::listadoParaSelect(true) : [],
             'institucionId' => $institucionId,
-            'bienes' => $institucionId !== null ? Bien::solicitadosQr($institucionId) : [],
+            'porImprimir' => $porImprimir,
+            'porPegar' => $porPegar,
+            'pestana' => $pestana,
+            'mensaje' => Session::pullFlash('ok'),
             'error' => Session::pullFlash('error'),
         ]);
+    }
+
+    /** Confirma desde la bodega que los stickers seleccionados ya quedaron pegados. */
+    public function confirmarPegados(): void
+    {
+        $this->verificarAcceso();
+
+        $request = new Request();
+        $institucionId = $this->institucionSeleccionada();
+        $volver = Url::to('/bienes/qr-masivo/bodega') . '?' . http_build_query(
+            array_filter(['institucion' => Auth::esSuperusuario() ? $institucionId : null, 'pestana' => 'por_pegar'])
+        );
+
+        if (!Csrf::verify((string) $request->input('_csrf'))) {
+            Session::flash('error', 'Tu sesión expiró, intenta de nuevo.');
+            header('Location: ' . $volver);
+            exit;
+        }
+
+        if ($institucionId === null) {
+            Session::flash('error', 'Selecciona una institución.');
+            header('Location: ' . Url::to('/bienes/qr-masivo/bodega'));
+            exit;
+        }
+
+        $ids = array_map('intval', (array) $request->input('bienes', []));
+        $confirmados = Database::transaccion(static function () use ($ids, $institucionId): array {
+            $confirmados = Bien::confirmarPegados($ids, $institucionId, (int) Auth::id());
+            foreach ($confirmados as $b) {
+                Auditoria::registrar(Auth::id(), $institucionId, 'confirmar_qr', 'bien', (int) $b['id'], null, [
+                    'codigo_identificacion' => $b['codigo_identificacion'],
+                ]);
+            }
+
+            return $confirmados;
+        });
+
+        if ($confirmados === []) {
+            Session::flash('error', 'Selecciona al menos un sticker impreso para confirmarlo como pegado.');
+        } else {
+            $n = count($confirmados);
+            Session::flash('ok', $n === 1
+                ? '1 sticker confirmado como pegado: salió de la bodega.'
+                : "{$n} stickers confirmados como pegados: salieron de la bodega.");
+        }
+
+        header('Location: ' . $volver);
+        exit;
     }
 
     public function generar(): void

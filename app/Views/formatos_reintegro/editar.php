@@ -23,7 +23,7 @@ use App\Core\Url;
     </div>
     <div class="col-md-6">
         <label class="form-label small d-block">Archivo actual</label>
-        <a href="<?= Url::to('/archivos/' . $registro['archivo_path']) ?>" class="btn btn-sm btn-outline-secondary" target="_blank">
+        <a href="<?= \App\Helpers\EnlaceArchivo::url($registro['archivo_path']) ?>" class="btn btn-sm btn-outline-secondary" target="_blank">
             <i class="bi bi-download me-1"></i>Descargar
         </a>
     </div>

@@ -13,7 +13,7 @@
     </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <title>Verificación en dos pasos · SIGEBI</title>
+    <title>Verificación en dos pasos · MIA</title>
     <link rel="icon" type="image/png" sizes="32x32" href="<?= Url::asset('/assets/img/favicon-32.png') ?>">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" integrity="sha384-tViUnnbYAV00FLIhhi3v/dWt3Jxw4gZQcNoSCxCIFNJVCx7/D55/wXsrNIRANwdD" crossorigin="anonymous" rel="stylesheet">
@@ -27,12 +27,12 @@
             <i class="bi bi-moon-stars"></i>
         </button>
         <div class="text-center mb-2">
-            <img src="<?= Url::asset('/assets/img/logo.webp') ?>" width="600" height="206" alt="SIGEBI" class="auth-logo">
+            <img src="<?= Url::asset('/assets/img/logo.webp') ?>" width="400" height="400" alt="MIA" class="auth-logo">
         </div>
         <h1 class="h5 text-center mb-1"><i class="bi bi-shield-lock me-1" aria-hidden="true"></i>Verificación en dos pasos</h1>
         <p class="text-muted small text-center mb-3">
             <?= $appDisponible
-                ? 'Abre tu aplicación autenticadora y escribe el código de 6 dígitos de SIGEBI.'
+                ? 'Abre tu aplicación autenticadora y escribe el código de 6 dígitos de MIA.'
                 : 'Escribe uno de tus códigos de recuperación.' ?>
         </p>
 

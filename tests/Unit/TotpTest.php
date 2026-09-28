@@ -57,10 +57,10 @@ final class TotpTest extends TestCase
 
     public function testUriOtpauthParaLosAutenticadores(): void
     {
-        $uri = Totp::uriOtpauth('JBSWY3DPEHPK3PXP', 'rector@colegio.edu.co', 'SIGEBI');
+        $uri = Totp::uriOtpauth('JBSWY3DPEHPK3PXP', 'rector@colegio.edu.co', 'MIA');
 
-        self::assertStringStartsWith('otpauth://totp/SIGEBI%3Arector%40colegio.edu.co?secret=JBSWY3DPEHPK3PXP', $uri);
-        self::assertStringContainsString('issuer=SIGEBI', $uri);
+        self::assertStringStartsWith('otpauth://totp/MIA%3Arector%40colegio.edu.co?secret=JBSWY3DPEHPK3PXP', $uri);
+        self::assertStringContainsString('issuer=MIA', $uri);
         self::assertSame('JBSW Y3DP EHPK 3PXP', Totp::formatearParaMostrar('JBSWY3DPEHPK3PXP'));
     }
 }

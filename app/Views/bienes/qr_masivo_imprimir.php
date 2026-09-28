@@ -1,6 +1,6 @@
 <?php
 
-use App\Core\Url;
+use App\Helpers\CodigoQr;
 
 $esEtiqueta = $formato === 'etiqueta';
 
@@ -10,7 +10,7 @@ $esEtiqueta = $formato === 'etiqueta';
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <title>Códigos QR para imprimir · SIGEBI</title>
+    <title>Códigos QR para imprimir · MIA</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" integrity="sha384-tViUnnbYAV00FLIhhi3v/dWt3Jxw4gZQcNoSCxCIFNJVCx7/D55/wXsrNIRANwdD" crossorigin="anonymous" rel="stylesheet">
     <style>
@@ -137,7 +137,7 @@ $esEtiqueta = $formato === 'etiqueta';
             </p>
         <?php endif; ?>
     </div>
-    <button type="button" class="btn btn-primary" onclick="window.print()">
+    <button type="button" class="btn btn-primary" id="botonImprimir" onclick="window.print()" disabled>
         <i class="bi bi-printer me-1"></i>Imprimir
     </button>
 </div>
@@ -148,7 +148,7 @@ $esEtiqueta = $formato === 'etiqueta';
             <div class="etiqueta-termica">
                 <div class="marca">jlcserviciosintegrales.com</div>
                 <div class="fila-inferior">
-                    <img src="<?= Url::to('/qr/' . $b['qr_token'] . '/imagen') ?>" alt="QR <?= htmlspecialchars($b['codigo_identificacion'], ENT_QUOTES) ?>">
+                    <img src="<?= CodigoQr::svgDataUri($b['qr_token']) ?>" alt="QR <?= htmlspecialchars($b['codigo_identificacion'], ENT_QUOTES) ?>">
                     <div class="texto">
                         <div class="institucion"><?= htmlspecialchars($institucionNombre, ENT_QUOTES) ?></div>
                         <div class="codigo"><?= htmlspecialchars($b['codigo_identificacion'], ENT_QUOTES) ?></div>
@@ -161,12 +161,21 @@ $esEtiqueta = $formato === 'etiqueta';
     <div class="hoja">
         <?php foreach ($bienes as $b): ?>
             <div class="etiqueta">
-                <img src="<?= Url::to('/qr/' . $b['qr_token'] . '/imagen') ?>" alt="QR <?= htmlspecialchars($b['codigo_identificacion'], ENT_QUOTES) ?>">
+                <img src="<?= CodigoQr::svgDataUri($b['qr_token']) ?>" alt="QR <?= htmlspecialchars($b['codigo_identificacion'], ENT_QUOTES) ?>">
                 <div class="codigo"><?= htmlspecialchars($b['codigo_identificacion'], ENT_QUOTES) ?></div>
             </div>
         <?php endforeach; ?>
     </div>
 <?php endif; ?>
 
+<script>
+// El botón se habilita cuando todos los QR ya están dibujados (evita imprimir a medias).
+(function () {
+    const boton = document.getElementById('botonImprimir');
+    Promise.all(Array.from(document.images).map(function (img) {
+        return img.decode ? img.decode().catch(function () {}) : Promise.resolve();
+    })).then(function () { boton.disabled = false; });
+})();
+</script>
 </body>
 </html>

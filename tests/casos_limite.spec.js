@@ -119,7 +119,9 @@ test('buscador global: encuentra un bien por código y agrupa los resultados por
     await page.locator('input[name="codigo_identificacion"]').fill(codigo);
     await page.locator('input[name="descripcion"]').fill('PW-TEST bien para buscador global');
     await page.getByRole('button', { name: 'Registrar bien' }).click();
-    await expect(page).toHaveURL(/\/bienes$/);
+    // Al registrar se abre la ficha del bien nuevo; aquí se sigue desde el listado.
+    await expect(page).toHaveURL(/\/bienes\/\d+\/editar/);
+    await page.goto('bienes');
 
     await Promise.all([
         page.waitForLoadState('networkidle'),

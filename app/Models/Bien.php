@@ -245,36 +245,83 @@ final class Bien
         return $stmt->fetchAll();
     }
 
+    /** Fases de la Bodega de impresión de QR (condición SQL sobre la tabla `b`). */
+    private const FASES_QR = [
+        // Pedido y sin imprimir desde que se pidió (un bien que se vuelve a pedir, por
+        // ejemplo porque el sticker se dañó, regresa aquí aunque tenga una impresión vieja).
+        'por_imprimir' => '(b.qr_impreso_en IS NULL OR b.qr_impreso_en < b.qr_solicitado_en)',
+        // Ya impreso para esta solicitud: falta pegar el sticker y confirmarlo.
+        'por_pegar' => 'b.qr_impreso_en >= b.qr_solicitado_en',
+    ];
+
     /**
      * Bodega de impresión de QR: bienes que alguien marcó con la casilla "Imprimir QR" en
-     * el formulario y todavía no se confirmó su etiquetado (ver confirmarEtiqueta(), que
-     * limpia qr_solicitado_en al confirmar). Sigue apareciendo aquí después de imprimirse
-     * -solo con qr_impreso_en distinto de null, para el ícono atenuado- por si hay que
-     * reimprimir.
+     * el formulario y todavía no se confirmó que el sticker quedó pegado (confirmar limpia
+     * qr_solicitado_en). Con $fase se separan los que faltan por imprimir de los ya
+     * impresos que faltan por pegar (ver FASES_QR).
      */
-    public static function solicitadosQr(int $institucionId): array
+    public static function solicitadosQr(int $institucionId, ?string $fase = null): array
     {
+        $condicion = $fase !== null ? ' AND ' . self::FASES_QR[$fase] : '';
         $stmt = Database::connection()->prepare(
-            'SELECT b.id, b.codigo_identificacion, b.descripcion, b.qr_token, b.qr_impreso_en, b.qr_solicitado_en,
-                    CONCAT(u.nombres, " ", u.apellidos) AS solicitado_por_nombre
+            "SELECT b.id, b.codigo_identificacion, b.descripcion, b.qr_token, b.qr_impreso_en, b.qr_solicitado_en,
+                    CONCAT(u.nombres, ' ', u.apellidos) AS solicitado_por_nombre
              FROM bienes b
              LEFT JOIN usuarios u ON u.id = b.qr_solicitado_por
-             WHERE b.institucion_id = ? AND b.qr_solicitado_en IS NOT NULL
-             ORDER BY b.qr_solicitado_en DESC'
+             WHERE b.institucion_id = ? AND b.qr_solicitado_en IS NOT NULL{$condicion}
+             ORDER BY b.codigo_identificacion"
         );
         $stmt->execute([$institucionId]);
 
         return $stmt->fetchAll();
     }
 
-    public static function contarSolicitadosQr(int $institucionId): int
+    public static function contarSolicitadosQr(int $institucionId, ?string $fase = null): int
     {
+        $condicion = $fase !== null ? ' AND ' . self::FASES_QR[$fase] : '';
         $stmt = Database::connection()->prepare(
-            'SELECT COUNT(*) FROM bienes WHERE institucion_id = ? AND qr_solicitado_en IS NOT NULL'
+            "SELECT COUNT(*) FROM bienes b WHERE b.institucion_id = ? AND b.qr_solicitado_en IS NOT NULL{$condicion}"
         );
         $stmt->execute([$institucionId]);
 
         return (int) $stmt->fetchColumn();
+    }
+
+    /**
+     * Confirma desde la bodega que los stickers ya quedaron pegados: solo sobre bienes de
+     * la institución que estén "impresos, por pegar". Marca la confirmación y retira la
+     * solicitud, con lo que salen de la bodega. Devuelve los bienes confirmados.
+     *
+     * @param int[] $ids
+     * @return array<int, array{id: int|string, codigo_identificacion: string}>
+     */
+    public static function confirmarPegados(array $ids, int $institucionId, int $usuarioId): array
+    {
+        $ids = array_values(array_unique(array_filter(array_map('intval', $ids))));
+        if ($ids === []) {
+            return [];
+        }
+
+        $marcadores = implode(',', array_fill(0, count($ids), '?'));
+        $stmt = Database::connection()->prepare(
+            "SELECT b.id, b.codigo_identificacion FROM bienes b
+             WHERE b.institucion_id = ? AND b.id IN ({$marcadores})
+               AND b.qr_solicitado_en IS NOT NULL AND " . self::FASES_QR['por_pegar']
+        );
+        $stmt->execute([$institucionId, ...$ids]);
+        $bienes = $stmt->fetchAll();
+        if ($bienes === []) {
+            return [];
+        }
+
+        $confirmados = array_map('intval', array_column($bienes, 'id'));
+        $marcadores = implode(',', array_fill(0, count($confirmados), '?'));
+        Database::connection()->prepare(
+            "UPDATE bienes SET qr_confirmado_en = NOW(), qr_confirmado_por = ?, qr_solicitado_en = NULL, qr_solicitado_por = NULL
+             WHERE id IN ({$marcadores})"
+        )->execute([$usuarioId, ...$confirmados]);
+
+        return $bienes;
     }
 
     /**
@@ -431,7 +478,8 @@ final class Bien
     /**
      * Marca la fecha de "impreso" para un lote de bienes recién incluidos en una hoja/
      * etiqueta de /bienes/qr-masivo. Solo escribe sobre los que todavía no tenían fecha
-     * (no pisa la primera impresión real si alguien vuelve a generar el mismo lote).
+     * (no pisa la primera impresión real si alguien vuelve a generar el mismo lote) o cuya
+     * impresión es anterior a una nueva solicitud (así pasan a "impresos, por pegar").
      */
     public static function marcarQrImpreso(array $ids): void
     {
@@ -442,7 +490,8 @@ final class Bien
 
         $marcadores = implode(',', array_fill(0, count($ids), '?'));
         Database::connection()->prepare(
-            "UPDATE bienes SET qr_impreso_en = NOW() WHERE id IN ({$marcadores}) AND qr_impreso_en IS NULL"
+            "UPDATE bienes SET qr_impreso_en = NOW() WHERE id IN ({$marcadores})
+               AND (qr_impreso_en IS NULL OR (qr_solicitado_en IS NOT NULL AND qr_impreso_en < qr_solicitado_en))"
         )->execute($ids);
     }
 

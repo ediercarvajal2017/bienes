@@ -75,6 +75,14 @@ final class Usuario
         return $stmt->fetch() ?: null;
     }
 
+    /** Deja la prueba de que el usuario aceptó la política de datos (versión y fecha). */
+    public static function aceptarPolitica(int $usuarioId, string $version): void
+    {
+        Database::connection()
+            ->prepare('UPDATE usuarios SET politica_version = ?, politica_aceptada_en = NOW() WHERE id = ?')
+            ->execute([$version, $usuarioId]);
+    }
+
     public static function registrarLoginExitoso(int $usuarioId): void
     {
         Database::connection()
@@ -90,7 +98,8 @@ final class Usuario
     public static function estadoSesion(int $usuarioId): ?array
     {
         $stmt = Database::connection()->prepare(
-            'SELECT u.activo, u.eliminado_en, u.sesion_version, r.nombre AS rol_nombre, i.activo AS institucion_activa
+            'SELECT u.activo, u.eliminado_en, u.sesion_version, u.politica_version, r.nombre AS rol_nombre,
+                    i.activo AS institucion_activa
              FROM usuarios u
              JOIN roles r ON r.id = u.rol_id
              JOIN instituciones i ON i.id = u.institucion_id

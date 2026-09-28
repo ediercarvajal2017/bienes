@@ -71,7 +71,7 @@ use App\Core\Url;
         if (destino === null) {
             mensaje.classList.remove('text-success');
             mensaje.classList.add('text-danger');
-            mensaje.textContent = 'Este código QR no es una etiqueta de SIGEBI.';
+            mensaje.textContent = 'Este código QR no es una etiqueta de MIA.';
             escaneando = true;
             iniciar(camaras[indiceCamara] ? camaras[indiceCamara].id : { facingMode: 'environment' });
             return;

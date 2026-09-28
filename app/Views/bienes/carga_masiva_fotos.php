@@ -46,7 +46,7 @@ $listar = static function (array $items, int $limite = 40): string {
         </p>
         <form method="post" action="<?= Url::to('/bienes/carga-masiva-fotos') ?>" enctype="multipart/form-data" class="d-flex gap-2">
             <?= Csrf::field() ?>
-            <input type="file" name="archivo" accept=".zip" class="form-control form-control-sm" required>
+            <input type="file" name="archivo" accept=".zip" aria-label="Archivo .zip con las fotos" class="form-control form-control-sm" required>
             <button type="submit" class="btn btn-sm btn-primary text-nowrap">Subir .zip</button>
         </form>
     </div>

@@ -31,6 +31,10 @@ const EXCEPCIONES = {
     'GET /bienes/qr-masivo': sinDocente,
     'POST /bienes/qr-masivo': sinDocente,
     'GET /bienes/qr-masivo/bodega': sinDocente,
+    'POST /bienes/qr-masivo/bodega/confirmar': sinDocente,
+    // ReporteController::exportacionCompleta: trae datos personales y la auditoría, así que
+    // aunque el secretario genere reportes, la descarga completa es solo del rector.
+    'GET /reportes/exportacion-completa.zip': (p, rol) => rol === 'rector' || rol === 'superusuario',
 };
 
 // Rutas que no se prueban aquí (motivo al lado).

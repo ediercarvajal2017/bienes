@@ -24,7 +24,7 @@ $urlBasePaginacion = Url::to('/cargas-masivas') . ($busqueda !== '' ? '?' . http
         </p>
         <form method="post" action="<?= Url::to('/cargas-masivas') ?>" enctype="multipart/form-data" class="d-flex gap-2">
             <?= Csrf::field() ?>
-            <input type="file" name="archivo" accept=".xlsx" class="form-control form-control-sm" required>
+            <input type="file" name="archivo" accept=".xlsx" aria-label="Archivo Excel de bienes" class="form-control form-control-sm" required>
             <button type="submit" class="btn btn-sm btn-primary text-nowrap">Analizar archivo</button>
         </form>
         <hr>
@@ -38,7 +38,7 @@ $urlBasePaginacion = Url::to('/cargas-masivas') . ($busqueda !== '' ? '?' . http
 <h2 class="h6">Cargas anteriores</h2>
 
 <div class="mb-2" style="max-width: 420px;">
-    <input type="search" id="buscador" class="form-control form-control-sm"
+    <input type="search" id="buscador" data-buscar="q" class="form-control form-control-sm"
            placeholder="Buscar por quién la subió, fecha o estado..."
            value="<?= htmlspecialchars($busqueda, ENT_QUOTES) ?>">
 </div>
@@ -96,22 +96,5 @@ $urlBasePaginacion = Url::to('/cargas-masivas') . ($busqueda !== '' ? '?' . http
 
 <script>
 (function () {
-    const input = document.getElementById('buscador');
-    let temporizador = null;
-
-    input.addEventListener('input', function () {
-        clearTimeout(temporizador);
-        temporizador = setTimeout(function () {
-            const url = new URL(window.location.href);
-            const valor = input.value.trim();
-            if (valor !== '') {
-                url.searchParams.set('q', valor);
-            } else {
-                url.searchParams.delete('q');
-            }
-            url.searchParams.set('pagina', '1');
-            window.location = url.toString();
-        }, 600);
-    });
 })();
 </script>

@@ -78,6 +78,7 @@ use App\Models\Categoria;
                             <form method="post" action="<?= Url::to('/categorias/' . $c['id']) ?>" class="d-flex gap-2">
                                 <?= Csrf::field() ?>
                                 <input type="text" name="nombre" class="form-control form-control-sm"
+                                       aria-label="Nombre de la categoría <?= htmlspecialchars($c['nombre'], ENT_QUOTES) ?>"
                                        value="<?= htmlspecialchars($c['nombre'], ENT_QUOTES) ?>" required>
                                 <button type="submit" class="btn btn-sm btn-outline-primary text-nowrap">Guardar</button>
                             </form>

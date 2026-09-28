@@ -1,6 +1,6 @@
 <?php
 // Genera un .xlsx de carga masiva de usuarios con identidades ÚNICAS por corrida
-// (a diferencia de un fixture estático de valores fijos): SIGEBI no libera el
+// (a diferencia de un fixture estático de valores fijos): MIA no libera el
 // documento/correo de un usuario solo porque quedó en la papelera --
 // Usuario::findByDocumento() no filtra eliminado_en IS NULL-- así que reusar el mismo
 // documento en cada corrida de la prueba lo trata como "ya existe" (modificado, no

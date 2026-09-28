@@ -7,7 +7,7 @@ namespace App\Helpers;
 /**
  * Cifra y descifra los respaldos con AES-256-CBC + PBKDF2 (SHA-256) en el formato
  * estándar de OpenSSL ("Salted__" + sal + datos cifrados). Así un respaldo se puede abrir
- * aun sin SIGEBI (p. ej. si se pierde el servidor), en cualquier equipo con OpenSSL:
+ * aun sin MIA (p. ej. si se pierde el servidor), en cualquier equipo con OpenSSL:
  *
  *   openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -md sha256 \
  *       -in respaldo.sql.gz.enc -out respaldo.sql.gz
@@ -69,7 +69,7 @@ final class CifradoRespaldo
         $cabecera = (string) fread($entrada, 16);
         if (strlen($cabecera) !== 16 || !str_starts_with($cabecera, 'Salted__')) {
             fclose($entrada);
-            throw new \RuntimeException('El archivo no es un respaldo cifrado de SIGEBI (falta la cabecera de OpenSSL).');
+            throw new \RuntimeException('El archivo no es un respaldo cifrado de MIA (falta la cabecera de OpenSSL).');
         }
         [$llave, $iv] = self::derivar($clave, substr($cabecera, 8, 8));
 

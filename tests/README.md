@@ -1,4 +1,4 @@
-# Pruebas automáticas de SIGEBI
+# Pruebas automáticas de MIA
 
 Hay tres niveles, y ninguno toca la base de desarrollo ni la de producción:
 

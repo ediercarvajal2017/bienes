@@ -99,6 +99,10 @@ use App\Core\Url;
         window.__indexadoListo = false;
 
         async function indexarPendientes() {
+            // Fotos ya intentadas en esta visita: si una no carga (archivo perdido o
+            // ilegible) no guarda su huella y el servidor la sigue devolviendo como
+            // pendiente. Sin este registro el ciclo la pedía una y otra vez sin fin.
+            const intentados = new Set();
             try {
                 let m;
                 try {
@@ -116,16 +120,18 @@ use App\Core\Url;
                         return;
                     }
 
-                    if (!datos.pendientes || datos.pendientes.length === 0) {
+                    const nuevos = (datos.pendientes || []).filter(function (b) { return !intentados.has(b.id); });
+                    if (nuevos.length === 0) {
                         notaIndexado.textContent = '';
                         return;
                     }
 
                     notaIndexado.textContent = 'Preparando fotos existentes para la búsqueda… (' + datos.total + ' pendientes)';
 
-                    for (const bien of datos.pendientes) {
+                    for (const bien of nuevos) {
+                        intentados.add(bien.id);
                         try {
-                            const img = await cargarImagen(archivosBase + '/' + bien.foto_path);
+                            const img = await cargarImagen(bien.foto_url || (archivosBase + '/' + bien.foto_path));
                             const vector = calcularVector(m, img);
                             const body = new URLSearchParams({ _csrf: csrfToken, id: String(bien.id), vector: JSON.stringify(vector) });
                             await fetch(urlGuardarVector, { method: 'POST', body });
@@ -149,12 +155,12 @@ use App\Core\Url;
             estado.textContent = lista.length + ' bien(es) parecido(s), de más a menos probable:';
             resultados.innerHTML = lista.map(function (b) {
                 const pct = Math.round(Math.max(0, b.similitud) * 100);
-                const foto = b.foto_path ? archivosBase + '/' + b.foto_path : null;
+                const foto = b.foto_url || (b.foto_path ? archivosBase + '/' + b.foto_path : null);
 
                 return (
                     '<div class="col-6 col-md-4 col-lg-3">' +
                         '<div class="card h-100">' +
-                            (foto ? '<img src="' + foto + '?w=480" class="card-img-top foto-resultado" alt="' + escapeHtml('Foto de ' + (b.descripcion || b.codigo_identificacion)) + '" loading="lazy">' : '') +
+                            (foto ? '<img src="' + escapeHtml(foto + (foto.indexOf('?') === -1 ? '?' : '&') + 'w=480') + '" class="card-img-top foto-resultado" alt="' + escapeHtml('Foto de ' + (b.descripcion || b.codigo_identificacion)) + '" loading="lazy">' : '') +
                             '<div class="card-body p-2">' +
                                 '<div class="small text-muted">' + pct + '% parecido</div>' +
                                 '<div class="fw-semibold small text-truncate">' + escapeHtml(b.codigo_identificacion) + '</div>' +

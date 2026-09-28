@@ -23,6 +23,7 @@ use App\Models\Hallazgo;
 use App\Models\Institucion;
 use App\Models\Movimiento;
 use App\Models\Verificacion;
+use App\Services\CicloVidaBien;
 
 final class BienController
 {
@@ -82,6 +83,12 @@ final class BienController
         $bodegaReintegroTotal = $vistaSinFiltrar ? Bien::contarListado($institucionId, null, false, null, 'reintegrado') : 0;
         $bodegaBajaTotal = $vistaSinFiltrar ? Bien::contarListado($institucionId, null, false, null, 'dado_de_baja') : 0;
 
+        // Se recuerda la consulta del listado (búsqueda, filtros, página) para volver a
+        // ella al guardar un bien o pulsar "Volver" en su ficha.
+        Session::put('bienes_listado', http_build_query(array_intersect_key(
+            $_GET, array_flip(['q', 'categoria', 'estado', 'espacio', 'pagina', 'porPagina'])
+        )));
+
         View::layout('partials/layout', 'bienes/index', [
             'title' => 'Bienes',
             'bienes' => $bienes,
@@ -121,6 +128,8 @@ final class BienController
         View::layout('partials/layout', 'bienes/form', [
             'title' => 'Registrar bien',
             'bien' => null,
+            'espaciosInstitucion' => !Auth::esSuperusuario() && Auth::tienePermiso('asignaciones.crear') && $hallazgo === null
+                ? Espacio::listadoParaSelect((int) Auth::institucionId()) : [],
             'categorias' => Auth::esSuperusuario() ? [] : Categoria::activas((int) Auth::institucionId()),
             'instituciones' => Auth::esSuperusuario() ? Institucion::listadoParaSelect() : [],
             'error' => Session::pullFlash('error'),
@@ -194,8 +203,18 @@ final class BienController
         // ":imprimir_qr" en la consulta -- con PDO::ATTR_EMULATE_PREPARES en false eso
         // revienta con "Invalid parameter number", no se ignora en silencio.
         $imprimirQr = $datos['imprimir_qr'] === '1';
-        $datosParaReintentar = $datos;
+        $espacioId = $hallazgo === null ? (int) $request->input('espacio_id') : 0;
+        $datosParaReintentar = $datos + ['espacio_id' => $espacioId ?: ''];
         unset($datos['imprimir_qr']);
+
+        // Ubicación elegida al registrar (opcional): se asigna en el mismo guardado.
+        if ($espacioId > 0 && (Auth::esSuperusuario() || !Auth::tienePermiso('asignaciones.crear')
+                || !Espacio::perteneceYActivo($espacioId, (int) $datos['institucion_id']))) {
+            Session::flash('error', 'El espacio seleccionado no es válido (debe ser un espacio activo de la institución).');
+            Session::flashOld($datosParaReintentar);
+            header('Location: ' . Url::to($volverA));
+            exit;
+        }
 
         $datos['created_by'] = Auth::id();
 
@@ -203,9 +222,13 @@ final class BienController
             // Crear el bien, auditarlo y (si viene de un hallazgo) asignarlo y cerrar el
             // hallazgo van juntos: antes podía quedar el bien creado con el hallazgo todavía
             // pendiente, o sin su asignación, si algo fallaba a mitad de camino.
-            $id = Database::transaccion(static function () use ($datos, $hallazgo): int {
+            $id = Database::transaccion(static function () use ($datos, $hallazgo, $espacioId): int {
                 $id = Bien::create($datos);
                 Auditoria::registrar(Auth::id(), (int) $datos['institucion_id'], 'crear', 'bien', $id, null, $datos);
+
+                if ($espacioId > 0) {
+                    CicloVidaBien::asignarOTrasladar((array) Bien::find($id), $espacioId, date('Y-m-d'), null);
+                }
 
                 if ($hallazgo !== null) {
                     Asignacion::crear([
@@ -220,6 +243,11 @@ final class BienController
 
                 return $id;
             });
+        } catch (\DomainException $e) {
+            Session::flash('error', $e->getMessage());
+            Session::flashOld($datosParaReintentar);
+            header('Location: ' . Url::to($volverA));
+            exit;
         } catch (\PDOException $e) {
             // La comprobación de Bien::existeCodigo() en validar() ya pasó, pero entre
             // ese chequeo y este INSERT otra petición pudo registrar el mismo código
@@ -242,11 +270,15 @@ final class BienController
 
         if ($hallazgo !== null) {
             Session::flash('ok', 'Bien registrado y asignado a ' . $hallazgo['espacio_nombre'] . '.');
+        } elseif ($espacioId > 0) {
+            Session::flash('ok', 'Bien registrado y asignado a ' . (Espacio::find($espacioId)['nombre'] ?? 'el espacio elegido') . '.');
         } else {
             Session::flash('ok', 'Bien registrado correctamente.');
         }
 
-        header('Location: ' . Url::to('/bienes'));
+        // Se abre la ficha del bien recién creado, para seguir con él (asignarlo, imprimir
+        // su QR...) sin tener que buscarlo en el listado.
+        header('Location: ' . Url::to("/bienes/{$id}/editar"));
         exit;
     }
 
@@ -429,11 +461,15 @@ final class BienController
             }
         }
 
+        $asignacionActiva = Asignacion::activaDe($id);
+
         View::layout('partials/layout', 'bienes/form', [
             'title' => 'Editar bien',
             'bien' => $bien,
+            'acciones' => CicloVidaBien::accionesDisponibles($bien, $asignacionActiva, $familiaSedesDestino),
+            'urlVolver' => self::urlListado($id),
             'categorias' => $this->categoriasParaFormulario($bien),
-            'asignacionActiva' => Asignacion::activaDe($id),
+            'asignacionActiva' => $asignacionActiva,
             'historialMovimientos' => Movimiento::historialDe($id),
             'espaciosInstitucion' => Espacio::listadoParaSelect((int) $bien['institucion_id']),
             'familiaSedesDestino' => $familiaSedesDestino,
@@ -477,21 +513,65 @@ final class BienController
         }
 
         $imprimirQr = $datos['imprimir_qr'] === '1';
-        $datosParaReintentar = $datos;
+        $datosParaReintentar = $datos + $this->camposAccion($request);
         unset($datos['imprimir_qr']);
 
+        // Acción elegida en "¿Qué desea hacer con este bien?" (por defecto, ninguna).
+        $accion = (string) $request->input('accion');
+        $asignacionActiva = Asignacion::activaDe($id);
+        $familia = Auth::rol() === 'rector' ? array_filter(
+            Institucion::familiaDe((int) $bien['institucion_id']),
+            static fn (array $sede): bool => (int) $sede['id'] !== (int) $bien['institucion_id']
+        ) : [];
+        if ($accion !== '' && $accion !== 'ninguna'
+            && !array_key_exists($accion, CicloVidaBien::accionesDisponibles($bien, $asignacionActiva, $familia))) {
+            $this->volverConError($id, 'Esa acción no está disponible para este bien.', $datosParaReintentar);
+        }
+
+        // La foto de un reporte de baja se guarda antes (fuera de la transacción).
+        $fotoBaja = null;
+        if ($accion === 'reportar_baja' && ($archivo = $request->file('accion_foto_baja'))) {
+            try {
+                $fotoBaja = Uploader::storeImage($archivo, 'bajas');
+            } catch (\RuntimeException $e) {
+                $this->volverConError($id, $e->getMessage(), $datosParaReintentar);
+            }
+        }
+
+        // Datos y acción van juntos: si la acción no se puede hacer, tampoco se guardan los
+        // datos (y viceversa), y el formulario vuelve con lo que se había escrito.
         try {
-            Bien::update($id, $datos);
+            $mensajeAccion = Database::transaccion(function () use ($id, $datos, $accion, $request, $fotoBaja, $asignacionActiva): string {
+                Bien::update($id, $datos);
+                $actualizado = (array) Bien::find($id);
+                $fecha = (string) ($request->input('accion_fecha') ?: date('Y-m-d'));
+                $observaciones = trim((string) $request->input('accion_observaciones')) ?: null;
+                $verificacionId = Verificacion::idValidoParaBien($id, (string) $request->input('verificacion_id'));
+
+                return match ($accion) {
+                    'asignar', 'trasladar' => CicloVidaBien::asignarOTrasladar(
+                        $actualizado, (int) $request->input('accion_espacio_id'), $fecha, $observaciones, $verificacionId),
+                    'trasladar_sede' => CicloVidaBien::trasladarSede(
+                        $actualizado, (int) $request->input('accion_sede_id'), (int) $request->input('accion_espacio_sede_id'), $fecha, $observaciones),
+                    'reintegrar' => CicloVidaBien::reintegrar(
+                        $actualizado, $fecha, (string) $request->input('accion_destino'), $observaciones),
+                    'reactivar' => CicloVidaBien::reactivar(
+                        $actualizado, $fecha, (string) $request->input('accion_motivo')),
+                    'reportar_baja' => CicloVidaBien::reportarBaja(
+                        $actualizado, (string) $request->input('accion_estado_reportado'),
+                        $asignacionActiva['espacio_nombre'] ?? null, (string) $request->input('accion_descripcion_baja'),
+                        $fotoBaja, $verificacionId),
+                    default => '',
+                };
+            });
+        } catch (\DomainException $e) {
+            $this->volverConError($id, $e->getMessage(), $datosParaReintentar);
         } catch (\PDOException $e) {
             if (!$this->esViolacionCodigoDuplicado($e)) {
                 throw $e;
             }
-
-            Session::flash('error', 'Ya existe un bien con ese código en la institución.');
             Session::flash('error_campo', 'codigo_identificacion');
-            Session::flashOld($datosParaReintentar);
-            header('Location: ' . Url::to("/bienes/{$id}/editar"));
-            exit;
+            $this->volverConError($id, 'Ya existe un bien con ese código en la institución.', $datosParaReintentar);
         }
 
         Auditoria::registrar(Auth::id(), (int) $datos['institucion_id'], 'editar', 'bien', $id, $bien, $datos);
@@ -499,8 +579,53 @@ final class BienController
         $this->procesarArchivos($id, $request, $datos['codigo_identificacion']);
         $this->procesarSolicitudQr($id, $imprimirQr);
 
-        Session::flash('ok', 'Bien actualizado.');
-        header('Location: ' . Url::to('/bienes'));
+        Session::flash('ok', trim('Bien actualizado. ' . $mensajeAccion));
+
+        // Se queda en la ficha del bien para seguir trabajando con él. Excepciones: al
+        // asignar un bien de un lote de alta masiva se va al listado del lote (para asignar
+        // el resto), y tras trasladarlo a otra sede el bien ya es de esa sede.
+        if ($accion === 'asignar' && !empty($bien['lote'])) {
+            header('Location: ' . Url::to('/bienes?q=' . urlencode($bien['lote'])));
+        } elseif ($accion === 'trasladar_sede') {
+            header('Location: ' . self::urlListado());
+        } else {
+            header('Location: ' . Url::to("/bienes/{$id}/editar"));
+        }
+        exit;
+    }
+
+    /**
+     * Dirección del listado de bienes con la búsqueda, filtros y página que tenía (ver
+     * index()). Con $editado, el listado resalta ese bien.
+     */
+    public static function urlListado(?int $editado = null): string
+    {
+        parse_str((string) Session::get('bienes_listado', ''), $consulta);
+        if ($editado !== null) {
+            $consulta['editado'] = $editado;
+        }
+
+        return Url::to('/bienes' . ($consulta !== [] ? '?' . http_build_query($consulta) : ''));
+    }
+
+    /** Campos de la acción elegida, para devolverlos al formulario si algo falla. */
+    private function camposAccion(Request $request): array
+    {
+        $campos = [];
+        foreach (['accion', 'accion_espacio_id', 'accion_sede_id', 'accion_espacio_sede_id', 'accion_fecha',
+                  'accion_observaciones', 'accion_destino', 'accion_motivo', 'accion_estado_reportado',
+                  'accion_descripcion_baja'] as $campo) {
+            $campos[$campo] = (string) $request->input($campo);
+        }
+
+        return $campos;
+    }
+
+    private function volverConError(int $id, string $mensaje, array $datosParaReintentar): never
+    {
+        Session::flash('error', $mensaje);
+        Session::flashOld($datosParaReintentar);
+        header('Location: ' . Url::to("/bienes/{$id}/editar"));
         exit;
     }
 
@@ -654,6 +779,9 @@ final class BienController
         Csrf::verificarORedirigir($request, $volverA, $datosAConservar);
     }
 
+    /**
+     * @phpstan-assert array $bien
+     */
     private function verificarAcceso(?array $bien): void
     {
         if (!$bien) {

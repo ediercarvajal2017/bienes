@@ -1,5 +1,5 @@
 <p class="text-muted contenedor-manual">
-    Estos son los pasos para las tareas que puedes realizar en SIGEBI como docente. Haz clic en cada tema para
+    Estos son los pasos para las tareas que puedes realizar en MIA como docente. Haz clic en cada tema para
     ver el detalle.
 </p>
 
@@ -20,7 +20,8 @@
         <summary class="fw-semibold">2. Escanear el código QR de un bien</summary>
         <div class="mt-2 small">
             <ol class="mb-0 ps-3">
-                <li>Entra a <strong>Escanear QR</strong> desde el menú lateral o el panel principal.</li>
+                <li>Entra a <strong>Escanear QR</strong> desde el menú lateral, el panel principal o, en el celular, el botón
+                    <strong>Escanear</strong> de la barra inferior.</li>
                 <li>Apunta la cámara al QR pegado en el bien. Si no tienes cámara a mano, puedes buscar el bien
                     escribiendo su código.</li>
                 <li>Se abrirá la ficha del bien con su información y las acciones disponibles para ti.</li>

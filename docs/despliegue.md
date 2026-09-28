@@ -1,4 +1,4 @@
-# Despliegue de SIGEBI a producción (Hostinger)
+# Despliegue de MIA a producción (Hostinger)
 
 **Regla:** se sube SOLO el software. La información de la base de producción es la correcta
 y no se carga, reemplaza ni corrige. Lo único que puede cambiar en la base son las migraciones
@@ -20,6 +20,19 @@ hPanel → Git.
 
 Por eso las actualizaciones llegan a producción **solo** cuando se ejecuta el script de
 despliegue, que trae de GitHub la versión indicada.
+
+## Forma rápida (uso diario): `./publicar.sh`
+
+Se trabaja en la rama **`desarrollo`**. Con los cambios en commits, desde Git Bash:
+
+```bash
+./publicar.sh "Qué cambia en esta versión"            # pruebas rápidas + versión + push + despliegue
+./publicar.sh "…" --completo                          # además, las 301 pruebas de navegador
+./publicar.sh "…" --con-migraciones                   # solo tras autorizar las migraciones que mostró
+```
+
+Hace los pasos de abajo en uno solo. Si la versión trae migraciones se detiene sin tocar nada y
+las lista. La rama `desarrollo` se une a `main` de vez en cuando (Pull Request), solo como registro.
 
 ## Flujo de una actualización
 
@@ -127,6 +140,30 @@ php database/restaurar.php ~/restaurar/<archivo>.sql.gz --base=<base> --reemplaz
 
 Recuperar los archivos: `~/bin/rclone copy sigebi-cifrado: ~/restaurar/uploads` (rclone los
 descifra solo; en otro equipo hay que crear el remoto `sigebi-cifrado` con la misma contraseña).
+
+## Resumen diario de errores
+
+`database/herramientas/resumen_errores.php` revisa los registros del día anterior en
+`storage_sigebi/logs/`:
+
+- errores (páginas 500) y avisos de PHP, agrupados por mensaje;
+- avisos de la política de contenido (CSP, `csp-AAAA-MM-DD.log`);
+- si el respaldo nocturno terminó bien.
+
+Si encuentra algo, envía un correo a `BACKUP_EMAIL`. Si todo está limpio, no envía nada.
+
+Se programa en hPanel > Avanzado > Cron Jobs:
+
+```
+30 6 * * *  cd /home/u397951547/domains/ediertech.com/public_html/bienes && php database/herramientas/resumen_errores.php
+```
+
+Para probarlo a mano: `php database/herramientas/resumen_errores.php --fecha=AAAA-MM-DD --sin-correo`
+(solo lo muestra) o con `--siempre` (lo envía aunque no haya nada).
+
+**CSP obligatoria:** hoy la política va en modo "solo reportar". Cuando el resumen lleve
+unos 7 días sin avisos de CSP reales, se cambia en `App\Helpers\PoliticaContenido`
+`Content-Security-Policy-Report-Only` por `Content-Security-Policy`.
 
 ## Historial
 

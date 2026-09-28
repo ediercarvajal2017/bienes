@@ -68,7 +68,7 @@ final class EspacioCargaMasivaController
             exit;
         }
 
-        $institucionId = Auth::institucionId();
+        $institucionId = (int) Auth::institucionId();
 
         try {
             // storeExcel valida tipo, extensión y tamaño (antes se guardaba cualquier archivo

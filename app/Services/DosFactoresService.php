@@ -22,7 +22,7 @@ use Endroid\QrCode\Writer\PngWriter;
  */
 final class DosFactoresService
 {
-    public const EMISOR = 'SIGEBI';
+    public const EMISOR = 'MIA';
     public const COOKIE_DISPOSITIVO = 'sigebi_dispositivo';
     /** Intentos de código por cada inicio de sesión (luego se vuelve al login). */
     public const MAX_INTENTOS_POR_INGRESO = 5;
@@ -114,10 +114,10 @@ final class DosFactoresService
             . '<p>' . htmlspecialchars($mensaje, ENT_QUOTES) . '</p>'
             . '<p>Fecha: ' . date('Y-m-d H:i') . ' · Dirección IP: ' . htmlspecialchars((string) ($_SERVER['REMOTE_ADDR'] ?? '—'), ENT_QUOTES) . '</p>'
             . '<p>Si no fue usted, cambie su contraseña de inmediato y avise al administrador del sistema.</p>'
-            . '<p>SIGEBI</p>';
+            . '<p>MIA</p>';
 
         try {
-            MailService::enviar((string) $usuario['email'], $nombre, 'SIGEBI: ' . $asunto, $html);
+            MailService::enviar((string) $usuario['email'], $nombre, 'MIA: ' . $asunto, $html);
         } catch (\RuntimeException) {
             // Sin correo configurado: el cambio igual queda en la auditoría.
         }

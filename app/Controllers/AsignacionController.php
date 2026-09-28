@@ -12,12 +12,14 @@ use App\Core\Request;
 use App\Core\Session;
 use App\Core\Url;
 use App\Core\View;
+use App\Helpers\FechaMovimiento;
 use App\Helpers\Paginador;
 use App\Models\Asignacion;
 use App\Models\Auditoria;
 use App\Models\Bien;
 use App\Models\Espacio;
 use App\Models\Institucion;
+use App\Services\CicloVidaBien;
 
 final class AsignacionController
 {
@@ -70,7 +72,7 @@ final class AsignacionController
 
         $this->verificarCsrf($request, $viejo);
 
-        $institucionId = Auth::esSuperusuario() ? (int) $request->input('institucion_id') : Auth::institucionId();
+        $institucionId = Auth::esSuperusuario() ? (int) $request->input('institucion_id') : (int) Auth::institucionId();
         $volverA = '/asignaciones' . (Auth::esSuperusuario() ? '?institucion=' . $institucionId : '');
 
         if (empty($bienIds)) {
@@ -80,8 +82,9 @@ final class AsignacionController
             exit;
         }
 
-        if ($espacioIdRaw === '' || $fecha === '' || !strtotime($fecha)) {
-            Session::flash('error', 'Selecciona un espacio y una fecha de asignación válida.');
+        $errorFecha = FechaMovimiento::error($fecha);
+        if ($espacioIdRaw === '' || $errorFecha !== null) {
+            Session::flash('error', $espacioIdRaw === '' ? 'Selecciona un espacio.' : $errorFecha);
             Session::flashOld($viejo);
             header('Location: ' . Url::to($volverA));
             exit;
@@ -113,62 +116,44 @@ final class AsignacionController
     }
 
     /**
-     * Cierra cualquier asignación activa remanente (por seguridad) y crea la nueva
-     * para cada bien del lote, dentro de una única transacción. Se omiten los bienes de
-     * otra institución, los dados de baja y los reintegrados: igual que en la asignación
-     * individual y en el listado de esta pantalla, un bien reintegrado solo vuelve a
-     * circular con "Reactivar" (rector o superusuario, con motivo). Antes la asignación
-     * masiva lo reactivaba en silencio si el id llegaba en el formulario.
+     * Asigna (o traslada, si ya tenía espacio) cada bien del lote con las MISMAS reglas que
+     * la ficha del bien (CicloVidaBien::asignarOTrasladar): así un bien que cambia de
+     * espacio deja su movimiento de traslado en el historial, y no se repite la asignación
+     * si ya estaba en ese espacio. Todo en una única transacción. Se omiten los bienes de
+     * otra institución, los dados de baja y los reintegrados (un reintegrado solo vuelve a
+     * circular con "Reactivar").
      *
-     * @return array{asignados: int, reintegrados: int, otros: int}|null  null si falló todo
+     * @return array{asignados: int, reintegrados: int, mismoEspacio: int, otros: int}|null  null si falló todo
      */
     private function asignarLote(array $bienIds, int $institucionId, int $espacioId, string $fecha, ?string $observaciones): ?array
     {
-        $resultado = ['asignados' => 0, 'reintegrados' => 0, 'otros' => 0];
+        $resultado = ['asignados' => 0, 'reintegrados' => 0, 'mismoEspacio' => 0, 'otros' => 0];
 
-        if (!Auth::esSuperusuario() && $institucionId !== Auth::institucionId()) {
-            return $resultado;
-        }
-
-        $pdo = Database::connection();
-        $asignados = 0;
-
-        $pdo->beginTransaction();
         try {
-            foreach ($bienIds as $bienId) {
-                $bien = Bien::find($bienId);
-                if (!$bien || $bien['estado'] === 'dado_de_baja' || (int) $bien['institucion_id'] !== $institucionId) {
-                    $resultado['otros']++;
-                    continue;
+            return Database::transaccion(static function () use ($bienIds, $institucionId, $espacioId, $fecha, $observaciones, $resultado): array {
+                foreach ($bienIds as $bienId) {
+                    $bien = Bien::find($bienId);
+                    if (!$bien || $bien['estado'] === 'dado_de_baja' || (int) $bien['institucion_id'] !== $institucionId) {
+                        $resultado['otros']++;
+                        continue;
+                    }
+                    if ($bien['estado'] === 'reintegrado') {
+                        $resultado['reintegrados']++;
+                        continue;
+                    }
+                    $actual = Asignacion::activaDe((int) $bienId);
+                    if ($actual && (int) $actual['espacio_id'] === $espacioId) {
+                        $resultado['mismoEspacio']++;
+                        continue;
+                    }
+
+                    CicloVidaBien::asignarOTrasladar((array) $bien, $espacioId, $fecha, $observaciones);
+                    $resultado['asignados']++;
                 }
 
-                if ($bien['estado'] === 'reintegrado') {
-                    $resultado['reintegrados']++;
-                    continue;
-                }
-
-                $anterior = Asignacion::activaDe($bienId);
-                Asignacion::cerrarActivasDe($bienId);
-                Asignacion::crear([
-                    'bien_id' => $bienId,
-                    'espacio_id' => $espacioId,
-                    'fecha_asignacion' => $fecha,
-                    'observaciones' => $observaciones,
-                    'asignado_por' => Auth::id(),
-                ]);
-                Auditoria::registrar(Auth::id(), $institucionId, 'asignar', 'bien', $bienId,
-                    ['espacio_id' => $anterior['espacio_id'] ?? null],
-                    ['espacio_id' => $espacioId, 'fecha' => $fecha, 'masivo' => true]);
-
-                $asignados++;
-            }
-
-            $pdo->commit();
-            $resultado['asignados'] = $asignados;
-
-            return $resultado;
+                return $resultado;
+            });
         } catch (\Throwable $e) {
-            $pdo->rollBack();
             ErrorHandler::reportar($e, __METHOD__);
 
             return null;
@@ -178,6 +163,9 @@ final class AsignacionController
     private function textoOmitidos(array $resultado): string
     {
         $texto = '';
+        if ($resultado['mismoEspacio'] > 0) {
+            $texto .= " {$resultado['mismoEspacio']} bien(es) ya estaban en ese espacio.";
+        }
         if ($resultado['reintegrados'] > 0) {
             $texto .= " Se omitieron {$resultado['reintegrados']} bien(es) reintegrado(s): para volver a asignarlos use \"Reactivar\" en la ficha del bien.";
         }

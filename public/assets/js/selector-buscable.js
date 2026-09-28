@@ -8,6 +8,11 @@
     if (typeof TomSelect === 'undefined') { return; }
 
     document.querySelectorAll('select.selector-buscable').forEach(function (select) {
+        // Tom Select pasa la etiqueta <label for> a su propio buscador: el <select> original
+        // (que sigue en la página para los lectores de pantalla) conserva el nombre así.
+        const etiqueta = select.id ? document.querySelector('label[for="' + CSS.escape(select.id) + '"]') : null;
+        const nombre = select.getAttribute('aria-label') || (etiqueta ? etiqueta.textContent.trim() : '');
+
         new TomSelect(select, {
             plugins: select.multiple ? ['remove_button'] : [],
             placeholder: 'Buscar...',
@@ -26,5 +31,7 @@
                 select.dispatchEvent(new Event('change', { bubbles: true }));
             },
         });
+
+        if (nombre) { select.setAttribute('aria-label', nombre); }
     });
 })();

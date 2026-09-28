@@ -30,7 +30,7 @@ if (!/test/i.test(BD_PRUEBAS) || /prod/i.test(BD_PRUEBAS)) {
     throw new Error(`Pruebas bloqueadas: la base de pruebas debe contener "test" y no "prod" (actual: ${BD_PRUEBAS}).`);
 }
 
-// El slash final importa: SIGEBI puede vivir en un subdirectorio.
+// El slash final importa: MIA puede vivir en un subdirectorio.
 let baseURL = MODO_REMOTO ? process.env.TEST_BASE_URL : `http://127.0.0.1:${PUERTO}/`;
 if (!baseURL.endsWith('/')) {
     baseURL += '/';
@@ -60,7 +60,7 @@ export default defineConfig({
     testDir: './tests',
     globalSetup: './tests/global-setup.js',
     fullyParallel: false,
-    // SIGEBI usa sesiones PHP con el token CSRF en el servidor, y el servidor embebido de
+    // MIA usa sesiones PHP con el token CSRF en el servidor, y el servidor embebido de
     // PHP atiende una petición a la vez: la suite corre en serie a propósito.
     workers: 1,
     forbidOnly: !!process.env.CI,

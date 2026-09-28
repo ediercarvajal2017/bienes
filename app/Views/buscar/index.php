@@ -13,7 +13,7 @@ $sinResultados = $q !== ''
 </div>
 
 <form method="get" action="<?= Url::to('/buscar') ?>" class="mb-4" style="max-width: 480px;">
-    <input type="search" name="q" class="form-control" autofocus
+    <input type="search" data-buscar-form name="q" class="form-control" autofocus
            placeholder="Buscar por código, nombre, documento..."
            value="<?= htmlspecialchars($q, ENT_QUOTES) ?>">
 </form>

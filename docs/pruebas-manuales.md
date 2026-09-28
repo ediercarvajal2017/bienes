@@ -33,7 +33,7 @@ dispositivo y el navegador.
 - [ ] Menú lateral: abre y cierra; el tema claro/oscuro y el selector de sede están arriba del menú.
 - [ ] **Escáner QR** (requiere HTTPS): pide permiso de cámara, lee una etiqueta impresa en 1–2 segundos, **vibra** y abre la ficha del bien.
 - [ ] Cambiar de cámara y encender la linterna (si el teléfono lo permite).
-- [ ] Escanear un QR que NO es de SIGEBI (por ejemplo, el de un producto): muestra "no es una etiqueta de SIGEBI" y no sale del sistema.
+- [ ] Escanear un QR que NO es de MIA (por ejemplo, el de un producto): muestra "no es una etiqueta de MIA" y no sale del sistema.
 - [ ] Docente: desde la ficha del QR, reportar una baja (con foto tomada en el momento) y solicitar un reintegro.
 - [ ] Fotos: tomar la foto de un bien con la cámara; se comprime y se sube rápido con datos móviles.
 - [ ] Verificación física: confirmar bienes escaneando y reportar un hallazgo con foto.
@@ -65,7 +65,7 @@ dispositivo y el navegador.
 
 ## 6. Aplicación instalada (PWA)
 
-- [ ] Android (Chrome): "Agregar a la pantalla de inicio" → abre en pantalla completa con el ícono de SIGEBI.
+- [ ] Android (Chrome): "Agregar a la pantalla de inicio" → abre en pantalla completa con el ícono de MIA.
 - [ ] iPhone (Safari → Compartir → "Agregar a inicio"): ícono correcto y la barra superior no queda bajo la muesca.
 - [ ] Sin conexión: muestra la página "Sin conexión", nunca datos de una sesión anterior.
 

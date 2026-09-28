@@ -1,5 +1,5 @@
 #!/bin/bash
-# Script de despliegue de SIGEBI en Hostinger.
+# Script de despliegue de MIA en Hostinger.
 #
 # Uso (conectado por SSH al servidor):
 #   curl -o deploy.sh https://raw.githubusercontent.com/ediercarvajal2017/bienes/main/deploy-hostinger.sh
@@ -9,7 +9,7 @@
 #   version            etiqueta de git a desplegar (ej. v1.4.0). Si no se indica, despliega
 #                      lo último de la rama main.
 #
-# SIGEBI YA ESTÁ EN PRODUCCIÓN CON INFORMACIÓN REAL, y esa información es la correcta:
+# MIA YA ESTÁ EN PRODUCCIÓN CON INFORMACIÓN REAL, y esa información es la correcta:
 # una actualización sube SOLO el software. No carga, reemplaza ni corrige datos (no
 # ejecuta seeders); lo único que toca en la base son las migraciones de ESTRUCTURA
 # pendientes, que muestra y pide confirmar antes de aplicarlas. En una actualización:
@@ -29,7 +29,7 @@ REPO_URL="https://github.com/ediercarvajal2017/bienes.git"
 PROYECTO_DIR="${1:-}"
 VERSION="${2:-}"
 
-echo "=== Despliegue de SIGEBI ==="
+echo "=== Despliegue de MIA ==="
 echo ""
 
 # --- 1. Detectar un PHP 8.3+ utilizable ---
@@ -131,7 +131,7 @@ MAIL_USERNAME=${MAIL_USERNAME}
 MAIL_PASSWORD=${MAIL_PASSWORD}
 MAIL_ENCRYPTION=tls
 MAIL_FROM_ADDRESS=${MAIL_USERNAME}
-MAIL_FROM_NAME=SIGEBI
+MAIL_FROM_NAME=MIA
 
 STORAGE_PATH=${STORAGE_PATH}
 BACKUP_EMAIL=${BACKUP_EMAIL}

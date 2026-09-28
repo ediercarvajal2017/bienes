@@ -9,7 +9,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 /**
  * El fixture se genera en cada corrida (en vez de un .xlsx estático) con documento y
- * correo únicos: SIGEBI no libera el documento de un usuario solo por estar en la
+ * correo únicos: MIA no libera el documento de un usuario solo por estar en la
  * papelera (Usuario::findByDocumento() no filtra eliminado_en), así que reusar el
  * mismo documento entre corridas hacía que la fila se tratara como "modificado" en
  * vez de "nuevo" -- nunca creaba un usuario activo de verdad la segunda vez.

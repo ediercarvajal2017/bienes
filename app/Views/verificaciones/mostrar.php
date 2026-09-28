@@ -118,8 +118,8 @@ $tabPorDefecto = !empty($hallazgos) ? 'hallazgos' : 'discrepancia';
                     <td class="text-muted small" data-label="Espacio"><?= htmlspecialchars($h['espacio_nombre'], ENT_QUOTES) ?></td>
                     <td data-label="Foto">
                         <?php if (!empty($h['foto_path'])): ?>
-                            <img src="<?= Url::to('/archivos/' . $h['foto_path']) ?>?w=96" loading="lazy"
-                                 data-lightbox-src="<?= Url::to('/archivos/' . $h['foto_path']) ?>"
+                            <img src="<?= \App\Helpers\EnlaceArchivo::url($h['foto_path'], 96) ?>" loading="lazy"
+                                 data-lightbox-src="<?= \App\Helpers\EnlaceArchivo::url($h['foto_path']) ?>"
                                  alt="Foto del hallazgo: <?= htmlspecialchars($h['descripcion'], ENT_QUOTES) ?>"
                                  class="miniatura-36 miniatura-ampliable" loading="lazy">
                         <?php else: ?>
@@ -166,7 +166,7 @@ $tabPorDefecto = !empty($hallazgos) ? 'hallazgos' : 'discrepancia';
         <div class="mb-2 d-flex flex-wrap gap-3 align-items-end">
             <div style="max-width: 420px; flex: 1 1 260px;">
                 <label for="buscadorDiscrepancia" class="form-label small mb-1">Buscar</label>
-                <input type="search" id="buscadorDiscrepancia" class="form-control form-control-sm"
+                <input type="search" id="buscadorDiscrepancia" data-buscar="qDiscrepancia" data-buscar-pagina="paginaDiscrepancia" data-buscar-ancla="seccion-discrepancia" class="form-control form-control-sm"
                        placeholder="Buscar por código, descripción o ubicación..."
                        value="<?= htmlspecialchars($busquedaDiscrepancia, ENT_QUOTES) ?>">
             </div>
@@ -258,7 +258,7 @@ $tabPorDefecto = !empty($hallazgos) ? 'hallazgos' : 'discrepancia';
 <div data-tab-panel="pendientes" id="seccion-pendientes" class="d-none">
     <p class="text-muted small mb-2">Bienes que todavía no han sido escaneados ni verificados en esta jornada.</p>
     <div class="mb-2" style="max-width: 420px;">
-        <input type="search" id="buscadorPendientes" class="form-control form-control-sm"
+        <input type="search" id="buscadorPendientes" data-buscar="q" data-buscar-pagina="pagina" data-buscar-ancla="seccion-pendientes" class="form-control form-control-sm"
                placeholder="Buscar por código, descripción o ubicación..."
                value="<?= htmlspecialchars($busquedaPendientes, ENT_QUOTES) ?>">
     </div>
@@ -291,7 +291,7 @@ $tabPorDefecto = !empty($hallazgos) ? 'hallazgos' : 'discrepancia';
     <p class="text-muted small mb-2">Bienes confirmados — coinciden exactamente con lo que el sistema tiene registrado.</p>
     <?php if ($verificadosOk > 0): ?>
         <div class="mb-2" style="max-width: 420px;">
-            <input type="search" id="buscadorOk" class="form-control form-control-sm"
+            <input type="search" id="buscadorOk" data-buscar="qOk" data-buscar-pagina="paginaOk" data-buscar-ancla="seccion-ok" class="form-control form-control-sm"
                    placeholder="Buscar por código, descripción o ubicación..."
                    value="<?= htmlspecialchars($busquedaOk, ENT_QUOTES) ?>">
         </div>
@@ -335,33 +335,7 @@ $tabPorDefecto = !empty($hallazgos) ? 'hallazgos' : 'discrepancia';
 
 <script>
 (function () {
-    // Buscador con reload debounceado, reutilizable por las tablas de la pantalla —
-    // cada una con su propio parametro de busqueda/pagina para no interferir entre si.
-    function activarBuscador(idInput, paramBusqueda, paramPagina, ancla) {
-        const input = document.getElementById(idInput);
-        if (!input) { return; }
-        let temporizador = null;
-
-        input.addEventListener('input', function () {
-            clearTimeout(temporizador);
-            temporizador = setTimeout(function () {
-                const url = new URL(window.location.href);
-                const valor = input.value.trim();
-                if (valor !== '') {
-                    url.searchParams.set(paramBusqueda, valor);
-                } else {
-                    url.searchParams.delete(paramBusqueda);
-                }
-                url.searchParams.set(paramPagina, '1');
-                url.hash = ancla;
-                window.location = url.toString();
-            }, 600);
-        });
-    }
-
-    activarBuscador('buscadorOk', 'qOk', 'paginaOk', 'seccion-ok');
-    activarBuscador('buscadorDiscrepancia', 'qDiscrepancia', 'paginaDiscrepancia', 'seccion-discrepancia');
-    activarBuscador('buscadorPendientes', 'q', 'pagina', 'seccion-pendientes');
+    // Los tres buscadores se activan desde buscador-vivo.js (atributos data-buscar*).
 
     const selectorEstado = document.getElementById('selectorEstadoDiscrepancia');
     if (selectorEstado) {

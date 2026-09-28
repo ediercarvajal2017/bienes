@@ -7,7 +7,7 @@ use App\Core\Url;
 <div class="contenedor-2fa">
     <h1 class="h4 mb-1"><i class="bi bi-shield-lock me-1" aria-hidden="true"></i>Configurar la verificación en dos pasos</h1>
     <p class="text-muted small mb-3">
-        Además de tu contraseña, SIGEBI te pedirá un código de 6 dígitos que genera tu teléfono.
+        Además de tu contraseña, MIA te pedirá un código de 6 dígitos que genera tu teléfono.
         Así, aunque alguien conozca tu contraseña, no podrá entrar sin tu teléfono. Es opcional: puedes
         desactivarla cuando quieras desde «Mi cuenta».
     </p>
@@ -36,7 +36,7 @@ use App\Core\Url;
                 </div>
                 <details class="small">
                     <summary>¿Estás configurando desde este mismo teléfono? Escribe la clave a mano</summary>
-                    <p class="mt-2 mb-1">Elige «Ingresar una clave de configuración», con el nombre <strong>SIGEBI</strong> y esta clave (basada en tiempo):</p>
+                    <p class="mt-2 mb-1">Elige «Ingresar una clave de configuración», con el nombre <strong>MIA</strong> y esta clave (basada en tiempo):</p>
                     <code class="d-block user-select-all fs-6 p-2 bg-body-tertiary rounded text-break"><?= htmlspecialchars($claveManual, ENT_QUOTES) ?></code>
                 </details>
             </div>

@@ -61,7 +61,7 @@ final class BienFotoCargaMasivaController
             exit;
         }
 
-        $institucionId = Auth::institucionId();
+        $institucionId = (int) Auth::institucionId();
 
         try {
             $resultado = FotoMasivaService::procesar($archivo['tmp_name'], $institucionId);

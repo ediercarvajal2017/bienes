@@ -8,7 +8,7 @@ declare(strict_types=1);
  * database/herramientas/preparar_demo.php y demo.bat).
  *
  * Crea una historia creíble y completa para que todas las pantallas tengan contenido:
- *  - "Administración SIGEBI" (la institución técnica donde vive el superusuario) y la
+ *  - "Administración MIA" (la institución técnica donde vive el superusuario) y la
  *    "Institución Educativa Los Andes" con dos sedes; además la "IE San José de la
  *    Montaña", independiente, para mostrar el aislamiento entre instituciones.
  *  - Un usuario de cada rol con contraseña conocida (solo para la demostración).
@@ -89,7 +89,7 @@ $cargo = static fn (string $nombre): int => (int) ($valor('SELECT id FROM cargos
 // ─────────────────────────────────────────────────────────────── Instituciones
 $instAdmin = (int) $valor("SELECT id FROM instituciones WHERE codigo_dane = '000000000000'");
 $pdo->prepare('UPDATE instituciones SET nombre = ?, direccion = ? WHERE id = ?')
-    ->execute(['Administración SIGEBI', 'Soporte técnico del sistema', $instAdmin]);
+    ->execute(['Administración MIA', 'Soporte técnico del sistema', $instAdmin]);
 
 $losAndes = $insertar('instituciones', [
     'codigo_dane' => '105001000101', 'nombre' => 'Institución Educativa Los Andes', 'tipo_sede' => 'principal',
@@ -128,7 +128,7 @@ $claves = [
 ];
 $superId = (int) $valor("SELECT u.id FROM usuarios u JOIN roles r ON r.id = u.rol_id WHERE r.nombre = 'superusuario' ORDER BY u.id LIMIT 1");
 $pdo->prepare('UPDATE usuarios SET email = ?, nombres = ?, apellidos = ?, password_hash = ?, activo = 1 WHERE id = ?')
-    ->execute(['super@demo.test', 'Administrador', 'SIGEBI', password_hash($claves['superusuario'], PASSWORD_BCRYPT), $superId]);
+    ->execute(['super@demo.test', 'Administrador', 'MIA', password_hash($claves['superusuario'], PASSWORD_BCRYPT), $superId]);
 
 $usuario = static function (string $documento, string $nombres, string $apellidos, string $cargoNombre, string $email, string $clave, int $inst, string $nombreRol) use ($insertar, $rol, $cargo, $haceDias): int {
     return $insertar('usuarios', [
@@ -592,6 +592,11 @@ foreach (array_slice(array_keys($bienes), 20, 30) as $id) {
 foreach ([$rector, $secretario, $docente, $rector, $secretario, $secretario, $docente, $rector] as $i => $u) {
     $auditar($u, $losAndes, 'login_ok', 'usuario', $u, $haceDias($i, mt_rand(7, 11)));
 }
+
+// Los usuarios sembrados ya aceptaron la política de datos (si no, cada ingreso pasaría
+// primero por /politica/aceptar). tests/politica_datos.spec.js prueba la aceptación.
+$pdo->prepare('UPDATE usuarios SET politica_version = ?, politica_aceptada_en = NOW()')
+    ->execute([\App\Helpers\PoliticaDatos::VERSION]);
 
 $total = (int) $valor('SELECT COUNT(*) FROM bienes');
 fwrite(STDERR, "Datos de demostración cargados: {$total} bienes, " . count($espacios) . " espacios, 4 instituciones.\n");

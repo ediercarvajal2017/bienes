@@ -173,7 +173,7 @@ final class CarteraController
         $registro = CarteraEnvio::find($id);
         Evidencia::verificarAcceso($registro);
 
-        CarteraEnvio::eliminar($id, Auth::id());
+        CarteraEnvio::eliminar($id, (int) Auth::id());
         Auditoria::registrar(Auth::id(), (int) $registro['institucion_id'], 'eliminar', 'cartera_envio', $id, $registro);
 
         Session::flash('ok', 'Registro enviado a la papelera. Un superusuario puede restaurarlo si fue un error.');

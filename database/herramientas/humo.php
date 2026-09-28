@@ -108,8 +108,8 @@ if (isset($opciones['url']) && is_string($opciones['url'])) {
         $cuerpo = @file_get_contents($url, false, $contexto);
         $estado = isset($http_response_header[0]) && preg_match('/\s(\d{3})\s?/', $http_response_header[0], $m) ? (int) $m[1] : 0;
         echo "HTTP {$url} → {$estado}\n";
-        if ($estado !== $esperado || $cuerpo === false || !str_contains($cuerpo, 'SIGEBI')) {
-            $fallas[] = "{$url} respondió {$estado} (se esperaba {$esperado} con la página de SIGEBI).";
+        if ($estado !== $esperado || $cuerpo === false || !str_contains($cuerpo, 'name="password"')) {
+            $fallas[] = "{$url} respondió {$estado} (se esperaba {$esperado} con la página de inicio de sesión).";
         }
     }
 }

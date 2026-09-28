@@ -19,7 +19,9 @@ test('carga masiva de fotos empareja una imagen con su bien por código', async 
         await page.locator('input[name="codigo_identificacion"]').fill(CODIGO);
         await page.locator('input[name="descripcion"]').fill('PW-TEST bien para carga masiva de fotos');
         await page.getByRole('button', { name: 'Registrar bien' }).click();
-        await expect(page).toHaveURL(/\/bienes$/);
+        // Al registrar se abre la ficha del bien nuevo; aquí se sigue desde el listado.
+        await expect(page).toHaveURL(/\/bienes\/\d+\/editar/);
+        await page.goto('bienes');
     }
 
     await page.goto('bienes/carga-masiva-fotos');

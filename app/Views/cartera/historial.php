@@ -46,7 +46,7 @@ use App\Core\View;
                     </td>
                     <td class="text-muted small mono" data-label="Registrado el"><?= htmlspecialchars($e['fecha_registro'], ENT_QUOTES) ?></td>
                     <td class="text-end text-nowrap">
-                        <a href="<?= Url::to('/archivos/' . $e['archivo_path']) ?>" class="btn btn-sm btn-outline-secondary" target="_blank">
+                        <a href="<?= \App\Helpers\EnlaceArchivo::url($e['archivo_path']) ?>" class="btn btn-sm btn-outline-secondary" target="_blank">
                             <i class="bi bi-download me-1"></i>Descargar
                         </a>
                         <a href="<?= Url::to('/cartera/' . $e['id'] . '/editar') ?>" class="btn btn-sm btn-outline-primary">

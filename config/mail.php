@@ -10,5 +10,5 @@ return [
     // 'tls', 'ssl' o '' (sin cifrado, no recomendado)
     'encryption' => Env::get('MAIL_ENCRYPTION', 'tls'),
     'from_address' => Env::get('MAIL_FROM_ADDRESS', ''),
-    'from_name' => Env::get('MAIL_FROM_NAME', 'SIGEBI'),
+    'from_name' => Env::get('MAIL_FROM_NAME', 'MIA'),
 ];

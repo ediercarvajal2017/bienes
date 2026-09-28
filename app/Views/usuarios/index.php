@@ -25,7 +25,7 @@ use App\Core\View;
 <?php endif; ?>
 
 <div class="mb-3" style="max-width: 420px;">
-    <input type="search" id="buscador" class="form-control form-control-sm"
+    <input type="search" id="buscador" data-buscar="q" class="form-control form-control-sm"
            placeholder="Buscar por nombre, documento, correo o cargo..."
            value="<?= htmlspecialchars($busqueda, ENT_QUOTES) ?>">
 </div>
@@ -59,7 +59,7 @@ use App\Core\View;
             <tr>
                 <td>
                     <?php if (!empty($u['foto_path'])): ?>
-                        <img src="<?= Url::to('/archivos/' . $u['foto_path']) ?>?w=96" loading="lazy"
+                        <img src="<?= \App\Helpers\EnlaceArchivo::url($u['foto_path'], 96) ?>" loading="lazy"
                              alt="Foto de <?= htmlspecialchars($u['nombres'] . ' ' . $u['apellidos'], ENT_QUOTES) ?>"
                              class="rounded-circle" style="width:32px;height:32px;object-fit:cover;" loading="lazy">
                     <?php else: ?>
@@ -119,22 +119,5 @@ use App\Core\View;
 
 <script>
 (function () {
-    const input = document.getElementById('buscador');
-    let temporizador = null;
-
-    input.addEventListener('input', function () {
-        clearTimeout(temporizador);
-        temporizador = setTimeout(function () {
-            const url = new URL(window.location.href);
-            const valor = input.value.trim();
-            if (valor !== '') {
-                url.searchParams.set('q', valor);
-            } else {
-                url.searchParams.delete('q');
-            }
-            url.searchParams.set('pagina', '1');
-            window.location = url.toString();
-        }, 600);
-    });
 })();
 </script>

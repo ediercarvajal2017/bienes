@@ -68,7 +68,7 @@ final class UsuarioCargaMasivaController
             exit;
         }
 
-        $institucionId = Auth::institucionId();
+        $institucionId = (int) Auth::institucionId();
 
         try {
             $rutaRelativa = Uploader::storeExcel($archivo, 'cargas');

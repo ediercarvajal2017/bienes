@@ -12,13 +12,14 @@
                 <li><strong>Registrar un bien</strong> (Bienes &gt; Registrar bien): código, descripción, categoría,
                     marca, valor y, si aplica, foto y factura. La categoría es obligatoria — sin ella, el bien no se
                     podrá reintegrar más adelante.</li>
-                <li><strong>Asignar</strong> un bien a un espacio y a un responsable, desde la ficha del bien.</li>
+                <li><strong>Asignar</strong> un bien a un espacio y a un responsable, desde la ficha del bien (o varios a la vez en
+                    <strong>Bienes &gt; Acciones masivas &gt; Asignar bienes</strong>).</li>
                 <li><strong>Trasladar</strong> un bien asignado a otro espacio.</li>
-                <li><strong>Reintegrar</strong> un bien (individual, o selecciona varios desde Bienes y reintégralos
-                    juntos).</li>
+                <li><strong>Reintegrar</strong> un bien desde su ficha, o varios a la vez en
+                    <strong>Bienes &gt; Acciones masivas &gt; Reintegrar bienes</strong>.</li>
                 <li><strong>Dar de baja</strong> un bien, o aprobar/rechazar bajas que otros reporten (ver tema 4).</li>
-                <li>Para cargar muchos bienes o fotos de una vez, usa <strong>Carga masiva</strong> en el menú
-                    lateral.</li>
+                <li>Para cargar muchos bienes o fotos de una vez, usa <strong>Bienes &gt; Acciones masivas &gt; Carga
+                    masiva de bienes</strong>.</li>
             </ol>
         </div>
     </details>
@@ -94,7 +95,7 @@
         <div class="mt-2 small">
             <p class="mb-1">
                 Estas tres secciones del menú son una biblioteca de evidencia: sirven para archivar en el sistema
-                documentos que ya firmaste o recibiste aparte (no los genera SIGEBI).
+                documentos que ya firmaste o recibiste aparte (no los genera MIA).
             </p>
             <ol class="mb-0 ps-3">
                 <li><strong>Formatos de reintegro</strong> y <strong>Formatos de plaqueteo</strong>: sube el PDF ya

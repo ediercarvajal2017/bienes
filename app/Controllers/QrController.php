@@ -6,6 +6,7 @@ namespace App\Controllers;
 
 use App\Core\Auth;
 use App\Core\Csrf;
+use App\Core\Database;
 use App\Core\Request;
 use App\Core\Session;
 use App\Core\Url;
@@ -131,27 +132,60 @@ final class QrController
         exit;
     }
 
+    /**
+     * PNG del código QR (ruta pública, sin sesión). Se genera una sola vez y se guarda en
+     * storage/cache/qr: antes cada visita consultaba la base y volvía a dibujarlo, y muchas
+     * peticiones seguidas podían agotar los procesos del hosting. El token es un UUID
+     * (se valida el formato antes de usarlo como nombre de archivo).
+     */
     public function imagen(string $token): void
     {
-        $bien = Bien::findPorToken($token);
+        session_write_close();
 
-        if (!$bien) {
+        if (!preg_match('/^[a-f0-9-]{36}$/', $token)) {
             http_response_code(404);
             exit;
         }
 
-        $builder = new Builder(
-            writer: new PngWriter(),
-            data: Url::absoluta("/qr/{$token}"),
-            size: 400,
-            margin: 12,
-            foregroundColor: new Color(0, 0, 0),
-            backgroundColor: new Color(255, 255, 255),
-        );
-        $resultado = $builder->build();
+        $config = require dirname(__DIR__, 2) . '/config/app.php';
+        $carpeta = $config['storage_path'] . '/cache/qr';
+        $archivo = "{$carpeta}/{$token}.png";
 
-        header('Content-Type: ' . $resultado->getMimeType());
+        if (!is_file($archivo)) {
+            if (!Bien::findPorToken($token)) {
+                http_response_code(404);
+                exit;
+            }
+            Database::desconectar();
+
+            $png = (new Builder(
+                writer: new PngWriter(),
+                data: Url::absoluta("/qr/{$token}"),
+                size: 400,
+                margin: 12,
+                foregroundColor: new Color(0, 0, 0),
+                backgroundColor: new Color(255, 255, 255),
+            ))->build()->getString();
+
+            if (!is_dir($carpeta)) {
+                @mkdir($carpeta, 0755, true);
+            }
+            // Escritura atómica: otro proceso nunca lee un PNG a medio escribir.
+            $temporal = $archivo . '.' . bin2hex(random_bytes(4)) . '.tmp';
+            if (@file_put_contents($temporal, $png) !== false) {
+                @rename($temporal, $archivo);
+            }
+
+            header('Content-Type: image/png');
+            header('Cache-Control: public, max-age=86400');
+            echo $png;
+            exit;
+        }
+
+        header('Content-Type: image/png');
         header('Cache-Control: public, max-age=86400');
-        echo $resultado->getString();
+        header('Content-Length: ' . filesize($archivo));
+        readfile($archivo);
+        exit;
     }
 }

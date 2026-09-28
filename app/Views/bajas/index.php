@@ -53,7 +53,7 @@ use App\Models\Categoria;
             <tr>
                 <td>
                     <?php if (!empty($b['foto_path'])): ?>
-                        <img src="<?= Url::to('/archivos/' . $b['foto_path']) ?>?w=96" loading="lazy"
+                        <img src="<?= \App\Helpers\EnlaceArchivo::url($b['foto_path'], 96) ?>" loading="lazy"
                              alt="Foto del reporte de baja de <?= htmlspecialchars($b['bien_descripcion'], ENT_QUOTES) ?>"
                              class="miniatura-36" loading="lazy">
                     <?php endif; ?>

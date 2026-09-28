@@ -8,6 +8,10 @@ $instituciones = Auth::esSuperusuario() ? Institucion::listadoParaSelect() : [];
 ?>
 <h1 class="h4 mb-3">Reportes</h1>
 
+<?php if (!empty($error)): ?>
+    <div class="alert alert-danger py-2 small" role="alert" style="max-width: 780px;"><?= htmlspecialchars($error, ENT_QUOTES) ?></div>
+<?php endif; ?>
+
 <?php if (Auth::esSuperusuario()): ?>
     <div class="mb-3" style="max-width: 320px;">
         <label for="selectorInstitucion" class="form-label small">Institución a exportar</label>
@@ -61,6 +65,37 @@ $instituciones = Auth::esSuperusuario() ? Institucion::listadoParaSelect() : [];
             </div>
         </div>
     </div>
+
+    <?php if (!empty($puedeExportarTodo)): ?>
+        <?php $baseExportacion = Url::to('/reportes/exportacion-completa.zip'); ?>
+        <div class="col-12">
+            <section class="card" aria-labelledby="tituloExportacion">
+                <div class="card-body">
+                    <h2 class="h6" id="tituloExportacion"><i class="bi bi-box-arrow-down me-1" aria-hidden="true"></i>Descargar toda la información</h2>
+                    <p class="small text-muted mb-2">
+                        Un archivo .zip con todo lo registrado en MIA<?= Auth::esSuperusuario() ? ' para la institución elegida' : '' ?> y sus sedes:
+                        bienes, asignaciones, movimientos, bajas, reintegros, espacios, usuarios, verificaciones, documentos y
+                        auditoría, en un libro de Excel con una hoja por tema. Sirve como copia propia de la institución.
+                    </p>
+                    <p class="small text-muted mb-3">
+                        Contiene datos personales: guárdalo en un lugar seguro. No incluye contraseñas.
+                        La opción con fotos y documentos puede tardar varios minutos y pesar bastante.
+                    </p>
+                    <?php if (Auth::esSuperusuario()): ?>
+                        <p class="small mb-2 aviso-elegir-institucion"><i class="bi bi-info-circle me-1" aria-hidden="true"></i>Primero elige arriba la institución a exportar.</p>
+                    <?php endif; ?>
+                    <div class="d-flex flex-wrap gap-2">
+                        <a class="btn btn-sm btn-primary enlace-reporte enlace-exportacion<?= Auth::esSuperusuario() ? ' disabled" aria-disabled="true' : '' ?>" data-base="<?= $baseExportacion ?>" data-descarga="Preparando…" href="<?= $baseExportacion ?>">
+                            <i class="bi bi-file-earmark-zip me-1" aria-hidden="true"></i>Solo los datos
+                        </a>
+                        <a class="btn btn-sm btn-outline-primary enlace-reporte enlace-exportacion<?= Auth::esSuperusuario() ? ' disabled" aria-disabled="true' : '' ?>" data-base="<?= $baseExportacion ?>?archivos=1" data-descarga="Preparando… puede tardar" href="<?= $baseExportacion ?>?archivos=1">
+                            <i class="bi bi-images me-1" aria-hidden="true"></i>Datos con fotos y documentos
+                        </a>
+                    </div>
+                </div>
+            </section>
+        </div>
+    <?php endif; ?>
 </div>
 
 <?php if (Auth::esSuperusuario()): ?>
@@ -69,8 +104,18 @@ document.getElementById('selectorInstitucion').addEventListener('change', functi
     const valor = this.value;
     document.querySelectorAll('.enlace-reporte').forEach(function (enlace) {
         const base = enlace.dataset.base;
-        enlace.href = valor ? base + '?institucion=' + encodeURIComponent(valor) : base;
+        const union = base.indexOf('?') === -1 ? '?' : '&';
+        enlace.href = valor ? base + union + 'institucion=' + encodeURIComponent(valor) : base;
     });
+    // La descarga completa es de UNA institución: sin elegirla, sus botones quedan inactivos.
+    document.querySelectorAll('.enlace-exportacion').forEach(function (enlace) {
+        enlace.classList.toggle('disabled', !valor);
+        enlace.setAttribute('aria-disabled', valor ? 'false' : 'true');
+    });
+    const aviso = document.querySelector('.aviso-elegir-institucion');
+    if (aviso) {
+        aviso.hidden = Boolean(valor);
+    }
 });
 </script>
 <?php endif; ?>

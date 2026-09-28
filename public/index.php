@@ -2,7 +2,11 @@
 
 declare(strict_types=1);
 
+header_remove('X-Powered-By');
+
 require dirname(__DIR__) . '/vendor/autoload.php';
+
+\App\Helpers\PoliticaContenido::enviar();
 
 use App\Core\Env;
 
@@ -30,6 +34,13 @@ if (is_file(__DIR__ . '/mantenimiento.flag')) {
     header('Retry-After: 300');
     header('Cache-Control: no-store');
     App\Core\View::render('errors/mantenimiento');
+    exit;
+}
+
+// Avisos de la política de contenido (CSP) que envía el navegador: se atienden antes de abrir
+// la sesión, que no necesitan (así no se crea un archivo de sesión por cada aviso).
+if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && (new App\Core\Request())->uri === '/csp-reporte') {
+    App\Helpers\ReporteCsp::recibir($appConfig['storage_path'] . '/logs');
     exit;
 }
 
@@ -62,6 +73,7 @@ use App\Controllers\ManualController;
 use App\Controllers\MovimientoController;
 use App\Controllers\PapeleraController;
 use App\Controllers\PasswordController;
+use App\Controllers\PoliticaController;
 use App\Controllers\QrController;
 use App\Controllers\QrMasivoController;
 use App\Controllers\ReintegroController;
@@ -80,6 +92,11 @@ use App\Middlewares\PermissionMiddleware;
 use App\Middlewares\SuperusuarioMiddleware;
 
 Session::start();
+// Tras enviar un formulario (aprobar una baja, revisar una solicitud...) los contadores del
+// menú se recalculan en la siguiente página, en vez de esperar su minuto de vigencia.
+if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
+    App\Services\ContadoresMenu::invalidar();
+}
 
 $router = new Router();
 
@@ -102,6 +119,12 @@ $router->post('/2fa/dispositivos/{id}/revocar', [DosFactoresController::class, '
 // Mi cuenta: seguridad de la propia cuenta (todos los roles).
 $router->get('/mi-cuenta', [CuentaController::class, 'index'], [AuthMiddleware::class]);
 $router->post('/mi-cuenta/contrasena', [CuentaController::class, 'cambiarContrasena'], [AuthMiddleware::class]);
+
+// Política de datos: la página es pública; la aceptación es obligatoria en el primer ingreso
+// (AuthMiddleware redirige a /politica/aceptar mientras esté pendiente).
+$router->get('/politica-de-datos', [PoliticaController::class, 'mostrar']);
+$router->get('/politica/aceptar', [PoliticaController::class, 'formularioAceptar'], [AuthMiddleware::class]);
+$router->post('/politica/aceptar', [PoliticaController::class, 'aceptar'], [AuthMiddleware::class]);
 
 $router->get('/olvide-contrasena', [PasswordController::class, 'formularioOlvideContrasena']);
 $router->post('/olvide-contrasena', [PasswordController::class, 'enviarEnlaceReset']);
@@ -263,6 +286,9 @@ $router->post('/bienes/qr-masivo', [QrMasivoController::class, 'generar'], [
     AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':bienes.ver',
 ]);
 $router->get('/bienes/qr-masivo/bodega', [QrMasivoController::class, 'bodega'], [
+    AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':bienes.ver',
+]);
+$router->post('/bienes/qr-masivo/bodega/confirmar', [QrMasivoController::class, 'confirmarPegados'], [
     AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':bienes.ver',
 ]);
 
@@ -447,6 +473,10 @@ $router->get('/reportes/reintegros.xlsx', [ReporteController::class, 'reintegros
     AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':reportes.generar',
 ]);
 $router->get('/reportes/reintegros-historial.xlsx', [ReporteController::class, 'reintegrosHistorialXlsx'], [
+    AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':reportes.generar',
+]);
+// Solo rector y superusuario (lo verifica el controlador): trae datos personales y la auditoría.
+$router->get('/reportes/exportacion-completa.zip', [ReporteController::class, 'exportacionCompleta'], [
     AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':reportes.generar',
 ]);
 

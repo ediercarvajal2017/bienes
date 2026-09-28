@@ -25,7 +25,9 @@ test('reportar una baja y aprobarla', async ({ page }) => {
     await seleccionarTomSelect(page, 'categoriaBien', 'Sin cartera');
     await page.getByRole('button', { name: 'Registrar bien' }).click();
 
-    await expect(page).toHaveURL(/\/bienes$/);
+    // Al registrar se abre la ficha del bien nuevo; aquí se sigue desde el listado.
+    await expect(page).toHaveURL(/\/bienes\/\d+\/editar/);
+    await page.goto('bienes');
     const filaBien = page.locator('tr', { hasText: descripcionBien });
     await filaBien.getByRole('link', { name: 'Editar' }).click();
 

@@ -14,7 +14,7 @@ declare(strict_types=1);
  * respaldo no protege contra una falla del servidor o del hosting en sí.
  *
  * La copia que va por correo se CIFRA con BACKUP_PASSWORD (AES-256, formato estándar
- * de OpenSSL: se puede abrir incluso sin SIGEBI, ver App\Helpers\CifradoRespaldo). Sin
+ * de OpenSSL: se puede abrir incluso sin MIA, ver App\Helpers\CifradoRespaldo). Sin
  * BACKUP_PASSWORD no se envía nada por correo. La copia local queda en .gz: el servidor
  * ya contiene la base de datos misma, y así restaurar tras un despliegue es directo.
  *
@@ -181,9 +181,9 @@ try {
 
     MailService::enviarConAdjunto(
         $config['backup_email'],
-        'SIGEBI',
-        "Respaldo SIGEBI - {$fecha}",
-        "<p>Respaldo automático de la base de datos de SIGEBI.</p>"
+        'MIA',
+        "Respaldo MIA - {$fecha}",
+        "<p>Respaldo automático de la base de datos de MIA.</p>"
             . "<p>Tablas: " . count($tablas) . " — Filas: {$totalFilas} — Tamaño: {$pesoMb} MB.</p>"
             . "<p>El adjunto está <strong>cifrado</strong> con la contraseña de respaldos (BACKUP_PASSWORD). "
             . "Para abrirlo en cualquier equipo con OpenSSL:</p><pre>{$comando}</pre>"

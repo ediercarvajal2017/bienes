@@ -172,7 +172,7 @@ final class FormatoPlaqueteoController
         $registro = FormatoPlaqueteo::find($id);
         Evidencia::verificarAcceso($registro);
 
-        FormatoPlaqueteo::eliminar($id, Auth::id());
+        FormatoPlaqueteo::eliminar($id, (int) Auth::id());
         Auditoria::registrar(Auth::id(), (int) $registro['institucion_id'], 'eliminar', 'formato_plaqueteo', $id, $registro);
 
         Session::flash('ok', 'Registro enviado a la papelera. Un superusuario puede restaurarlo si fue un error.');

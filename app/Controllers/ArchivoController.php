@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Core\Auth;
+use App\Helpers\EnlaceArchivo;
 use App\Core\Database;
 use App\Models\Archivo;
 
@@ -21,7 +22,8 @@ final class ArchivoController
             exit;
         }
 
-        if (!Auth::esSuperusuario()) {
+        $firmaValida = EnlaceArchivo::firmaValida("{$tipo}/{$archivo}", (string) ($_GET['f'] ?? ''), (int) ($_GET['e'] ?? 0), Auth::institucionId());
+        if (!Auth::esSuperusuario() && !$firmaValida) {
             $institucionPropietaria = Archivo::institucionPropietaria($tipo, "{$tipo}/{$archivo}");
             if ($institucionPropietaria === null || $institucionPropietaria !== Auth::institucionId()) {
                 http_response_code(404);

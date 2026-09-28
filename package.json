@@ -2,7 +2,7 @@
   "name": "gestionbienes",
   "version": "1.0.0",
   "private": true,
-  "description": "SIGEBI - pruebas de navegador (Playwright) para los flujos con JavaScript del sistema PHP",
+  "description": "MIA - pruebas de navegador (Playwright) para los flujos con JavaScript del sistema PHP",
   "type": "module",
   "scripts": {
     "test": "playwright test",
@@ -11,6 +11,7 @@
   },
   "license": "proprietary",
   "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
     "@playwright/test": "^1.62.1"
   }
 }

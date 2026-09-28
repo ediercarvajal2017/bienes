@@ -1,6 +1,6 @@
 #!/bin/bash
 # =====================================================================================
-# Respaldo diario de SIGEBI a Google Drive (vía rclone).
+# Respaldo diario de MIA a Google Drive (vía rclone).
 #
 #  1. Base de datos: respaldo completo y verificado (database/respaldo.php), CIFRADO con
 #     BACKUP_PASSWORD (AES-256, formato estándar de OpenSSL) y subido a
@@ -44,7 +44,7 @@ alertar() {
         App\Core\Env::cargar();
         $para = (string) getenv("BACKUP_EMAIL");
         if ($para === "") { exit(0); }
-        App\Services\MailService::enviar($para, "Responsable de SIGEBI", "SIGEBI: el respaldo diario a Google Drive FALLÓ",
+        App\Services\MailService::enviar($para, "Responsable de MIA", "MIA: el respaldo diario a Google Drive FALLÓ",
             "<p>El respaldo del " . date("Y-m-d H:i") . " falló en la línea " . $argv[1] . " del script.</p>"
             . "<p>Revise el registro <code>storage_sigebi/logs/respaldo-drive.log</code> en el servidor.</p>");
     ' "$linea" >> "$LOG" 2>&1 || true

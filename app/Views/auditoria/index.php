@@ -38,6 +38,8 @@ $etiquetasAccion = [
     '2fa_regenerar_codigos' => 'Regenerar códigos de recuperación',
     '2fa_restablecer' => 'Restablecer verificación en dos pasos',
     'correccion_datos' => 'Corrección de datos',
+    'aceptar_politica' => 'Aceptar política de datos',
+    'exportar_todo' => 'Descargar toda la información',
 ];
 $coloresAccion = [
     'crear' => 'text-bg-primary',

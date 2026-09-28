@@ -6,6 +6,7 @@ namespace App\Controllers;
 
 use App\Core\Auth;
 use App\Core\Csrf;
+use App\Helpers\FechaMovimiento;
 use App\Core\Database;
 use App\Core\Request;
 use App\Core\Session;
@@ -119,8 +120,11 @@ final class SolicitudReintegroController
         $destino = trim((string) $request->input('destino_texto'));
         $respuesta = trim((string) $request->input('respuesta')) ?: null;
 
-        if ($fecha === '' || !strtotime($fecha) || $destino === '') {
-            $this->volverConError('Indique la fecha y el destino del reintegro para aprobar la solicitud.');
+        if ($destino === '') {
+            $this->volverConError('Indique el destino del reintegro para aprobar la solicitud.');
+        }
+        if ($errorFecha = FechaMovimiento::error($fecha)) {
+            $this->volverConError($errorFecha);
         }
 
         $bien = Bien::find((int) $solicitud['bien_id']);

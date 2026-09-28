@@ -47,6 +47,9 @@ $algunFiltroActivo = $busqueda !== '' || $categoriaId !== null || $estado !== nu
                         <li><a class="dropdown-item" href="<?= Url::to('/asignaciones') ?>">
                             <i class="bi bi-person-check me-1"></i>Asignar bienes
                         </a></li>
+                        <li><a class="dropdown-item" href="<?= Url::to('/reintegros') ?>">
+                            <i class="bi bi-box-arrow-in-left me-1"></i>Reintegrar bienes
+                        </a></li>
                     <?php endif; ?>
                     <?php if ($puedeQr): ?>
                         <li><a class="dropdown-item" href="<?= Url::to('/bienes/qr-masivo') ?>">
@@ -101,7 +104,7 @@ $algunFiltroActivo = $busqueda !== '' || $categoriaId !== null || $estado !== nu
 <div class="mb-3 d-flex flex-wrap gap-3 align-items-end">
     <div class="filtro-busqueda">
         <label for="buscador" class="form-label small mb-1">Buscar</label>
-        <input type="search" id="buscador" class="form-control form-control-sm"
+        <input type="search" id="buscador" data-buscar="q" class="form-control form-control-sm"
                placeholder="Buscar por código, descripción, responsable, ubicación, estado o valor..."
                value="<?= htmlspecialchars($busqueda, ENT_QUOTES) ?>">
     </div>
@@ -208,12 +211,13 @@ $algunFiltroActivo = $busqueda !== '' || $categoriaId !== null || $estado !== nu
                 </td>
             </tr>
         <?php endforeach; ?>
+        <?php $bienEditado = (int) ($_GET['editado'] ?? 0); ?>
         <?php foreach ($bienes as $b): ?>
-            <tr>
+            <tr<?= (int) $b['id'] === $bienEditado ? ' id="bienEditado" class="fila-editada"' : '' ?>>
                 <td>
                     <?php if (!empty($b['foto_path'])): ?>
-                        <img src="<?= Url::to('/archivos/' . $b['foto_path']) ?>?w=96" loading="lazy"
-                             data-lightbox-src="<?= Url::to('/archivos/' . $b['foto_path']) ?>"
+                        <img src="<?= \App\Helpers\EnlaceArchivo::url($b['foto_path'], 96) ?>" loading="lazy"
+                             data-lightbox-src="<?= \App\Helpers\EnlaceArchivo::url($b['foto_path']) ?>"
                              alt="Foto de <?= htmlspecialchars($b['descripcion'], ENT_QUOTES) ?>"
                              class="miniatura-36 miniatura-ampliable"
                              title="Ver foto en grande" loading="lazy">
@@ -292,23 +296,6 @@ $algunFiltroActivo = $busqueda !== '' || $categoriaId !== null || $estado !== nu
 })();
 
 (function () {
-    const input = document.getElementById('buscador');
-    let temporizador = null;
-
-    input.addEventListener('input', function () {
-        clearTimeout(temporizador);
-        temporizador = setTimeout(function () {
-            const url = new URL(window.location.href);
-            const valor = input.value.trim();
-            if (valor !== '') {
-                url.searchParams.set('q', valor);
-            } else {
-                url.searchParams.delete('q');
-            }
-            url.searchParams.set('pagina', '1');
-            window.location = url.toString();
-        }, 600);
-    });
 
     const filtrosSelect = [
         ['filtroCategoria', 'categoria'],
@@ -330,5 +317,16 @@ $algunFiltroActivo = $busqueda !== '' || $categoriaId !== null || $estado !== nu
             window.location = url.toString();
         });
     });
+})();
+</script>
+
+<script>
+// Tras guardar un bien se vuelve a este listado (con su búsqueda y página): se muestra
+// la fila del bien editado, resaltada unos segundos.
+(function () {
+    var fila = document.getElementById('bienEditado');
+    if (!fila) { return; }
+    fila.scrollIntoView({ block: 'center' });
+    window.setTimeout(function () { fila.classList.remove('fila-editada'); }, 4000);
 })();
 </script>
