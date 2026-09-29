@@ -8,7 +8,7 @@ return [
     'name' => 'MIA',
     'descripcion' => 'Manejo de Inventario de Activos',
     // Versión que se muestra en el pie de página (subirla en cada despliegue a producción).
-    'version' => '1.2.2',
+    'version' => '1.2.3',
     'env' => $env,
     // Apagado por defecto: si el .env se pierde o no define APP_DEBUG, nunca se muestran
     // trazas de PHP al usuario. Para desarrollar en local, poner APP_DEBUG=1 en el .env.
