@@ -346,7 +346,8 @@ final class BienController
         return [
             'institucion_id' => $institucionId,
             'lote' => trim((string) $request->input('lote')),
-            'descripcion' => trim((string) $request->input('descripcion')),
+            // Mayúscula o minúscula según la categoría (ver Bien::descripcionSegunCategoria).
+            'descripcion' => Bien::descripcionSegunCategoria(trim((string) $request->input('descripcion')), ((int) $request->input('categoria_id')) ?: null),
             'marca' => trim((string) $request->input('marca')) ?: null,
             'categoria_id' => ((int) $request->input('categoria_id')) ?: null,
             'fecha_ingreso' => (string) $request->input('fecha_ingreso'),
@@ -696,7 +697,8 @@ final class BienController
         return [
             'institucion_id' => $institucionId,
             'codigo_identificacion' => trim((string) $request->input('codigo_identificacion')),
-            'descripcion' => trim((string) $request->input('descripcion')),
+            // Mayúscula o minúscula según la categoría (ver Bien::descripcionSegunCategoria).
+            'descripcion' => Bien::descripcionSegunCategoria(trim((string) $request->input('descripcion')), $categoriaId !== '' ? (int) $categoriaId : null),
             'marca' => trim((string) $request->input('marca')) ?: null,
             'categoria_id' => $categoriaId !== '' ? (int) $categoriaId : null,
             'fecha_ingreso' => (string) $request->input('fecha_ingreso'),

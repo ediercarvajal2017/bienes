@@ -649,8 +649,28 @@ final class Bien
         return (bool) $stmt->fetchColumn();
     }
 
+    /**
+     * Regla de escritura de la descripción según la categoría: en "Sin cartera", todo en
+     * minúscula; en cualquier otra categoría (Muebles, Tecnología, Otra IE...), todo en
+     * mayúscula. Un bien sin categoría no se toca. La aplican create(), crearVarios() y
+     * update(), así que rige al crear, al editar, al cambiar de categoría, en el alta
+     * masiva y en la carga masiva.
+     */
+    public static function descripcionSegunCategoria(string $descripcion, int|string|null $categoriaId): string
+    {
+        $categoria = is_numeric($categoriaId) && (int) $categoriaId > 0 ? Categoria::find((int) $categoriaId) : null;
+        if ($categoria === null) {
+            return $descripcion;
+        }
+
+        return Categoria::esProtegida($categoria)
+            ? mb_strtolower($descripcion, 'UTF-8')
+            : mb_strtoupper($descripcion, 'UTF-8');
+    }
+
     public static function create(array $datos): int
     {
+        $datos['descripcion'] = self::descripcionSegunCategoria((string) $datos['descripcion'], $datos['categoria_id'] ?? null);
         $datos['qr_token'] = self::generarUuid();
         $datos['lote'] ??= null;
 
@@ -676,6 +696,7 @@ final class Bien
         if ($codigos === []) {
             return;
         }
+        $descripcion = self::descripcionSegunCategoria($descripcion, $categoriaId);
 
         $filas = [];
         $params = [];
@@ -723,7 +744,7 @@ final class Bien
         );
         $stmt->execute([
             'codigo_identificacion' => $datos['codigo_identificacion'],
-            'descripcion' => $datos['descripcion'],
+            'descripcion' => self::descripcionSegunCategoria((string) $datos['descripcion'], $datos['categoria_id']),
             'marca' => $datos['marca'],
             'categoria_id' => $datos['categoria_id'],
             'fecha_ingreso' => $datos['fecha_ingreso'],

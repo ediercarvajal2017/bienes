@@ -259,7 +259,7 @@ $invalido = static fn (string $campo) => $errorCampo === $campo ? ' is-invalid' 
 
     <div class="col-12">
         <label for="campo-descripcion" class="form-label small requerido">Descripción</label>
-        <input id="campo-descripcion" type="text" name="descripcion" class="form-control<?= $invalido('descripcion') ?>" required <?= $puedeEditar ? '' : 'disabled' ?>
+        <input id="campo-descripcion" type="text" name="descripcion" data-descripcion-segun-categoria="categoriaBien" class="form-control<?= $invalido('descripcion') ?>" required <?= $puedeEditar ? '' : 'disabled' ?>
                placeholder="Ej. Silla plástica azul, Proyector Epson X200..."
                value="<?= htmlspecialchars($v('descripcion'), ENT_QUOTES) ?>">
         <?php if ($errorCampo === 'descripcion'): ?>
@@ -645,3 +645,4 @@ document.addEventListener('DOMContentLoaded', function () {
         </div>
     </details>
 <?php endif; ?>
+<script src="<?= Url::asset('/assets/js/descripcion-categoria.js') ?>"></script>

@@ -65,7 +65,7 @@ $v = static fn (string $campo, mixed $porDefecto = '') => $viejo[$campo] ?? $por
 
     <div class="col-12">
         <label for="campo-descripcion" class="form-label small requerido">Descripción</label>
-        <input id="campo-descripcion" type="text" name="descripcion" class="form-control" required
+        <input id="campo-descripcion" type="text" name="descripcion" data-descripcion-segun-categoria="categoriaLote" class="form-control" required
                placeholder="Ej. Silla metálica con espaldar en polipropileno"
                value="<?= htmlspecialchars($v('descripcion'), ENT_QUOTES) ?>">
     </div>
@@ -139,3 +139,4 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 });
 </script>
+<script src="<?= Url::asset('/assets/js/descripcion-categoria.js') ?>"></script>

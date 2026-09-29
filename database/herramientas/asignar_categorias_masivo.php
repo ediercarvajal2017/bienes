@@ -157,10 +157,15 @@ if (empty($actualizaciones)) {
 
 $pdo->beginTransaction();
 try {
-    $stmtUpdate = $pdo->prepare('UPDATE bienes SET categoria_id = ? WHERE id = ?');
+    // La descripción cambia a mayúscula o minúscula según la nueva categoría (misma regla que
+    // al editar: App\Models\Bien::descripcionSegunCategoria).
+    $stmtUpdate = $pdo->prepare('UPDATE bienes SET categoria_id = ?, descripcion = ? WHERE id = ?');
+    $stmtDescripcion = $pdo->prepare('SELECT descripcion FROM bienes WHERE id = ?');
 
     foreach ($actualizaciones as $bienId => $datos) {
-        $stmtUpdate->execute([$datos['categoria_id'], $bienId]);
+        $stmtDescripcion->execute([$bienId]);
+        $descripcion = \App\Models\Bien::descripcionSegunCategoria((string) $stmtDescripcion->fetchColumn(), (int) $datos['categoria_id']);
+        $stmtUpdate->execute([$datos['categoria_id'], $descripcion, $bienId]);
     }
 
     $pdo->commit();
