@@ -383,6 +383,185 @@ final class ReportesControl
         }
     }
 
+    public const TIPOS_CONTROL = [
+        'calidad' => 'Calidad del inventario',
+        'valor' => 'Valor por espacio y categoría',
+        'inactivos' => 'Funcionarios inactivos',
+    ];
+
+    /** Días sin ingresar a partir de los cuales un funcionario cuenta como inactivo. */
+    public const DIAS_INACTIVO = 30;
+
+    /** Solo los bienes que siguen en el inventario (ni reintegrados ni dados de baja). */
+    private const EN_INVENTARIO = "b.estado IN ('activo', 'en_reparacion')";
+
+    /**
+     * Excel de control del inventario: calidad, valor por espacio y categoría, o funcionarios
+     * inactivos.
+     *
+     * @param list<int>|null $institucionIds null = todas (solo superusuario)
+     * @return array{ruta: string, nombre: string}
+     */
+    public static function controlXlsx(string $tipo, ?array $institucionIds, string $alcance, string $generadoPor, string $carpeta): array
+    {
+        if (!isset(self::TIPOS_CONTROL[$tipo])) {
+            throw new \InvalidArgumentException('Tipo de reporte no válido.');
+        }
+        if (!is_dir($carpeta) && !mkdir($carpeta, 0700, true) && !is_dir($carpeta)) {
+            throw new \RuntimeException('No se pudo crear la carpeta temporal.');
+        }
+        $trabajo = $carpeta . '/control-' . bin2hex(random_bytes(8));
+        mkdir($trabajo, 0700);
+        $libro = new LibroXlsxStreaming($trabajo);
+        $pdo = Database::connection();
+        $en = static fn (string $columna): string => $institucionIds === null
+            ? '1 = 1'
+            : ($institucionIds === [] ? '1 = 0' : "{$columna} IN (" . implode(',', array_map('intval', $institucionIds)) . ')');
+
+        $notas = [
+            'calidad' => 'Solo bienes en el inventario (activos o en reparación). "Sin ubicación": sin asignación activa a un espacio.',
+            'valor' => 'Solo bienes en el inventario (activos o en reparación). Valores en pesos.',
+            'inactivos' => 'Usuarios activos que no ingresan hace ' . self::DIAS_INACTIVO . ' días o más, o que nunca han ingresado.',
+        ];
+        $libro->agregarHojaDesdeFilas('Información', ['Dato', 'Valor'], [
+            ['Reporte', self::TIPOS_CONTROL[$tipo]],
+            ['Institución', $alcance],
+            ['Generado por', $generadoPor],
+            ['Generado el', date('d/m/Y H:i')],
+            ['Nota', $notas[$tipo]],
+        ]);
+
+        // Espacio actual de cada bien (su asignación activa).
+        $ubicacion = 'LEFT JOIN (SELECT bien_id, MAX(espacio_id) AS espacio_id FROM asignaciones WHERE activa = 1 GROUP BY bien_id) ua
+                        ON ua.bien_id = b.id
+                      LEFT JOIN espacios e ON e.id = ua.espacio_id';
+        $nombreEspacio = "CASE WHEN e.id IS NULL THEN 'Sin ubicación' ELSE CONCAT_WS(' - ', NULLIF(e.codigo, ''), e.nombre) END";
+
+        if ($tipo === 'calidad') {
+            $stmt = $pdo->query(
+                "SELECT i.nombre AS `Sede`, {$nombreEspacio} AS `Espacio`, COUNT(*) AS `Bienes`,
+                        SUM(b.foto_path IS NULL OR b.foto_path = '') AS `Sin foto`,
+                        SUM(b.categoria_id IS NULL) AS `Sin categoría`,
+                        SUM(ua.bien_id IS NULL) AS `Sin ubicación`,
+                        SUM(b.qr_confirmado_en IS NULL) AS `Sin QR pegado`
+                   FROM bienes b JOIN instituciones i ON i.id = b.institucion_id {$ubicacion}
+                  WHERE " . self::EN_INVENTARIO . ' AND ' . $en('b.institucion_id') . "
+                  GROUP BY i.nombre, e.id, e.codigo, e.nombre
+                  ORDER BY i.nombre, (e.id IS NULL), e.nombre"
+            );
+            $libro->agregarHoja('Resumen por espacio', self::sinFalla($stmt), ['Bienes', 'Sin foto', 'Sin categoría', 'Sin ubicación', 'Sin QR pegado']);
+
+            $listas = [
+                'Sin foto' => "(b.foto_path IS NULL OR b.foto_path = '')",
+                'Sin categoría' => 'b.categoria_id IS NULL',
+                'Sin ubicación' => 'ua.bien_id IS NULL',
+                'Sin QR pegado' => 'b.qr_confirmado_en IS NULL',
+            ];
+            foreach ($listas as $titulo => $condicion) {
+                $stmt = $pdo->query(
+                    "SELECT b.codigo_identificacion AS `Código`, b.descripcion AS `Descripción`, c.nombre AS `Categoría`,
+                            {$nombreEspacio} AS `Espacio`, i.nombre AS `Sede`,
+                            CASE b.estado WHEN 'activo' THEN 'Activo' ELSE 'En reparación' END AS `Estado`
+                       FROM bienes b JOIN instituciones i ON i.id = b.institucion_id
+                       LEFT JOIN categorias_bienes c ON c.id = b.categoria_id {$ubicacion}
+                      WHERE " . self::EN_INVENTARIO . " AND {$condicion} AND " . $en('b.institucion_id') . '
+                      ORDER BY i.nombre, b.codigo_identificacion'
+                );
+                $libro->agregarHoja($titulo, self::sinFalla($stmt));
+            }
+        }
+
+        if ($tipo === 'valor') {
+            $stmt = $pdo->query(
+                "SELECT i.nombre AS sede, {$nombreEspacio} AS espacio, COUNT(*) AS bienes, SUM(b.valor) AS valor
+                   FROM bienes b JOIN instituciones i ON i.id = b.institucion_id {$ubicacion}
+                  WHERE " . self::EN_INVENTARIO . ' AND ' . $en('b.institucion_id') . '
+                  GROUP BY i.nombre, e.id, e.codigo, e.nombre ORDER BY i.nombre, (e.id IS NULL), e.nombre'
+            );
+            $libro->agregarHojaDesdeFilas('Por espacio', ['Sede', 'Espacio', 'Bienes', 'Valor total'],
+                self::conTotal(self::sinFalla($stmt)->fetchAll(PDO::FETCH_NUM), 2), ['Bienes', 'Valor total']);
+
+            $stmt = $pdo->query(
+                "SELECT COALESCE(c.nombre, 'Sin categoría') AS categoria, COUNT(*) AS bienes, SUM(b.valor) AS valor
+                   FROM bienes b LEFT JOIN categorias_bienes c ON c.id = b.categoria_id
+                  WHERE " . self::EN_INVENTARIO . ' AND ' . $en('b.institucion_id') . "
+                  GROUP BY COALESCE(c.nombre, 'Sin categoría') ORDER BY valor DESC"
+            );
+            $libro->agregarHojaDesdeFilas('Por categoría', ['Categoría', 'Bienes', 'Valor total'],
+                self::conTotal(self::sinFalla($stmt)->fetchAll(PDO::FETCH_NUM), 1), ['Bienes', 'Valor total']);
+
+            $stmt = $pdo->query(
+                "SELECT i.nombre AS `Sede`, {$nombreEspacio} AS `Espacio`, COALESCE(c.nombre, 'Sin categoría') AS `Categoría`,
+                        COUNT(*) AS `Bienes`, SUM(b.valor) AS `Valor total`
+                   FROM bienes b JOIN instituciones i ON i.id = b.institucion_id
+                   LEFT JOIN categorias_bienes c ON c.id = b.categoria_id {$ubicacion}
+                  WHERE " . self::EN_INVENTARIO . ' AND ' . $en('b.institucion_id') . "
+                  GROUP BY i.nombre, e.id, e.codigo, e.nombre, COALESCE(c.nombre, 'Sin categoría')
+                  ORDER BY i.nombre, (e.id IS NULL), e.nombre, `Categoría`"
+            );
+            $libro->agregarHoja('Espacio × categoría', self::sinFalla($stmt), ['Bienes', 'Valor total']);
+        }
+
+        if ($tipo === 'inactivos') {
+            $stmt = $pdo->prepare(
+                "SELECT TRIM(CONCAT_WS(' ', u.nombres, u.apellidos)) AS `Funcionario`, u.documento AS `Documento`,
+                        u.email AS `Correo`, r.nombre AS `Rol`, ca.nombre AS `Cargo`, i.nombre AS `Sede`,
+                        COALESCE(DATE_FORMAT(u.ultimo_login, '%Y-%m-%d %H:%i'), 'Nunca ha ingresado') AS `Último ingreso`,
+                        DATEDIFF(NOW(), u.ultimo_login) AS `Días sin ingresar`
+                   FROM usuarios u
+                   JOIN roles r ON r.id = u.rol_id
+                   JOIN instituciones i ON i.id = u.institucion_id
+                   LEFT JOIN cargos ca ON ca.id = u.cargo_id
+                  WHERE u.activo = 1 AND u.eliminado_en IS NULL AND r.nombre <> 'superusuario'
+                    AND (u.ultimo_login IS NULL OR u.ultimo_login < NOW() - INTERVAL ? DAY)
+                    AND " . $en('u.institucion_id') . '
+                  ORDER BY (u.ultimo_login IS NULL) DESC, u.ultimo_login, u.apellidos'
+            );
+            $stmt->execute([self::DIAS_INACTIVO]);
+            $libro->agregarHoja('Funcionarios inactivos', $stmt, ['Días sin ingresar']);
+        }
+
+        $ruta = $trabajo . '.xlsx';
+        $libro->guardar($ruta);
+        @rmdir($trabajo);
+
+        return ['ruta' => $ruta, 'nombre' => 'MIA_' . $tipo . '_' . date('Y-m-d') . '.xlsx'];
+    }
+
+    private static function sinFalla(\PDOStatement|false $stmt): \PDOStatement
+    {
+        if ($stmt === false) {
+            throw new \RuntimeException('No se pudo leer la información.');
+        }
+
+        return $stmt;
+    }
+
+    /**
+     * Agrega la fila TOTAL sumando las columnas numéricas desde $primeraNumerica.
+     *
+     * @param array<int, array<int, mixed>> $filas
+     * @return array<int, array<int, mixed>>
+     */
+    private static function conTotal(array $filas, int $primeraNumerica): array
+    {
+        if ($filas === []) {
+            return [];
+        }
+        $total = array_fill(0, count(reset($filas)), '');
+        $total[0] = 'TOTAL';
+        foreach ($filas as $fila) {
+            foreach (array_values($fila) as $i => $valor) {
+                if ($i >= $primeraNumerica) {
+                    $total[$i] = (float) ($total[$i] === '' ? 0 : $total[$i]) + (float) $valor;
+                }
+            }
+        }
+        $filas[] = $total;
+
+        return $filas;
+    }
+
     private static function nombreRegistro(array $datos, int $id): string
     {
         $nombre = trim((string) ($datos['nombre'] ?? trim(($datos['nombres'] ?? '') . ' ' . ($datos['apellidos'] ?? ''))));

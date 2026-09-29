@@ -117,6 +117,38 @@ $instituciones = Auth::esSuperusuario() ? Institucion::listadoParaSelect() : [];
             </section>
         </div>
 
+        <div class="col-12">
+            <section class="card" aria-labelledby="tituloControlInventario">
+                <div class="card-body">
+                    <h2 class="h6" id="tituloControlInventario"><i class="bi bi-clipboard-data me-1" aria-hidden="true"></i>Control del inventario</h2>
+                    <p class="small text-muted mb-3">Para revisar qué falta completar, dónde está el valor del inventario y quién no está usando MIA<?= Auth::esSuperusuario() ? ' (institución elegida arriba, o todas)' : '' ?>.</p>
+                    <form method="get" action="<?= Url::to('/reportes/control.xlsx') ?>" id="formControl" class="row g-3" data-sin-cargando>
+                        <?php if (Auth::esSuperusuario()): ?>
+                            <input type="hidden" name="institucion" class="institucion-reporte-control" value="">
+                        <?php endif; ?>
+                        <?php
+                        $descripcionesControl = [
+                            'calidad' => 'Bienes sin foto, sin categoría, sin ubicación o sin QR pegado, por espacio, con la lista de cada caso.',
+                            'valor' => 'Cantidad de bienes y valor total por espacio, por categoría y cruzado, con totales.',
+                            'inactivos' => 'Funcionarios que no ingresan hace ' . \App\Services\ReportesControl::DIAS_INACTIVO . ' días o más, o que nunca han ingresado.',
+                        ];
+                        ?>
+                        <?php foreach (\App\Services\ReportesControl::TIPOS_CONTROL as $clave => $texto): ?>
+                            <div class="col-md-4 d-flex flex-column">
+                                <div class="fw-semibold small"><?= htmlspecialchars($texto, ENT_QUOTES) ?></div>
+                                <p class="small text-muted mb-2 flex-grow-1"><?= htmlspecialchars($descripcionesControl[$clave], ENT_QUOTES) ?></p>
+                                <div>
+                                    <button type="submit" name="tipo" value="<?= $clave ?>" class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-file-earmark-excel me-1" aria-hidden="true"></i>.xlsx
+                                    </button>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    </form>
+                </div>
+            </section>
+        </div>
+
         <?php $baseExportacion = Url::to('/reportes/exportacion-completa.zip'); ?>
         <div class="col-12">
             <section class="card" aria-labelledby="tituloExportacion">
@@ -171,6 +203,9 @@ document.getElementById('selectorInstitucion').addEventListener('change', functi
     if (institucionActividad) {
         institucionActividad.value = valor;
     }
+    document.querySelectorAll('.institucion-reporte-control').forEach(function (campo) {
+        campo.value = valor;
+    });
 });
 </script>
 <?php endif; ?>
@@ -194,7 +229,8 @@ document.getElementById('selectorInstitucion').addEventListener('change', functi
     alternarRango();
 
     // La descarga no cambia de página: se avisa en el botón unos segundos, sin bloquear la pantalla.
-    form.addEventListener('submit', function (evento) {
+    [form, document.getElementById('formControl')].forEach(function (f) { if (f) { f.addEventListener('submit', avisar); } });
+    function avisar(evento) {
         const boton = evento.submitter;
         if (!boton) { return; }
         window.setTimeout(function () {
@@ -202,7 +238,7 @@ document.getElementById('selectorInstitucion').addEventListener('change', functi
             boton.innerHTML = '<span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>Generando…';
             window.setTimeout(function () { boton.innerHTML = original; }, 4000);
         }, 0);
-    });
+    }
 })();
 </script>
 <?php endif; ?>

@@ -37,6 +37,7 @@ const EXCEPCIONES = {
     'GET /reportes/exportacion-completa.zip': (p, rol) => rol === 'rector' || rol === 'superusuario',
     // ReporteController::actividad: la actividad de los funcionarios es para control del rector.
     'GET /reportes/actividad.xlsx': (p, rol) => rol === 'rector' || rol === 'superusuario',
+    'GET /reportes/control.xlsx': (p, rol) => rol === 'rector' || rol === 'superusuario',
 };
 
 // Rutas que no se prueban aquí (motivo al lado).

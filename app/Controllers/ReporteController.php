@@ -67,6 +67,35 @@ final class ReporteController
             'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     }
 
+    /**
+     * Reportes de control del inventario en Excel (ver ReportesControl::controlXlsx): calidad
+     * del inventario, valor por espacio y categoría, y funcionarios inactivos. Mismo acceso
+     * que la actividad: rector (su institución y sedes) y superusuario.
+     */
+    public function control(): void
+    {
+        if (!$this->puedeExportarTodo()) {
+            http_response_code(403);
+            View::render('errors/403');
+            exit;
+        }
+
+        $tipo = (string) ($_GET['tipo'] ?? '');
+        if (!isset(ReportesControl::TIPOS_CONTROL[$tipo])) {
+            Session::flash('error', 'Elige uno de los reportes de control del inventario.');
+            header('Location: ' . Url::to('/reportes'));
+            exit;
+        }
+        [$ids, $alcance] = $this->alcance();
+
+        $config = require dirname(__DIR__, 2) . '/config/app.php';
+        @set_time_limit(0);
+        $resultado = ReportesControl::controlXlsx($tipo, $ids, $alcance, (string) Auth::nombreCompleto(), $config['storage_path'] . '/tmp');
+
+        $this->enviarArchivo($resultado['ruta'], $resultado['nombre'],
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    }
+
     public function carteraXlsx(): void
     {
         ReporteService::enviarXlsx(ReporteService::carteraBienes($this->institucionAExportar()), 'cartera_bienes');

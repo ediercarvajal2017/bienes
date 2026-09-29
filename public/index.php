@@ -483,6 +483,10 @@ $router->get('/reportes/exportacion-completa.zip', [ReporteController::class, 'e
 $router->get('/reportes/actividad.xlsx', [ReporteController::class, 'actividad'], [
     AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':reportes.generar',
 ]);
+// Control del inventario (Excel): calidad, valor por espacio y categoría, funcionarios inactivos.
+$router->get('/reportes/control.xlsx', [ReporteController::class, 'control'], [
+    AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':reportes.generar',
+]);
 
 $router->get('/cartera/enviar', [CarteraController::class, 'formulario'], [
     AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':cartera.gestionar',

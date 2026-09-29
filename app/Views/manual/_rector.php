@@ -120,6 +120,9 @@
                     rango) y, si quieres, un funcionario, y descargas en Excel: el resumen por funcionario, los registros
                     nuevos, los actualizados (qué campo cambió, antes y después) y los movimientos, o todo en un solo
                     archivo.</li>
+                <li>En <strong>Control del inventario</strong> descargas en Excel la calidad del inventario (bienes sin
+                    foto, sin categoría, sin ubicación o sin QR pegado), el valor por espacio y categoría, y los
+                    funcionarios que no ingresan hace 30 días o más.</li>
                 <li>Al final de Reportes, <strong>Descargar toda la información</strong> te da un .zip con todo lo
                     registrado de tu institución y sus sedes (un Excel con una hoja por tema y, si quieres, las fotos y
                     documentos). Úsalo como copia propia; contiene datos personales, así que guárdalo en un lugar
