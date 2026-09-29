@@ -86,11 +86,11 @@ $v = static fn (string $campo, mixed $porDefecto = '') => $viejo[$campo] ?? $por
     <div class="col-12">
         <div class="form-check">
             <input type="checkbox" name="imprimir_qr" value="1" id="imprimirQrLote" class="form-check-input"
-                   <?= !empty($v('imprimir_qr', '1')) ? 'checked' : '' ?>>
+                   <?= !empty($v('imprimir_qr', '0')) ? 'checked' : '' ?>>
             <label class="form-check-label small" for="imprimirQrLote">Imprimir QR de todo el lote</label>
             <i class="bi bi-question-circle text-muted small ms-1"
                style="cursor: help;"
-               title="Agrega los bienes del lote a la Bodega de impresión de QR (en &quot;Generar QR masivo&quot;) para imprimirlos de una vez."></i>
+               title="Márcala solo si necesitas los stickers: agrega los bienes del lote a la Bodega de impresión de QR (en &quot;Generar QR masivo&quot;)."></i>
         </div>
     </div>
 

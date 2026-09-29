@@ -578,7 +578,7 @@ final class BienController
         Auditoria::registrar(Auth::id(), (int) $datos['institucion_id'], 'editar', 'bien', $id, $bien, $datos);
 
         $this->procesarArchivos($id, $request, $datos['codigo_identificacion']);
-        $this->procesarSolicitudQr($id, $imprimirQr);
+        $this->procesarSolicitudQr($id, $imprimirQr, $request->input('quitar_qr') === '1');
 
         Session::flash('ok', trim('Bien actualizado. ' . $mensajeAccion));
 
@@ -669,12 +669,18 @@ final class BienController
      * impresión de QR (/bienes/qr-masivo); desmarcada lo retira si estaba ahí. No hace
      * nada si el bien no tenía autorización de edición (formulario deshabilitado).
      */
-    private function procesarSolicitudQr(int $bienId, bool $solicitado): void
+    /**
+     * La casilla "Imprimir QR" es una orden, no un estado: marcada, manda el bien a la Bodega
+     * de QR; desmarcada, no cambia nada. Antes, desmarcada lo sacaba de la Bodega y al editar
+     * venía marcada si ya estaba en ella, así que guardar lo devolvía a "por imprimir" y se
+     * reimprimía. Para sacarlo de la Bodega está la casilla aparte "Quitar de la Bodega".
+     */
+    private function procesarSolicitudQr(int $bienId, bool $solicitado, bool $quitar = false): void
     {
-        if ($solicitado) {
-            Bien::solicitarQr($bienId, (int) Auth::id());
-        } else {
+        if ($quitar) {
             Bien::cancelarSolicitudQr($bienId);
+        } elseif ($solicitado) {
+            Bien::solicitarQr($bienId, (int) Auth::id());
         }
     }
 

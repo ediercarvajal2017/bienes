@@ -254,6 +254,19 @@ final class Bien
         'por_pegar' => 'b.qr_impreso_en >= b.qr_solicitado_en',
     ];
 
+    /** Fase del bien en la Bodega de QR (misma regla que FASES_QR), o null si no está en ella. */
+    public static function faseQr(array $bien): ?string
+    {
+        $solicitado = (string) ($bien['qr_solicitado_en'] ?? '');
+        if ($solicitado === '') {
+            return null;
+        }
+        $impreso = (string) ($bien['qr_impreso_en'] ?? '');
+
+        // Fechas 'AAAA-MM-DD HH:MM:SS': compararlas como texto respeta el orden en el tiempo.
+        return $impreso === '' || $impreso < $solicitado ? 'por_imprimir' : 'por_pegar';
+    }
+
     /**
      * Bodega de impresión de QR: bienes que alguien marcó con la casilla "Imprimir QR" en
      * el formulario y todavía no se confirmó que el sticker quedó pegado (confirmar limpia

@@ -322,21 +322,32 @@ $invalido = static fn (string $campo) => $errorCampo === $campo ? ' is-invalid' 
     </div>
 
     <?php
-    // Por defecto va marcada al crear (lo normal es querer imprimir un bien nuevo) y
-    // refleja si el bien ya está en la Bodega de impresión al editar -- no "si el QR ya
-    // se imprimió", sino "si sigue con una solicitud activa" (ver Bien::solicitarQr()).
-    $imprimirQrPorDefecto = $esEdicion ? !empty($bien['qr_solicitado_en']) : true;
+    // "Imprimir QR" siempre viene desmarcada: marcarla es una orden ("mándalo a imprimir"),
+    // no un estado, y desmarcada no cambia nada (ver BienController::procesarSolicitudQr).
+    // Al editar se informa si el bien ya está en la Bodega de QR.
+    $faseQr = $esEdicion ? \App\Models\Bien::faseQr($bien) : null;
     ?>
     <div class="col-12">
-        <div class="form-check">
-            <input type="checkbox" name="imprimir_qr" value="1" id="imprimirQr" class="form-check-input"
-                   <?= !empty($v('imprimir_qr', $imprimirQrPorDefecto ? '1' : '0')) ? 'checked' : '' ?>
-                   <?= $puedeEditar ? '' : 'disabled' ?>>
-            <label class="form-check-label small" for="imprimirQr">Imprimir QR</label>
-            <i class="bi bi-question-circle text-muted small ms-1"
-               style="cursor: help;"
-               title="Agrega este bien a la Bodega de impresión de QR (en &quot;Generar QR masivo&quot;) para imprimirlo."></i>
-        </div>
+        <?php if ($faseQr === 'por_imprimir'): ?>
+            <p class="small mb-1"><i class="bi bi-printer me-1" aria-hidden="true"></i>Este bien ya está en la Bodega de QR, pendiente de imprimir.</p>
+            <div class="form-check">
+                <input type="checkbox" name="quitar_qr" value="1" id="quitarQr" class="form-check-input" <?= $puedeEditar ? '' : 'disabled' ?>>
+                <label class="form-check-label small" for="quitarQr">Quitar de la Bodega de QR</label>
+            </div>
+        <?php else: ?>
+            <?php if ($faseQr === 'por_pegar'): ?>
+                <p class="small mb-1"><i class="bi bi-sticky me-1" aria-hidden="true"></i>El QR ya se imprimió y está pendiente de pegar (Bodega de QR).</p>
+            <?php endif; ?>
+            <div class="form-check">
+                <input type="checkbox" name="imprimir_qr" value="1" id="imprimirQr" class="form-check-input"
+                       <?= !empty($v('imprimir_qr', '0')) ? 'checked' : '' ?>
+                       <?= $puedeEditar ? '' : 'disabled' ?>>
+                <label class="form-check-label small" for="imprimirQr"><?= $faseQr === 'por_pegar' ? 'Volver a imprimir el QR' : 'Imprimir QR' ?></label>
+                <i class="bi bi-question-circle text-muted small ms-1"
+                   style="cursor: help;"
+                   title="Márcala solo si necesitas el sticker: agrega este bien a la Bodega de impresión de QR (en &quot;Generar QR masivo&quot;)."></i>
+            </div>
+        <?php endif; ?>
     </div>
 
     <div class="col-md-6">
