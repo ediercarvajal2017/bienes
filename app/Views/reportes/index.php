@@ -67,6 +67,56 @@ $instituciones = Auth::esSuperusuario() ? Institucion::listadoParaSelect() : [];
     </div>
 
     <?php if (!empty($puedeExportarTodo)): ?>
+        <div class="col-12">
+            <section class="card border-primary-subtle" aria-labelledby="tituloActividad">
+                <div class="card-body">
+                    <span class="badge text-bg-primary mb-2">CONTROL</span>
+                    <h2 class="h6" id="tituloActividad"><i class="bi bi-person-lines-fill me-1" aria-hidden="true"></i>Actividad de los funcionarios</h2>
+                    <p class="small text-muted mb-3">
+                        Qué se registró, qué se cambió y qué se movió, quién lo hizo y a qué hora<?= Auth::esSuperusuario() ? ' (en la institución elegida arriba, o en todas)' : '' ?>.
+                        Cada reporte se descarga en Excel.
+                    </p>
+                    <form method="get" action="<?= Url::to('/reportes/actividad.xlsx') ?>" id="formActividad" class="row g-2 align-items-end" data-sin-cargando>
+                        <?php if (Auth::esSuperusuario()): ?>
+                            <input type="hidden" name="institucion" id="actividadInstitucion" value="">
+                        <?php endif; ?>
+                        <div class="col-sm-6 col-lg-3">
+                            <label class="form-label small mb-1" for="actividadPeriodo">Período</label>
+                            <select name="periodo" id="actividadPeriodo" class="form-select form-select-sm">
+                                <?php foreach (\App\Services\ReportesControl::PERIODOS as $clave => $texto): ?>
+                                    <option value="<?= $clave ?>"><?= htmlspecialchars($texto, ENT_QUOTES) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="col-6 col-lg-2 campo-rango" hidden>
+                            <label class="form-label small mb-1" for="actividadDesde">Desde</label>
+                            <input type="date" name="desde" id="actividadDesde" class="form-control form-control-sm" max="<?= date('Y-m-d') ?>">
+                        </div>
+                        <div class="col-6 col-lg-2 campo-rango" hidden>
+                            <label class="form-label small mb-1" for="actividadHasta">Hasta</label>
+                            <input type="date" name="hasta" id="actividadHasta" class="form-control form-control-sm" max="<?= date('Y-m-d') ?>">
+                        </div>
+                        <div class="col-sm-6 col-lg-5">
+                            <label class="form-label small mb-1" for="actividadUsuario">Funcionario</label>
+                            <select name="usuario" id="actividadUsuario" class="form-select form-select-sm selector-buscable">
+                                <option value="">Todos los funcionarios</option>
+                                <?php foreach ($funcionarios as $f): ?>
+                                    <option value="<?= (int) $f['id'] ?>"><?= htmlspecialchars($f['nombre'], ENT_QUOTES) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="col-12 d-flex flex-wrap gap-2 mt-2">
+                            <?php foreach (\App\Services\ReportesControl::TIPOS_ACTIVIDAD as $clave => $texto): ?>
+                                <button type="submit" name="tipo" value="<?= $clave ?>" class="btn btn-sm <?= $clave === 'todo' ? 'btn-primary' : 'btn-outline-primary' ?>">
+                                    <i class="bi bi-file-earmark-excel me-1" aria-hidden="true"></i><?= htmlspecialchars($clave === 'todo' ? 'Todo en un solo Excel' : $texto, ENT_QUOTES) ?>
+                                </button>
+                            <?php endforeach; ?>
+                        </div>
+                    </form>
+                </div>
+            </section>
+        </div>
+
         <?php $baseExportacion = Url::to('/reportes/exportacion-completa.zip'); ?>
         <div class="col-12">
             <section class="card" aria-labelledby="tituloExportacion">
@@ -116,6 +166,43 @@ document.getElementById('selectorInstitucion').addEventListener('change', functi
     if (aviso) {
         aviso.hidden = Boolean(valor);
     }
+    // Reportes de actividad: la institución elegida (vacía = todas).
+    const institucionActividad = document.getElementById('actividadInstitucion');
+    if (institucionActividad) {
+        institucionActividad.value = valor;
+    }
 });
+</script>
+<?php endif; ?>
+
+<?php if (!empty($puedeExportarTodo)): ?>
+<script>
+(function () {
+    const form = document.getElementById('formActividad');
+    const periodo = document.getElementById('actividadPeriodo');
+    if (!form || !periodo) { return; }
+
+    // "Rango de fechas" muestra Desde/Hasta (obligatorios en ese caso).
+    function alternarRango() {
+        const esRango = periodo.value === 'rango';
+        form.querySelectorAll('.campo-rango').forEach(function (campo) {
+            campo.hidden = !esRango;
+            campo.querySelector('input').required = esRango;
+        });
+    }
+    periodo.addEventListener('change', alternarRango);
+    alternarRango();
+
+    // La descarga no cambia de página: se avisa en el botón unos segundos, sin bloquear la pantalla.
+    form.addEventListener('submit', function (evento) {
+        const boton = evento.submitter;
+        if (!boton) { return; }
+        window.setTimeout(function () {
+            const original = boton.innerHTML;
+            boton.innerHTML = '<span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>Generando…';
+            window.setTimeout(function () { boton.innerHTML = original; }, 4000);
+        }, 0);
+    });
+})();
 </script>
 <?php endif; ?>

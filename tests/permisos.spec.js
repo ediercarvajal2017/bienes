@@ -35,6 +35,8 @@ const EXCEPCIONES = {
     // ReporteController::exportacionCompleta: trae datos personales y la auditoría, así que
     // aunque el secretario genere reportes, la descarga completa es solo del rector.
     'GET /reportes/exportacion-completa.zip': (p, rol) => rol === 'rector' || rol === 'superusuario',
+    // ReporteController::actividad: la actividad de los funcionarios es para control del rector.
+    'GET /reportes/actividad.xlsx': (p, rol) => rol === 'rector' || rol === 'superusuario',
 };
 
 // Rutas que no se prueban aquí (motivo al lado).

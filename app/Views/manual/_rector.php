@@ -116,6 +116,10 @@
                     (pendientes o históricos) y el consolidado de jornadas de verificación, en Excel o CSV.</li>
                 <li>En <strong>Cartera (histórico)</strong> puedes enviar ese reporte por correo, indicando el
                     funcionario que lo remite y el destinatario.</li>
+                <li>En <strong>Actividad de los funcionarios</strong> eliges un período (hoy, ayer, 7 días, el mes o un
+                    rango) y, si quieres, un funcionario, y descargas en Excel: el resumen por funcionario, los registros
+                    nuevos, los actualizados (qué campo cambió, antes y después) y los movimientos, o todo en un solo
+                    archivo.</li>
                 <li>Al final de Reportes, <strong>Descargar toda la información</strong> te da un .zip con todo lo
                     registrado de tu institución y sus sedes (un Excel con una hoja por tema y, si quieres, las fotos y
                     documentos). Úsalo como copia propia; contiene datos personales, así que guárdalo en un lugar

@@ -479,6 +479,10 @@ $router->get('/reportes/reintegros-historial.xlsx', [ReporteController::class, '
 $router->get('/reportes/exportacion-completa.zip', [ReporteController::class, 'exportacionCompleta'], [
     AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':reportes.generar',
 ]);
+// Actividad de los funcionarios (Excel): también solo rector y superusuario (lo verifica el controlador).
+$router->get('/reportes/actividad.xlsx', [ReporteController::class, 'actividad'], [
+    AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':reportes.generar',
+]);
 
 $router->get('/cartera/enviar', [CarteraController::class, 'formulario'], [
     AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':cartera.gestionar',

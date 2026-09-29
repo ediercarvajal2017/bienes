@@ -35,6 +35,31 @@ final class LibroXlsxStreaming
      */
     public function agregarHoja(string $titulo, PDOStatement $stmt, array $numericas = []): int
     {
+        $encabezados = [];
+        for ($i = 0; $i < $stmt->columnCount(); $i++) {
+            $encabezados[] = (string) ($stmt->getColumnMeta($i)['name'] ?? '');
+        }
+        $filas = (static function () use ($stmt): \Generator {
+            while (($fila = $stmt->fetch(\PDO::FETCH_NUM)) !== false) {
+                yield $fila;
+            }
+            $stmt->closeCursor();
+        })();
+
+        return $this->agregarHojaDesdeFilas($titulo, $encabezados, $filas, $numericas);
+    }
+
+    /**
+     * Escribe una hoja con filas armadas en PHP (cada fila, una lista de valores en el orden
+     * de $encabezados). Para reportes que se calculan en vez de salir de una sola consulta.
+     *
+     * @param list<string> $encabezados
+     * @param iterable<array<int, mixed>> $filas
+     * @param list<string> $numericas columnas cuyos valores numéricos se guardan como número
+     * @return int filas escritas (sin contar el encabezado)
+     */
+    public function agregarHojaDesdeFilas(string $titulo, array $encabezados, iterable $filas, array $numericas = []): int
+    {
         $n = count($this->hojas) + 1;
         $ruta = $this->carpetaTrabajo . "/hoja{$n}.xml";
         $archivo = fopen($ruta, 'wb');
@@ -42,10 +67,6 @@ final class LibroXlsxStreaming
             throw new \RuntimeException('No se pudo escribir el archivo temporal.');
         }
 
-        $encabezados = [];
-        for ($i = 0; $i < $stmt->columnCount(); $i++) {
-            $encabezados[] = (string) ($stmt->getColumnMeta($i)['name'] ?? '');
-        }
         $esNumerica = array_map(static fn (string $e): bool => in_array($e, $numericas, true), $encabezados);
         $ultimaColumna = self::columna(max(1, count($encabezados)));
 
@@ -65,11 +86,11 @@ final class LibroXlsxStreaming
         }
         fwrite($archivo, '</row>');
 
-        $filas = 0;
-        while (($fila = $stmt->fetch(\PDO::FETCH_NUM)) !== false) {
-            $r = $filas + 2;
+        $escritas = 0;
+        foreach ($filas as $fila) {
+            $r = $escritas + 2;
             $xml = '<row r="' . $r . '">';
-            foreach ($fila as $i => $valor) {
+            foreach (array_values($fila) as $i => $valor) {
                 if ($valor === null || $valor === '') {
                     continue;
                 }
@@ -80,16 +101,15 @@ final class LibroXlsxStreaming
                     : self::celdaTexto($ref, $texto);
             }
             fwrite($archivo, $xml . '</row>');
-            $filas++;
+            $escritas++;
         }
-        $stmt->closeCursor();
 
         fwrite($archivo, '</sheetData><autoFilter ref="A1:' . $ultimaColumna . '1"/></worksheet>');
         fclose($archivo);
 
         $this->hojas[] = ['titulo' => self::tituloValido($titulo), 'archivo' => $ruta];
 
-        return $filas;
+        return $escritas;
     }
 
     /** Empaqueta el libro en $rutaXlsx y borra los archivos temporales de las hojas. */
