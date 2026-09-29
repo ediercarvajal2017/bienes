@@ -91,6 +91,8 @@ export default defineConfig({
             STORAGE_PATH: path.resolve('storage/pruebas'),
             // Revalida la sesión en cada petición (las pruebas de revocación no esperan 60 s).
             SESSION_REVALIDACION_SEGUNDOS: '0',
+            // Igual que producción: la base en hora de Colombia (GitHub corre la base en UTC).
+            DB_ZONA_HORARIA: '-05:00',
         },
     },
 
