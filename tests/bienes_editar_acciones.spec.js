@@ -49,10 +49,11 @@ test('editar datos y trasladar con un solo guardado, y volver al listado como es
     // "Volver" regresa al listado con la misma búsqueda y página, resaltando el bien.
     await page.getByRole('link', { name: 'Volver' }).click();
     await expect(page).toHaveURL(new RegExp(`/bienes\\?q=${codigo}&pagina=1&editado=${bienId}`));
-    await expect(page.locator('#bienEditado')).toContainText(`PW bien editado ${sufijo}`);
+    await expect(page.locator('#bienEditado')).toContainText(`PW BIEN EDITADO ${sufijo}`);
 
     // En la base: el dato, un traslado, una sola asignación activa (la nueva) y la auditoría.
-    expect(bd(`SELECT descripcion FROM bienes WHERE id = ${bienId}`)).toBe(`PW bien editado ${sufijo}`);
+    // "Muebles": la descripción queda en mayúscula (Bien::descripcionSegunCategoria).
+    expect(bd(`SELECT descripcion FROM bienes WHERE id = ${bienId}`)).toBe(`PW BIEN EDITADO ${sufijo}`);
     expect(bd(`SELECT COUNT(*) FROM movimientos WHERE bien_id = ${bienId} AND tipo = 'traslado' AND espacio_destino_id = ${espB}`)).toBe('1');
     expect(bd(`SELECT GROUP_CONCAT(espacio_id) FROM asignaciones WHERE bien_id = ${bienId} AND activa = 1`)).toBe(String(espB));
     expect(bd(`SELECT GROUP_CONCAT(accion ORDER BY id) FROM auditoria WHERE entidad = 'bien' AND entidad_id = ${bienId}`)).toBe('trasladar,editar');
@@ -87,7 +88,7 @@ test('si la acción no se puede hacer, tampoco se guardan los datos', async ({ p
     await expect(page).toHaveURL(new RegExp(`/bienes/${bienId}/editar`));
     await expect(page.locator('.alert-danger')).toContainText('destino');
     // El formulario conserva lo escrito y la acción elegida; la base no cambió.
-    await expect(page.locator('input[name="descripcion"]')).toHaveValue(`PW no debe guardarse ${sufijo}`);
+    await expect(page.locator('input[name="descripcion"]')).toHaveValue(`PW NO DEBE GUARDARSE ${sufijo}`);
     await expect(page.locator('#accionBien')).toHaveValue('reintegrar');
     expect(bd(`SELECT descripcion FROM bienes WHERE id = ${bienId}`)).toBe(`PW bien acciones ${sufijo}`);
     expect(bd(`SELECT estado FROM bienes WHERE id = ${bienId}`)).toBe('activo');
