@@ -70,3 +70,15 @@ test('editar un usuario con verificación en dos pasos deja la auditoría comple
 
     bd(`DELETE FROM auditoria WHERE entidad = 'usuario' AND entidad_id = ${id}; DELETE FROM usuarios WHERE id = ${id}`);
 });
+
+test('los avisos de error de Usuarios se ven en la lista (no eliminar la propia cuenta)', async ({ browser }) => {
+    const { datos, comoRol, csrf } = await import('./helpers/datos.js');
+    const contexto = await comoRol(browser, 'rector');
+    const pagina = await contexto.newPage();
+    await pagina.goto('usuarios');
+    // Sin seguir la redirección: si no, esa petición abre la lista y se "come" el aviso.
+    await pagina.request.post(`usuarios/${datos().usuarios.rector.id}/eliminar`, { form: { _csrf: await csrf(pagina) }, maxRedirects: 0 });
+    await pagina.goto('usuarios');
+    await expect(pagina.getByRole('alert')).toContainText('No puedes eliminar tu propia cuenta');
+    await contexto.close();
+});

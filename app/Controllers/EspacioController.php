@@ -43,6 +43,8 @@ final class EspacioController
             'total' => $total,
             'totalPaginas' => Paginador::totalPaginas($total, $porPagina),
             'mensaje' => Session::pullFlash('ok'),
+            'error' => Session::pullFlash('error'),
+            'errorDetalle' => json_decode((string) Session::pullFlash('error_detalle'), true) ?: null,
         ]);
     }
 
@@ -152,7 +154,7 @@ final class EspacioController
         $this->verificarCsrf($request, '/espacios');
 
         if (Espacio::estaEnUso($id)) {
-            Session::flash('error', 'No se puede eliminar: el espacio tiene asignaciones o movimientos registrados. Desactívalo en su lugar.');
+            $this->explicarPorQueNoSeElimina($id, (string) $espacio['nombre']);
         } else {
             Espacio::eliminar($id, (int) Auth::id());
             Auditoria::registrar(Auth::id(), (int) $espacio['institucion_id'], 'eliminar', 'espacio', $id, $espacio);
@@ -161,6 +163,40 @@ final class EspacioController
 
         header('Location: ' . Url::to('/espacios'));
         exit;
+    }
+
+    /**
+     * Aviso para la lista de espacios: por qué no se puede eliminar y qué bienes lo usan
+     * (los asignados ahora o, si no hay, los de su historial), con enlace a cada uno.
+     */
+    private function explicarPorQueNoSeElimina(int $id, string $nombre): void
+    {
+        $uso = Espacio::usoDetallado($id);
+        $plural = static fn (int $n, string $uno, string $varios): string => $n === 1 ? "1 {$uno}" : "{$n} {$varios}";
+
+        if ($uso['actuales'] > 0) {
+            $mensaje = "No se puede eliminar el espacio «{$nombre}»: tiene "
+                . $plural($uso['actuales'], 'bien asignado', 'bienes asignados') . ' en este momento.';
+            $consejo = 'Traslada o reintegra esos bienes, o desactiva el espacio para que no se use más.';
+            $total = $uso['actuales'];
+        } elseif ($uso['historial'] > 0) {
+            $mensaje = "No se puede eliminar el espacio «{$nombre}»: ya no tiene bienes asignados, pero aparece en el historial de "
+                . $plural($uso['historial'], 'bien', 'bienes') . ' (asignaciones y movimientos anteriores) que debe conservarse.';
+            $consejo = 'Desactiva el espacio para que no se use más; su historial queda intacto.';
+            $total = $uso['historial'];
+        } else {
+            $mensaje = "No se puede eliminar el espacio «{$nombre}»: tiene "
+                . $plural($uso['hallazgos'], 'hallazgo', 'hallazgos') . ' de verificación física registrados en él.';
+            $consejo = 'Desactiva el espacio para que no se use más.';
+            $total = 0;
+        }
+
+        Session::flash('error', $mensaje);
+        Session::flash('error_detalle', (string) json_encode([
+            'bienes' => $uso['bienes'],
+            'mas' => max(0, $total - count($uso['bienes'])),
+            'consejo' => $consejo,
+        ], JSON_UNESCAPED_UNICODE));
     }
 
     private function datosDesdeFormulario(Request $request, ?int $institucionIdExistente = null): array

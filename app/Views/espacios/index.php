@@ -25,6 +25,27 @@ $puedeCrearEspacio = Auth::esSuperusuario() || Auth::tienePermiso('espacios.crea
 <?php if (!empty($mensaje)): ?>
     <div class="alert alert-success py-2 small"><?= htmlspecialchars($mensaje, ENT_QUOTES) ?></div>
 <?php endif; ?>
+<?php if (!empty($error)): ?>
+    <div class="alert alert-danger py-2 small" role="alert" style="max-width: 780px;">
+        <?= htmlspecialchars($error, ENT_QUOTES) ?>
+        <?php if (!empty($errorDetalle['bienes'])): ?>
+            <ul class="mb-1 mt-2 ps-3">
+                <?php foreach ($errorDetalle['bienes'] as $b): ?>
+                    <li>
+                        <a href="<?= Url::to('/bienes/' . (int) $b['id'] . '/editar') ?>" class="alert-link mono"><?= htmlspecialchars((string) $b['codigo'], ENT_QUOTES) ?></a>
+                        · <?= htmlspecialchars((string) $b['descripcion'], ENT_QUOTES) ?>
+                    </li>
+                <?php endforeach; ?>
+                <?php if ((int) ($errorDetalle['mas'] ?? 0) > 0): ?>
+                    <li class="list-unstyled text-body-secondary">y <?= (int) $errorDetalle['mas'] ?> más.</li>
+                <?php endif; ?>
+            </ul>
+        <?php endif; ?>
+        <?php if (!empty($errorDetalle['consejo'])): ?>
+            <div class="mt-1"><?= htmlspecialchars((string) $errorDetalle['consejo'], ENT_QUOTES) ?></div>
+        <?php endif; ?>
+    </div>
+<?php endif; ?>
 
 <div class="mb-3" style="max-width: 420px;">
     <label for="buscador" class="form-label small mb-1">Buscar</label>

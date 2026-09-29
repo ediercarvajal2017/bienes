@@ -23,6 +23,9 @@ use App\Core\View;
 <?php if (!empty($mensaje)): ?>
     <div class="alert alert-success py-2 small"><?= htmlspecialchars($mensaje, ENT_QUOTES) ?></div>
 <?php endif; ?>
+<?php if (!empty($error)): ?>
+    <div class="alert alert-danger py-2 small" role="alert"><?= htmlspecialchars($error, ENT_QUOTES) ?></div>
+<?php endif; ?>
 
 <div class="mb-3" style="max-width: 420px;">
     <input type="search" id="buscador" data-buscar="q" class="form-control form-control-sm"

@@ -201,6 +201,51 @@ final class Espacio
      * origen del movimiento y los hallazgos, que también referencian al espacio sin
      * CASCADE, por la misma razón que en Usuario::estaEnUso().
      */
+    /**
+     * Por qué no se puede eliminar un espacio, para explicárselo al usuario: los bienes que
+     * tiene asignados ahora y, si no tiene, los que aparecen en su historial (asignaciones
+     * anteriores y movimientos), más los hallazgos de verificación registrados en él.
+     *
+     * @return array{actuales: int, historial: int, hallazgos: int, bienes: list<array{id: int, codigo: string, descripcion: string}>}
+     */
+    public static function usoDetallado(int $id, int $limite = 5): array
+    {
+        $pdo = Database::connection();
+        $contar = static function (string $sql) use ($pdo, $id): int {
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute(array_fill(0, substr_count($sql, '?'), $id));
+
+            return (int) $stmt->fetchColumn();
+        };
+
+        $actuales = $contar('SELECT COUNT(DISTINCT bien_id) FROM asignaciones WHERE espacio_id = ? AND activa = 1');
+        $historial = $contar(
+            'SELECT COUNT(DISTINCT bien_id) FROM (
+                SELECT bien_id FROM asignaciones WHERE espacio_id = ? AND activa = 0
+                UNION SELECT bien_id FROM movimientos WHERE espacio_destino_id = ? OR espacio_origen_id = ?
+             ) h'
+        );
+        $hallazgos = $contar('SELECT COUNT(*) FROM hallazgos_verificacion WHERE espacio_id = ?');
+
+        // Los bienes que se muestran: los asignados ahora; si no hay, los del historial.
+        $sqlBienes = $actuales > 0
+            ? 'SELECT DISTINCT b.id, b.codigo_identificacion, b.descripcion FROM asignaciones a JOIN bienes b ON b.id = a.bien_id
+               WHERE a.espacio_id = ? AND a.activa = 1 ORDER BY b.codigo_identificacion LIMIT ' . $limite
+            : 'SELECT DISTINCT b.id, b.codigo_identificacion, b.descripcion FROM bienes b
+               WHERE b.id IN (SELECT bien_id FROM asignaciones WHERE espacio_id = ?
+                              UNION SELECT bien_id FROM movimientos WHERE espacio_destino_id = ? OR espacio_origen_id = ?)
+               ORDER BY b.codigo_identificacion LIMIT ' . $limite;
+        $stmt = $pdo->prepare($sqlBienes);
+        $stmt->execute(array_fill(0, substr_count($sqlBienes, '?'), $id));
+        $bienes = array_values(array_map(static fn (array $b): array => [
+            'id' => (int) $b['id'],
+            'codigo' => (string) $b['codigo_identificacion'],
+            'descripcion' => (string) $b['descripcion'],
+        ], $stmt->fetchAll()));
+
+        return ['actuales' => $actuales, 'historial' => $historial, 'hallazgos' => $hallazgos, 'bienes' => $bienes];
+    }
+
     public static function estaEnUso(int $id): bool
     {
         $pdo = Database::connection();
