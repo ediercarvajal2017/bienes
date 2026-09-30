@@ -1007,6 +1007,13 @@ html { scroll-padding-top: calc(var(--alto-navbar) + 0.75rem); }
   padding: 0.9rem 1rem; border-bottom: 1px solid var(--bs-border-color);
 }
 .panel-notas-acciones { display: flex; align-items: center; flex-wrap: wrap; gap: 0.5rem 0.75rem; padding: 0.75rem 1rem; }
+/* Clase propia (no .alert-danger): el panel está en todas las páginas y no debe
+   confundirse con los avisos de error de cada pantalla. */
+.panel-notas-error {
+  margin: 0 1rem 0.5rem; padding: 0.5rem 0.75rem; border-radius: 0.375rem;
+  background: var(--bs-danger-bg-subtle); color: var(--bs-danger-text-emphasis);
+  border: 1px solid var(--bs-danger-border-subtle);
+}
 .panel-notas-lista {
   flex: 1 1 auto; overflow-y: auto; overscroll-behavior: contain;
   display: flex; flex-direction: column; gap: 0.75rem; padding: 0.25rem 1rem 1rem;

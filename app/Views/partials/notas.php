@@ -23,7 +23,7 @@ use App\Models\Nota;
         </button>
         <span class="small text-muted">Solo tú las ves. Se guardan solas.</span>
     </div>
-    <div class="alert alert-danger small py-2 mx-3 mb-2" role="alert" data-notas-error hidden></div>
+    <div class="panel-notas-error small" role="alert" data-notas-error hidden></div>
     <p class="text-muted small text-center my-4" data-notas-cargando hidden>Cargando tus notas…</p>
     <p class="text-muted small text-center px-3 my-4" data-notas-vacio hidden>
         Todavía no tienes notas. Pulsa <strong>Nueva nota</strong> para anotar algo pendiente.
