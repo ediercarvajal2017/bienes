@@ -284,7 +284,9 @@ final class ExportacionInstitucion
                         f.fecha_registro AS `Registrado en`, f.eliminado_en AS `En la papelera desde`
                     FROM facturas_administrativas f WHERE f.institucion_id IN (:ids)
                 UNION ALL
-                SELECT 'Cartera (histórico)', c.fecha_envio, CONCAT_WS(' · ', c.nombre_funcionario, c.correo_remitente), c.archivo_path,
+                SELECT 'Cartera recibida', c.fecha_envio,
+                        CONCAT_WS(' · ', CONCAT('Solicitada por ', c.nombre_funcionario), c.correo_solicitante, CONCAT('Llegó desde ', c.correo_remitente)),
+                        c.archivo_path,
                         c.fecha_registro, c.eliminado_en
                     FROM cartera_envios c WHERE c.institucion_id IN (:ids)
                 UNION ALL

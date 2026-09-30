@@ -7,8 +7,8 @@ use App\Core\Url;
 ?>
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
     <div>
-        <h1 class="h4 mb-0">Cartera enviada a la Alcaldía</h1>
-        <p class="text-muted small mb-0">Registra la evidencia de cada cartera que la institución envió por correo (fuera del sistema).</p>
+        <h1 class="h4 mb-0">Cartera recibida de la Alcaldía</h1>
+        <p class="text-muted small mb-0">Registra la evidencia de cada cartera que la institución solicitó por correo (fuera del sistema).</p>
     </div>
     <a href="<?= Url::to('/cartera/enviados') ?>" class="btn btn-sm btn-outline-secondary">Ver histórico</a>
 </div>
@@ -43,21 +43,9 @@ use App\Core\Url;
         <?= Csrf::field() ?>
         <input type="hidden" name="institucion_id" value="<?= $institucionId ?>">
 
-        <div class="col-md-6">
-            <label for="campo-nombre-funcionario" class="form-label small requerido">Funcionario que realizó el envío</label>
-            <input id="campo-nombre-funcionario" type="text" name="nombre_funcionario" class="form-control" required
-                   value="<?= htmlspecialchars($nombreFuncionarioPorDefecto ?? '', ENT_QUOTES) ?>">
-        </div>
-        <div class="col-md-6">
-            <label for="campo-correo-remitente" class="form-label small requerido">Correo del remitente</label>
-            <input id="campo-correo-remitente" type="email" name="correo_remitente" class="form-control" required>
-        </div>
-        <div class="col-md-6">
-            <label for="campo-fecha-envio" class="form-label small requerido">Fecha de envío</label>
-            <input id="campo-fecha-envio" type="date" name="fecha_envio" class="form-control" required value="<?= date('Y-m-d') ?>">
-        </div>
-        <div class="col-md-6">
-            <label for="campo-archivo" class="form-label small requerido">Archivo adjunto (cartera, Excel)</label>
+        <?php \App\Core\View::render('cartera/_campos', ['funcionarios' => $funcionarios, 'valores' => $valores]); ?>
+        <div class="col-12">
+            <label for="campo-archivo" class="form-label small requerido">Archivo de la cartera recibida (Excel)</label>
             <input id="campo-archivo" type="file" name="archivo" accept=".xlsx,.xls" class="form-control" required>
         </div>
 

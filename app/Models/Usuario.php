@@ -268,7 +268,7 @@ final class Usuario
     public static function elegiblesACargo(int $institucionId): array
     {
         $stmt = Database::connection()->prepare(
-            "SELECT u.id, u.nombres, u.apellidos, u.documento, c.nombre AS cargo_nombre, r.nombre AS rol_nombre
+            "SELECT u.id, u.nombres, u.apellidos, u.documento, u.email, c.nombre AS cargo_nombre, r.nombre AS rol_nombre
              FROM usuarios u
              JOIN roles r ON r.id = u.rol_id
              JOIN cargos c ON c.id = u.cargo_id

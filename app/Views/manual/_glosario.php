@@ -3,9 +3,10 @@
     <div class="mt-2 small">
         <dl class="mb-0">
             <dt>Cartera (histórico)</dt>
-            <dd class="text-muted">El inventario completo de bienes de la institución, en Excel o CSV, listo para
-                enviar por correo como reporte oficial. Se llama "histórico" porque la pantalla guarda cada envío
-                que se ha hecho, no solo el más reciente.</dd>
+            <dd class="text-muted">La cartera de bienes que la institución solicita por correo y la Alcaldía le
+                envía. En esta pantalla se guarda la evidencia de cada una (quién la solicitó, desde qué correo
+                llegó, la fecha y el archivo). Se llama "histórico" porque conserva todas las recibidas, no solo
+                la más reciente.</dd>
 
             <dt class="mt-2">Lotes de reintegro</dt>
             <dd class="text-muted">Agrupa varios reintegros ya registrados en un solo comprobante oficial

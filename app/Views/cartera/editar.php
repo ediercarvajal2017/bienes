@@ -5,7 +5,7 @@ use App\Core\Url;
 
 ?>
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-    <h1 class="h4 mb-0">Editar registro de cartera</h1>
+    <h1 class="h4 mb-0">Editar registro de cartera recibida</h1>
     <a href="<?= Url::to('/cartera/enviados') ?>" class="btn btn-sm btn-outline-secondary">Volver al histórico</a>
 </div>
 
@@ -16,21 +16,15 @@ use App\Core\Url;
 <form method="post" action="<?= Url::to('/cartera/' . $registro['id'] . '/actualizar') ?>" enctype="multipart/form-data" class="row g-3" style="max-width: 640px;">
     <?= Csrf::field() ?>
 
-    <div class="col-md-6">
-        <label for="campo-nombre-funcionario" class="form-label small requerido">Funcionario que realizó el envío</label>
-        <input id="campo-nombre-funcionario" type="text" name="nombre_funcionario" class="form-control" required
-               value="<?= htmlspecialchars($registro['nombre_funcionario'], ENT_QUOTES) ?>">
-    </div>
-    <div class="col-md-6">
-        <label for="campo-correo-remitente" class="form-label small requerido">Correo del remitente</label>
-        <input id="campo-correo-remitente" type="email" name="correo_remitente" class="form-control" required
-               value="<?= htmlspecialchars($registro['correo_remitente'], ENT_QUOTES) ?>">
-    </div>
-    <div class="col-md-6">
-        <label for="campo-fecha-envio" class="form-label small requerido">Fecha de envío</label>
-        <input id="campo-fecha-envio" type="date" name="fecha_envio" class="form-control" required
-               value="<?= htmlspecialchars($registro['fecha_envio'], ENT_QUOTES) ?>">
-    </div>
+    <?php if (empty($registro['funcionario_id'])): ?>
+        <div class="col-12">
+            <div class="alert alert-info py-2 small mb-0">
+                Este registro es de antes y guardó el funcionario como texto: <strong><?= htmlspecialchars((string) $registro['nombre_funcionario'], ENT_QUOTES) ?></strong>.
+                Elígelo de la lista y completa el correo con el que solicitó la cartera.
+            </div>
+        </div>
+    <?php endif; ?>
+    <?php \App\Core\View::render('cartera/_campos', ['funcionarios' => $funcionarios, 'valores' => $valores]); ?>
     <div class="col-md-6">
         <label class="form-label small d-block">Archivo actual</label>
         <a href="<?= \App\Helpers\EnlaceArchivo::url($registro['archivo_path']) ?>" class="btn btn-sm btn-outline-secondary" target="_blank">

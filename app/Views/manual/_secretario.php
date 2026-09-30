@@ -98,8 +98,9 @@
                 <li>Con un responsable elegido en el filtro aparece <strong>Acta de bienes a cargo</strong>: un Excel con sus
                     bienes individuales y los de sus espacios, para imprimir y firmar (por ejemplo, cuando alguien sale de
                     la institución). También está en <strong>Reportes</strong>.</li>
-                <li>En <strong>Cartera (histórico)</strong> puedes enviar ese reporte por correo, indicando el
-                    funcionario que lo remite y el destinatario.</li>
+                <li>En <strong>Cartera (histórico)</strong> registras cada cartera que la institución solicitó por correo
+                    y la Alcaldía le envió: el funcionario que la solicitó (se elige de la lista) y su correo, el correo
+                    desde el que llegó, la fecha en que se recibió y el archivo.</li>
             </ol>
         </div>
     </details>
