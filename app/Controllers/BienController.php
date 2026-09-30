@@ -113,6 +113,9 @@ final class BienController
             'responsables' => $institucionId !== null && !$soloPropios ? Usuario::paraFiltroResponsable($institucionId) : [],
             'tipo' => $tipo,
             'tipos' => $soloPropios ? [] : FiltrosBienes::TIPOS,
+            // Con el filtro Responsable puesto: su "Acta de bienes a cargo".
+            'urlActa' => $responsableId !== null && (Auth::esSuperusuario() || Auth::tienePermiso('reportes.generar'))
+                ? Url::to('/reportes/acta-a-cargo.xlsx') . '?usuario=' . $responsableId : null,
             // "Descargar en Excel": la cartera con estos mismos filtros (ReporteController).
             'urlDescarga' => Auth::esSuperusuario() || Auth::tienePermiso('reportes.generar')
                 ? Url::to('/reportes/cartera.xlsx') . '?' . http_build_query(FiltrosBienes::aConsulta([

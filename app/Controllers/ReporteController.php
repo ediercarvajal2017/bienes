@@ -14,6 +14,7 @@ use App\Helpers\LimiteIntentos;
 use App\Models\Auditoria;
 use App\Models\Institucion;
 use App\Models\Usuario;
+use App\Services\ActaACargo;
 use App\Services\ExportacionInstitucion;
 use App\Services\ReportesControl;
 use App\Services\ReporteService;
@@ -26,6 +27,7 @@ final class ReporteController
             'title' => 'Reportes',
             'puedeExportarTodo' => $this->puedeExportarTodo(),
             'funcionarios' => $this->puedeExportarTodo() ? $this->funcionariosDelAlcance() : [],
+            'funcionariosActa' => $this->funcionariosDelAlcance(),
             'error' => Session::pullFlash('error'),
         ]);
     }
@@ -95,6 +97,30 @@ final class ReporteController
 
         $this->enviarArchivo($resultado['ruta'], $resultado['nombre'],
             'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    }
+
+    /**
+     * "Acta de bienes a cargo" de un funcionario (ActaACargo): sus bienes individuales y los
+     * grupales de sus espacios, para imprimir y firmar. Para quien genera reportes, de un
+     * funcionario de su institución o sus sedes (el superusuario, de cualquiera).
+     */
+    public function actaACargo(): void
+    {
+        $persona = Usuario::find((int) ($_GET['usuario'] ?? 0));
+        $alcance = Auth::esSuperusuario() ? null
+            : array_map(static fn (array $i): int => (int) $i['id'], Institucion::familiaDe((int) Auth::institucionId()));
+        if ($persona === null || ($alcance !== null && !in_array((int) $persona['institucion_id'], $alcance, true))) {
+            Session::flash('error', 'Elige un funcionario de tu institución para generar el acta.');
+            header('Location: ' . Url::to('/reportes'));
+            exit;
+        }
+
+        $institucionId = (int) $persona['institucion_id'];
+        $familia = Institucion::familiaDe($institucionId);
+        $rector = Usuario::rectorDe($institucionId) ?? ($familia !== [] ? Usuario::rectorDe((int) $familia[0]['id']) : null);
+        $documento = preg_replace('/[^0-9A-Za-z]/', '', (string) $persona['documento']) ?: (string) $persona['id'];
+
+        ReporteService::enviarXlsx(ActaACargo::generar($persona, (string) $persona['institucion_nombre'], $rector), 'acta_bienes_a_cargo_' . $documento);
     }
 
     /** Con los filtros de la lista de bienes en la dirección (botón "Descargar en Excel"). */

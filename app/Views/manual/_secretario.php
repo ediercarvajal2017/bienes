@@ -12,9 +12,17 @@
                 <li><strong>Registrar un bien</strong> (Bienes &gt; Registrar bien): código, descripción, categoría,
                     marca, valor y, si aplica, foto y factura. La categoría es obligatoria — sin ella, el bien no se
                     podrá reintegrar más adelante.</li>
-                <li><strong>Asignar</strong> un bien a un espacio y a un responsable, desde la ficha del bien (o varios a la vez en
-                    <strong>Bienes &gt; Acciones masivas &gt; Asignar bienes</strong>).</li>
-                <li><strong>Trasladar</strong> un bien asignado a otro espacio.</li>
+                <li><strong>Asignar</strong> un bien, desde su ficha (o varios a la vez en
+                    <strong>Bienes &gt; Acciones masivas &gt; Asignar bienes</strong>). Elige la responsabilidad:
+                    <ul class="mt-1">
+                        <li><strong>Grupal</strong>: el bien queda en un espacio y responden todos los responsables de ese
+                            espacio (por ejemplo, las sillas del Aula 101).</li>
+                        <li><strong>Individual</strong>: el bien queda a cargo de una persona y responde solo ella (por ejemplo,
+                            el portátil de un docente). Si quieres, indica en qué espacio está guardado.</li>
+                    </ul>
+                </li>
+                <li><strong>Trasladar</strong> un bien asignado a otro espacio o a otra persona, o pasarlo de Grupal a
+                    Individual (o al revés). Cada cambio queda en su historial.</li>
                 <li><strong>Reintegrar</strong> un bien desde su ficha, o varios a la vez en
                     <strong>Bienes &gt; Acciones masivas &gt; Reintegrar bienes</strong>.</li>
                 <li><strong>Dar de baja</strong> un bien, o aprobar/rechazar bajas que otros reporten (ver tema 4).</li>
@@ -84,6 +92,12 @@
             <ol class="mb-0 ps-3">
                 <li>Entra a <strong>Reportes</strong> para descargar la cartera de bienes, los reintegros
                     (pendientes o históricos) y el consolidado de jornadas de verificación, en Excel o CSV.</li>
+                <li>En <strong>Bienes</strong> puedes filtrar por <strong>Espacio</strong>, <strong>Responsable</strong> y
+                    <strong>Responsabilidad</strong> (Grupal, Individual o Sin asignar). <strong>Descargar en Excel</strong> baja
+                    la cartera con los filtros que tengas puestos.</li>
+                <li>Con un responsable elegido en el filtro aparece <strong>Acta de bienes a cargo</strong>: un Excel con sus
+                    bienes individuales y los de sus espacios, para imprimir y firmar (por ejemplo, cuando alguien sale de
+                    la institución). También está en <strong>Reportes</strong>.</li>
                 <li>En <strong>Cartera (histórico)</strong> puedes enviar ese reporte por correo, indicando el
                     funcionario que lo remite y el destinatario.</li>
             </ol>

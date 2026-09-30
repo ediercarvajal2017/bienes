@@ -19,7 +19,8 @@ $urlBasePaginacion = Url::to('/cargas-masivas') . ($busqueda !== '' ? '?' . http
         <p class="small text-muted">
             Sube un archivo <strong>.xlsx</strong> con las columnas: Código, Descripción, Marca, Fecha de ingreso
             (opcional), Valor, Ubicación (opcional, código de un espacio ya existente), Categoría
-            (opcional, nombre de una categoría activa ya existente).
+            (opcional, nombre de una categoría activa ya existente) y Responsable individual (opcional, documento
+            de un usuario activo: el bien queda a su cargo y la Ubicación, si la pones, es donde está guardado).
             <a href="<?= Url::to('/cargas-masivas/plantilla.xlsx') ?>">Descargar plantilla</a>.
         </p>
         <form method="post" action="<?= Url::to('/cargas-masivas') ?>" enctype="multipart/form-data" class="d-flex gap-2">

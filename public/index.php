@@ -473,6 +473,10 @@ $router->get('/reportes', [ReporteController::class, 'index'], [
 $router->get('/reportes/cartera.xlsx', [ReporteController::class, 'carteraXlsx'], [
     AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':reportes.generar',
 ]);
+$router->get('/reportes/acta-a-cargo.xlsx', [ReporteController::class, 'actaACargo'], [
+    AuthMiddleware::class,
+    PermissionMiddleware::class . ':reportes.generar',
+]);
 $router->get('/reportes/cartera.csv', [ReporteController::class, 'carteraCsv'], [
     AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':reportes.generar',
 ]);

@@ -9,6 +9,7 @@ use App\Models\Asignacion;
 use App\Models\Bien;
 use App\Models\Categoria;
 use App\Models\Espacio;
+use App\Models\Usuario;
 use PhpOffice\PhpSpreadsheet\Shared\Date as FechaExcel;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
@@ -16,9 +17,13 @@ use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 final class CargaMasivaService
 {
     /**
-     * Lee un .xlsx (columnas A-G: Código, Descripción, Marca, Fecha_Ingreso, Valor, Ubicación,
-     * Categoría) y compara cada fila contra la base de datos de la institución. No escribe nada
-     * todavía.
+     * Lee un .xlsx (columnas A-H: Código, Descripción, Marca, Fecha_Ingreso, Valor, Ubicación,
+     * Categoría, Responsable individual) y compara cada fila contra la base de datos de la
+     * institución. No escribe nada todavía.
+     *
+     * Responsable individual (opcional) es el documento de un usuario activo de la
+     * institución: el bien queda a su cargo (responsabilidad individual) y la Ubicación, si
+     * se indica, es donde está guardado. En blanco no cambia la persona del bien.
      *
      * Fecha_Ingreso es opcional: si se deja en blanco, se usa la fecha de hoy para un bien
      * nuevo, o se conserva la que ya tenía el bien si es una actualización. Ubicación (opcional)
@@ -58,6 +63,7 @@ final class CargaMasivaService
             $marca = trim((string) $sheet->getCell("C{$numeroFila}")->getValue());
             $ubicacion = trim((string) $sheet->getCell("F{$numeroFila}")->getValue());
             $categoriaTexto = trim((string) $sheet->getCell("G{$numeroFila}")->getValue());
+            $responsableTexto = trim((string) $sheet->getCell("H{$numeroFila}")->getValue());
 
             if ($codigo === '' && $descripcion === '') {
                 continue;
@@ -123,6 +129,24 @@ final class CargaMasivaService
                 }
             }
 
+            $personaId = null;
+            $personaNombre = null;
+            if ($responsableTexto !== '') {
+                $persona = Usuario::findByDocumento($responsableTexto, $institucionId);
+                $motivo = null;
+                if ($persona === null) {
+                    $motivo = "Responsable no encontrado: no hay un usuario de la institución con documento \"{$responsableTexto}\"";
+                } elseif (Usuario::elegibleACargo((int) $persona['id'], $institucionId) === null) {
+                    $motivo = "El responsable con documento \"{$responsableTexto}\" no puede tener bienes a cargo (está inactivo o es superusuario)";
+                }
+                if ($motivo !== null) {
+                    $filas[] = ['fila' => $numeroFila, 'tipo' => 'invalido', 'motivo' => $motivo, 'codigo' => $codigo, 'descripcion' => $descripcion];
+                    continue;
+                }
+                $personaId = (int) $persona['id'];
+                $personaNombre = trim($persona['nombres'] . ' ' . $persona['apellidos']);
+            }
+
             $existente = $existentesPorCodigo[$codigo] ?? null;
 
             if ($fecha === null) {
@@ -143,6 +167,8 @@ final class CargaMasivaService
                 'valor' => $valor,
                 'espacio_id' => $espacioId,
                 'ubicacion_texto' => $ubicacion !== '' ? $ubicacion : null,
+                'persona_id' => $personaId,
+                'persona_nombre' => $personaNombre,
                 'categoria_id' => $categoriaId,
                 // Se llevan tal cual del bien existente (si lo hay) para que aplicar() no
                 // tenga que volver a leerlo de la base de datos solo por esto.
@@ -155,7 +181,7 @@ final class CargaMasivaService
                 continue;
             }
 
-            $asignacionActiva = $espacioId !== null ? Asignacion::activaDe((int) $existente['id']) : null;
+            $asignacionActiva = $espacioId !== null || $personaId !== null ? Asignacion::activaDe((int) $existente['id']) : null;
             $cambios = self::detectarCambios($existente, $datos, $asignacionActiva, $categoriasPorId);
 
             $filas[] = $cambios === []
@@ -192,9 +218,10 @@ final class CargaMasivaService
                         'created_by' => $usuarioId,
                     ]);
 
-                    if ($fila['datos']['espacio_id'] !== null) {
+                    if ($fila['datos']['espacio_id'] !== null || ($fila['datos']['persona_id'] ?? null) !== null) {
                         Asignacion::crear([
                             'bien_id' => $bienId,
+                            'usuario_responsable_id' => $fila['datos']['persona_id'] ?? null,
                             'espacio_id' => $fila['datos']['espacio_id'],
                             'fecha_asignacion' => date('Y-m-d'),
                             'observaciones' => null,
@@ -227,17 +254,17 @@ final class CargaMasivaService
                     ]);
 
                     // Solo se reubican bienes en circulación (un reintegrado no vuelve a un
-                    // espacio por una carga masiva: requiere "Reactivar"). Un bien a cargo de
-                    // una persona (responsabilidad individual) la conserva: la columna
-                    // Ubicación solo cambia dónde está guardado.
-                    if ($fila['datos']['espacio_id'] !== null && isset($fila['cambios']['Ubicación'])
+                    // espacio por una carga masiva: requiere "Reactivar"). Lo que la fila no
+                    // indica se conserva: sin Responsable, la persona que ya tenía; sin
+                    // Ubicación, el espacio que ya tenía.
+                    if ((isset($fila['cambios']['Ubicación']) || isset($fila['cambios']['Responsable individual']))
                         && in_array($actual['estado'], ['activo', 'en_reparacion'], true)) {
                         $asignacionAnterior = Asignacion::activaDe((int) $fila['bien_id']);
                         Asignacion::cerrarActivasDe($fila['bien_id']);
                         Asignacion::crear([
                             'bien_id' => $fila['bien_id'],
-                            'usuario_responsable_id' => $asignacionAnterior['usuario_responsable_id'] ?? null,
-                            'espacio_id' => $fila['datos']['espacio_id'],
+                            'usuario_responsable_id' => ($fila['datos']['persona_id'] ?? null) ?? ($asignacionAnterior['usuario_responsable_id'] ?? null),
+                            'espacio_id' => $fila['datos']['espacio_id'] ?? ($asignacionAnterior['espacio_id'] ?? null),
                             'fecha_asignacion' => date('Y-m-d'),
                             'observaciones' => 'Actualizado por carga masiva',
                             'asignado_por' => $usuarioId,
@@ -259,9 +286,12 @@ final class CargaMasivaService
     {
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
-        $sheet->fromArray(['Codigo', 'Descripcion', 'Marca', 'Fecha_Ingreso', 'Valor', 'Ubicacion', 'Categoria'], null, 'A1');
-        $sheet->fromArray(['BIEN-0001', 'Silla plástica azul', 'Rimax', '2026-01-15', 85000, 'AULA-101', 'Sillas'], null, 'A2');
-        foreach (range('A', 'G') as $columna) {
+        $sheet->fromArray(['Codigo', 'Descripcion', 'Marca', 'Fecha_Ingreso', 'Valor', 'Ubicacion', 'Categoria', 'Responsable_individual'], null, 'A1');
+        $sheet->fromArray(['BIEN-0001', 'Silla plástica azul', 'Rimax', '2026-01-15', 85000, 'AULA-101', 'Sillas', ''], null, 'A2');
+        $sheet->fromArray(['BIEN-0002', 'Portátil HP', 'HP', '2026-01-15', 2500000, '', 'Tecnología', '1234567890'], null, 'A3');
+        $sheet->getStyle('H2:H3')->getNumberFormat()->setFormatCode('@');
+        $sheet->getCell('H3')->setValueExplicit('1234567890', \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
+        foreach (range('A', 'H') as $columna) {
             $sheet->getColumnDimension($columna)->setAutoSize(true);
         }
 
@@ -307,6 +337,14 @@ final class CargaMasivaService
             $cambios['Categoría'] = [
                 'antes' => $categoriaActualId !== null ? ($categoriasPorId[$categoriaActualId] ?? '—') : 'Sin categoría',
                 'despues' => $categoriaNuevaId !== null ? ($categoriasPorId[$categoriaNuevaId] ?? '—') : 'Sin categoría',
+            ];
+        }
+
+        if (($nuevo['persona_id'] ?? null) !== null
+            && (int) $nuevo['persona_id'] !== (int) ($asignacionActiva['usuario_responsable_id'] ?? 0)) {
+            $cambios['Responsable individual'] = [
+                'antes' => $asignacionActiva['persona_nombre'] ?? 'Ninguno',
+                'despues' => $nuevo['persona_nombre'],
             ];
         }
 

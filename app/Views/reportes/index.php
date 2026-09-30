@@ -66,6 +66,27 @@ $instituciones = Auth::esSuperusuario() ? Institucion::listadoParaSelect() : [];
         </div>
     </div>
 
+    <div class="col-md-6">
+        <section class="card h-100" aria-labelledby="tituloActa">
+            <div class="card-body">
+                <h2 class="h6" id="tituloActa">Acta de bienes a cargo</h2>
+                <p class="small text-muted mb-2">Los bienes por los que responde un funcionario (los individuales y los de sus espacios), en Excel para imprimir y firmar.</p>
+                <form method="get" action="<?= Url::to('/reportes/acta-a-cargo.xlsx') ?>" id="formActa" class="d-flex flex-wrap gap-2 align-items-end" data-sin-cargando>
+                    <div class="flex-grow-1">
+                        <label class="form-label small mb-1" for="actaUsuario">Funcionario</label>
+                        <select name="usuario" id="actaUsuario" class="form-select form-select-sm selector-buscable" required>
+                            <option value="">-- Selecciona --</option>
+                            <?php foreach ($funcionariosActa as $f): ?>
+                                <option value="<?= (int) $f['id'] ?>"><?= htmlspecialchars($f['nombre'], ENT_QUOTES) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-sm btn-primary"><i class="bi bi-file-earmark-excel me-1" aria-hidden="true"></i>.xlsx</button>
+                </form>
+            </div>
+        </section>
+    </div>
+
     <?php if (!empty($puedeExportarTodo)): ?>
         <div class="col-12">
             <section class="card border-primary-subtle" aria-labelledby="tituloActividad">
@@ -128,7 +149,7 @@ $instituciones = Auth::esSuperusuario() ? Institucion::listadoParaSelect() : [];
                         <?php endif; ?>
                         <?php
                         $descripcionesControl = [
-                            'calidad' => 'Bienes sin foto, sin categoría, sin ubicación o sin QR pegado, por espacio, con la lista de cada caso.',
+                            'calidad' => 'Bienes sin foto, sin categoría, sin asignar o sin QR pegado, por espacio, con la lista de cada caso.',
                             'valor' => 'Cantidad de bienes y valor total por espacio, por categoría y cruzado, con totales.',
                             'inactivos' => 'Funcionarios que no ingresan hace ' . \App\Services\ReportesControl::DIAS_INACTIVO . ' días o más, o que nunca han ingresado.',
                         ];

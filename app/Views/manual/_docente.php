@@ -6,11 +6,13 @@
 <div class="d-flex flex-column gap-2 contenedor-manual">
 
     <details class="border rounded p-3 bg-body" open>
-        <summary class="fw-semibold">1. Ver los bienes de tu espacio</summary>
+        <summary class="fw-semibold">1. Ver tus bienes</summary>
         <div class="mt-2 small">
             <ol class="mb-0 ps-3">
                 <li>En el menú lateral, entra a <strong>Bienes</strong>.</li>
-                <li>Verás solo los bienes que están asignados a los espacios de los que eres responsable.</li>
+                <li>Verás solo los bienes por los que respondes: los de los espacios de los que eres responsable
+                    (responsabilidad <strong>Grupal</strong>, compartida con los demás responsables del espacio) y los que están
+                    a tu cargo directo (responsabilidad <strong>Individual</strong>, por ejemplo un portátil que te entregaron).</li>
                 <li>Haz clic en un bien para ver su ficha completa (descripción, estado, ubicación).</li>
             </ol>
         </div>

@@ -182,6 +182,12 @@ $algunFiltroActivo = $busqueda !== '' || $categoriaId !== null || $estado !== nu
             <i class="bi bi-file-earmark-excel me-1" aria-hidden="true"></i>Descargar en Excel
         </a>
     <?php endif; ?>
+    <?php if ($urlActa !== null): ?>
+        <a href="<?= htmlspecialchars($urlActa, ENT_QUOTES) ?>" class="btn btn-sm btn-outline-secondary" id="descargarActaACargo"
+           title="Acta con los bienes individuales y grupales de este responsable, para imprimir y firmar">
+            <i class="bi bi-file-earmark-text me-1" aria-hidden="true"></i>Acta de bienes a cargo
+        </a>
+    <?php endif; ?>
 </div>
 
 <?php View::render('partials/paginacion', [
