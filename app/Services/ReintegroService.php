@@ -48,6 +48,7 @@ final class ReintegroService
                 'fecha' => $fecha,
                 'responsable_id' => Auth::id(),
                 'espacio_origen_id' => $asignacionActiva['espacio_id'] ?? null,
+                'persona_origen_id' => $asignacionActiva['usuario_responsable_id'] ?? null,
                 'espacio_destino_id' => null,
                 'destino_texto' => $destino,
                 'observaciones' => $observaciones,
@@ -56,7 +57,8 @@ final class ReintegroService
             Asignacion::cerrarActivasDe($bienId);
             Bien::cambiarEstado($bienId, 'reintegrado');
             Auditoria::registrar(Auth::id(), (int) $bien['institucion_id'], 'reintegrar', 'bien', $bienId,
-                ['estado' => $bien['estado'], 'espacio_id' => $asignacionActiva['espacio_id'] ?? null],
+                ['estado' => $bien['estado'], 'espacio_id' => $asignacionActiva['espacio_id'] ?? null,
+                    'usuario_responsable_id' => $asignacionActiva['usuario_responsable_id'] ?? null],
                 ['estado' => 'reintegrado', 'destino' => $destino, 'fecha' => $fecha] + $extraAuditoria);
 
             return $movimientoId;

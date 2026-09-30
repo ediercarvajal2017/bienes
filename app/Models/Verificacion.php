@@ -214,9 +214,8 @@ final class Verificacion
 
         $sql = "SELECT v.*, b.codigo_identificacion, b.descripcion, b.qr_token,
                        CONCAT(e.codigo, ' - ', e.nombre) AS espacio_nombre,
-                       (SELECT GROUP_CONCAT(CONCAT(u2.nombres, ' ', u2.apellidos) SEPARATOR ', ')
-                        FROM espacio_responsables er JOIN usuarios u2 ON u2.id = er.usuario_id
-                        WHERE er.espacio_id = e.id) AS responsables_nombres,
+                       " . Bien::sqlResponsable() . " AS responsables_nombres,
+                       " . Bien::sqlTipoResponsabilidad() . " AS tipo_responsabilidad,
                        u.nombres, u.apellidos,
                        ur.nombres AS revisor_nombres, ur.apellidos AS revisor_apellidos
                 FROM verificaciones_bienes v

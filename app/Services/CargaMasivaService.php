@@ -227,12 +227,16 @@ final class CargaMasivaService
                     ]);
 
                     // Solo se reubican bienes en circulación (un reintegrado no vuelve a un
-                    // espacio por una carga masiva: requiere "Reactivar").
+                    // espacio por una carga masiva: requiere "Reactivar"). Un bien a cargo de
+                    // una persona (responsabilidad individual) la conserva: la columna
+                    // Ubicación solo cambia dónde está guardado.
                     if ($fila['datos']['espacio_id'] !== null && isset($fila['cambios']['Ubicación'])
                         && in_array($actual['estado'], ['activo', 'en_reparacion'], true)) {
+                        $asignacionAnterior = Asignacion::activaDe((int) $fila['bien_id']);
                         Asignacion::cerrarActivasDe($fila['bien_id']);
                         Asignacion::crear([
                             'bien_id' => $fila['bien_id'],
+                            'usuario_responsable_id' => $asignacionAnterior['usuario_responsable_id'] ?? null,
                             'espacio_id' => $fila['datos']['espacio_id'],
                             'fecha_asignacion' => date('Y-m-d'),
                             'observaciones' => 'Actualizado por carga masiva',

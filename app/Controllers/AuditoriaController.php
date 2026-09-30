@@ -39,6 +39,7 @@ final class AuditoriaController
             'registrado_por' => Usuario::mapaIdNombreCompleto(),
             'created_by' => Usuario::mapaIdNombreCompleto(),
             'responsables' => Usuario::mapaIdNombreCompleto(),
+            'usuario_responsable_id' => Usuario::mapaIdNombreCompleto(),
         ];
 
         View::layout('partials/layout', 'auditoria/index', [

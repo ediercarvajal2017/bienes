@@ -28,6 +28,8 @@ final class AuditoriaFormato
         'nombre' => 'Nombre',
         'codigo' => 'Código / número',
         'responsables' => 'Responsables',
+        'espacio_id' => 'Espacio',
+        'usuario_responsable_id' => 'Responsable individual',
         'codigo_identificacion' => 'Código de identificación',
         'descripcion' => 'Descripción',
         'marca' => 'Marca',

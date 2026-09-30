@@ -26,7 +26,7 @@ final class Bien
         [$whereSql, $params] = self::condicionesListado($institucionId, $busqueda, $excluirLotes, $categoriaId, $estado, $espacioId);
 
         $sql = 'SELECT b.*, c.nombre AS categoria_nombre, CONCAT(e.codigo, " - ", e.nombre) AS espacio_nombre,
-                       ' . self::sqlResponsablesEspacio('e.id') . ' AS responsables_nombres
+                       ' . self::sqlResponsable() . ' AS responsables_nombres, ' . self::sqlTipoResponsabilidad() . ' AS tipo_responsabilidad
                 FROM bienes b
                 LEFT JOIN categorias_bienes c ON c.id = b.categoria_id
                 LEFT JOIN asignaciones a ON a.bien_id = b.id AND a.activa = 1
@@ -60,8 +60,8 @@ final class Bien
     /**
      * Busca por código, descripción, responsable/ubicación, estado (admite "en reparacion"
      * con o sin guion bajo), valor y lote — las mismas columnas visibles en /bienes. El
-     * responsable ahora es el espacio (y sus responsables), no una persona asignada
-     * directamente al bien.
+     * responsable es la persona (responsabilidad individual) o los responsables del
+     * espacio (grupal).
      */
     private static function condicionesListado(?int $institucionId, ?string $busqueda, bool $excluirLotes = false, ?int $categoriaId = null, ?string $estado = null, ?int $espacioId = null): array
     {
@@ -99,10 +99,9 @@ final class Bien
         if ($busqueda !== null && $busqueda !== '') {
             $termino = '%' . $busqueda . '%';
             $condiciones[] = '(b.codigo_identificacion LIKE ? OR b.descripcion LIKE ? OR e.nombre LIKE ?
-                OR EXISTS (SELECT 1 FROM espacio_responsables er JOIN usuarios u ON u.id = er.usuario_id
-                           WHERE er.espacio_id = e.id AND CONCAT(u.nombres, " ", u.apellidos) LIKE ?)
+                OR ' . self::sqlBuscaResponsable() . '
                 OR REPLACE(b.estado, "_", " ") LIKE ? OR CAST(b.valor AS CHAR) LIKE ? OR b.lote LIKE ?)';
-            array_push($params, $termino, $termino, $termino, $termino, $termino, $termino, $termino);
+            array_push($params, $termino, $termino, $termino, $termino, $termino, $termino, $termino, $termino);
         }
 
         $sql = $condiciones ? ' WHERE ' . implode(' AND ', $condiciones) : '';
@@ -111,53 +110,52 @@ final class Bien
     }
 
     /**
-     * Igual que listar(), pero solo los bienes cuya asignación activa está en un espacio
-     * donde $usuarioId figura como responsable (usado para el rol docente: solo ve "sus"
-     * bienes, no todo el inventario de la institución). Un bien sin asignación activa, o
-     * asignado a un espacio donde el usuario no es responsable, queda fuera.
+     * Igual que listar(), pero solo los bienes por los que responde $usuarioId (usado para
+     * el rol docente: solo ve "sus" bienes, no todo el inventario de la institución): los
+     * grupales de los espacios donde es responsable y los individuales a su cargo (ver
+     * sqlRespondePor). Un bien sin asignación activa, o individual de otra persona aunque
+     * esté guardado en su espacio, queda fuera.
      */
     public static function listarPropios(int $usuarioId, ?int $institucionId = null, ?string $busqueda = null, int $pagina = 1, int $porPagina = 50, ?int $categoriaId = null, ?string $estado = null, ?int $espacioId = null): array
     {
-        [$whereSql, $params] = self::condicionesPropios($institucionId, $busqueda, $categoriaId, $estado, $espacioId);
+        [$whereSql, $params] = self::condicionesPropios($usuarioId, $institucionId, $busqueda, $categoriaId, $estado, $espacioId);
 
         $sql = 'SELECT b.*, c.nombre AS categoria_nombre, CONCAT(e.codigo, " - ", e.nombre) AS espacio_nombre,
-                       ' . self::sqlResponsablesEspacio('e.id') . ' AS responsables_nombres
+                       ' . self::sqlResponsable() . ' AS responsables_nombres, ' . self::sqlTipoResponsabilidad() . ' AS tipo_responsabilidad
                 FROM bienes b
                 LEFT JOIN categorias_bienes c ON c.id = b.categoria_id
                 JOIN asignaciones a ON a.bien_id = b.id AND a.activa = 1
-                JOIN espacios e ON e.id = a.espacio_id
-                JOIN espacio_responsables er ON er.espacio_id = e.id AND er.usuario_id = ?'
+                LEFT JOIN espacios e ON e.id = a.espacio_id'
                . $whereSql
                . ' ORDER BY b.created_at DESC, b.id DESC'
                . self::limitSql($pagina, $porPagina);
 
         $stmt = Database::connection()->prepare($sql);
-        $stmt->execute(array_merge([$usuarioId], $params));
+        $stmt->execute($params);
 
         return $stmt->fetchAll();
     }
 
     public static function contarPropios(int $usuarioId, ?int $institucionId = null, ?string $busqueda = null, ?int $categoriaId = null, ?string $estado = null, ?int $espacioId = null): int
     {
-        [$whereSql, $params] = self::condicionesPropios($institucionId, $busqueda, $categoriaId, $estado, $espacioId);
+        [$whereSql, $params] = self::condicionesPropios($usuarioId, $institucionId, $busqueda, $categoriaId, $estado, $espacioId);
 
         $sql = 'SELECT COUNT(*)
                 FROM bienes b
                 JOIN asignaciones a ON a.bien_id = b.id AND a.activa = 1
-                JOIN espacios e ON e.id = a.espacio_id
-                JOIN espacio_responsables er ON er.espacio_id = e.id AND er.usuario_id = ?'
+                LEFT JOIN espacios e ON e.id = a.espacio_id'
                . $whereSql;
 
         $stmt = Database::connection()->prepare($sql);
-        $stmt->execute(array_merge([$usuarioId], $params));
+        $stmt->execute($params);
 
         return (int) $stmt->fetchColumn();
     }
 
-    private static function condicionesPropios(?int $institucionId, ?string $busqueda, ?int $categoriaId = null, ?string $estado = null, ?int $espacioId = null): array
+    private static function condicionesPropios(int $usuarioId, ?int $institucionId, ?string $busqueda, ?int $categoriaId = null, ?string $estado = null, ?int $espacioId = null): array
     {
-        $condiciones = [];
-        $params = [];
+        $condiciones = [self::sqlRespondePor()];
+        $params = [$usuarioId, $usuarioId];
 
         if ($institucionId !== null) {
             $condiciones[] = 'b.institucion_id = ?';
@@ -186,9 +184,47 @@ final class Bien
             array_push($params, $termino, $termino, $termino, $termino, $termino);
         }
 
-        $sql = $condiciones ? ' WHERE ' . implode(' AND ', $condiciones) : '';
+        // Siempre hay al menos una condición: la de sqlRespondePor().
+        $sql = ' WHERE ' . implode(' AND ', $condiciones);
 
         return [$sql, $params];
+    }
+
+    /**
+     * Quién responde por el bien, según su asignación activa (alias "a"; espacio "e"):
+     * la persona si la responsabilidad es individual, o los responsables del espacio si
+     * es grupal. Mismo criterio que Asignacion::activaDe().
+     */
+    public static function sqlResponsable(): string
+    {
+        return "(CASE WHEN a.usuario_responsable_id IS NOT NULL
+                      THEN (SELECT CONCAT(ur.nombres, ' ', ur.apellidos) FROM usuarios ur WHERE ur.id = a.usuario_responsable_id)
+                      ELSE " . self::sqlResponsablesEspacio('e.id') . ' END)';
+    }
+
+    /** 'individual', 'grupal' o NULL (sin asignar), según la asignación activa (alias "a"). */
+    public static function sqlTipoResponsabilidad(): string
+    {
+        return "(CASE WHEN a.id IS NULL THEN NULL WHEN a.usuario_responsable_id IS NOT NULL THEN 'individual' ELSE 'grupal' END)";
+    }
+
+    /**
+     * Condición "responde $usuarioId por el bien" (DOS parámetros: el mismo id dos veces):
+     * lo tiene a cargo (individual), o está en un espacio donde es responsable y no está a
+     * cargo de otra persona (grupal).
+     */
+    public static function sqlRespondePor(): string
+    {
+        return '(a.usuario_responsable_id = ? OR (a.usuario_responsable_id IS NULL AND EXISTS (
+                    SELECT 1 FROM espacio_responsables err WHERE err.espacio_id = a.espacio_id AND err.usuario_id = ?)))';
+    }
+
+    /** Búsqueda por el nombre de quien responde (DOS parámetros: el mismo término dos veces). */
+    private static function sqlBuscaResponsable(): string
+    {
+        return '(EXISTS (SELECT 1 FROM usuarios ub WHERE ub.id = a.usuario_responsable_id AND CONCAT(ub.nombres, " ", ub.apellidos) LIKE ?)
+                OR (a.usuario_responsable_id IS NULL AND EXISTS (SELECT 1 FROM espacio_responsables er JOIN usuarios u ON u.id = er.usuario_id
+                           WHERE er.espacio_id = e.id AND CONCAT(u.nombres, " ", u.apellidos) LIKE ?)))';
     }
 
     /**
@@ -630,21 +666,20 @@ final class Bien
     }
 
     /**
-     * Si el bien tiene una asignación activa, ¿$usuarioId es uno de los responsables de
-     * ese espacio? Usado para que un docente solo pueda verificar (jornada de
-     * verificación física) los bienes a su cargo, igual que el filtro de "solo mis
-     * bienes" en /bienes.
+     * ¿Responde $usuarioId por el bien? (individual a su cargo, o grupal en un espacio donde
+     * es responsable; ver sqlRespondePor). Usado para que un docente solo pueda verificar
+     * (jornada de verificación física) los bienes a su cargo, igual que el filtro de "solo
+     * mis bienes" en /bienes.
      */
     public static function esResponsableDe(int $bienId, int $usuarioId): bool
     {
         $stmt = Database::connection()->prepare(
             'SELECT 1
              FROM asignaciones a
-             JOIN espacio_responsables er ON er.espacio_id = a.espacio_id
-             WHERE a.bien_id = ? AND a.activa = 1 AND er.usuario_id = ?
+             WHERE a.bien_id = ? AND a.activa = 1 AND ' . self::sqlRespondePor() . '
              LIMIT 1'
         );
-        $stmt->execute([$bienId, $usuarioId]);
+        $stmt->execute([$bienId, $usuarioId, $usuarioId]);
 
         return (bool) $stmt->fetchColumn();
     }
@@ -838,7 +873,7 @@ final class Bien
         [$whereSql, $params] = self::condicionesPendientesDeReintegro($institucionId, $busqueda);
 
         $sql = 'SELECT b.*, a.fecha_asignacion, CONCAT(e.codigo, " - ", e.nombre) AS espacio_nombre, i.nombre AS institucion_nombre,
-                       c.nombre AS categoria_nombre, ' . self::sqlResponsablesEspacio('e.id') . ' AS responsables_nombres
+                       c.nombre AS categoria_nombre, ' . self::sqlResponsable() . ' AS responsables_nombres, ' . self::sqlTipoResponsabilidad() . ' AS tipo_responsabilidad
                 FROM bienes b
                 JOIN asignaciones a ON a.bien_id = b.id AND a.activa = 1
                 LEFT JOIN espacios e ON e.id = a.espacio_id
@@ -871,10 +906,9 @@ final class Bien
         if ($busqueda !== null && $busqueda !== '') {
             $termino = '%' . $busqueda . '%';
             $condiciones[] = '(b.codigo_identificacion LIKE ? OR b.descripcion LIKE ? OR e.nombre LIKE ?
-                OR EXISTS (SELECT 1 FROM espacio_responsables er JOIN usuarios u ON u.id = er.usuario_id
-                           WHERE er.espacio_id = e.id AND CONCAT(u.nombres, " ", u.apellidos) LIKE ?)
+                OR ' . self::sqlBuscaResponsable() . '
                 OR CAST(b.valor AS CHAR) LIKE ?)';
-            array_push($params, $termino, $termino, $termino, $termino, $termino);
+            array_push($params, $termino, $termino, $termino, $termino, $termino, $termino);
         }
 
         return [' WHERE ' . implode(' AND ', $condiciones), $params];
@@ -921,7 +955,7 @@ final class Bien
         [$whereSql, $params] = self::condicionesOperables($institucionId, $busqueda);
 
         $sql = 'SELECT b.id, b.codigo_identificacion, b.descripcion, b.valor,
-                       CONCAT(e.codigo, " - ", e.nombre) AS espacio_nombre, ' . self::sqlResponsablesEspacio('e.id') . ' AS responsables_nombres,
+                       CONCAT(e.codigo, " - ", e.nombre) AS espacio_nombre, ' . self::sqlResponsable() . ' AS responsables_nombres, ' . self::sqlTipoResponsabilidad() . ' AS tipo_responsabilidad,
                        CASE WHEN a.id IS NOT NULL THEN 1 ELSE 0 END AS asignado
                 FROM bienes b
                 LEFT JOIN asignaciones a ON a.bien_id = b.id AND a.activa = 1
@@ -949,10 +983,9 @@ final class Bien
         if ($busqueda !== null && $busqueda !== '') {
             $termino = '%' . $busqueda . '%';
             $condiciones[] = '(b.codigo_identificacion LIKE ? OR b.descripcion LIKE ? OR e.nombre LIKE ?
-                OR EXISTS (SELECT 1 FROM espacio_responsables er JOIN usuarios u ON u.id = er.usuario_id
-                           WHERE er.espacio_id = e.id AND CONCAT(u.nombres, " ", u.apellidos) LIKE ?)
+                OR ' . self::sqlBuscaResponsable() . '
                 OR CAST(b.valor AS CHAR) LIKE ?)';
-            array_push($params, $termino, $termino, $termino, $termino, $termino);
+            array_push($params, $termino, $termino, $termino, $termino, $termino, $termino);
         }
 
         return [' WHERE ' . implode(' AND ', $condiciones), $params];
@@ -973,7 +1006,7 @@ final class Bien
 
         $sql = 'SELECT b.id, b.codigo_identificacion, b.descripcion, b.valor, b.foto_path,
                        c.nombre AS categoria_nombre,
-                       CONCAT(e.codigo, " - ", e.nombre) AS espacio_nombre, ' . self::sqlResponsablesEspacio('e.id') . ' AS responsables_nombres
+                       CONCAT(e.codigo, " - ", e.nombre) AS espacio_nombre, ' . self::sqlResponsable() . ' AS responsables_nombres, ' . self::sqlTipoResponsabilidad() . ' AS tipo_responsabilidad
                 FROM bienes b
                 JOIN asignaciones a ON a.bien_id = b.id AND a.activa = 1
                 LEFT JOIN espacios e ON e.id = a.espacio_id
@@ -997,7 +1030,7 @@ final class Bien
     {
         $stmt = Database::connection()->prepare(
             'SELECT b.id, b.codigo_identificacion, b.descripcion,
-                    CONCAT(e.codigo, " - ", e.nombre) AS espacio_nombre, ' . self::sqlResponsablesEspacio('e.id') . ' AS responsables_nombres
+                    CONCAT(e.codigo, " - ", e.nombre) AS espacio_nombre, ' . self::sqlResponsable() . ' AS responsables_nombres, ' . self::sqlTipoResponsabilidad() . ' AS tipo_responsabilidad
              FROM bienes b
              JOIN asignaciones a ON a.bien_id = b.id AND a.activa = 1
              LEFT JOIN espacios e ON e.id = a.espacio_id
@@ -1057,10 +1090,9 @@ final class Bien
         if ($busqueda !== null && $busqueda !== '') {
             $termino = '%' . $busqueda . '%';
             $condiciones[] = '(b.codigo_identificacion LIKE ? OR b.descripcion LIKE ? OR e.nombre LIKE ?
-                OR EXISTS (SELECT 1 FROM espacio_responsables er JOIN usuarios u ON u.id = er.usuario_id
-                           WHERE er.espacio_id = e.id AND CONCAT(u.nombres, " ", u.apellidos) LIKE ?)
+                OR ' . self::sqlBuscaResponsable() . '
                 OR CAST(b.valor AS CHAR) LIKE ?)';
-            array_push($params, $termino, $termino, $termino, $termino, $termino);
+            array_push($params, $termino, $termino, $termino, $termino, $termino, $termino);
         }
 
         return [' WHERE ' . implode(' AND ', $condiciones), $params];

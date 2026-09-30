@@ -42,7 +42,7 @@ test('calidad del inventario: resumen por espacio y la lista de cada caso, solo 
     expect(descarga.suggestedFilename()).toMatch(/^MIA_calidad_\d{4}-\d{2}-\d{2}\.xlsx$/);
     const libro = leerXlsx(fs.readFileSync(await descarga.path()));
 
-    expect(Object.keys(libro)).toEqual(['Información', 'Resumen por espacio', 'Sin foto', 'Sin categoría', 'Sin ubicación', 'Sin QR pegado']);
+    expect(Object.keys(libro)).toEqual(['Información', 'Resumen por espacio', 'Sin foto', 'Sin categoría', 'Sin asignar', 'Sin QR pegado']);
     const codigoConFoto = bd(`SELECT codigo_identificacion FROM bienes WHERE id = ${d.bienes.A.silla}`);
     const sinFoto = libro['Sin foto'].map((f) => String(f[0]));
     expect(sinFoto).not.toContain(codigoConFoto);

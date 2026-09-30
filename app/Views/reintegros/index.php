@@ -178,10 +178,7 @@ $viejo ??= [];
                             <?php endif; ?>
                         </td>
                         <td class="small" data-label="Responsable / ubicación">
-                            <?= htmlspecialchars($b['espacio_nombre'] ?? '—', ENT_QUOTES) ?>
-                            <?php if (!empty($b['responsables_nombres'])): ?>
-                                <div class="text-muted"><?= htmlspecialchars($b['responsables_nombres'], ENT_QUOTES) ?></div>
-                            <?php endif; ?>
+                            <?php \App\Core\View::render('partials/responsabilidad', ['fila' => $b]); ?>
                         </td>
                         <td class="text-end" data-label="Valor"><?= number_format((float) $b['valor'], 2) ?></td>
                     </tr>

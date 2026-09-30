@@ -88,7 +88,7 @@ $puedeVer = static function (array $item): bool {
             'detalle' => number_format($r['total'], 0, ',', '.') . ' registrados en total', 'ruta' => '/bienes'],
         ['icono' => 'cash-coin', 'valor' => $valorCifra, 'unidad' => $valorUnidad, 'texto' => 'valor del inventario',
             'detalle' => '$' . number_format($r['valor'], 0, ',', '.'), 'ruta' => '/reportes'],
-        ['icono' => 'person-check', 'valor' => $porcentaje($r['asignados'], $r['en_circulacion']) . ' %', 'texto' => 'asignados a un espacio',
+        ['icono' => 'person-check', 'valor' => $porcentaje($r['asignados'], $r['en_circulacion']) . ' %', 'texto' => 'asignados (espacio o persona)',
             'detalle' => number_format($r['en_circulacion'] - $r['asignados'], 0, ',', '.') . ' sin asignar', 'ruta' => '/asignaciones',
             'progreso' => $porcentaje($r['asignados'], $r['en_circulacion'])],
         ['icono' => 'qr-code', 'valor' => $porcentaje($r['qr_confirmados'], $r['en_circulacion']) . ' %', 'texto' => 'con etiqueta QR confirmada',

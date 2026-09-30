@@ -419,7 +419,7 @@ final class ReportesControl
             : ($institucionIds === [] ? '1 = 0' : "{$columna} IN (" . implode(',', array_map('intval', $institucionIds)) . ')');
 
         $notas = [
-            'calidad' => 'Solo bienes en el inventario (activos o en reparación). "Sin ubicación": sin asignación activa a un espacio.',
+            'calidad' => 'Solo bienes en el inventario (activos o en reparación). "Sin asignar": sin espacio ni persona responsable. "Individual (sin espacio)": a cargo de una persona, sin espacio.',
             'valor' => 'Solo bienes en el inventario (activos o en reparación). Valores en pesos.',
             'inactivos' => 'Usuarios activos que no ingresan hace ' . self::DIAS_INACTIVO . ' días o más, o que nunca han ingresado.',
         ];
@@ -431,30 +431,32 @@ final class ReportesControl
             ['Nota', $notas[$tipo]],
         ]);
 
-        // Espacio actual de cada bien (su asignación activa).
+        // Espacio actual de cada bien (su asignación activa). Sin asignación: "Sin asignar";
+        // a cargo de una persona sin espacio: "Individual (sin espacio)".
         $ubicacion = 'LEFT JOIN (SELECT bien_id, MAX(espacio_id) AS espacio_id FROM asignaciones WHERE activa = 1 GROUP BY bien_id) ua
                         ON ua.bien_id = b.id
                       LEFT JOIN espacios e ON e.id = ua.espacio_id';
-        $nombreEspacio = "CASE WHEN e.id IS NULL THEN 'Sin ubicación' ELSE CONCAT_WS(' - ', NULLIF(e.codigo, ''), e.nombre) END";
+        $nombreEspacio = "CASE WHEN ua.bien_id IS NULL THEN 'Sin asignar' WHEN e.id IS NULL THEN 'Individual (sin espacio)'
+                               ELSE CONCAT_WS(' - ', NULLIF(e.codigo, ''), e.nombre) END";
 
         if ($tipo === 'calidad') {
             $stmt = $pdo->query(
                 "SELECT i.nombre AS `Sede`, {$nombreEspacio} AS `Espacio`, COUNT(*) AS `Bienes`,
                         SUM(b.foto_path IS NULL OR b.foto_path = '') AS `Sin foto`,
                         SUM(b.categoria_id IS NULL) AS `Sin categoría`,
-                        SUM(ua.bien_id IS NULL) AS `Sin ubicación`,
+                        SUM(ua.bien_id IS NULL) AS `Sin asignar`,
                         SUM(b.qr_confirmado_en IS NULL) AS `Sin QR pegado`
                    FROM bienes b JOIN instituciones i ON i.id = b.institucion_id {$ubicacion}
                   WHERE " . self::EN_INVENTARIO . ' AND ' . $en('b.institucion_id') . "
-                  GROUP BY i.nombre, e.id, e.codigo, e.nombre
-                  ORDER BY i.nombre, (e.id IS NULL), e.nombre"
+                  GROUP BY i.nombre, (ua.bien_id IS NULL), e.id, e.codigo, e.nombre
+                  ORDER BY i.nombre, (e.id IS NULL), (ua.bien_id IS NULL), e.nombre"
             );
-            $libro->agregarHoja('Resumen por espacio', self::sinFalla($stmt), ['Bienes', 'Sin foto', 'Sin categoría', 'Sin ubicación', 'Sin QR pegado']);
+            $libro->agregarHoja('Resumen por espacio', self::sinFalla($stmt), ['Bienes', 'Sin foto', 'Sin categoría', 'Sin asignar', 'Sin QR pegado']);
 
             $listas = [
                 'Sin foto' => "(b.foto_path IS NULL OR b.foto_path = '')",
                 'Sin categoría' => 'b.categoria_id IS NULL',
-                'Sin ubicación' => 'ua.bien_id IS NULL',
+                'Sin asignar' => 'ua.bien_id IS NULL',
                 'Sin QR pegado' => 'b.qr_confirmado_en IS NULL',
             ];
             foreach ($listas as $titulo => $condicion) {
@@ -476,7 +478,7 @@ final class ReportesControl
                 "SELECT i.nombre AS sede, {$nombreEspacio} AS espacio, COUNT(*) AS bienes, SUM(b.valor) AS valor
                    FROM bienes b JOIN instituciones i ON i.id = b.institucion_id {$ubicacion}
                   WHERE " . self::EN_INVENTARIO . ' AND ' . $en('b.institucion_id') . '
-                  GROUP BY i.nombre, e.id, e.codigo, e.nombre ORDER BY i.nombre, (e.id IS NULL), e.nombre'
+                  GROUP BY i.nombre, (ua.bien_id IS NULL), e.id, e.codigo, e.nombre ORDER BY i.nombre, (e.id IS NULL), (ua.bien_id IS NULL), e.nombre'
             );
             $libro->agregarHojaDesdeFilas('Por espacio', ['Sede', 'Espacio', 'Bienes', 'Valor total'],
                 self::conTotal(self::sinFalla($stmt)->fetchAll(PDO::FETCH_NUM), 2), ['Bienes', 'Valor total']);
@@ -496,8 +498,8 @@ final class ReportesControl
                    FROM bienes b JOIN instituciones i ON i.id = b.institucion_id
                    LEFT JOIN categorias_bienes c ON c.id = b.categoria_id {$ubicacion}
                   WHERE " . self::EN_INVENTARIO . ' AND ' . $en('b.institucion_id') . "
-                  GROUP BY i.nombre, e.id, e.codigo, e.nombre, COALESCE(c.nombre, 'Sin categoría')
-                  ORDER BY i.nombre, (e.id IS NULL), e.nombre, `Categoría`"
+                  GROUP BY i.nombre, (ua.bien_id IS NULL), e.id, e.codigo, e.nombre, COALESCE(c.nombre, 'Sin categoría')
+                  ORDER BY i.nombre, (e.id IS NULL), (ua.bien_id IS NULL), e.nombre, `Categoría`"
             );
             $libro->agregarHoja('Espacio × categoría', self::sinFalla($stmt), ['Bienes', 'Valor total']);
         }
@@ -584,6 +586,7 @@ final class ReportesControl
             'registrado_por' => $usuarios,
             'created_by' => $usuarios,
             'responsables' => $usuarios,
+            'usuario_responsable_id' => $usuarios,
             'espacio_id' => self::mapaEspacios(),
         ];
     }

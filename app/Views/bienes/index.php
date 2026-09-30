@@ -237,14 +237,7 @@ $algunFiltroActivo = $busqueda !== '' || $categoriaId !== null || $estado !== nu
                 <td class="text-muted mono" data-label="Código"><?= htmlspecialchars($b['codigo_identificacion'], ENT_QUOTES) ?></td>
                 <td class="text-muted" data-label="Categoría"><?= htmlspecialchars($b['categoria_nombre'] ?? '—', ENT_QUOTES) ?></td>
                 <td class="small" data-label="Responsable / ubicación">
-                    <?php if (!empty($b['espacio_nombre'])): ?>
-                        <?= htmlspecialchars($b['espacio_nombre'], ENT_QUOTES) ?>
-                        <?php if (!empty($b['responsables_nombres'])): ?>
-                            <div class="text-muted"><?= htmlspecialchars($b['responsables_nombres'], ENT_QUOTES) ?></div>
-                        <?php endif; ?>
-                    <?php else: ?>
-                        <span class="text-muted">Sin asignar</span>
-                    <?php endif; ?>
+                    <?php View::render('partials/responsabilidad', ['fila' => $b]); ?>
                 </td>
                 <td class="mono" data-label="Valor">$<?= number_format((float) $b['valor'], 0, ',', '.') ?></td>
                 <td data-label="Estado"><span class="badge badge-estado-<?= htmlspecialchars($b['estado'], ENT_QUOTES) ?>"><?= $etiquetasEstado[$b['estado']] ?? $b['estado'] ?></span></td>

@@ -12,10 +12,14 @@ final class Movimiento
     public static function historialDe(int $bienId): array
     {
         $stmt = Database::connection()->prepare(
-            'SELECT m.*, u.nombres, u.apellidos, CONCAT(e.codigo, " - ", e.nombre) AS espacio_destino_nombre
+            'SELECT m.*, u.nombres, u.apellidos, CONCAT(e.codigo, " - ", e.nombre) AS espacio_destino_nombre,
+                    CONCAT(pd.nombres, " ", pd.apellidos) AS persona_destino_nombre,
+                    CONCAT(po.nombres, " ", po.apellidos) AS persona_origen_nombre
              FROM movimientos m
              JOIN usuarios u ON u.id = m.responsable_id
              LEFT JOIN espacios e ON e.id = m.espacio_destino_id
+             LEFT JOIN usuarios pd ON pd.id = m.persona_destino_id
+             LEFT JOIN usuarios po ON po.id = m.persona_origen_id
              WHERE m.bien_id = ?
              ORDER BY m.fecha DESC, m.id DESC'
         );
@@ -129,16 +133,19 @@ final class Movimiento
     }
 
     /**
-     * 'lote_reintegro_id' y 'espacio_origen_id' solo aplican a ciertos movimientos;
-     * se completan con null por defecto para no romper a los llamadores que no los envían.
+     * 'lote_reintegro_id', 'espacio_origen_id' y las personas de origen y destino
+     * (responsabilidad individual) solo aplican a ciertos movimientos; se completan con null
+     * por defecto para no romper a los llamadores que no los envían.
      */
     public static function crear(array $datos): int
     {
         $stmt = Database::connection()->prepare(
-            'INSERT INTO movimientos (bien_id, tipo, lote_reintegro_id, fecha, responsable_id, espacio_origen_id, espacio_destino_id, destino_texto, observaciones)
-             VALUES (:bien_id, :tipo, :lote_reintegro_id, :fecha, :responsable_id, :espacio_origen_id, :espacio_destino_id, :destino_texto, :observaciones)'
+            'INSERT INTO movimientos (bien_id, tipo, lote_reintegro_id, fecha, responsable_id, espacio_origen_id, persona_origen_id,
+                                      espacio_destino_id, persona_destino_id, destino_texto, observaciones)
+             VALUES (:bien_id, :tipo, :lote_reintegro_id, :fecha, :responsable_id, :espacio_origen_id, :persona_origen_id,
+                     :espacio_destino_id, :persona_destino_id, :destino_texto, :observaciones)'
         );
-        $stmt->execute($datos + ['lote_reintegro_id' => null, 'espacio_origen_id' => null]);
+        $stmt->execute($datos + ['lote_reintegro_id' => null, 'espacio_origen_id' => null, 'persona_origen_id' => null, 'persona_destino_id' => null]);
 
         return (int) Database::connection()->lastInsertId();
     }

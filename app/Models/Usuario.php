@@ -259,6 +259,39 @@ final class Usuario
         return $stmt->fetchAll();
     }
 
+    /**
+     * Personas que pueden tener bienes a cargo (responsabilidad individual): usuarios
+     * activos de la institución del bien, sin superusuarios.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public static function elegiblesACargo(int $institucionId): array
+    {
+        $stmt = Database::connection()->prepare(
+            "SELECT u.id, u.nombres, u.apellidos, u.documento, c.nombre AS cargo_nombre, r.nombre AS rol_nombre
+             FROM usuarios u
+             JOIN roles r ON r.id = u.rol_id
+             JOIN cargos c ON c.id = u.cargo_id
+             WHERE u.institucion_id = ? AND u.activo = 1 AND u.eliminado_en IS NULL AND r.nombre <> 'superusuario'
+             ORDER BY u.nombres, u.apellidos"
+        );
+        $stmt->execute([$institucionId]);
+
+        return array_values($stmt->fetchAll());
+    }
+
+    /** La persona, si puede tener a cargo bienes de esa institución (ver elegiblesACargo). */
+    public static function elegibleACargo(int $usuarioId, int $institucionId): ?array
+    {
+        foreach (self::elegiblesACargo($institucionId) as $persona) {
+            if ((int) $persona['id'] === $usuarioId) {
+                return $persona;
+            }
+        }
+
+        return null;
+    }
+
     public static function create(array $datos): int
     {
         $stmt = Database::connection()->prepare(

@@ -22,6 +22,7 @@ use App\Models\Espacio;
 use App\Models\Hallazgo;
 use App\Models\Institucion;
 use App\Models\Movimiento;
+use App\Models\Usuario;
 use App\Models\Verificacion;
 use App\Services\CicloVidaBien;
 
@@ -131,6 +132,8 @@ final class BienController
             'bien' => null,
             'espaciosInstitucion' => !Auth::esSuperusuario() && Auth::tienePermiso('asignaciones.crear') && $hallazgo === null
                 ? Espacio::listadoParaSelect((int) Auth::institucionId()) : [],
+            'personasInstitucion' => !Auth::esSuperusuario() && Auth::tienePermiso('asignaciones.crear') && $hallazgo === null
+                ? Usuario::elegiblesACargo((int) Auth::institucionId()) : [],
             'categorias' => Auth::esSuperusuario() ? [] : Categoria::activas((int) Auth::institucionId()),
             'instituciones' => Auth::esSuperusuario() ? Institucion::listadoParaSelect() : [],
             'error' => Session::pullFlash('error'),
@@ -204,14 +207,28 @@ final class BienController
         // ":imprimir_qr" en la consulta -- con PDO::ATTR_EMULATE_PREPARES en false eso
         // revienta con "Invalid parameter number", no se ignora en silencio.
         $imprimirQr = $datos['imprimir_qr'] === '1';
+        // Responsabilidad elegida al registrar (opcional): Grupal (espacio) o Individual
+        // (persona, con espacio opcional). Se asigna en el mismo guardado.
+        $individual = $hallazgo === null && $request->input('tipo_responsabilidad') === 'individual';
         $espacioId = $hallazgo === null ? (int) $request->input('espacio_id') : 0;
-        $datosParaReintentar = $datos + ['espacio_id' => $espacioId ?: ''];
+        $personaId = $individual ? (int) $request->input('persona_id') : 0;
+        $datosParaReintentar = $datos + [
+            'tipo_responsabilidad' => $individual ? 'individual' : 'grupal',
+            'espacio_id' => $espacioId ?: '',
+            'persona_id' => $personaId ?: '',
+        ];
         unset($datos['imprimir_qr']);
 
-        // Ubicación elegida al registrar (opcional): se asigna en el mismo guardado.
-        if ($espacioId > 0 && (Auth::esSuperusuario() || !Auth::tienePermiso('asignaciones.crear')
-                || !Espacio::perteneceYActivo($espacioId, (int) $datos['institucion_id']))) {
-            Session::flash('error', 'El espacio seleccionado no es válido (debe ser un espacio activo de la institución).');
+        $errorAsignacion = null;
+        if (($espacioId > 0 || $individual) && (Auth::esSuperusuario() || !Auth::tienePermiso('asignaciones.crear'))) {
+            $errorAsignacion = 'No tienes permiso para asignar bienes.';
+        } elseif ($individual && $personaId <= 0) {
+            $errorAsignacion = 'Elige la persona responsable, o marca la responsabilidad Grupal.';
+        } elseif ($espacioId > 0 && !Espacio::perteneceYActivo($espacioId, (int) $datos['institucion_id'])) {
+            $errorAsignacion = 'El espacio seleccionado no es válido (debe ser un espacio activo de la institución).';
+        }
+        if ($errorAsignacion !== null) {
+            Session::flash('error', $errorAsignacion);
             Session::flashOld($datosParaReintentar);
             header('Location: ' . Url::to($volverA));
             exit;
@@ -223,12 +240,14 @@ final class BienController
             // Crear el bien, auditarlo y (si viene de un hallazgo) asignarlo y cerrar el
             // hallazgo van juntos: antes podía quedar el bien creado con el hallazgo todavía
             // pendiente, o sin su asignación, si algo fallaba a mitad de camino.
-            $id = Database::transaccion(static function () use ($datos, $hallazgo, $espacioId): int {
+            $mensajeAsignacion = null;
+            $id = Database::transaccion(static function () use ($datos, $hallazgo, $espacioId, $personaId, &$mensajeAsignacion): int {
                 $id = Bien::create($datos);
                 Auditoria::registrar(Auth::id(), (int) $datos['institucion_id'], 'crear', 'bien', $id, null, $datos);
 
-                if ($espacioId > 0) {
-                    CicloVidaBien::asignarOTrasladar((array) Bien::find($id), $espacioId, date('Y-m-d'), null);
+                if ($espacioId > 0 || $personaId > 0) {
+                    $mensajeAsignacion = CicloVidaBien::asignarResponsabilidad(
+                        (array) Bien::find($id), $espacioId ?: null, $personaId ?: null, date('Y-m-d'), null);
                 }
 
                 if ($hallazgo !== null) {
@@ -271,6 +290,8 @@ final class BienController
 
         if ($hallazgo !== null) {
             Session::flash('ok', 'Bien registrado y asignado a ' . $hallazgo['espacio_nombre'] . '.');
+        } elseif ($personaId > 0 && $mensajeAsignacion !== null) {
+            Session::flash('ok', 'Bien registrado. ' . $mensajeAsignacion);
         } elseif ($espacioId > 0) {
             Session::flash('ok', 'Bien registrado y asignado a ' . (Espacio::find($espacioId)['nombre'] ?? 'el espacio elegido') . '.');
         } else {
@@ -474,6 +495,7 @@ final class BienController
             'asignacionActiva' => $asignacionActiva,
             'historialMovimientos' => Movimiento::historialDe($id),
             'espaciosInstitucion' => Espacio::listadoParaSelect((int) $bien['institucion_id']),
+            'personasInstitucion' => Usuario::elegiblesACargo((int) $bien['institucion_id']),
             'familiaSedesDestino' => $familiaSedesDestino,
             'espaciosPorSedeDestino' => $espaciosPorSedeDestino,
             'verificacionId' => Verificacion::idValidoParaBien($id, (string) ($_GET['verificacion_id'] ?? '')),
@@ -551,8 +573,11 @@ final class BienController
                 $verificacionId = Verificacion::idValidoParaBien($id, (string) $request->input('verificacion_id'));
 
                 return match ($accion) {
-                    'asignar', 'trasladar' => CicloVidaBien::asignarOTrasladar(
-                        $actualizado, (int) $request->input('accion_espacio_id'), $fecha, $observaciones, $verificacionId),
+                    'asignar', 'trasladar' => CicloVidaBien::asignarResponsabilidad(
+                        $actualizado,
+                        (int) $request->input('accion_espacio_id') ?: null,
+                        self::personaIndividualElegida($request),
+                        $fecha, $observaciones, $verificacionId),
                     'trasladar_sede' => CicloVidaBien::trasladarSede(
                         $actualizado, (int) $request->input('accion_sede_id'), (int) $request->input('accion_espacio_sede_id'), $fecha, $observaciones),
                     'reintegrar' => CicloVidaBien::reintegrar(
@@ -610,11 +635,28 @@ final class BienController
         return Url::to('/bienes' . ($consulta !== [] ? '?' . http_build_query($consulta) : ''));
     }
 
+    /**
+     * Persona elegida en la acción Asignar/Traslado: null si la responsabilidad es Grupal.
+     * Individual sin persona es un error (no se convierte en Grupal sin avisar).
+     */
+    private static function personaIndividualElegida(Request $request): ?int
+    {
+        if ($request->input('accion_tipo') !== 'individual') {
+            return null;
+        }
+        $personaId = (int) $request->input('accion_persona_id');
+        if ($personaId <= 0) {
+            throw new \DomainException('Elige la persona responsable, o marca la responsabilidad Grupal.');
+        }
+
+        return $personaId;
+    }
+
     /** Campos de la acción elegida, para devolverlos al formulario si algo falla. */
     private function camposAccion(Request $request): array
     {
         $campos = [];
-        foreach (['accion', 'accion_espacio_id', 'accion_sede_id', 'accion_espacio_sede_id', 'accion_fecha',
+        foreach (['accion', 'accion_tipo', 'accion_espacio_id', 'accion_persona_id', 'accion_sede_id', 'accion_espacio_sede_id', 'accion_fecha',
                   'accion_observaciones', 'accion_destino', 'accion_motivo', 'accion_estado_reportado',
                   'accion_descripcion_baja'] as $campo) {
             $campos[$campo] = (string) $request->input($campo);

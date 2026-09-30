@@ -45,7 +45,9 @@ $sinResultados = $q !== ''
                                 <?= htmlspecialchars($b['descripcion'], ENT_QUOTES) ?>
                                 <span class="text-muted small mono ms-1"><?= htmlspecialchars($b['codigo_identificacion'], ENT_QUOTES) ?></span>
                             </span>
-                            <span class="text-muted small"><?= htmlspecialchars($b['espacio_nombre'] ?? 'Sin asignar', ENT_QUOTES) ?></span>
+                            <span class="text-muted small"><?= htmlspecialchars(($b['tipo_responsabilidad'] ?? null) === 'individual'
+                                ? 'A cargo de ' . $b['responsables_nombres']
+                                : ($b['espacio_nombre'] ?? 'Sin asignar'), ENT_QUOTES) ?></span>
                         </a>
                     <?php endforeach; ?>
                 </div>

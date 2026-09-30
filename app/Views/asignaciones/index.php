@@ -11,7 +11,7 @@ $bienesSeleccionados = $viejo['bienes'] ?? [];
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
     <div>
         <h1 class="h4 mb-0">Asignar bienes</h1>
-        <p class="text-muted small mb-0">Selecciona uno o varios bienes y asígnalos (o reasígnalos) a un espacio.</p>
+        <p class="text-muted small mb-0">Selecciona uno o varios bienes y asígnalos (o reasígnalos) a un espacio o a una persona.</p>
     </div>
     <a href="<?= Url::to('/bienes') ?>" class="btn btn-sm btn-outline-secondary">Volver</a>
 </div>
@@ -56,19 +56,25 @@ $bienesSeleccionados = $viejo['bienes'] ?? [];
                 <h2 class="h6 mb-3">Datos de la asignación</h2>
 
                 <div class="row g-3">
-                    <div class="col-md-6">
-                        <label for="campo-espacio-id" class="form-label small">Espacio / ubicación (define el responsable)</label>
-                        <select id="campo-espacio-id" name="espacio_id" class="form-select form-select-sm selector-buscable" required>
-                            <option value="">-- Selecciona --</option>
-                            <?php foreach ($espacios as $e): ?>
-                                <option value="<?= $e['id'] ?>" <?= ($viejo['espacio_id'] ?? '') === (string) $e['id'] ? 'selected' : '' ?>><?= htmlspecialchars($e['codigo'] . ' - ' . $e['nombre'], ENT_QUOTES) ?></option>
-                            <?php endforeach; ?>
-                        </select>
+                    <div class="col-md-7">
+                        <?php View::render('partials/campos_responsabilidad', [
+                            'prefijo' => 'masivo',
+                            'idEspacio' => 'campo-espacio-id',
+                            'nombres' => ['tipo' => 'tipo_responsabilidad', 'espacio' => 'espacio_id', 'persona' => 'persona_id'],
+                            'espacios' => $espacios,
+                            'personas' => $personas,
+                            'valores' => [
+                                'tipo' => (string) ($viejo['tipo_responsabilidad'] ?? 'grupal'),
+                                'espacio' => (string) ($viejo['espacio_id'] ?? ''),
+                                'persona' => (string) ($viejo['persona_id'] ?? ''),
+                            ],
+                            'espacioObligatorio' => true,
+                        ]); ?>
                         <?php if (empty($espacios)): ?>
-                            <div class="form-text text-danger">No hay espacios creados en esta institución. Crea uno en "Espacios" antes de asignar.</div>
+                            <div class="form-text text-danger">No hay espacios creados en esta institución. Para la responsabilidad grupal, crea uno en "Espacios".</div>
                         <?php endif; ?>
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-md-5">
                         <label for="campo-fecha-asignacion" class="form-label small">Fecha de asignación</label>
                         <input id="campo-fecha-asignacion" type="date" min="<?= \App\Helpers\FechaMovimiento::MINIMA ?>" max="<?= \App\Helpers\FechaMovimiento::hoy() ?>" name="fecha_asignacion" class="form-control form-control-sm" value="<?= htmlspecialchars($viejo['fecha_asignacion'] ?? date('Y-m-d'), ENT_QUOTES) ?>" required>
                     </div>
@@ -127,10 +133,7 @@ $bienesSeleccionados = $viejo['bienes'] ?? [];
                             <td data-label="Estado"><span class="badge text-bg-light border">Sin asignar</span></td>
                         <?php else: ?>
                             <td class="small" data-label="Responsable / ubicación">
-                                <?= htmlspecialchars($b['espacio_nombre'] ?? '—', ENT_QUOTES) ?>
-                                <?php if (!empty($b['responsables_nombres'])): ?>
-                                    <div class="text-muted"><?= htmlspecialchars($b['responsables_nombres'], ENT_QUOTES) ?></div>
-                                <?php endif; ?>
+                                <?php \App\Core\View::render('partials/responsabilidad', ['fila' => $b]); ?>
                             </td>
                             <td data-label="Estado"><span class="badge badge-estado-activo">Asignado</span></td>
                         <?php endif; ?>

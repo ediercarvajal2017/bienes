@@ -15,6 +15,7 @@ use App\Models\Categoria;
 use App\Models\Espacio;
 use App\Models\Institucion;
 use App\Models\Movimiento;
+use App\Models\Usuario;
 use App\Models\Verificacion;
 
 /**
@@ -46,9 +47,9 @@ final class CicloVidaBien
 
         if ($enCirculacion && $puedeMover) {
             if ($asignacionActiva) {
-                $acciones['trasladar'] = 'Cambiar de espacio (traslado)';
+                $acciones['trasladar'] = 'Cambiar de espacio o de responsable (traslado)';
             } else {
-                $acciones['asignar'] = 'Asignar a un espacio';
+                $acciones['asignar'] = 'Asignar a un espacio o a una persona';
             }
             if ($familiaSedesDestino !== []) {
                 $acciones['trasladar_sede'] = 'Trasladar a otra sede';
@@ -68,25 +69,51 @@ final class CicloVidaBien
     }
 
     /**
-     * Asigna el bien a un espacio (si no tenía) o lo traslada (si ya estaba en otro).
-     * Devuelve el mensaje de éxito.
+     * Responsabilidad grupal: asigna el bien a un espacio (si no tenía) o lo traslada.
+     * Se conserva para los llamadores que solo manejan espacios (hallazgos, verificación,
+     * rutas antiguas). Devuelve el mensaje de éxito.
      */
     public static function asignarOTrasladar(array $bien, int $espacioId, string $fecha, ?string $observaciones, ?int $verificacionId = null): string
+    {
+        return self::asignarResponsabilidad($bien, $espacioId, null, $fecha, $observaciones, $verificacionId);
+    }
+
+    /**
+     * Asigna o cambia la responsabilidad del bien:
+     *  - Grupal ($personaId null): en un espacio (obligatorio); responden sus responsables.
+     *  - Individual ($personaId): a cargo de esa persona, un usuario activo de la misma
+     *    institución; el espacio es opcional y solo indica dónde está guardado.
+     * Si el bien ya tenía una asignación, el cambio es un traslado y queda como movimiento
+     * con el espacio y la persona de origen y de destino. Devuelve el mensaje de éxito.
+     */
+    public static function asignarResponsabilidad(array $bien, ?int $espacioId, ?int $personaId, string $fecha, ?string $observaciones, ?int $verificacionId = null): string
     {
         self::verificarEnCirculacion($bien);
         self::verificarFecha($fecha);
         $id = (int) $bien['id'];
+        $institucionId = (int) $bien['institucion_id'];
+        $espacioId = $espacioId !== null && $espacioId > 0 ? $espacioId : null;
+        $personaId = $personaId !== null && $personaId > 0 ? $personaId : null;
 
-        if ($espacioId <= 0 || !Espacio::perteneceYActivo($espacioId, (int) $bien['institucion_id'])) {
+        if ($personaId === null && $espacioId === null) {
+            throw new \DomainException('Selecciona el espacio (responsabilidad grupal) o la persona responsable (individual).');
+        }
+        if ($espacioId !== null && !Espacio::perteneceYActivo($espacioId, $institucionId)) {
             throw new \DomainException('El espacio seleccionado no es válido para este bien (debe ser un espacio activo de su misma institución).');
+        }
+        $persona = null;
+        if ($personaId !== null && ($persona = Usuario::elegibleACargo($personaId, $institucionId)) === null) {
+            throw new \DomainException('La persona seleccionada no puede tener este bien a cargo (debe ser un usuario activo de la misma institución).');
         }
 
         $anterior = Asignacion::activaDe($id);
-        if ($anterior && (int) $anterior['espacio_id'] === $espacioId) {
-            throw new \DomainException('El bien ya está en ese espacio.');
+        if ($anterior
+            && (int) ($anterior['espacio_id'] ?? 0) === (int) $espacioId
+            && (int) ($anterior['usuario_responsable_id'] ?? 0) === (int) $personaId) {
+            throw new \DomainException($personaId !== null ? 'El bien ya está a cargo de esa persona.' : 'El bien ya está en ese espacio.');
         }
 
-        Database::transaccion(static function () use ($id, $bien, $espacioId, $fecha, $observaciones, $anterior): void {
+        Database::transaccion(static function () use ($id, $institucionId, $espacioId, $personaId, $fecha, $observaciones, $anterior): void {
             if ($anterior) {
                 Movimiento::crear([
                     'bien_id' => $id,
@@ -94,7 +121,9 @@ final class CicloVidaBien
                     'fecha' => $fecha,
                     'responsable_id' => Auth::id(),
                     'espacio_origen_id' => $anterior['espacio_id'] ?? null,
+                    'persona_origen_id' => $anterior['usuario_responsable_id'] ?? null,
                     'espacio_destino_id' => $espacioId,
+                    'persona_destino_id' => $personaId,
                     'destino_texto' => null,
                     'observaciones' => $observaciones,
                 ]);
@@ -102,14 +131,15 @@ final class CicloVidaBien
             Asignacion::cerrarActivasDe($id);
             Asignacion::crear([
                 'bien_id' => $id,
+                'usuario_responsable_id' => $personaId,
                 'espacio_id' => $espacioId,
                 'fecha_asignacion' => $fecha,
                 'observaciones' => $observaciones,
                 'asignado_por' => Auth::id(),
             ]);
-            Auditoria::registrar(Auth::id(), (int) $bien['institucion_id'], $anterior ? 'trasladar' : 'asignar', 'bien', $id,
-                ['espacio_id' => $anterior['espacio_id'] ?? null],
-                ['espacio_id' => $espacioId, 'fecha' => $fecha, 'observaciones' => $observaciones]);
+            Auditoria::registrar(Auth::id(), $institucionId, $anterior ? 'trasladar' : 'asignar', 'bien', $id,
+                ['espacio_id' => $anterior['espacio_id'] ?? null, 'usuario_responsable_id' => $anterior['usuario_responsable_id'] ?? null],
+                ['espacio_id' => $espacioId, 'usuario_responsable_id' => $personaId, 'fecha' => $fecha, 'observaciones' => $observaciones]);
         });
 
         // Si viene de una discrepancia de la verificación física ("no está aquí, se movió"),
@@ -118,7 +148,12 @@ final class CicloVidaBien
             Verificacion::marcarRevisada($verificacionId, (int) Auth::id());
         }
 
-        $nombre = Espacio::find($espacioId)['nombre'] ?? 'el espacio elegido';
+        if ($persona !== null) {
+            $nombre = trim($persona['nombres'] . ' ' . $persona['apellidos']);
+
+            return $anterior ? "Ahora está a cargo de {$nombre} (responsabilidad individual)." : "Queda a cargo de {$nombre} (responsabilidad individual).";
+        }
+        $nombre = Espacio::find((int) $espacioId)['nombre'] ?? 'el espacio elegido';
 
         return $anterior ? "Trasladado a {$nombre}." : "Asignado a {$nombre}.";
     }
@@ -172,6 +207,7 @@ final class CicloVidaBien
                 'fecha' => $fecha,
                 'responsable_id' => Auth::id(),
                 'espacio_origen_id' => $asignacionActiva['espacio_id'] ?? null,
+                'persona_origen_id' => $asignacionActiva['usuario_responsable_id'] ?? null,
                 'espacio_destino_id' => $espacioId,
                 'destino_texto' => null,
                 'observaciones' => $observacionesFinal,
@@ -186,7 +222,8 @@ final class CicloVidaBien
             ]);
             Bien::cambiarInstitucion($id, $institucionDestinoId);
             Auditoria::registrar(Auth::id(), (int) $bien['institucion_id'], 'trasladar_sede', 'bien', $id,
-                ['institucion_id' => (int) $bien['institucion_id'], 'espacio_id' => $asignacionActiva['espacio_id'] ?? null],
+                ['institucion_id' => (int) $bien['institucion_id'], 'espacio_id' => $asignacionActiva['espacio_id'] ?? null,
+                    'usuario_responsable_id' => $asignacionActiva['usuario_responsable_id'] ?? null],
                 ['institucion_id' => $institucionDestinoId, 'espacio_id' => $espacioId, 'fecha' => $fecha]);
         });
 
@@ -249,7 +286,7 @@ final class CicloVidaBien
                 ['estado' => 'reintegrado'], ['estado' => 'activo', 'motivo' => $motivo, 'fecha' => $fecha]);
         });
 
-        return 'Bien reactivado. Ahora puedes asignarlo a un espacio.';
+        return 'Bien reactivado. Ahora puedes asignarlo a un espacio o a una persona.';
     }
 
     /**

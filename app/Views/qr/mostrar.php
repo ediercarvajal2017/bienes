@@ -92,10 +92,14 @@ $qrImpreso = !empty($bien['qr_impreso_en']);
                 <dd class="col-7"><?= htmlspecialchars($bien['categoria_nombre'], ENT_QUOTES) ?></dd>
             <?php endif; ?>
 
-            <dt class="col-5 text-muted fw-normal">Ubicación</dt>
-            <dd class="col-7"><?= !empty($asignacion['espacio_nombre']) ? htmlspecialchars($asignacion['espacio_nombre'], ENT_QUOTES) : 'Sin asignar' ?></dd>
+            <?php $esIndividual = ($asignacion['tipo_responsabilidad'] ?? null) === 'individual'; ?>
+            <dt class="col-5 text-muted fw-normal">Responsabilidad</dt>
+            <dd class="col-7"><?= $asignacion ? ($esIndividual ? 'Individual' : 'Grupal') : 'Sin asignar' ?></dd>
 
-            <dt class="col-5 text-muted fw-normal">Responsable</dt>
+            <dt class="col-5 text-muted fw-normal"><?= $esIndividual ? 'Guardado en' : 'Ubicación' ?></dt>
+            <dd class="col-7"><?= !empty($asignacion['espacio_nombre']) ? htmlspecialchars($asignacion['espacio_nombre'], ENT_QUOTES) : ($esIndividual ? '—' : 'Sin asignar') ?></dd>
+
+            <dt class="col-5 text-muted fw-normal"><?= $esIndividual ? 'A cargo de' : 'Responsable' ?></dt>
             <dd class="col-7"><?= !empty($asignacion['responsables_nombres']) ? htmlspecialchars($asignacion['responsables_nombres'], ENT_QUOTES) : '—' ?></dd>
 
             <dt class="col-5 text-muted fw-normal">Institución</dt>

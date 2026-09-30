@@ -51,7 +51,15 @@ $invalido = static fn (string $campo) => $errorCampo === $campo ? ' is-invalid' 
                 <div class="text-truncate"><?= htmlspecialchars($bien['descripcion'], ENT_QUOTES) ?></div>
                 <div class="small text-muted" id="ubicacionActual">
                     <i class="bi bi-geo-alt me-1" aria-hidden="true"></i>
-                    <?php if ($asignacionActiva && !empty($asignacionActiva['espacio_nombre'])): ?>
+                    <?php if ($asignacionActiva && ($asignacionActiva['tipo_responsabilidad'] ?? '') === 'individual'): ?>
+                        <span class="badge etiqueta-responsabilidad etiqueta-individual">Individual</span>
+                        A cargo de <span class="fw-semibold text-body"><?= htmlspecialchars((string) $asignacionActiva['persona_nombre'], ENT_QUOTES) ?></span>
+                        <?php if (!empty($asignacionActiva['espacio_nombre'])): ?>
+                            · guardado en <?= htmlspecialchars($asignacionActiva['espacio_nombre'], ENT_QUOTES) ?>
+                        <?php endif; ?>
+                        · desde <?= htmlspecialchars($asignacionActiva['fecha_asignacion'], ENT_QUOTES) ?>
+                    <?php elseif ($asignacionActiva && !empty($asignacionActiva['espacio_nombre'])): ?>
+                        <span class="badge etiqueta-responsabilidad etiqueta-grupal">Grupal</span>
                         <span class="fw-semibold text-body"><?= htmlspecialchars($asignacionActiva['espacio_nombre'], ENT_QUOTES) ?></span>
                         <?php if (!empty($asignacionActiva['responsables_nombres'])): ?>
                             · <?= htmlspecialchars($asignacionActiva['responsables_nombres'], ENT_QUOTES) ?>
@@ -138,14 +146,19 @@ $invalido = static fn (string $campo) => $errorCampo === $campo ? ' is-invalid' 
 
                 <?php if (isset($acciones['asignar']) || isset($acciones['trasladar'])): ?>
                     <div data-campos-accion="asignar trasladar" class="mb-2" hidden>
-                        <label class="form-label small requerido" for="accionEspacio"><?= isset($acciones['trasladar']) ? 'Nuevo espacio' : 'Espacio' ?></label>
-                        <select id="accionEspacio" name="accion_espacio_id" class="form-select form-select-sm selector-buscable" required disabled>
-                            <option value="">-- Selecciona --</option>
-                            <?php foreach ($espaciosInstitucion as $e): ?>
-                                <?php if ((int) $e['id'] === (int) ($asignacionActiva['espacio_id'] ?? 0)) { continue; } ?>
-                                <option value="<?= $e['id'] ?>" <?= $va('accion_espacio_id') === (string) $e['id'] ? 'selected' : '' ?>><?= htmlspecialchars($e['codigo'] . ' - ' . $e['nombre'], ENT_QUOTES) ?></option>
-                            <?php endforeach; ?>
-                        </select>
+                        <?php View::render('partials/campos_responsabilidad', [
+                            'prefijo' => 'accion',
+                            'nombres' => ['tipo' => 'accion_tipo', 'espacio' => 'accion_espacio_id', 'persona' => 'accion_persona_id'],
+                            'espacios' => $espaciosInstitucion,
+                            'personas' => $personasInstitucion ?? [],
+                            'valores' => [
+                                'tipo' => $va('accion_tipo', (string) ($asignacionActiva['tipo_responsabilidad'] ?? 'grupal')),
+                                'espacio' => $va('accion_espacio_id'),
+                                'persona' => $va('accion_persona_id'),
+                            ],
+                            'espacioObligatorio' => true,
+                            'deshabilitado' => true,
+                        ]); ?>
                     </div>
                 <?php endif; ?>
 
@@ -269,14 +282,22 @@ $invalido = static fn (string $campo) => $errorCampo === $campo ? ' is-invalid' 
 
     <?php if (!$esEdicion && !empty($espaciosInstitucion)): ?>
         <div class="col-12">
-            <label for="campoEspacioNuevo" class="form-label small">Ubicación (espacio)</label>
-            <select id="campoEspacioNuevo" name="espacio_id" class="form-select selector-buscable">
-                <option value="">-- Sin asignar por ahora --</option>
-                <?php foreach ($espaciosInstitucion as $e): ?>
-                    <option value="<?= $e['id'] ?>" <?= (string) ($viejo['espacio_id'] ?? '') === (string) $e['id'] ? 'selected' : '' ?>><?= htmlspecialchars($e['codigo'] . ' - ' . $e['nombre'], ENT_QUOTES) ?></option>
-                <?php endforeach; ?>
-            </select>
-            <div class="form-text">Si lo elige, el bien queda asignado a ese espacio al registrarlo.</div>
+            <?php View::render('partials/campos_responsabilidad', [
+                'prefijo' => 'nuevo',
+                'idEspacio' => 'campoEspacioNuevo',
+                'nombres' => ['tipo' => 'tipo_responsabilidad', 'espacio' => 'espacio_id', 'persona' => 'persona_id'],
+                'espacios' => $espaciosInstitucion,
+                'personas' => $personasInstitucion ?? [],
+                'valores' => [
+                    'tipo' => (string) ($viejo['tipo_responsabilidad'] ?? 'grupal'),
+                    'espacio' => (string) ($viejo['espacio_id'] ?? ''),
+                    'persona' => (string) ($viejo['persona_id'] ?? ''),
+                ],
+                'espacioObligatorio' => false,
+                'textoSinEspacio' => '-- Sin asignar por ahora --',
+                'tamano' => '',
+            ]); ?>
+            <div class="form-text mt-0">Opcional: si eliges un espacio o una persona, el bien queda asignado al registrarlo.</div>
         </div>
     <?php endif; ?>
 
@@ -635,7 +656,9 @@ document.addEventListener('DOMContentLoaded', function () {
                         <td class="mono" data-label="Fecha"><?= htmlspecialchars($m['fecha'], ENT_QUOTES) ?></td>
                         <td data-label="Tipo"><span class="badge text-bg-light border text-capitalize"><?= htmlspecialchars($m['tipo'], ENT_QUOTES) ?></span></td>
                         <td data-label="Responsable"><?= htmlspecialchars($m['nombres'] . ' ' . $m['apellidos'], ENT_QUOTES) ?></td>
-                        <td class="text-muted" data-label="Destino"><?= htmlspecialchars($m['espacio_destino_nombre'] ?? $m['destino_texto'] ?? '—', ENT_QUOTES) ?></td>
+                        <td class="text-muted" data-label="Destino"><?= htmlspecialchars(!empty($m['persona_destino_nombre'])
+                            ? 'A cargo de ' . $m['persona_destino_nombre'] . (!empty($m['espacio_destino_nombre']) ? ' (guardado en ' . $m['espacio_destino_nombre'] . ')' : '')
+                            : ($m['espacio_destino_nombre'] ?? $m['destino_texto'] ?? '—'), ENT_QUOTES) ?></td>
                         <td class="text-muted small" data-label="Observaciones"><?= htmlspecialchars($m['observaciones'] ?? '', ENT_QUOTES) ?></td>
                     </tr>
                 <?php endforeach; ?>

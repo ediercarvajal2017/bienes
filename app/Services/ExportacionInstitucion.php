@@ -168,8 +168,13 @@ final class ExportacionInstitucion
                     b.valor AS `Valor`, b.estado AS `Estado`,
                     (SELECT GROUP_CONCAT(DISTINCT e.nombre SEPARATOR ' | ') FROM asignaciones a JOIN espacios e ON e.id = a.espacio_id
                         WHERE a.bien_id = b.id AND a.activa = 1) AS `Ubicación actual`,
-                    (SELECT GROUP_CONCAT(DISTINCT {$persona('u')} SEPARATOR ' | ') FROM asignaciones a JOIN usuarios u ON u.id = a.usuario_responsable_id
-                        WHERE a.bien_id = b.id AND a.activa = 1) AS `Responsable actual`,
+                    (SELECT IF(a.usuario_responsable_id IS NULL, 'Grupal', 'Individual') FROM asignaciones a
+                        WHERE a.bien_id = b.id AND a.activa = 1 ORDER BY a.id DESC LIMIT 1) AS `Tipo de responsabilidad`,
+                    (SELECT IF(a.usuario_responsable_id IS NOT NULL,
+                               (SELECT {$persona('u')} FROM usuarios u WHERE u.id = a.usuario_responsable_id),
+                               (SELECT GROUP_CONCAT({$persona('u')} SEPARATOR ', ') FROM espacio_responsables er
+                                  JOIN usuarios u ON u.id = er.usuario_id WHERE er.espacio_id = a.espacio_id))
+                        FROM asignaciones a WHERE a.bien_id = b.id AND a.activa = 1 ORDER BY a.id DESC LIMIT 1) AS `Responsable actual`,
                     IF(b.tiene_factura = 1, 'Sí', 'No') AS `Tiene factura`, b.foto_path AS `Foto`, b.factura_pdf_path AS `Factura`,
                     b.qr_impreso_en AS `QR impreso en`, b.qr_confirmado_en AS `QR pegado en`,
                     {$persona('cr')} AS `Registrado por`, b.created_at AS `Registrado en`, b.updated_at AS `Actualizado en`
@@ -179,7 +184,8 @@ final class ExportacionInstitucion
                 LEFT JOIN usuarios cr ON cr.id = b.created_by
                 WHERE b.institucion_id IN (:ids) ORDER BY b.codigo_identificacion",
             'asignaciones' => "SELECT a.id AS `Id`, b.codigo_identificacion AS `Código del bien`, b.descripcion AS `Bien`,
-                    {$persona('u')} AS `Responsable`, u.documento AS `Documento del responsable`, e.nombre AS `Espacio`,
+                    IF(a.usuario_responsable_id IS NULL, 'Grupal', 'Individual') AS `Tipo de responsabilidad`,
+                    {$persona('u')} AS `Responsable individual`, u.documento AS `Documento del responsable`, e.nombre AS `Espacio`,
                     a.fecha_asignacion AS `Fecha de asignación`, IF(a.activa = 1, 'Sí', 'No') AS `Vigente`,
                     a.observaciones AS `Observaciones`, {$persona('ap')} AS `Asignado por`, a.created_at AS `Registrada en`
                 FROM asignaciones a
@@ -190,7 +196,8 @@ final class ExportacionInstitucion
                 WHERE b.institucion_id IN (:ids) ORDER BY a.id",
             'movimientos' => "SELECT m.id AS `Id`, b.codigo_identificacion AS `Código del bien`, b.descripcion AS `Bien`, m.tipo AS `Tipo`,
                     m.fecha AS `Fecha`, {$persona('r')} AS `Registrado por`, {$persona('ua')} AS `Responsable anterior`,
-                    eo.nombre AS `Espacio de origen`, ed.nombre AS `Espacio de destino`, m.destino_texto AS `Destino`,
+                    eo.nombre AS `Espacio de origen`, {$persona('po')} AS `Persona de origen`,
+                    ed.nombre AS `Espacio de destino`, {$persona('pd')} AS `Persona de destino`, m.destino_texto AS `Destino`,
                     m.lote_reintegro_id AS `Lote de reintegro`, m.observaciones AS `Observaciones`, m.created_at AS `Registrado en`
                 FROM movimientos m
                 JOIN bienes b ON b.id = m.bien_id
@@ -198,6 +205,8 @@ final class ExportacionInstitucion
                 LEFT JOIN usuarios ua ON ua.id = m.usuario_anterior_id
                 LEFT JOIN espacios eo ON eo.id = m.espacio_origen_id
                 LEFT JOIN espacios ed ON ed.id = m.espacio_destino_id
+                LEFT JOIN usuarios po ON po.id = m.persona_origen_id
+                LEFT JOIN usuarios pd ON pd.id = m.persona_destino_id
                 WHERE b.institucion_id IN (:ids) ORDER BY m.id",
             'bajas' => "SELECT bb.id AS `Id`, b.codigo_identificacion AS `Código del bien`, b.descripcion AS `Bien`,
                     bb.estado_reportado AS `Estado reportado`, bb.ubicacion AS `Ubicación`, {$persona('r')} AS `Reportada por`,
