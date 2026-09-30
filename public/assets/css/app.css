@@ -776,11 +776,35 @@ main.flex-fill { padding-bottom: max(1.5rem, env(safe-area-inset-bottom)) !impor
 /* ── Filtros de los listados ── */
 .filtro-busqueda { flex: 1 1 260px; max-width: 420px; }
 .filtro-item { flex: 0 1 240px; min-width: 0; }
+
+/* Panel de filtros (Bienes): arriba Buscar a lo ancho con los botones a la derecha; abajo
+   los filtros en columnas iguales: todos en una fila si caben con holgura, si no de a 3
+   (3 + 2), para que ninguno quede solo. La vista pone cuántos hay (--filtros), que
+   varía según el rol. Se mide el ancho del panel, no el de la pantalla, porque el menú
+   lateral le quita espacio. */
+.panel-filtros {
+  display: grid; gap: .75rem;
+  padding: .75rem 1rem;
+  border: 1px solid var(--bs-border-color); border-radius: 8px;
+  background: var(--bs-body-bg);
+  container-type: inline-size;
+}
+[data-bs-theme="dark"] .panel-filtros { background: var(--sigebi-surface); }
+.panel-filtros-fila { display: flex; flex-wrap: wrap; gap: .75rem 1rem; align-items: flex-end; }
+.panel-filtros-busqueda { flex: 1 1 320px; min-width: 0; }
+.panel-filtros-acciones { display: flex; flex-wrap: wrap; gap: .5rem; }
+.filtros-rejilla { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: .75rem; }
+.filtros-rejilla .filtro-item { min-width: 0; }
+@container (min-width: 560px) { .filtros-rejilla { grid-template-columns: repeat(var(--filtros-medio, 3), minmax(0, 1fr)); } }
+@container (min-width: 1050px) { .filtros-rejilla { grid-template-columns: repeat(var(--filtros, 5), minmax(0, 1fr)); } }
+
 @media (max-width: 767.98px) {
   .filtro-busqueda { flex: 1 1 100%; max-width: none; }
   .filtros-plegables { flex: 1 1 100%; }
   .filtros-plegables .filtro-item { flex: 1 1 100%; }
   .filtros-plegables:not(.abierto) { display: none !important; }
+  .panel-filtros-busqueda { flex-basis: 100%; }
+  .filtros-rejilla { grid-template-columns: 1fr; }
 }
 
 /* Selección masiva en el celular: el botón de acción ("Asignar (3)") queda fijo abajo

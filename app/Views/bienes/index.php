@@ -106,18 +106,42 @@ $algunFiltroActivo = $busqueda !== '' || $categoriaId !== null || $estado !== nu
 <?php endif; ?>
 
 <?php $filtrosActivos = count(array_filter([$categoriaId, $estado, $espacioId, $responsableId, $tipo], static fn ($f) => $f !== null)); ?>
-<div class="mb-3 d-flex flex-wrap gap-3 align-items-end">
-    <div class="filtro-busqueda">
-        <label for="buscador" class="form-label small mb-1">Buscar</label>
-        <input type="search" id="buscador" data-buscar="q" class="form-control form-control-sm"
-               placeholder="Buscar por código, descripción, responsable, ubicación, estado o valor..."
-               value="<?= htmlspecialchars($busqueda, ENT_QUOTES) ?>">
+<!-- Arriba: Buscar a lo ancho y los botones; abajo: los filtros en columnas iguales. -->
+<div class="panel-filtros mb-3">
+    <div class="panel-filtros-fila">
+        <div class="panel-filtros-busqueda">
+            <label for="buscador" class="form-label small mb-1">Buscar</label>
+            <input type="search" id="buscador" data-buscar="q" class="form-control form-control-sm"
+                   placeholder="Buscar por código, descripción, responsable, ubicación, estado o valor..."
+                   value="<?= htmlspecialchars($busqueda, ENT_QUOTES) ?>">
+        </div>
+        <div class="panel-filtros-acciones">
+            <button type="button" class="btn btn-sm btn-outline-secondary d-md-none" data-alternar="filtrosBienes"
+                    aria-controls="filtrosBienes" aria-expanded="<?= $filtrosActivos > 0 ? 'true' : 'false' ?>">
+                <i class="bi bi-funnel me-1" aria-hidden="true"></i>Filtros<?= $filtrosActivos > 0 ? " ({$filtrosActivos} activo" . ($filtrosActivos === 1 ? '' : 's') . ')' : '' ?>
+            </button>
+            <?php if ($algunFiltroActivo): ?>
+                <a href="<?= Url::to('/bienes') ?>" class="btn btn-sm btn-outline-secondary" id="quitarFiltrosBienes">
+                    <i class="bi bi-x-circle me-1" aria-hidden="true"></i>Quitar filtros
+                </a>
+            <?php endif; ?>
+            <?php if ($urlDescarga !== null): ?>
+                <a href="<?= htmlspecialchars($urlDescarga, ENT_QUOTES) ?>" class="btn btn-sm btn-outline-secondary" id="descargarCarteraFiltrada" data-sin-cargando
+                   title="Descarga la cartera en Excel con los filtros y la búsqueda que tengas puestos">
+                    <i class="bi bi-file-earmark-excel me-1" aria-hidden="true"></i>Descargar en Excel
+                </a>
+            <?php endif; ?>
+            <?php if ($urlActa !== null): ?>
+                <a href="<?= htmlspecialchars($urlActa, ENT_QUOTES) ?>" class="btn btn-sm btn-outline-secondary" id="descargarActaACargo"
+                   title="Acta con los bienes individuales y grupales de este responsable, para imprimir y firmar">
+                    <i class="bi bi-file-earmark-text me-1" aria-hidden="true"></i>Acta de bienes a cargo
+                </a>
+            <?php endif; ?>
+        </div>
     </div>
-    <button type="button" class="btn btn-sm btn-outline-secondary d-md-none" data-alternar="filtrosBienes"
-            aria-controls="filtrosBienes" aria-expanded="<?= $filtrosActivos > 0 ? 'true' : 'false' ?>">
-        <i class="bi bi-funnel me-1" aria-hidden="true"></i>Filtros<?= $filtrosActivos > 0 ? " ({$filtrosActivos} activo" . ($filtrosActivos === 1 ? '' : 's') . ')' : '' ?>
-    </button>
-    <div id="filtrosBienes" class="filtros-plegables d-flex flex-wrap gap-3 align-items-end<?= $filtrosActivos > 0 ? ' abierto' : '' ?>">
+    <?php $numFiltros = 2 + (int) !empty($espacios) + (int) !empty($responsables) + (int) !empty($tipos); ?>
+    <div id="filtrosBienes" class="filtros-plegables filtros-rejilla<?= $filtrosActivos > 0 ? ' abierto' : '' ?>"
+         style="--filtros: <?= $numFiltros ?>; --filtros-medio: <?= min($numFiltros, 3) ?>;">
     <div class="filtro-item">
         <label for="filtroCategoria" class="form-label small mb-1">Categoría</label>
         <select id="filtroCategoria" class="form-select form-select-sm selector-buscable">
@@ -176,18 +200,6 @@ $algunFiltroActivo = $busqueda !== '' || $categoriaId !== null || $estado !== nu
         </div>
     <?php endif; ?>
     </div>
-    <?php if ($urlDescarga !== null): ?>
-        <a href="<?= htmlspecialchars($urlDescarga, ENT_QUOTES) ?>" class="btn btn-sm btn-outline-secondary" id="descargarCarteraFiltrada" data-sin-cargando
-           title="Descarga la cartera en Excel con los filtros y la búsqueda que tengas puestos">
-            <i class="bi bi-file-earmark-excel me-1" aria-hidden="true"></i>Descargar en Excel
-        </a>
-    <?php endif; ?>
-    <?php if ($urlActa !== null): ?>
-        <a href="<?= htmlspecialchars($urlActa, ENT_QUOTES) ?>" class="btn btn-sm btn-outline-secondary" id="descargarActaACargo"
-           title="Acta con los bienes individuales y grupales de este responsable, para imprimir y firmar">
-            <i class="bi bi-file-earmark-text me-1" aria-hidden="true"></i>Acta de bienes a cargo
-        </a>
-    <?php endif; ?>
 </div>
 
 <?php View::render('partials/paginacion', [
