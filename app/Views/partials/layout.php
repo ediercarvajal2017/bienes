@@ -107,7 +107,22 @@ foreach (['/manual', '/mi-cuenta'] as $rutaPie) {
         <input type="search" data-buscar-form id="buscadorGlobal" name="q" class="form-control form-control-sm"
                placeholder="Buscar en todo MIA...">
     </form>
+    <?php
+    // Notas rápidas del usuario (partials/notas.php). Si la tabla aún no existe (despliegue
+    // a medias), el ícono sale sin número en lugar de tumbar todas las páginas.
+    try {
+        $totalNotas = \App\Models\Nota::contar((int) Auth::id());
+    } catch (\Throwable $e) {
+        \App\Core\ErrorHandler::reportar($e, 'layout: contar notas');
+        $totalNotas = 0;
+    }
+    ?>
     <div class="ms-auto d-flex align-items-center gap-2 gap-sm-3">
+        <button type="button" class="theme-toggle boton-notas" data-abrir-notas aria-controls="panelNotas" aria-expanded="false"
+                title="Mis notas" aria-label="Mis notas<?= $totalNotas > 0 ? " ({$totalNotas})" : '' ?>">
+            <i class="bi bi-sticky" aria-hidden="true"></i>
+            <span class="boton-notas-cuenta" data-cuenta-notas aria-hidden="true"<?= $totalNotas > 0 ? '' : ' hidden' ?>><?= $totalNotas ?></span>
+        </button>
         <a href="<?= Url::to('/buscar') ?>" class="theme-toggle d-none d-sm-inline-flex d-lg-none" aria-label="Buscar" title="Buscar">
             <i class="bi bi-search"></i>
         </a>
@@ -204,7 +219,9 @@ foreach (['/manual', '/mi-cuenta'] as $rutaPie) {
 <script src="<?= Url::asset('/assets/js/mostrar-contrasena.js') ?>"></script>
 <script src="<?= Url::asset('/assets/js/camara.js') ?>"></script>
 <?php require __DIR__ . '/menu_inferior.php'; ?>
+<?php require __DIR__ . '/notas.php'; ?>
 <script src="<?= Url::asset('/assets/js/menu.js') ?>"></script>
+<script src="<?= Url::asset('/assets/js/notas.js') ?>"></script>
 <script src="<?= Url::asset('/assets/js/lightbox.js') ?>"></script>
 <script src="<?= Url::asset('/assets/js/cargando.js') ?>"></script>
 <script src="<?= Url::asset('/assets/js/buscador-vivo.js') ?>"></script>

@@ -71,6 +71,7 @@ use App\Controllers\HallazgoController;
 use App\Controllers\InstitucionController;
 use App\Controllers\ManualController;
 use App\Controllers\MovimientoController;
+use App\Controllers\NotaController;
 use App\Controllers\PapeleraController;
 use App\Controllers\PasswordController;
 use App\Controllers\PoliticaController;
@@ -119,6 +120,12 @@ $router->post('/2fa/dispositivos/{id}/revocar', [DosFactoresController::class, '
 // Mi cuenta: seguridad de la propia cuenta (todos los roles).
 $router->get('/mi-cuenta', [CuentaController::class, 'index'], [AuthMiddleware::class]);
 $router->post('/mi-cuenta/contrasena', [CuentaController::class, 'cambiarContrasena'], [AuthMiddleware::class]);
+
+// Notas rápidas: privadas de cada usuario (todos los roles), responden en JSON.
+$router->get('/notas', [NotaController::class, 'index'], [AuthMiddleware::class]);
+$router->post('/notas', [NotaController::class, 'crear'], [AuthMiddleware::class]);
+$router->post('/notas/{id}', [NotaController::class, 'actualizar'], [AuthMiddleware::class]);
+$router->post('/notas/{id}/eliminar', [NotaController::class, 'eliminar'], [AuthMiddleware::class]);
 
 // Política de datos: la página es pública; la aceptación es obligatoria en el primer ingreso
 // (AuthMiddleware redirige a /politica/aceptar mientras esté pendiente).

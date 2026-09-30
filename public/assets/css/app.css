@@ -977,3 +977,106 @@ html { scroll-padding-top: calc(var(--alto-navbar) + 0.75rem); }
 @media print {
   .menu-inferior { display: none !important; }
 }
+
+/* ---------- Notas rápidas (partials/notas.php, notas.js) ---------- */
+.boton-notas { position: relative; }
+.boton-notas-cuenta {
+  position: absolute; top: -6px; right: -7px; min-width: 18px; height: 18px; padding: 0 4px;
+  border-radius: 9px; background: var(--sigebi-accent); color: #1F2937;
+  font-size: 0.65rem; font-weight: 700; line-height: 18px; text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.notas-fondo {
+  position: fixed; inset: 0; z-index: 1055; background: rgba(0, 0, 0, 0.35);
+  opacity: 0; visibility: hidden; transition: opacity 0.2s ease, visibility 0s linear 0.2s;
+}
+.notas-fondo.visible { opacity: 1; visibility: visible; transition: opacity 0.2s ease; }
+.panel-notas {
+  position: fixed; top: 0; right: 0; bottom: 0; z-index: 1056;
+  width: 380px; max-width: 100%;
+  display: flex; flex-direction: column;
+  background: var(--bs-body-bg); color: var(--bs-body-color);
+  border-left: 1px solid var(--bs-border-color); box-shadow: -8px 0 24px rgba(0, 0, 0, 0.25);
+  padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px);
+  transform: translateX(100%); visibility: hidden;
+  transition: transform 0.22s ease, visibility 0s linear 0.22s;
+}
+.panel-notas.abierto { transform: none; visibility: visible; transition: transform 0.22s ease; }
+.panel-notas-encabezado {
+  display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;
+  padding: 0.9rem 1rem; border-bottom: 1px solid var(--bs-border-color);
+}
+.panel-notas-acciones { display: flex; align-items: center; flex-wrap: wrap; gap: 0.5rem 0.75rem; padding: 0.75rem 1rem; }
+.panel-notas-lista {
+  flex: 1 1 auto; overflow-y: auto; overscroll-behavior: contain;
+  display: flex; flex-direction: column; gap: 0.75rem; padding: 0.25rem 1rem 1rem;
+}
+
+/* Cada color define su fondo, su franja superior y su muestra; el texto usa --nota-texto. */
+.nota {
+  --nota-fondo: #fff4b3; --nota-borde: #d9ad00; --nota-texto: #1f2937;
+  flex-shrink: 0; padding: 0.45rem 0.6rem 0.35rem; border-radius: 6px;
+  background: var(--nota-fondo); color: var(--nota-texto);
+  border-top: 6px solid var(--nota-borde); box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+.nota-verde { --nota-fondo: #dff5d8; --nota-borde: #4fa94a; }
+.nota-rosado { --nota-fondo: #ffe0ee; --nota-borde: #d9588f; }
+.nota-azul { --nota-fondo: #dcedff; --nota-borde: #3f86d1; }
+.nota-morado { --nota-fondo: #ece0ff; --nota-borde: #8a58d6; }
+[data-bs-theme="dark"] .nota { --nota-fondo: #463d1c; --nota-borde: #c9a227; --nota-texto: #eef2f6; }
+[data-bs-theme="dark"] .nota-verde { --nota-fondo: #1f3b27; --nota-borde: #4caf50; }
+[data-bs-theme="dark"] .nota-rosado { --nota-fondo: #45243a; --nota-borde: #d0679a; }
+[data-bs-theme="dark"] .nota-azul { --nota-fondo: #1c3350; --nota-borde: #4a90d9; }
+[data-bs-theme="dark"] .nota-morado { --nota-fondo: #33264f; --nota-borde: #9a74e0; }
+
+.nota-texto {
+  display: block; width: 100%; min-height: 4.5rem; padding: 0.25rem; overflow: hidden; resize: none;
+  border: 0; border-radius: 4px; background: transparent; color: inherit;
+  font-size: 0.95rem; line-height: 1.4;
+}
+.nota-texto:focus { outline: 2px solid var(--nota-borde); outline-offset: 1px; }
+.nota-texto::placeholder { color: inherit; opacity: 0.65; }
+.nota-pie { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.3rem; }
+.nota-colores { display: flex; gap: 0.35rem; flex: 0 0 auto; }
+/* El botón es la zona táctil; la muestra redonda es su ::before. */
+.nota-color {
+  display: inline-grid; place-items: center; width: 26px; height: 26px; padding: 0;
+  border: 0; border-radius: 50%; background: transparent;
+}
+.nota-color::before {
+  content: ""; width: 22px; height: 22px; border-radius: 50%;
+  border: 2px solid rgba(0, 0, 0, 0.3); background: var(--muestra);
+}
+.nota-color[aria-pressed="true"]::before { box-shadow: 0 0 0 2px var(--nota-fondo), 0 0 0 4px var(--nota-texto); }
+.nota-color:focus-visible { outline: 2px solid var(--nota-texto); outline-offset: 1px; }
+.nota-color-amarillo { --muestra: #f5d547; }
+.nota-color-verde { --muestra: #8fd88a; }
+.nota-color-rosado { --muestra: #f5a3c7; }
+.nota-color-azul { --muestra: #8ec2f5; }
+.nota-color-morado { --muestra: #bb9cf2; }
+.nota-estado {
+  flex: 1 1 auto; min-width: 0; font-size: 0.72rem; opacity: 0.85; text-align: right;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.nota-borrar {
+  flex: 0 0 auto; width: 32px; height: 32px; border: 0; border-radius: 50%;
+  background: transparent; color: inherit;
+}
+.nota-borrar:hover, .nota-borrar:focus-visible { background: rgba(0, 0, 0, 0.1); }
+[data-bs-theme="dark"] .nota-borrar:hover, [data-bs-theme="dark"] .nota-borrar:focus-visible { background: rgba(255, 255, 255, 0.12); }
+.nota-confirmar { display: flex; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.35rem; font-size: 0.85rem; font-weight: 600; }
+.nota-confirmar span { flex: 1 1 auto; }
+@media (max-width: 575.98px) {
+  .panel-notas { width: 100%; border-left: 0; }
+}
+@media (pointer: coarse) {
+  .nota-color { width: 32px; height: 44px; border-radius: 8px; }
+  .nota-borrar, .panel-notas .btn-close { width: 44px; height: 44px; }
+  .nota-texto { font-size: 16px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .panel-notas, .notas-fondo { transition: none; }
+}
+@media print {
+  .panel-notas, .notas-fondo, .boton-notas { display: none !important; }
+}
