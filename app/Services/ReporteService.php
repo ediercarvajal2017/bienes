@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Helpers\BinderSinFormulas;
+use App\Helpers\FiltrosBienes;
 use App\Models\Bien;
 use App\Models\Movimiento;
 use App\Models\Verificacion;
@@ -21,24 +22,38 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use PhpOffice\PhpSpreadsheet\Writer\Csv;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
+/**
+ * @phpstan-import-type Filtros from FiltrosBienes
+ */
 final class ReporteService
 {
-    public static function carteraBienes(?int $institucionId): Spreadsheet
+    /**
+     * Cartera de bienes. Con $filtros (los de la lista de bienes, ver FiltrosBienes) trae
+     * solo lo que coincide y agrega una hoja "Filtros" que dice cuáles se aplicaron.
+     *
+     * @param Filtros|null $filtros
+     */
+    public static function carteraBienes(?int $institucionId, ?array $filtros = null): Spreadsheet
     {
         $spreadsheet = self::libroNuevo();
         $sheet = $spreadsheet->getActiveSheet();
         $sheet->setTitle('Cartera de bienes');
 
         $sheet->fromArray(
-            ['Código', 'Descripción', 'Marca', 'Categoría', 'Ubicación', 'Responsable', 'Estado', 'Valor', 'Fecha de ingreso'],
+            ['Código', 'Descripción', 'Marca', 'Categoría', 'Ubicación', 'Responsable', 'Tipo de responsabilidad', 'Estado', 'Valor', 'Fecha de ingreso'],
             null,
             'A1'
         );
 
+        $tipos = ['grupal' => 'Grupal', 'individual' => 'Individual'];
         $fila = 2;
         // porPagina = 0: sentinel de Bien::listar() para traer todas las filas sin
         // paginar — un reporte exportado nunca debe quedar truncado a una página.
-        foreach (Bien::listar($institucionId, null, 1, 0) as $b) {
+        $bienes = $filtros === null
+            ? Bien::listar($institucionId, null, 1, 0)
+            : Bien::listar($institucionId, $filtros['q'], 1, 0, false, $filtros['categoria'], $filtros['estado'],
+                $filtros['espacio'], $filtros['responsable'], $filtros['tipo']);
+        foreach ($bienes as $b) {
             $sheet->fromArray([
                 $b['codigo_identificacion'],
                 $b['descripcion'],
@@ -46,6 +61,7 @@ final class ReporteService
                 $b['categoria_nombre'],
                 $b['espacio_nombre'] ?? '',
                 $b['responsables_nombres'] ?? '',
+                $tipos[$b['tipo_responsabilidad'] ?? ''] ?? 'Sin asignar',
                 self::etiquetaEstado($b['estado']),
                 (float) $b['valor'],
                 $b['fecha_ingreso'],
@@ -53,7 +69,18 @@ final class ReporteService
             $fila++;
         }
 
-        self::autoajustarColumnas($sheet, 'A', 'I');
+        self::autoajustarColumnas($sheet, 'A', 'J');
+
+        $descripcion = $filtros !== null ? FiltrosBienes::descripcion($filtros) : [];
+        if ($descripcion !== []) {
+            $hojaFiltros = $spreadsheet->createSheet();
+            $hojaFiltros->setTitle('Filtros');
+            $hojaFiltros->fromArray(['Filtro', 'Valor'], null, 'A1');
+            $hojaFiltros->fromArray($descripcion, null, 'A2');
+            $hojaFiltros->fromArray([['Bienes', count($bienes)]], null, 'A' . (count($descripcion) + 2));
+            self::autoajustarColumnas($hojaFiltros, 'A', 'B');
+            $spreadsheet->setActiveSheetIndex(0);
+        }
 
         return $spreadsheet;
     }

@@ -12,6 +12,7 @@ use App\Core\Request;
 use App\Core\Session;
 use App\Core\Url;
 use App\Core\View;
+use App\Helpers\FiltrosBienes;
 use App\Helpers\Paginador;
 use App\Helpers\Uploader;
 use App\Models\Asignacion;
@@ -47,28 +48,31 @@ final class BienController
         $estado = (string) ($_GET['estado'] ?? '');
         $estado = in_array($estado, self::ESTADOS, true) ? $estado : null;
         $espacioId = $institucionId !== null ? (((int) ($_GET['espacio'] ?? 0)) ?: null) : null;
+        $soloPropios = Auth::rol() === 'docente';
+        // Responsable y Tipo de responsabilidad: no aplican al docente (ya ve solo lo suyo).
+        $filtros = FiltrosBienes::desdeConsulta($_GET);
+        $responsableId = $institucionId !== null && !$soloPropios ? $filtros['responsable'] : null;
+        $tipo = !$soloPropios ? $filtros['tipo'] : null;
         $pagina = max(1, (int) ($_GET['pagina'] ?? 1));
         $porPagina = (int) ($_GET['porPagina'] ?? self::POR_PAGINA_DEFECTO);
         if (!in_array($porPagina, self::OPCIONES_POR_PAGINA, true)) {
             $porPagina = self::POR_PAGINA_DEFECTO;
         }
 
-        $soloPropios = Auth::rol() === 'docente';
-
         // Mientras no se busque ni filtre nada, los bienes que pertenecen a un lote (ej.
         // 250 sillas identicas) se excluyen del listado individual y se muestran agrupados
         // aparte (ver $lotes) — asi la cartera no queda saturada de filas casi identicas.
         // En cuanto el usuario busca o filtra algo, se ve todo, agrupado o no, para que el
         // resultado siga siendo confiable.
-        $hayFiltroActivo = $terminoBusqueda !== null || $estado !== null || $espacioId !== null;
+        $hayFiltroActivo = $terminoBusqueda !== null || $estado !== null || $espacioId !== null || $responsableId !== null || $tipo !== null;
         $excluirLotes = !$soloPropios && !$hayFiltroActivo;
 
         if ($soloPropios) {
             $total = Bien::contarPropios((int) Auth::id(), $institucionId, $terminoBusqueda, $categoriaId, $estado, $espacioId);
             $bienes = Bien::listarPropios((int) Auth::id(), $institucionId, $terminoBusqueda, $pagina, $porPagina, $categoriaId, $estado, $espacioId);
         } else {
-            $total = Bien::contarListado($institucionId, $terminoBusqueda, $excluirLotes, $categoriaId, $estado, $espacioId);
-            $bienes = Bien::listar($institucionId, $terminoBusqueda, $pagina, $porPagina, $excluirLotes, $categoriaId, $estado, $espacioId);
+            $total = Bien::contarListado($institucionId, $terminoBusqueda, $excluirLotes, $categoriaId, $estado, $espacioId, $responsableId, $tipo);
+            $bienes = Bien::listar($institucionId, $terminoBusqueda, $pagina, $porPagina, $excluirLotes, $categoriaId, $estado, $espacioId, $responsableId, $tipo);
         }
 
         // Las filas-resumen de lote se intercalan arriba de los bienes individuales en la
@@ -87,7 +91,7 @@ final class BienController
         // Se recuerda la consulta del listado (búsqueda, filtros, página) para volver a
         // ella al guardar un bien o pulsar "Volver" en su ficha.
         Session::put('bienes_listado', http_build_query(array_intersect_key(
-            $_GET, array_flip(['q', 'categoria', 'estado', 'espacio', 'pagina', 'porPagina'])
+            $_GET, array_flip(['q', 'categoria', 'estado', 'espacio', 'responsable', 'tipo', 'pagina', 'porPagina'])
         )));
 
         View::layout('partials/layout', 'bienes/index', [
@@ -105,6 +109,17 @@ final class BienController
             'espacios' => $institucionId !== null
                 ? ($soloPropios ? Espacio::propiosDe((int) Auth::id(), $institucionId) : Espacio::listadoParaSelect($institucionId))
                 : [],
+            'responsableId' => $responsableId,
+            'responsables' => $institucionId !== null && !$soloPropios ? Usuario::paraFiltroResponsable($institucionId) : [],
+            'tipo' => $tipo,
+            'tipos' => $soloPropios ? [] : FiltrosBienes::TIPOS,
+            // "Descargar en Excel": la cartera con estos mismos filtros (ReporteController).
+            'urlDescarga' => Auth::esSuperusuario() || Auth::tienePermiso('reportes.generar')
+                ? Url::to('/reportes/cartera.xlsx') . '?' . http_build_query(FiltrosBienes::aConsulta([
+                    'q' => $terminoBusqueda, 'categoria' => $categoriaId, 'estado' => $estado, 'espacio' => $espacioId,
+                    'responsable' => $responsableId, 'tipo' => $tipo,
+                ]) + (Auth::esSuperusuario() && $institucionId !== null ? ['institucion' => $institucionId] : []))
+                : null,
             'pagina' => $pagina,
             'porPagina' => $porPagina,
             'opcionesPorPagina' => self::OPCIONES_POR_PAGINA,

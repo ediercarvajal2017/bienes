@@ -40,7 +40,7 @@ $bienesSeleccionados = $viejo['bienes'] ?? [];
 
 <?php if ($institucionId === null): ?>
     <p class="text-muted">Selecciona una institución para continuar.</p>
-<?php elseif ($total === 0 && $q === ''): ?>
+<?php elseif ($total === 0 && $q === '' && $espacioFiltro === null && $responsableFiltro === null && $tipoFiltro === null): ?>
     <p class="text-muted">
         No hay bienes disponibles para asignar en esta institución (ya están todos asignados, o aún no se ha
         registrado ninguno — puedes hacerlo en "<a href="<?= Url::to('/bienes/crear') ?>">Registrar bien</a>").
@@ -88,11 +88,50 @@ $bienesSeleccionados = $viejo['bienes'] ?? [];
         </div>
 
         <?php
-        $queryBase = ['institucion' => $institucionId, 'q' => $q];
+        $queryBase = array_filter(['institucion' => $institucionId, 'q' => $q, 'espacio' => $espacioFiltro,
+            'responsable' => $responsableFiltro, 'tipo' => $tipoFiltro], static fn ($v) => $v !== null && $v !== '');
         $urlBasePaginacion = Url::to('/asignaciones') . '?' . http_build_query($queryBase);
+        $hayFiltros = $espacioFiltro !== null || $responsableFiltro !== null || $tipoFiltro !== null || $q !== '';
         ?>
 
         <h2 class="h6 mb-2">Bienes (<?= $total ?>)</h2>
+        <div class="d-flex flex-wrap gap-3 align-items-end mb-2" id="filtrosAsignacion">
+            <div class="filtro-item">
+                <label for="filtroAsigEspacio" class="form-label small mb-1">Espacio</label>
+                <select id="filtroAsigEspacio" data-filtro="espacio" class="form-select form-select-sm selector-buscable">
+                    <option value="">Todos los espacios</option>
+                    <?php foreach ($espacios as $e): ?>
+                        <option value="<?= (int) $e['id'] ?>" <?= $espacioFiltro === (int) $e['id'] ? 'selected' : '' ?>><?= htmlspecialchars($e['codigo'] . ' - ' . $e['nombre'], ENT_QUOTES) ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div class="filtro-item">
+                <label for="filtroAsigResponsable" class="form-label small mb-1">Responsable</label>
+                <select id="filtroAsigResponsable" data-filtro="responsable" class="form-select form-select-sm selector-buscable">
+                    <option value="">Todos los responsables</option>
+                    <?php foreach ($responsablesFiltro as $r): ?>
+                        <option value="<?= (int) $r['id'] ?>" <?= $responsableFiltro === (int) $r['id'] ? 'selected' : '' ?>>
+                            <?= htmlspecialchars(trim($r['nombres'] . ' ' . $r['apellidos']) . ((int) $r['activo'] === 1 ? '' : ' (inactivo)'), ENT_QUOTES) ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div class="filtro-item">
+                <label for="filtroAsigTipo" class="form-label small mb-1">Responsabilidad</label>
+                <select id="filtroAsigTipo" data-filtro="tipo" class="form-select form-select-sm">
+                    <option value="">Todas</option>
+                    <?php foreach ($tipos as $valorTipo => $etiquetaTipo): ?>
+                        <option value="<?= $valorTipo ?>" <?= $tipoFiltro === $valorTipo ? 'selected' : '' ?>><?= $etiquetaTipo ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <?php if ($hayFiltros && $total > count($bienes)): ?>
+                <a class="btn btn-sm btn-outline-primary" id="seleccionarFiltrados"
+                   href="<?= htmlspecialchars($urlBasePaginacion . '&porPagina=0&seleccionar=todos', ENT_QUOTES) ?>">
+                    Seleccionar los <?= (int) $total ?> filtrados
+                </a>
+            <?php endif; ?>
+        </div>
         <div class="d-flex flex-wrap justify-content-between align-items-end gap-2 mb-2">
             <div style="max-width: 420px; flex: 1 1 260px;">
                 <input type="search" id="buscador" data-buscar="q" class="form-control form-control-sm"
@@ -177,6 +216,23 @@ $bienesSeleccionados = $viejo['bienes'] ?? [];
             casillas.forEach(function (c) { c.checked = todos.checked; });
             actualizarContador();
         });
+
+        // Filtros: al elegir uno se recarga la lista con él (en la página 1).
+        document.querySelectorAll('#filtrosAsignacion [data-filtro]').forEach(function (select) {
+            select.addEventListener('change', function () {
+                const url = new URL(window.location.href);
+                if (select.value !== '') { url.searchParams.set(select.dataset.filtro, select.value); }
+                else { url.searchParams.delete(select.dataset.filtro); }
+                url.searchParams.delete('pagina');
+                url.searchParams.delete('seleccionar');
+                window.location = url.toString();
+            });
+        });
+
+        // "Seleccionar los N filtrados": la lista viene completa y todas marcadas.
+        if (new URL(window.location.href).searchParams.get('seleccionar') === 'todos') {
+            casillas.forEach(function (c) { c.checked = true; });
+        }
 
         document.getElementById('formAsignar').addEventListener('submit', function (e) {
             const seleccionadas = Array.from(casillas).filter(function (c) { return c.checked; }).length;

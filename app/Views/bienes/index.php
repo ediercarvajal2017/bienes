@@ -9,6 +9,8 @@ $parametrosPaginacion = array_filter([
     'categoria' => $categoriaId,
     'estado' => $estado,
     'espacio' => $espacioId,
+    'responsable' => $responsableId,
+    'tipo' => $tipo,
 ], static fn ($valor) => $valor !== null);
 $urlBasePaginacion = Url::to('/bienes') . (!empty($parametrosPaginacion) ? '?' . http_build_query($parametrosPaginacion) : '');
 
@@ -28,7 +30,7 @@ $puedeAsignar = Auth::esSuperusuario() || Auth::tienePermiso('asignaciones.crear
 // solo de los otros permisos, que sí varían según el rol.
 $mostrarAccionesMasivas = true;
 
-$algunFiltroActivo = $busqueda !== '' || $categoriaId !== null || $estado !== null || $espacioId !== null;
+$algunFiltroActivo = $busqueda !== '' || $categoriaId !== null || $estado !== null || $espacioId !== null || $responsableId !== null || $tipo !== null;
 ?>
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
     <h1 class="h4 mb-0">Bienes</h1>
@@ -103,7 +105,7 @@ $algunFiltroActivo = $busqueda !== '' || $categoriaId !== null || $estado !== nu
     <p class="text-muted small">Mostrando solo los bienes de los espacios donde eres responsable.</p>
 <?php endif; ?>
 
-<?php $filtrosActivos = ($categoriaId !== null ? 1 : 0) + ($estado !== null ? 1 : 0) + ($espacioId !== null ? 1 : 0); ?>
+<?php $filtrosActivos = count(array_filter([$categoriaId, $estado, $espacioId, $responsableId, $tipo], static fn ($f) => $f !== null)); ?>
 <div class="mb-3 d-flex flex-wrap gap-3 align-items-end">
     <div class="filtro-busqueda">
         <label for="buscador" class="form-label small mb-1">Buscar</label>
@@ -149,7 +151,37 @@ $algunFiltroActivo = $busqueda !== '' || $categoriaId !== null || $estado !== nu
             </select>
         </div>
     <?php endif; ?>
+    <?php if (!empty($responsables)): ?>
+        <div class="filtro-item">
+            <label for="filtroResponsable" class="form-label small mb-1">Responsable</label>
+            <select id="filtroResponsable" class="form-select form-select-sm selector-buscable">
+                <option value="">Todos los responsables</option>
+                <?php foreach ($responsables as $r): ?>
+                    <option value="<?= (int) $r['id'] ?>" <?= $responsableId === (int) $r['id'] ? 'selected' : '' ?>>
+                        <?= htmlspecialchars(trim($r['nombres'] . ' ' . $r['apellidos']) . ((int) $r['activo'] === 1 ? '' : ' (inactivo)'), ENT_QUOTES) ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+    <?php endif; ?>
+    <?php if (!empty($tipos)): ?>
+        <div class="filtro-item">
+            <label for="filtroTipo" class="form-label small mb-1">Responsabilidad</label>
+            <select id="filtroTipo" class="form-select form-select-sm">
+                <option value="">Todas</option>
+                <?php foreach ($tipos as $valorTipo => $etiquetaTipo): ?>
+                    <option value="<?= $valorTipo ?>" <?= $tipo === $valorTipo ? 'selected' : '' ?>><?= $etiquetaTipo ?></option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+    <?php endif; ?>
     </div>
+    <?php if ($urlDescarga !== null): ?>
+        <a href="<?= htmlspecialchars($urlDescarga, ENT_QUOTES) ?>" class="btn btn-sm btn-outline-secondary" id="descargarCarteraFiltrada" data-sin-cargando
+           title="Descarga la cartera en Excel con los filtros y la búsqueda que tengas puestos">
+            <i class="bi bi-file-earmark-excel me-1" aria-hidden="true"></i>Descargar en Excel
+        </a>
+    <?php endif; ?>
 </div>
 
 <?php View::render('partials/paginacion', [
@@ -297,6 +329,8 @@ $algunFiltroActivo = $busqueda !== '' || $categoriaId !== null || $estado !== nu
         ['filtroCategoria', 'categoria'],
         ['filtroEstado', 'estado'],
         ['filtroEspacio', 'espacio'],
+        ['filtroResponsable', 'responsable'],
+        ['filtroTipo', 'tipo'],
     ];
     filtrosSelect.forEach(function (par) {
         const select = document.getElementById(par[0]);

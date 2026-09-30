@@ -280,6 +280,27 @@ final class Usuario
         return array_values($stmt->fetchAll());
     }
 
+    /**
+     * Opciones del filtro "Responsable" de la lista de bienes: los usuarios de la
+     * institución, también los inactivos (pueden seguir teniendo bienes a su nombre), sin
+     * superusuarios. Primero los activos.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public static function paraFiltroResponsable(int $institucionId): array
+    {
+        $stmt = Database::connection()->prepare(
+            "SELECT u.id, u.nombres, u.apellidos, u.activo
+             FROM usuarios u
+             JOIN roles r ON r.id = u.rol_id
+             WHERE u.institucion_id = ? AND u.eliminado_en IS NULL AND r.nombre <> 'superusuario'
+             ORDER BY u.activo DESC, u.nombres, u.apellidos"
+        );
+        $stmt->execute([$institucionId]);
+
+        return array_values($stmt->fetchAll());
+    }
+
     /** La persona, si puede tener a cargo bienes de esa institución (ver elegiblesACargo). */
     public static function elegibleACargo(int $usuarioId, int $institucionId): ?array
     {

@@ -9,6 +9,7 @@ use App\Core\Database;
 use App\Core\Session;
 use App\Core\Url;
 use App\Core\View;
+use App\Helpers\FiltrosBienes;
 use App\Helpers\LimiteIntentos;
 use App\Models\Auditoria;
 use App\Models\Institucion;
@@ -96,14 +97,15 @@ final class ReporteController
             'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     }
 
+    /** Con los filtros de la lista de bienes en la dirección (botón "Descargar en Excel"). */
     public function carteraXlsx(): void
     {
-        ReporteService::enviarXlsx(ReporteService::carteraBienes($this->institucionAExportar()), 'cartera_bienes');
+        ReporteService::enviarXlsx(ReporteService::carteraBienes($this->institucionAExportar(), FiltrosBienes::desdeConsulta($_GET)), 'cartera_bienes');
     }
 
     public function carteraCsv(): void
     {
-        ReporteService::enviarCsv(ReporteService::carteraBienes($this->institucionAExportar()), 'cartera_bienes');
+        ReporteService::enviarCsv(ReporteService::carteraBienes($this->institucionAExportar(), FiltrosBienes::desdeConsulta($_GET)), 'cartera_bienes');
     }
 
     public function reintegrosXlsx(): void

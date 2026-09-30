@@ -21,9 +21,9 @@ final class Bien
      * de Baja" (ver BienController::index()), y siguen apareciendo aquí si el usuario
      * busca algo o filtra por Estado explícitamente.
      */
-    public static function listar(?int $institucionId = null, ?string $busqueda = null, int $pagina = 1, int $porPagina = 50, bool $excluirLotes = false, ?int $categoriaId = null, ?string $estado = null, ?int $espacioId = null): array
+    public static function listar(?int $institucionId = null, ?string $busqueda = null, int $pagina = 1, int $porPagina = 50, bool $excluirLotes = false, ?int $categoriaId = null, ?string $estado = null, ?int $espacioId = null, ?int $responsableId = null, ?string $tipo = null): array
     {
-        [$whereSql, $params] = self::condicionesListado($institucionId, $busqueda, $excluirLotes, $categoriaId, $estado, $espacioId);
+        [$whereSql, $params] = self::condicionesListado($institucionId, $busqueda, $excluirLotes, $categoriaId, $estado, $espacioId, $responsableId, $tipo);
 
         $sql = 'SELECT b.*, c.nombre AS categoria_nombre, CONCAT(e.codigo, " - ", e.nombre) AS espacio_nombre,
                        ' . self::sqlResponsable() . ' AS responsables_nombres, ' . self::sqlTipoResponsabilidad() . ' AS tipo_responsabilidad
@@ -41,9 +41,9 @@ final class Bien
         return $stmt->fetchAll();
     }
 
-    public static function contarListado(?int $institucionId = null, ?string $busqueda = null, bool $excluirLotes = false, ?int $categoriaId = null, ?string $estado = null, ?int $espacioId = null): int
+    public static function contarListado(?int $institucionId = null, ?string $busqueda = null, bool $excluirLotes = false, ?int $categoriaId = null, ?string $estado = null, ?int $espacioId = null, ?int $responsableId = null, ?string $tipo = null): int
     {
-        [$whereSql, $params] = self::condicionesListado($institucionId, $busqueda, $excluirLotes, $categoriaId, $estado, $espacioId);
+        [$whereSql, $params] = self::condicionesListado($institucionId, $busqueda, $excluirLotes, $categoriaId, $estado, $espacioId, $responsableId, $tipo);
 
         $sql = 'SELECT COUNT(*)
                 FROM bienes b
@@ -63,10 +63,9 @@ final class Bien
      * responsable es la persona (responsabilidad individual) o los responsables del
      * espacio (grupal).
      */
-    private static function condicionesListado(?int $institucionId, ?string $busqueda, bool $excluirLotes = false, ?int $categoriaId = null, ?string $estado = null, ?int $espacioId = null): array
+    private static function condicionesListado(?int $institucionId, ?string $busqueda, bool $excluirLotes = false, ?int $categoriaId = null, ?string $estado = null, ?int $espacioId = null, ?int $responsableId = null, ?string $tipo = null): array
     {
-        $condiciones = [];
-        $params = [];
+        [$condiciones, $params] = self::condicionesResponsabilidad($responsableId, $tipo);
 
         if ($institucionId !== null) {
             $condiciones[] = 'b.institucion_id = ?';
@@ -217,6 +216,33 @@ final class Bien
     {
         return '(a.usuario_responsable_id = ? OR (a.usuario_responsable_id IS NULL AND EXISTS (
                     SELECT 1 FROM espacio_responsables err WHERE err.espacio_id = a.espacio_id AND err.usuario_id = ?)))';
+    }
+
+    /**
+     * Filtros "Responsable" (quien responde por el bien: individual a su cargo o grupal en
+     * un espacio suyo) y "Tipo" (grupal, individual o sin asignar), sobre la asignación
+     * activa (alias "a", unida con LEFT JOIN).
+     *
+     * @return array{0: list<string>, 1: list<mixed>} condiciones y parámetros
+     */
+    private static function condicionesResponsabilidad(?int $responsableId, ?string $tipo): array
+    {
+        $condiciones = [];
+        $params = [];
+        if ($responsableId !== null) {
+            $condiciones[] = self::sqlRespondePor();
+            array_push($params, $responsableId, $responsableId);
+        }
+        $porTipo = [
+            'grupal' => '(a.id IS NOT NULL AND a.usuario_responsable_id IS NULL)',
+            'individual' => 'a.usuario_responsable_id IS NOT NULL',
+            'sin_asignar' => 'a.id IS NULL',
+        ];
+        if ($tipo !== null && isset($porTipo[$tipo])) {
+            $condiciones[] = $porTipo[$tipo];
+        }
+
+        return [$condiciones, $params];
     }
 
     /** Búsqueda por el nombre de quien responde (DOS parámetros: el mismo término dos veces). */
@@ -922,9 +948,9 @@ final class Bien
      * aparezcan aquí como candidatos. (Los candidatos a Reintegrar se listan aparte, ver
      * reintegrables(), en la pantalla dedicada /reintegros.)
      */
-    public static function operables(?int $institucionId = null, ?string $busqueda = null, int $pagina = 1, int $porPagina = 50): array
+    public static function operables(?int $institucionId = null, ?string $busqueda = null, int $pagina = 1, int $porPagina = 50, ?int $espacioId = null, ?int $responsableId = null, ?string $tipo = null): array
     {
-        [$sql, $params] = self::sqlOperables($institucionId, $busqueda);
+        [$sql, $params] = self::sqlOperables($institucionId, $busqueda, $espacioId, $responsableId, $tipo);
 
         $sql .= ' ORDER BY asignado ASC, b.codigo_identificacion ASC, b.id ASC' . self::limitSql($pagina, $porPagina);
 
@@ -934,9 +960,9 @@ final class Bien
         return $stmt->fetchAll();
     }
 
-    public static function contarOperables(?int $institucionId = null, ?string $busqueda = null): int
+    public static function contarOperables(?int $institucionId = null, ?string $busqueda = null, ?int $espacioId = null, ?int $responsableId = null, ?string $tipo = null): int
     {
-        [$whereSql, $params] = self::condicionesOperables($institucionId, $busqueda);
+        [$whereSql, $params] = self::condicionesOperables($institucionId, $busqueda, $espacioId, $responsableId, $tipo);
 
         $sql = 'SELECT COUNT(*)
                 FROM bienes b
@@ -950,9 +976,9 @@ final class Bien
         return (int) $stmt->fetchColumn();
     }
 
-    private static function sqlOperables(?int $institucionId, ?string $busqueda): array
+    private static function sqlOperables(?int $institucionId, ?string $busqueda, ?int $espacioId = null, ?int $responsableId = null, ?string $tipo = null): array
     {
-        [$whereSql, $params] = self::condicionesOperables($institucionId, $busqueda);
+        [$whereSql, $params] = self::condicionesOperables($institucionId, $busqueda, $espacioId, $responsableId, $tipo);
 
         $sql = 'SELECT b.id, b.codigo_identificacion, b.descripcion, b.valor,
                        CONCAT(e.codigo, " - ", e.nombre) AS espacio_nombre, ' . self::sqlResponsable() . ' AS responsables_nombres, ' . self::sqlTipoResponsabilidad() . ' AS tipo_responsabilidad,
@@ -970,10 +996,15 @@ final class Bien
      * columnas visibles en /asignaciones. Excluye los bienes dados de baja y los
      * reintegrados (ver operables() arriba).
      */
-    private static function condicionesOperables(?int $institucionId, ?string $busqueda): array
+    private static function condicionesOperables(?int $institucionId, ?string $busqueda, ?int $espacioId = null, ?int $responsableId = null, ?string $tipo = null): array
     {
-        $condiciones = ['b.estado NOT IN ("dado_de_baja", "reintegrado")'];
-        $params = [];
+        [$condiciones, $params] = self::condicionesResponsabilidad($responsableId, $tipo);
+        $condiciones[] = 'b.estado NOT IN ("dado_de_baja", "reintegrado")';
+
+        if ($espacioId !== null) {
+            $condiciones[] = 'a.espacio_id = ?';
+            $params[] = $espacioId;
+        }
 
         if ($institucionId !== null) {
             $condiciones[] = 'b.institucion_id = ?';

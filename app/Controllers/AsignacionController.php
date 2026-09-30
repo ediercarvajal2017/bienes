@@ -13,6 +13,7 @@ use App\Core\Session;
 use App\Core\Url;
 use App\Core\View;
 use App\Helpers\FechaMovimiento;
+use App\Helpers\FiltrosBienes;
 use App\Helpers\Paginador;
 use App\Models\Asignacion;
 use App\Models\Auditoria;
@@ -39,7 +40,14 @@ final class AsignacionController
             $porPagina = self::POR_PAGINA_DEFECTO;
         }
 
-        $total = $institucionId !== null ? Bien::contarOperables($institucionId, $termino) : 0;
+        // Filtros para elegir los bienes: espacio, responsable y tipo de responsabilidad
+        // (p. ej. "todos los individuales de Ana", para pasarlos a otra persona).
+        $filtros = FiltrosBienes::desdeConsulta($_GET);
+        $espacioFiltro = $institucionId !== null ? $filtros['espacio'] : null;
+        $responsableFiltro = $institucionId !== null ? $filtros['responsable'] : null;
+        $tipoFiltro = $filtros['tipo'];
+
+        $total = $institucionId !== null ? Bien::contarOperables($institucionId, $termino, $espacioFiltro, $responsableFiltro, $tipoFiltro) : 0;
 
         View::layout('partials/layout', 'asignaciones/index', [
             'title' => 'Asignar bienes',
@@ -48,8 +56,13 @@ final class AsignacionController
             'espacios' => $institucionId !== null ? Espacio::listadoParaSelect($institucionId) : [],
             'personas' => $institucionId !== null ? Usuario::elegiblesACargo($institucionId) : [],
 
-            'bienes' => $institucionId !== null ? Bien::operables($institucionId, $termino, $pagina, $porPagina) : [],
+            'bienes' => $institucionId !== null ? Bien::operables($institucionId, $termino, $pagina, $porPagina, $espacioFiltro, $responsableFiltro, $tipoFiltro) : [],
             'q' => $q,
+            'espacioFiltro' => $espacioFiltro,
+            'responsableFiltro' => $responsableFiltro,
+            'tipoFiltro' => $tipoFiltro,
+            'responsablesFiltro' => $institucionId !== null ? Usuario::paraFiltroResponsable($institucionId) : [],
+            'tipos' => FiltrosBienes::TIPOS,
             'pagina' => $pagina,
             'total' => $total,
             'totalPaginas' => Paginador::totalPaginas($total, $porPagina),
