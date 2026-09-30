@@ -44,27 +44,34 @@ test('registrar, editar y eliminar una cartera recibida', async ({ page }) => {
     expect(bd(`SELECT CONCAT(funcionario_id, '|', correo_solicitante, '|', nombre_funcionario) FROM cartera_envios WHERE correo_remitente = '${correo}'`))
         .toBe(`${d.usuarios.docente.id}|${d.usuarios.docente.email}|${nombre(d.usuarios.docente.id)}`);
 
-    await page.goto('cartera/enviados');
-    await expect(page.getByRole('heading', { name: 'Histórico de cartera recibida' })).toBeVisible();
-    let fila = page.locator('tr', { hasText: correo });
+    // El registro aparece en la lista de la misma ventana, sin "Ver histórico".
+    await expect(page.getByRole('link', { name: 'Ver histórico' })).toHaveCount(0);
+    let fila = page.locator('tbody tr', { hasText: correo });
     await expect(fila).toContainText(nombre(d.usuarios.docente.id));
     await expect(fila).toContainText(d.usuarios.docente.email);
 
+    // Editar en la misma ventana.
     await fila.getByRole('link', { name: 'Editar' }).click();
+    await expect(page).toHaveURL(/cartera\/enviar\?.*editar=\d+/);
+    await expect(page.getByRole('heading', { name: 'Editar registro' })).toBeVisible();
     await expect(page.locator('input[name="correo_remitente"]')).toHaveValue(correo);
     await page.locator('input[name="correo_remitente"]').fill(correoEditado);
     await page.getByRole('button', { name: 'Guardar cambios' }).click();
 
-    await expect(page).toHaveURL(/\/cartera\/enviados$/);
-    fila = page.locator('tr', { hasText: correoEditado });
+    await expect(page).toHaveURL(/cartera\/enviar/);
+    await expect(page).not.toHaveURL(/editar=/);
+    fila = page.locator('tbody tr', { hasText: correoEditado });
     await expect(fila).toBeVisible();
 
-    await fila.getByRole('link', { name: 'Editar' }).click();
-    page.once('dialog', (dialog) => dialog.accept('ELIMINAR'));
-    await page.getByRole('button', { name: 'Eliminar registro' }).click();
+    // La dirección vieja del histórico lleva a la misma ventana.
+    const historial = await page.request.get('cartera/enviados', { maxRedirects: 0 });
+    expect(historial.headers().location).toContain('/cartera/enviar');
 
-    await expect(page).toHaveURL(/\/cartera\/enviados$/);
-    await expect(page.locator('tr', { hasText: correoEditado })).toHaveCount(0);
+    // Eliminar desde la lista.
+    page.once('dialog', (dialog) => dialog.accept());
+    await fila.getByRole('button', { name: 'Eliminar' }).click();
+    await expect(page.locator('.alert-success')).toContainText('papelera');
+    await expect(page.locator('tbody tr', { hasText: correoEditado })).toHaveCount(0);
 });
 
 test('se rechaza un funcionario de otra institución y un correo inválido', async ({ page }) => {
@@ -97,16 +104,18 @@ test('un registro de antes, sin funcionario enlazado, se muestra y se completa a
         VALUES (${d.instituciones.A}, 'cartera/no-existe.xlsx', '${correo}', 'Funcionaria de antes', '2026-08-01', ${d.usuarios.superusuario.id})`);
     const id = bd(`SELECT id FROM cartera_envios WHERE correo_remitente = '${correo}'`);
 
-    await page.goto('cartera/enviados');
-    const fila = page.locator('tr', { hasText: correo });
+    await page.goto(`cartera/enviar?institucion=${d.instituciones.A}`);
+    const fila = page.locator('tbody tr', { hasText: correo });
     await expect(fila).toContainText('Funcionaria de antes');
 
+    // La dirección vieja de editar lleva a la ventana en modo edición.
     await page.goto(`cartera/${id}/editar`);
+    expect(page.url()).toContain(`cartera/enviar?editar=${id}`);
     await expect(page.locator('.alert-info')).toContainText('Funcionaria de antes');
     await seleccionarTomSelect(page, 'campo-funcionario', nombre(d.usuarios.secretario.id));
     await expect(page.locator('input[name="correo_solicitante"]')).toHaveValue(d.usuarios.secretario.email);
     await page.getByRole('button', { name: 'Guardar cambios' }).click();
-    await expect(page).toHaveURL(/\/cartera\/enviados$/);
+    await expect(page.locator('.alert-success')).toContainText('Registro actualizado');
     expect(bd(`SELECT CONCAT(funcionario_id, '|', correo_solicitante) FROM cartera_envios WHERE id = ${id}`))
         .toBe(`${d.usuarios.secretario.id}|${d.usuarios.secretario.email}`);
 });

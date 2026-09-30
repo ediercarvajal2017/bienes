@@ -8,7 +8,6 @@ use App\Core\Auth;
 use App\Core\Csrf;
 use App\Core\Request;
 use App\Core\Session;
-use App\Core\Url;
 use App\Core\View;
 use App\Helpers\Evidencia;
 use App\Helpers\Paginador;
@@ -17,17 +16,42 @@ use App\Models\Auditoria;
 use App\Models\FormatoPlaqueteo;
 use App\Models\Institucion;
 
+/**
+ * Formatos de plaqueteo: una sola ventana con el formulario (registrar, o editar con
+ * ?editar=ID) y debajo los registros con Descargar, Editar y Eliminar (ver Evidencia).
+ */
 final class FormatoPlaqueteoController
 {
-    private const POR_PAGINA_DEFECTO = 50;
-    private const OPCIONES_POR_PAGINA = [10, 25, 50, 100, 0];
+    private const VENTANA = '/formatos-plaqueteo';
 
     public function formulario(): void
     {
+        $registro = isset($_GET['editar']) ? FormatoPlaqueteo::find((int) $_GET['editar']) : null;
+        if (isset($_GET['editar'])) {
+            Evidencia::verificarAcceso($registro);
+        }
+        $institucionId = $registro !== null ? (int) $registro['institucion_id'] : Evidencia::institucionDeVentana();
+        [$pagina, $porPagina] = Evidencia::paginacion();
+        $alcance = $institucionId > 0 ? $institucionId : null;
+        $total = FormatoPlaqueteo::contarListado($alcance);
+        $viejo = Session::pullOld();
+
         View::layout('partials/layout', 'formatos_plaqueteo/formulario', [
             'title' => 'Formatos de plaqueteo',
             'instituciones' => Auth::esSuperusuario() ? Institucion::listadoParaSelect(true) : [],
-            'institucionId' => $this->institucionSeleccionada(),
+            'institucionId' => $institucionId,
+            'registro' => $registro,
+            'valores' => $viejo !== [] ? $viejo : [
+                'fecha_plaqueteo' => $registro['fecha_plaqueteo'] ?? date('Y-m-d'),
+                'funcionario_asistio' => $registro['funcionario_asistio'] ?? '',
+                'descripcion' => $registro['descripcion'] ?? '',
+            ],
+            'formatos' => FormatoPlaqueteo::listar($alcance, $pagina, $porPagina),
+            'pagina' => $pagina,
+            'porPagina' => $porPagina,
+            'opcionesPorPagina' => Evidencia::OPCIONES_POR_PAGINA,
+            'total' => $total,
+            'totalPaginas' => Paginador::totalPaginas($total, $porPagina),
             'error' => Session::pullFlash('error'),
             'mensaje' => Session::pullFlash('ok'),
         ]);
@@ -38,82 +62,44 @@ final class FormatoPlaqueteoController
         $request = new Request();
         $this->verificarCsrf($request);
 
-        $institucionId = $this->institucionSeleccionada();
-        $fechaPlaqueteo = trim((string) $request->input('fecha_plaqueteo'));
-        $funcionario = trim((string) $request->input('funcionario_asistio'));
-        $descripcion = trim((string) $request->input('descripcion')) ?: null;
-
+        $institucionId = Evidencia::institucionDeVentana();
+        $ventana = Evidencia::ruta(self::VENTANA, $institucionId);
         if ($institucionId === 0) {
-            Session::flash('error', 'Selecciona una institución.');
-            header('Location: ' . Url::to('/formatos-plaqueteo'));
-            exit;
+            $this->volverConError(self::VENTANA, 'Selecciona una institución.', $request);
         }
-
-        if ($fechaPlaqueteo === '' || $funcionario === '') {
-            Session::flash('error', 'Indica la fecha del plaqueteo y el funcionario que asistió.');
-            header('Location: ' . Url::to('/formatos-plaqueteo'));
-            exit;
+        [$error, $datos] = $this->leerFormulario($request);
+        if ($error !== null) {
+            $this->volverConError($ventana, $error, $request);
         }
 
         try {
             $archivoPath = Uploader::storePdf($_FILES['archivo'] ?? [], 'plaqueteo');
             if ($archivoPath === null) {
-                Session::flash('error', 'Adjunta el formato de plaqueteo en PDF.');
-                header('Location: ' . Url::to('/formatos-plaqueteo'));
-                exit;
+                $this->volverConError($ventana, 'Adjunta el formato de plaqueteo en PDF.', $request);
             }
 
-            $datos = [
-                'institucion_id' => $institucionId,
-                'fecha_plaqueteo' => $fechaPlaqueteo,
-                'funcionario_asistio' => $funcionario,
-                'descripcion' => $descripcion,
-                'archivo_path' => $archivoPath,
-                'registrado_por' => Auth::id(),
-            ];
+            $datos = ['institucion_id' => $institucionId] + $datos + ['archivo_path' => $archivoPath, 'registrado_por' => Auth::id()];
             $id = FormatoPlaqueteo::create($datos);
             Auditoria::registrar(Auth::id(), $institucionId, 'crear', 'formato_plaqueteo', $id, null, $datos);
 
             Session::flash('ok', 'Formato de plaqueteo guardado en la biblioteca de evidencia.');
         } catch (\RuntimeException $e) {
-            Session::flash('error', $e->getMessage());
+            $this->volverConError($ventana, $e->getMessage(), $request);
         }
 
-        header('Location: ' . Url::to('/formatos-plaqueteo'));
-        exit;
+        Evidencia::redirigir($ventana);
     }
 
+    /** La lista ya está en la ventana única: la dirección vieja lleva allí. */
     public function historial(): void
     {
-        $institucionId = Auth::esSuperusuario() ? Auth::filtroInstitucionId() : Auth::institucionId();
-        $pagina = max(1, (int) ($_GET['pagina'] ?? 1));
-        $porPagina = (int) ($_GET['porPagina'] ?? self::POR_PAGINA_DEFECTO);
-        if (!in_array($porPagina, self::OPCIONES_POR_PAGINA, true)) {
-            $porPagina = self::POR_PAGINA_DEFECTO;
-        }
-        $total = FormatoPlaqueteo::contarListado($institucionId);
-
-        View::layout('partials/layout', 'formatos_plaqueteo/historial', [
-            'title' => 'Histórico de formatos de plaqueteo',
-            'formatos' => FormatoPlaqueteo::listar($institucionId, $pagina, $porPagina),
-            'pagina' => $pagina,
-            'porPagina' => $porPagina,
-            'opcionesPorPagina' => self::OPCIONES_POR_PAGINA,
-            'total' => $total,
-            'totalPaginas' => Paginador::totalPaginas($total, $porPagina),
-        ]);
+        Evidencia::redirigir(Evidencia::ruta(self::VENTANA, Evidencia::institucionDeVentana()));
     }
 
+    /** Se edita en la ventana única: la dirección vieja lleva allí. */
     public function formularioEditar(string $id): void
     {
-        $registro = FormatoPlaqueteo::find((int) $id);
-        Evidencia::verificarAcceso($registro);
-
-        View::layout('partials/layout', 'formatos_plaqueteo/editar', [
-            'title' => 'Editar formato de plaqueteo',
-            'registro' => $registro,
-            'error' => Session::pullFlash('error'),
-        ]);
+        Evidencia::redirigir(self::VENTANA . '?editar=' . (int) $id . '#formularioEvidencia');
     }
 
     public function actualizar(string $id): void
@@ -124,15 +110,12 @@ final class FormatoPlaqueteoController
 
         $registro = FormatoPlaqueteo::find($id);
         Evidencia::verificarAcceso($registro);
+        $institucionId = (int) $registro['institucion_id'];
+        $editar = Evidencia::ruta(self::VENTANA, $institucionId, ['editar' => $id]);
 
-        $fechaPlaqueteo = trim((string) $request->input('fecha_plaqueteo'));
-        $funcionario = trim((string) $request->input('funcionario_asistio'));
-        $descripcion = trim((string) $request->input('descripcion')) ?: null;
-
-        if ($fechaPlaqueteo === '' || $funcionario === '') {
-            Session::flash('error', 'Indica la fecha del plaqueteo y el funcionario que asistió.');
-            header('Location: ' . Url::to("/formatos-plaqueteo/{$id}/editar"));
-            exit;
+        [$error, $datos] = $this->leerFormulario($request);
+        if ($error !== null) {
+            $this->volverConError($editar, $error, $request);
         }
 
         try {
@@ -143,24 +126,16 @@ final class FormatoPlaqueteoController
                 $archivoPath = $nuevoArchivo;
             }
 
-            $datosNuevos = [
-                'fecha_plaqueteo' => $fechaPlaqueteo,
-                'funcionario_asistio' => $funcionario,
-                'descripcion' => $descripcion,
-                'archivo_path' => $archivoPath,
-            ];
+            $datosNuevos = $datos + ['archivo_path' => $archivoPath];
             FormatoPlaqueteo::actualizar($id, $datosNuevos);
-            Auditoria::registrar(Auth::id(), (int) $registro['institucion_id'], 'editar', 'formato_plaqueteo', $id, $registro, $datosNuevos);
+            Auditoria::registrar(Auth::id(), $institucionId, 'editar', 'formato_plaqueteo', $id, $registro, $datosNuevos);
 
             Session::flash('ok', 'Registro actualizado.');
         } catch (\RuntimeException $e) {
-            Session::flash('error', $e->getMessage());
-            header('Location: ' . Url::to("/formatos-plaqueteo/{$id}/editar"));
-            exit;
+            $this->volverConError($editar, $e->getMessage(), $request);
         }
 
-        header('Location: ' . Url::to('/formatos-plaqueteo/historial'));
-        exit;
+        Evidencia::redirigir(Evidencia::ruta(self::VENTANA, $institucionId));
     }
 
     public function eliminar(string $id): void
@@ -176,21 +151,36 @@ final class FormatoPlaqueteoController
         Auditoria::registrar(Auth::id(), (int) $registro['institucion_id'], 'eliminar', 'formato_plaqueteo', $id, $registro);
 
         Session::flash('ok', 'Registro enviado a la papelera. Un superusuario puede restaurarlo si fue un error.');
-        header('Location: ' . Url::to('/formatos-plaqueteo/historial'));
-        exit;
+        Evidencia::redirigir(Evidencia::ruta(self::VENTANA, (int) $registro['institucion_id']));
     }
 
-    private function institucionSeleccionada(): int
+    /** @return array{0: ?string, 1: array{fecha_plaqueteo: string, funcionario_asistio: string, descripcion: ?string}} */
+    private function leerFormulario(Request $request): array
     {
-        if (!Auth::esSuperusuario()) {
-            return (int) Auth::institucionId();
-        }
+        $datos = [
+            'fecha_plaqueteo' => trim((string) $request->input('fecha_plaqueteo')),
+            'funcionario_asistio' => trim((string) $request->input('funcionario_asistio')),
+            'descripcion' => trim((string) $request->input('descripcion')) ?: null,
+        ];
+        $error = $datos['fecha_plaqueteo'] === '' || $datos['funcionario_asistio'] === ''
+            ? 'Indica la fecha del plaqueteo y el funcionario que asistió.' : null;
 
-        return (int) ($_GET['institucion'] ?? $_POST['institucion_id'] ?? 0);
+        return [$error, $datos];
+    }
+
+    private function volverConError(string $ruta, string $mensaje, Request $request): never
+    {
+        Session::flash('error', $mensaje);
+        Session::flashOld([
+            'fecha_plaqueteo' => (string) $request->input('fecha_plaqueteo'),
+            'funcionario_asistio' => (string) $request->input('funcionario_asistio'),
+            'descripcion' => (string) $request->input('descripcion'),
+        ]);
+        Evidencia::redirigir($ruta);
     }
 
     private function verificarCsrf(Request $request): void
     {
-        Csrf::verificarORedirigir($request, '/formatos-plaqueteo');
+        Csrf::verificarORedirigir($request, self::VENTANA);
     }
 }

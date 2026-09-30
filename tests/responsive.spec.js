@@ -23,7 +23,7 @@ const RUTAS = [
     'espacios', 'espacios/crear', 'espacios/carga-masiva',
     'asignaciones', 'reintegros', 'reintegros/lotes', 'reintegros/lotes/generar', 'reintegros/solicitudes',
     'bajas', 'verificaciones', 'escanear',
-    'reportes', 'cartera/enviar', 'cartera/enviados', 'formatos-reintegro', 'formatos-plaqueteo', 'facturas',
+    'reportes', 'cartera/enviar', 'formatos-reintegro', 'formatos-plaqueteo', 'facturas',
     'usuarios', 'usuarios/crear', 'usuarios/carga-masiva', 'instituciones', 'categorias', 'cargas-masivas',
 ];
 

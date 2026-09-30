@@ -100,7 +100,8 @@
                     la institución). También está en <strong>Reportes</strong>.</li>
                 <li>En <strong>Cartera (histórico)</strong> registras cada cartera que la institución solicitó por correo
                     y la Alcaldía le envió: el funcionario que la solicitó (se elige de la lista) y su correo, el correo
-                    desde el que llegó, la fecha en que se recibió y el archivo.</li>
+                    desde el que llegó, la fecha en que se recibió y el archivo. Los registros aparecen debajo del
+                    formulario, en la misma ventana, con Descargar, Editar y Eliminar.</li>
             </ol>
         </div>
     </details>
@@ -117,6 +118,9 @@
                     firmado, con su fecha y una descripción.</li>
                 <li><strong>Facturas</strong>: sube las facturas administrativas de compras, para tenerlas
                     centralizadas.</li>
+                <li>Todo queda en la misma ventana: arriba el formulario y debajo los registros, con
+                    <strong>Descargar</strong>, <strong>Editar</strong> (el formulario se llena con sus datos) y
+                    <strong>Eliminar</strong> (va a la papelera).</li>
             </ol>
         </div>
     </details>

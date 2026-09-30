@@ -8,7 +8,6 @@ use App\Core\Auth;
 use App\Core\Csrf;
 use App\Core\Request;
 use App\Core\Session;
-use App\Core\Url;
 use App\Core\View;
 use App\Helpers\Evidencia;
 use App\Helpers\Paginador;
@@ -17,17 +16,41 @@ use App\Models\Auditoria;
 use App\Models\FormatoReintegro;
 use App\Models\Institucion;
 
+/**
+ * Formatos de reintegro: una sola ventana con el formulario (registrar, o editar con
+ * ?editar=ID) y debajo los registros con Descargar, Editar y Eliminar (ver Evidencia).
+ */
 final class FormatoReintegroController
 {
-    private const POR_PAGINA_DEFECTO = 50;
-    private const OPCIONES_POR_PAGINA = [10, 25, 50, 100, 0];
+    private const VENTANA = '/formatos-reintegro';
 
     public function formulario(): void
     {
+        $registro = isset($_GET['editar']) ? FormatoReintegro::find((int) $_GET['editar']) : null;
+        if (isset($_GET['editar'])) {
+            Evidencia::verificarAcceso($registro);
+        }
+        $institucionId = $registro !== null ? (int) $registro['institucion_id'] : Evidencia::institucionDeVentana();
+        [$pagina, $porPagina] = Evidencia::paginacion();
+        $alcance = $institucionId > 0 ? $institucionId : null;
+        $total = FormatoReintegro::contarListado($alcance);
+        $viejo = Session::pullOld();
+
         View::layout('partials/layout', 'formatos_reintegro/formulario', [
             'title' => 'Formatos de reintegro',
             'instituciones' => Auth::esSuperusuario() ? Institucion::listadoParaSelect(true) : [],
-            'institucionId' => $this->institucionSeleccionada(),
+            'institucionId' => $institucionId,
+            'registro' => $registro,
+            'valores' => $viejo !== [] ? $viejo : [
+                'fecha_reintegro' => $registro['fecha_reintegro'] ?? date('Y-m-d'),
+                'descripcion' => $registro['descripcion'] ?? '',
+            ],
+            'formatos' => FormatoReintegro::listar($alcance, $pagina, $porPagina),
+            'pagina' => $pagina,
+            'porPagina' => $porPagina,
+            'opcionesPorPagina' => Evidencia::OPCIONES_POR_PAGINA,
+            'total' => $total,
+            'totalPaginas' => Paginador::totalPaginas($total, $porPagina),
             'error' => Session::pullFlash('error'),
             'mensaje' => Session::pullFlash('ok'),
         ]);
@@ -38,80 +61,44 @@ final class FormatoReintegroController
         $request = new Request();
         $this->verificarCsrf($request);
 
-        $institucionId = $this->institucionSeleccionada();
-        $fechaReintegro = trim((string) $request->input('fecha_reintegro'));
-        $descripcion = trim((string) $request->input('descripcion')) ?: null;
-
+        $institucionId = Evidencia::institucionDeVentana();
+        $ventana = Evidencia::ruta(self::VENTANA, $institucionId);
         if ($institucionId === 0) {
-            Session::flash('error', 'Selecciona una institución.');
-            header('Location: ' . Url::to('/formatos-reintegro'));
-            exit;
+            $this->volverConError(self::VENTANA, 'Selecciona una institución.', $request);
         }
-
-        if ($fechaReintegro === '') {
-            Session::flash('error', 'Indica la fecha del reintegro.');
-            header('Location: ' . Url::to('/formatos-reintegro'));
-            exit;
+        [$error, $datos] = $this->leerFormulario($request);
+        if ($error !== null) {
+            $this->volverConError($ventana, $error, $request);
         }
 
         try {
             $archivoPath = Uploader::storePdf($_FILES['archivo'] ?? [], 'reintegros');
             if ($archivoPath === null) {
-                Session::flash('error', 'Adjunta el formato de reintegro en PDF.');
-                header('Location: ' . Url::to('/formatos-reintegro'));
-                exit;
+                $this->volverConError($ventana, 'Adjunta el formato de reintegro en PDF.', $request);
             }
 
-            $datos = [
-                'institucion_id' => $institucionId,
-                'fecha_reintegro' => $fechaReintegro,
-                'descripcion' => $descripcion,
-                'archivo_path' => $archivoPath,
-                'registrado_por' => Auth::id(),
-            ];
+            $datos = ['institucion_id' => $institucionId] + $datos + ['archivo_path' => $archivoPath, 'registrado_por' => Auth::id()];
             $id = FormatoReintegro::create($datos);
             Auditoria::registrar(Auth::id(), $institucionId, 'crear', 'formato_reintegro', $id, null, $datos);
 
             Session::flash('ok', 'Formato de reintegro guardado en la biblioteca de evidencia.');
         } catch (\RuntimeException $e) {
-            Session::flash('error', $e->getMessage());
+            $this->volverConError($ventana, $e->getMessage(), $request);
         }
 
-        header('Location: ' . Url::to('/formatos-reintegro'));
-        exit;
+        Evidencia::redirigir($ventana);
     }
 
+    /** La lista ya está en la ventana única: la dirección vieja lleva allí. */
     public function historial(): void
     {
-        $institucionId = Auth::esSuperusuario() ? Auth::filtroInstitucionId() : Auth::institucionId();
-        $pagina = max(1, (int) ($_GET['pagina'] ?? 1));
-        $porPagina = (int) ($_GET['porPagina'] ?? self::POR_PAGINA_DEFECTO);
-        if (!in_array($porPagina, self::OPCIONES_POR_PAGINA, true)) {
-            $porPagina = self::POR_PAGINA_DEFECTO;
-        }
-        $total = FormatoReintegro::contarListado($institucionId);
-
-        View::layout('partials/layout', 'formatos_reintegro/historial', [
-            'title' => 'Histórico de formatos de reintegro',
-            'formatos' => FormatoReintegro::listar($institucionId, $pagina, $porPagina),
-            'pagina' => $pagina,
-            'porPagina' => $porPagina,
-            'opcionesPorPagina' => self::OPCIONES_POR_PAGINA,
-            'total' => $total,
-            'totalPaginas' => Paginador::totalPaginas($total, $porPagina),
-        ]);
+        Evidencia::redirigir(Evidencia::ruta(self::VENTANA, Evidencia::institucionDeVentana()));
     }
 
+    /** Se edita en la ventana única: la dirección vieja lleva allí. */
     public function formularioEditar(string $id): void
     {
-        $registro = FormatoReintegro::find((int) $id);
-        Evidencia::verificarAcceso($registro);
-
-        View::layout('partials/layout', 'formatos_reintegro/editar', [
-            'title' => 'Editar formato de reintegro',
-            'registro' => $registro,
-            'error' => Session::pullFlash('error'),
-        ]);
+        Evidencia::redirigir(self::VENTANA . '?editar=' . (int) $id . '#formularioEvidencia');
     }
 
     public function actualizar(string $id): void
@@ -122,14 +109,12 @@ final class FormatoReintegroController
 
         $registro = FormatoReintegro::find($id);
         Evidencia::verificarAcceso($registro);
+        $institucionId = (int) $registro['institucion_id'];
+        $editar = Evidencia::ruta(self::VENTANA, $institucionId, ['editar' => $id]);
 
-        $fechaReintegro = trim((string) $request->input('fecha_reintegro'));
-        $descripcion = trim((string) $request->input('descripcion')) ?: null;
-
-        if ($fechaReintegro === '') {
-            Session::flash('error', 'Indica la fecha del reintegro.');
-            header('Location: ' . Url::to("/formatos-reintegro/{$id}/editar"));
-            exit;
+        [$error, $datos] = $this->leerFormulario($request);
+        if ($error !== null) {
+            $this->volverConError($editar, $error, $request);
         }
 
         try {
@@ -140,23 +125,16 @@ final class FormatoReintegroController
                 $archivoPath = $nuevoArchivo;
             }
 
-            $datosNuevos = [
-                'fecha_reintegro' => $fechaReintegro,
-                'descripcion' => $descripcion,
-                'archivo_path' => $archivoPath,
-            ];
+            $datosNuevos = $datos + ['archivo_path' => $archivoPath];
             FormatoReintegro::actualizar($id, $datosNuevos);
-            Auditoria::registrar(Auth::id(), (int) $registro['institucion_id'], 'editar', 'formato_reintegro', $id, $registro, $datosNuevos);
+            Auditoria::registrar(Auth::id(), $institucionId, 'editar', 'formato_reintegro', $id, $registro, $datosNuevos);
 
             Session::flash('ok', 'Registro actualizado.');
         } catch (\RuntimeException $e) {
-            Session::flash('error', $e->getMessage());
-            header('Location: ' . Url::to("/formatos-reintegro/{$id}/editar"));
-            exit;
+            $this->volverConError($editar, $e->getMessage(), $request);
         }
 
-        header('Location: ' . Url::to('/formatos-reintegro/historial'));
-        exit;
+        Evidencia::redirigir(Evidencia::ruta(self::VENTANA, $institucionId));
     }
 
     public function eliminar(string $id): void
@@ -172,21 +150,33 @@ final class FormatoReintegroController
         Auditoria::registrar(Auth::id(), (int) $registro['institucion_id'], 'eliminar', 'formato_reintegro', $id, $registro);
 
         Session::flash('ok', 'Registro enviado a la papelera. Un superusuario puede restaurarlo si fue un error.');
-        header('Location: ' . Url::to('/formatos-reintegro/historial'));
-        exit;
+        Evidencia::redirigir(Evidencia::ruta(self::VENTANA, (int) $registro['institucion_id']));
     }
 
-    private function institucionSeleccionada(): int
+    /** @return array{0: ?string, 1: array{fecha_reintegro: string, descripcion: ?string}} */
+    private function leerFormulario(Request $request): array
     {
-        if (!Auth::esSuperusuario()) {
-            return (int) Auth::institucionId();
-        }
+        $datos = [
+            'fecha_reintegro' => trim((string) $request->input('fecha_reintegro')),
+            'descripcion' => trim((string) $request->input('descripcion')) ?: null,
+        ];
+        $error = $datos['fecha_reintegro'] === '' ? 'Indica la fecha del reintegro.' : null;
 
-        return (int) ($_GET['institucion'] ?? $_POST['institucion_id'] ?? 0);
+        return [$error, $datos];
+    }
+
+    private function volverConError(string $ruta, string $mensaje, Request $request): never
+    {
+        Session::flash('error', $mensaje);
+        Session::flashOld([
+            'fecha_reintegro' => (string) $request->input('fecha_reintegro'),
+            'descripcion' => (string) $request->input('descripcion'),
+        ]);
+        Evidencia::redirigir($ruta);
     }
 
     private function verificarCsrf(Request $request): void
     {
-        Csrf::verificarORedirigir($request, '/formatos-reintegro');
+        Csrf::verificarORedirigir($request, self::VENTANA);
     }
 }
