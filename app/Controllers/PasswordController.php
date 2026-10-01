@@ -16,6 +16,7 @@ use App\Models\Institucion;
 use App\Models\PasswordReset;
 use App\Models\Usuario;
 use App\Services\MailService;
+use App\Services\PlantillaCorreo;
 
 final class PasswordController
 {
@@ -62,12 +63,9 @@ final class PasswordController
                     $token = PasswordReset::crear((int) $usuario['id']);
                     $enlace = Url::absoluta('/restablecer-contrasena/' . $token);
 
-                    MailService::enviar(
-                        $usuario['email'],
-                        trim($usuario['nombres'] . ' ' . $usuario['apellidos']),
-                        'Restablecer tu contraseña · MIA',
-                        $this->plantillaCorreoReset(trim($usuario['nombres'] . ' ' . $usuario['apellidos']), $enlace)
-                    );
+                    $nombre = trim($usuario['nombres'] . ' ' . $usuario['apellidos']);
+                    $correo = $this->correoReset($nombre, $enlace);
+                    MailService::enviar($usuario['email'], $nombre, 'Restablecer tu contraseña · MIA', $correo['html'], $correo['texto']);
                 } catch (\RuntimeException $e) {
                     error_log('MailService (reset de contraseña): ' . $e->getMessage());
                 }
@@ -226,16 +224,18 @@ final class PasswordController
         return $ocultarUsuario($usuarioCorreo) . '@' . $dominioMascarado;
     }
 
-    private function plantillaCorreoReset(string $nombre, string $enlace): string
+    /** @return array{html: string, texto: string} */
+    private function correoReset(string $nombre, string $enlace): array
     {
-        $nombreEscapado = htmlspecialchars($nombre, ENT_QUOTES);
-        $enlaceEscapado = htmlspecialchars($enlace, ENT_QUOTES);
-
-        return <<<HTML
-            <p>Hola {$nombreEscapado},</p>
-            <p>Recibimos una solicitud para restablecer tu contraseña en MIA. Si fuiste tú, haz clic en el siguiente enlace (válido por 60 minutos):</p>
-            <p><a href="{$enlaceEscapado}">{$enlaceEscapado}</a></p>
-            <p>Si no solicitaste esto, puedes ignorar este correo — tu contraseña actual sigue funcionando normalmente.</p>
-            HTML;
+        return PlantillaCorreo::armar(
+            'Restablece tu contraseña',
+            $nombre,
+            [
+                'Recibimos una solicitud para restablecer la contraseña de tu cuenta en MIA.',
+                'Para crear una contraseña nueva, haz clic en el botón. El enlace vence en 60 minutos y solo se puede usar una vez.',
+            ],
+            ['texto' => 'Restablecer mi contraseña', 'url' => $enlace],
+            '¿No fuiste tú? Ignora este correo: tu contraseña actual sigue funcionando y nadie puede cambiarla sin este enlace.'
+        );
     }
 }

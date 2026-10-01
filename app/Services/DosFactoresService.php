@@ -110,14 +110,16 @@ final class DosFactoresService
     public static function avisarPorCorreo(array $usuario, string $asunto, string $mensaje): void
     {
         $nombre = trim(($usuario['nombres'] ?? '') . ' ' . ($usuario['apellidos'] ?? ''));
-        $html = '<p>Hola ' . htmlspecialchars($nombre, ENT_QUOTES) . ',</p>'
-            . '<p>' . htmlspecialchars($mensaje, ENT_QUOTES) . '</p>'
-            . '<p>Fecha: ' . date('Y-m-d H:i') . ' · Dirección IP: ' . htmlspecialchars((string) ($_SERVER['REMOTE_ADDR'] ?? '—'), ENT_QUOTES) . '</p>'
-            . '<p>Si no fue usted, cambie su contraseña de inmediato y avise al administrador del sistema.</p>'
-            . '<p>MIA</p>';
+        $correo = PlantillaCorreo::armar(
+            'Aviso de seguridad: ' . $asunto,
+            $nombre,
+            [$mensaje, 'Fecha: ' . date('Y-m-d H:i') . ' · Dirección IP: ' . (string) ($_SERVER['REMOTE_ADDR'] ?? '—')],
+            null,
+            'Si no fuiste tú, cambia tu contraseña de inmediato y avisa al administrador del sistema.'
+        );
 
         try {
-            MailService::enviar((string) $usuario['email'], $nombre, 'MIA: ' . $asunto, $html);
+            MailService::enviar((string) $usuario['email'], $nombre, 'MIA: ' . $asunto, $correo['html'], $correo['texto']);
         } catch (\RuntimeException) {
             // Sin correo configurado: el cambio igual queda en la auditoría.
         }

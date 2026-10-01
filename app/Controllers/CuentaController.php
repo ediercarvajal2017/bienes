@@ -81,7 +81,7 @@ final class CuentaController
         // Las demás sesiones abiertas con la contraseña anterior se cierran; esta sigue.
         Auth::actualizarVersionSesion(Usuario::invalidarSesiones($id));
         Auditoria::registrar($id, (int) $usuario['institucion_id'], 'cambiar_contrasena', 'usuario', $id);
-        DosFactoresService::avisarPorCorreo($usuario, 'contraseña cambiada', 'Se cambió la contraseña de su cuenta de MIA.');
+        DosFactoresService::avisarPorCorreo($usuario, 'contraseña cambiada', 'Se cambió la contraseña de tu cuenta de MIA.');
 
         Session::flash('ok', 'Contraseña cambiada. Las demás sesiones abiertas con tu cuenta se cerraron.');
         header('Location: ' . Url::to('/mi-cuenta'));

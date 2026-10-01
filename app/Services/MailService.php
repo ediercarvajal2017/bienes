@@ -10,10 +10,11 @@ use PHPMailer\PHPMailer\PHPMailer;
 final class MailService
 {
     /**
-     * Envía un correo simple en HTML (con su versión en texto plano de respaldo).
+     * Envía un correo en HTML con su versión en texto plano ($textoPlano; si no se da,
+     * se saca del HTML). Si el HTML usa el logo de PlantillaCorreo, lo incrusta.
      * Lanza RuntimeException si el SMTP no está configurado o si el envío falla.
      */
-    public static function enviar(string $paraCorreo, string $paraNombre, string $asunto, string $cuerpoHtml): void
+    public static function enviar(string $paraCorreo, string $paraNombre, string $asunto, string $cuerpoHtml, ?string $textoPlano = null): void
     {
         $config = require dirname(__DIR__, 2) . '/config/mail.php';
 
@@ -40,7 +41,10 @@ final class MailService
             $mail->isHTML(true);
             $mail->Subject = $asunto;
             $mail->Body = $cuerpoHtml;
-            $mail->AltBody = trim(strip_tags($cuerpoHtml));
+            $mail->AltBody = $textoPlano ?? trim(strip_tags($cuerpoHtml));
+            if (str_contains($cuerpoHtml, 'cid:' . PlantillaCorreo::CID_LOGO)) {
+                $mail->addEmbeddedImage(dirname(__DIR__, 2) . '/' . PlantillaCorreo::RUTA_LOGO, PlantillaCorreo::CID_LOGO, 'mia.png', PHPMailer::ENCODING_BASE64, 'image/png');
+            }
 
             $mail->send();
         } catch (PHPMailerException $e) {

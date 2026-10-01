@@ -161,7 +161,7 @@ final class UsuarioController
 
         Auditoria::registrar(Auth::id(), (int) $usuario['institucion_id'], '2fa_restablecer', 'usuario', $id);
         DosFactoresService::avisarPorCorreo($usuario, 'verificación en dos pasos restablecida',
-            'Un administrador restableció la verificación en dos pasos de su cuenta de MIA. En su próximo ingreso podrá configurarla de nuevo.');
+            'Un administrador restableció la verificación en dos pasos de tu cuenta de MIA. En tu próximo ingreso podrás configurarla de nuevo.');
 
         $volver('ok', 'Verificación en dos pasos restablecida. Sus sesiones abiertas se cerrarán en menos de un minuto.');
     }

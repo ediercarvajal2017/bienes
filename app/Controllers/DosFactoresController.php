@@ -106,7 +106,7 @@ final class DosFactoresController
             Auditoria::registrar((int) $usuario['id'], (int) $usuario['institucion_id'], 'codigo_recuperacion_usado',
                 'usuario', (int) $usuario['id'], null, ['codigos_restantes' => $quedan]);
             DosFactoresService::avisarPorCorreo($usuario, 'se usó un código de recuperación',
-                "Se ingresó a su cuenta con un código de recuperación. Le quedan {$quedan}.");
+                "Se ingresó a tu cuenta con un código de recuperación. Te quedan {$quedan}.");
             Session::flash('ok', $quedan <= 3
                 ? "Ingresaste con un código de recuperación. Te quedan {$quedan}: genera códigos nuevos en «Mi cuenta»."
                 : "Ingresaste con un código de recuperación. Te quedan {$quedan}.");
@@ -178,7 +178,7 @@ final class DosFactoresController
 
         Auditoria::registrar($id, (int) $usuario['institucion_id'], '2fa_activar', 'usuario', $id);
         DosFactoresService::avisarPorCorreo($usuario, 'verificación en dos pasos activada',
-            'Se activó la verificación en dos pasos en su cuenta de MIA.');
+            'Se activó la verificación en dos pasos en tu cuenta de MIA.');
 
         Session::put('2fa_codigos_nuevos', $codigos);
         header('Location: ' . Url::to('/2fa/codigos'));
@@ -253,7 +253,7 @@ final class DosFactoresController
 
         Auditoria::registrar($id, (int) $usuario['institucion_id'], '2fa_desactivar', 'usuario', $id);
         DosFactoresService::avisarPorCorreo($usuario, 'verificación en dos pasos desactivada',
-            'Se desactivó la verificación en dos pasos en su cuenta de MIA.');
+            'Se desactivó la verificación en dos pasos en tu cuenta de MIA.');
 
         $this->volverAMiCuenta('ok', 'Verificación en dos pasos desactivada.');
     }
