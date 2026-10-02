@@ -95,7 +95,7 @@ $ventana = '/cartera/enviar';
                     <?php if (Auth::esSuperusuario()): ?><th>Institución</th><?php endif; ?>
                     <th>Solicitada por</th>
                     <th>Correo del solicitante</th>
-                    <th>Llegó desde</th>
+                    <th>Enviada por (Alcaldía)</th>
                     <th>Registrado por</th>
                     <th>Registrado el</th>
                     <th></th>
@@ -108,7 +108,10 @@ $ventana = '/cartera/enviar';
                         <?php if (Auth::esSuperusuario()): ?><td class="text-muted small" data-label="Institución"><?= htmlspecialchars($e['institucion_nombre'], ENT_QUOTES) ?></td><?php endif; ?>
                         <td data-label="Solicitada por"><?= htmlspecialchars($e['nombre_funcionario'], ENT_QUOTES) ?></td>
                         <td class="small text-muted" data-label="Correo del solicitante"><?= !empty($e['correo_solicitante']) ? htmlspecialchars($e['correo_solicitante'], ENT_QUOTES) : '—' ?></td>
-                        <td class="small text-muted" data-label="Llegó desde"><?= htmlspecialchars($e['correo_remitente'], ENT_QUOTES) ?></td>
+                        <td data-label="Enviada por (Alcaldía)">
+                            <?= !empty($e['nombre_remitente']) ? htmlspecialchars($e['nombre_remitente'], ENT_QUOTES) : '<span class="text-muted">—</span>' ?>
+                            <div class="small text-muted"><?= htmlspecialchars($e['correo_remitente'], ENT_QUOTES) ?></div>
+                        </td>
                         <td class="text-muted small" data-label="Registrado por">
                             <?= !empty($e['registrado_por_nombres']) ? htmlspecialchars($e['registrado_por_nombres'] . ' ' . $e['registrado_por_apellidos'], ENT_QUOTES) : '—' ?>
                         </td>

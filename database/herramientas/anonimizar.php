@@ -79,7 +79,7 @@ $sentencias = [
     // Los JSON de antes/después pueden traer correos, documentos o nombres de usuarios.
     'auditoria (usuarios)' => "UPDATE auditoria SET datos_antes = NULL, datos_despues = NULL WHERE entidad = 'usuario'",
     'instituciones' => "UPDATE instituciones SET email_institucional = CONCAT('institucion', id, '@ensayo.test') WHERE email_institucional IS NOT NULL",
-    'cartera_envios' => "UPDATE cartera_envios SET correo_remitente = CONCAT('remitente', id, '@ensayo.test'), nombre_funcionario = CONCAT('Funcionario ', id)",
+    'cartera_envios' => "UPDATE cartera_envios SET correo_remitente = CONCAT('remitente', id, '@ensayo.test'), nombre_remitente = CONCAT('Remitente ', id), nombre_funcionario = CONCAT('Funcionario ', id)",
     'formatos_plaqueteo' => "UPDATE formatos_plaqueteo SET funcionario_asistio = CONCAT('Funcionario ', id)",
 ];
 

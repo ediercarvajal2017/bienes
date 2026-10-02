@@ -15,7 +15,8 @@ use App\Helpers\Paginador;
  *
  * Columnas: funcionario_id y nombre_funcionario (quien solicitó la cartera; el nombre queda
  * como era al registrarla), correo_solicitante (desde dónde se solicitó), correo_remitente
- * (desde dónde llegó la cartera) y fecha_envio (fecha en que se recibió).
+ * y nombre_remitente (desde qué correo llegó la cartera y quién la envió en la Alcaldía) y
+ * fecha_envio (fecha en que se recibió).
  */
 final class CarteraEnvio
 {
@@ -23,9 +24,9 @@ final class CarteraEnvio
     {
         $stmt = Database::connection()->prepare(
             'INSERT INTO cartera_envios
-                (institucion_id, archivo_path, correo_remitente, nombre_funcionario, funcionario_id, correo_solicitante, fecha_envio, registrado_por)
+                (institucion_id, archivo_path, correo_remitente, nombre_remitente, nombre_funcionario, funcionario_id, correo_solicitante, fecha_envio, registrado_por)
              VALUES
-                (:institucion_id, :archivo_path, :correo_remitente, :nombre_funcionario, :funcionario_id, :correo_solicitante, :fecha_envio, :registrado_por)'
+                (:institucion_id, :archivo_path, :correo_remitente, :nombre_remitente, :nombre_funcionario, :funcionario_id, :correo_solicitante, :fecha_envio, :registrado_por)'
         );
         $stmt->execute($datos);
 
@@ -45,7 +46,7 @@ final class CarteraEnvio
     {
         $stmt = Database::connection()->prepare(
             'UPDATE cartera_envios
-                SET correo_remitente = :correo_remitente, nombre_funcionario = :nombre_funcionario,
+                SET correo_remitente = :correo_remitente, nombre_remitente = :nombre_remitente, nombre_funcionario = :nombre_funcionario,
                     funcionario_id = :funcionario_id, correo_solicitante = :correo_solicitante,
                     fecha_envio = :fecha_envio, archivo_path = :archivo_path
               WHERE id = :id'

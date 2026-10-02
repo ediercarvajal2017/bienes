@@ -21,7 +21,8 @@ use App\Models\Usuario;
 /**
  * "Cartera recibida de la Alcaldía": la institución solicita la cartera por correo (fuera
  * del sistema), la Alcaldía la envía y aquí se guarda la evidencia: quién la solicitó y
- * desde qué correo, desde qué correo llegó, la fecha en que se recibió y el archivo.
+ * desde qué correo, quién la envió en la Alcaldía y desde qué correo, la fecha en que se
+ * recibió y el archivo.
  *
  * Todo en UNA ventana (/cartera/enviar): el formulario (registrar, o editar con ?editar=ID)
  * y debajo los registros con Descargar, Editar y Eliminar (ver Evidencia). Las direcciones
@@ -84,6 +85,7 @@ final class CarteraController
             'funcionario_id' => $porDefecto['id'] ?? '',
             'correo_solicitante' => $porDefecto['email'] ?? '',
             'correo_remitente' => '',
+            'nombre_remitente' => '',
             'fecha_envio' => date('Y-m-d'),
         ];
     }
@@ -110,6 +112,7 @@ final class CarteraController
             'funcionario_id' => $funcionarioId ?: '',
             'correo_solicitante' => (string) ($registro['correo_solicitante'] ?? ''),
             'correo_remitente' => (string) $registro['correo_remitente'],
+            'nombre_remitente' => (string) ($registro['nombre_remitente'] ?? ''),
             'fecha_envio' => (string) $registro['fecha_envio'],
         ];
     }
@@ -221,13 +224,14 @@ final class CarteraController
      * Valida los datos del formulario. El funcionario debe ser un usuario activo de la
      * institución (al editar, también vale el que ya tenía el registro).
      *
-     * @return array{0: ?string, 1: array{funcionario_id: int, nombre_funcionario: string, correo_solicitante: string, correo_remitente: string, fecha_envio: string}}
+     * @return array{0: ?string, 1: array{funcionario_id: int, nombre_funcionario: string, correo_solicitante: string, correo_remitente: string, nombre_remitente: string, fecha_envio: string}}
      */
     private function leerFormulario(Request $request, int $institucionId, ?array $registro): array
     {
         $funcionarioId = (int) $request->input('funcionario_id');
         $correoSolicitante = trim((string) $request->input('correo_solicitante'));
         $correoRemitente = trim((string) $request->input('correo_remitente'));
+        $nombreRemitente = trim((string) preg_replace('/\s+/u', ' ', (string) $request->input('nombre_remitente')));
         $fecha = trim((string) $request->input('fecha_envio'));
 
         $funcionario = null;
@@ -240,6 +244,8 @@ final class CarteraController
         $error = match (true) {
             $funcionario === null => 'Elige el funcionario de la institución que solicitó la cartera.',
             !filter_var($correoSolicitante, FILTER_VALIDATE_EMAIL) => 'Escribe un correo válido del funcionario que solicitó la cartera.',
+            $nombreRemitente === '' => 'Escribe los nombres completos del funcionario de la Alcaldía que envió la cartera.',
+            mb_strlen($nombreRemitente) > 150 => 'El nombre de quien envió la cartera es muy largo (máximo 150 caracteres).',
             !filter_var($correoRemitente, FILTER_VALIDATE_EMAIL) => 'Escribe un correo válido desde el que llegó la cartera.',
             FechaMovimiento::error($fecha) !== null => 'Fecha en que se recibió: ' . mb_strtolower((string) FechaMovimiento::error($fecha)),
             default => null,
@@ -250,6 +256,7 @@ final class CarteraController
             'nombre_funcionario' => $funcionario !== null ? trim($funcionario['nombres'] . ' ' . $funcionario['apellidos']) : '',
             'correo_solicitante' => $correoSolicitante,
             'correo_remitente' => $correoRemitente,
+            'nombre_remitente' => $nombreRemitente,
             'fecha_envio' => $fecha,
         ]];
     }
@@ -281,6 +288,7 @@ final class CarteraController
             'funcionario_id' => (string) $request->input('funcionario_id'),
             'correo_solicitante' => (string) $request->input('correo_solicitante'),
             'correo_remitente' => (string) $request->input('correo_remitente'),
+            'nombre_remitente' => (string) $request->input('nombre_remitente'),
             'fecha_envio' => (string) $request->input('fecha_envio'),
         ]);
         Evidencia::redirigir($volverA);

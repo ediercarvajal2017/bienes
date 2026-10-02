@@ -10,7 +10,7 @@ const excelPrueba = path.join(__dirname, 'fixtures', 'excel_prueba.xlsx');
 /**
  * "Cartera recibida de la Alcaldía" (CarteraController): la institución la solicitó por
  * correo y la Alcaldía la envió; se registra quién la solicitó (usuario de la lista) y su
- * correo, desde qué correo llegó, la fecha en que se recibió y el archivo.
+ * correo, quién la envió en la Alcaldía y desde qué correo, la fecha en que se recibió y el archivo.
  */
 const nombre = (id) => bd(`SELECT CONCAT(nombres, ' ', apellidos) FROM usuarios WHERE id = ${id}`);
 
@@ -36,6 +36,7 @@ test('registrar, editar y eliminar una cartera recibida', async ({ page }) => {
     // Al elegir el funcionario, su correo de MIA se llena solo.
     await seleccionarTomSelect(page, 'campo-funcionario', nombre(d.usuarios.docente.id));
     await expect(page.locator('input[name="correo_solicitante"]')).toHaveValue(d.usuarios.docente.email);
+    await page.locator('input[name="nombre_remitente"]').fill('María Fernanda López Ruiz');
     await page.locator('input[name="correo_remitente"]').fill(correo);
     await page.setInputFiles('input[name="archivo"]', excelPrueba);
     await page.getByRole('button', { name: 'Guardar registro' }).click();
@@ -43,18 +44,21 @@ test('registrar, editar y eliminar una cartera recibida', async ({ page }) => {
 
     expect(bd(`SELECT CONCAT(funcionario_id, '|', correo_solicitante, '|', nombre_funcionario) FROM cartera_envios WHERE correo_remitente = '${correo}'`))
         .toBe(`${d.usuarios.docente.id}|${d.usuarios.docente.email}|${nombre(d.usuarios.docente.id)}`);
+    expect(bd(`SELECT nombre_remitente FROM cartera_envios WHERE correo_remitente = '${correo}'`)).toBe('María Fernanda López Ruiz');
 
     // El registro aparece en la lista de la misma ventana, sin "Ver histórico".
     await expect(page.getByRole('link', { name: 'Ver histórico' })).toHaveCount(0);
     let fila = page.locator('tbody tr', { hasText: correo });
     await expect(fila).toContainText(nombre(d.usuarios.docente.id));
     await expect(fila).toContainText(d.usuarios.docente.email);
+    await expect(fila).toContainText('María Fernanda López Ruiz');
 
     // Editar en la misma ventana.
     await fila.getByRole('link', { name: 'Editar' }).click();
     await expect(page).toHaveURL(/cartera\/enviar\?.*editar=\d+/);
     await expect(page.getByRole('heading', { name: 'Editar registro' })).toBeVisible();
     await expect(page.locator('input[name="correo_remitente"]')).toHaveValue(correo);
+    await expect(page.locator('input[name="nombre_remitente"]')).toHaveValue('María Fernanda López Ruiz');
     await page.locator('input[name="correo_remitente"]').fill(correoEditado);
     await page.getByRole('button', { name: 'Guardar cambios' }).click();
 
@@ -74,7 +78,7 @@ test('registrar, editar y eliminar una cartera recibida', async ({ page }) => {
     await expect(page.locator('tbody tr', { hasText: correoEditado })).toHaveCount(0);
 });
 
-test('se rechaza un funcionario de otra institución y un correo inválido', async ({ page }) => {
+test('se rechaza un funcionario de otra institución, quien envió vacío y un correo inválido', async ({ page }) => {
     test.skip(datos().remoto === true, 'Necesita la base de pruebas local');
     const d = datos();
     const url = `cartera/enviar?institucion=${d.instituciones.A}`;
@@ -89,11 +93,16 @@ test('se rechaza un funcionario de otra institución y un correo inválido', asy
     await page.goto(url);
     await expect(page.locator('.alert-danger')).toContainText('Elige el funcionario de la institución');
 
-    await enviar({ funcionario_id: String(d.usuarios.docente.id), correo_solicitante: 'a@example.com', correo_remitente: 'no-es-correo' });
+    await enviar({ funcionario_id: String(d.usuarios.docente.id), correo_solicitante: 'a@example.com', nombre_remitente: '   ', correo_remitente: 'b@example.com' });
+    await page.goto(url);
+    await expect(page.locator('.alert-danger')).toContainText('funcionario de la Alcaldía que envió');
+
+    await enviar({ funcionario_id: String(d.usuarios.docente.id), correo_solicitante: 'a@example.com', nombre_remitente: 'Ana Ruiz', correo_remitente: 'no-es-correo' });
     await page.goto(url);
     await expect(page.locator('.alert-danger')).toContainText('correo válido desde el que llegó');
     // Lo escrito se conserva.
     await expect(page.locator('input[name="correo_solicitante"]')).toHaveValue('a@example.com');
+    await expect(page.locator('input[name="nombre_remitente"]')).toHaveValue('Ana Ruiz');
 });
 
 test('un registro de antes, sin funcionario enlazado, se muestra y se completa al editarlo', async ({ page }) => {
@@ -114,8 +123,11 @@ test('un registro de antes, sin funcionario enlazado, se muestra y se completa a
     await expect(page.locator('.alert-info')).toContainText('Funcionaria de antes');
     await seleccionarTomSelect(page, 'campo-funcionario', nombre(d.usuarios.secretario.id));
     await expect(page.locator('input[name="correo_solicitante"]')).toHaveValue(d.usuarios.secretario.email);
+    // Quien la envió en la Alcaldía no existía antes: se completa al editar.
+    await expect(page.locator('input[name="nombre_remitente"]')).toHaveValue('');
+    await page.locator('input[name="nombre_remitente"]').fill('Luz Marina Gómez');
     await page.getByRole('button', { name: 'Guardar cambios' }).click();
     await expect(page.locator('.alert-success')).toContainText('Registro actualizado');
-    expect(bd(`SELECT CONCAT(funcionario_id, '|', correo_solicitante) FROM cartera_envios WHERE id = ${id}`))
-        .toBe(`${d.usuarios.secretario.id}|${d.usuarios.secretario.email}`);
+    expect(bd(`SELECT CONCAT(funcionario_id, '|', correo_solicitante, '|', nombre_remitente) FROM cartera_envios WHERE id = ${id}`))
+        .toBe(`${d.usuarios.secretario.id}|${d.usuarios.secretario.email}|Luz Marina Gómez`);
 });

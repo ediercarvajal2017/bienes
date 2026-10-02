@@ -44,6 +44,7 @@ final class AuditoriaFormato
         'funcionario_asistio' => 'Funcionario que asistió',
         'fecha_envio' => 'Fecha de envío',
         'correo_remitente' => 'Correo remitente',
+        'nombre_remitente' => 'Funcionario de la Alcaldía que la envió',
         'nombre_funcionario' => 'Funcionario',
         'archivo_path' => 'Archivo adjunto',
         'registrado_por' => 'Registrado por',

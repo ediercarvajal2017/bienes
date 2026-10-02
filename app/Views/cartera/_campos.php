@@ -3,7 +3,7 @@
  * Campos de "Cartera recibida de la Alcaldía" (registrar y editar). public/assets/js/cartera.js
  * llena el correo del solicitante al elegir el funcionario (se puede cambiar).
  * Variables: $funcionarios (Usuario::elegiblesACargo) y $valores (funcionario_id,
- * correo_solicitante, correo_remitente, fecha_envio).
+ * correo_solicitante, nombre_remitente, correo_remitente, fecha_envio).
  */
 
 $e = static fn (mixed $valor): string => htmlspecialchars((string) $valor, ENT_QUOTES);
@@ -29,6 +29,11 @@ foreach ($funcionarios as $f) {
     <input id="campo-correo-solicitante" type="email" name="correo_solicitante" class="form-control" required
            value="<?= $e($valores['correo_solicitante'] ?? '') ?>">
     <div class="form-text">Se llena con el correo del funcionario elegido; cámbialo si la solicitud salió de otro correo.</div>
+</div>
+<div class="col-md-6">
+    <label for="campo-nombre-remitente" class="form-label small requerido">Funcionario de la Alcaldía que envió la cartera</label>
+    <input id="campo-nombre-remitente" type="text" name="nombre_remitente" class="form-control" required maxlength="150"
+           autocomplete="off" placeholder="Nombres y apellidos completos" value="<?= $e($valores['nombre_remitente'] ?? '') ?>">
 </div>
 <div class="col-md-6">
     <label for="campo-correo-remitente" class="form-label small requerido">Correo desde el que llegó la cartera</label>

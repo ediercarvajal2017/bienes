@@ -4,8 +4,8 @@
         <dl class="mb-0">
             <dt>Cartera (histórico)</dt>
             <dd class="text-muted">La cartera de bienes que la institución solicita por correo y la Alcaldía le
-                envía. En esta pantalla se guarda la evidencia de cada una (quién la solicitó, desde qué correo
-                llegó, la fecha y el archivo). Se llama "histórico" porque conserva todas las recibidas, no solo
+                envía. En esta pantalla se guarda la evidencia de cada una (quién la solicitó, quién la envió en la
+                Alcaldía y desde qué correo, la fecha y el archivo). Se llama "histórico" porque conserva todas las recibidas, no solo
                 la más reciente.</dd>
 
             <dt class="mt-2">Lotes de reintegro</dt>

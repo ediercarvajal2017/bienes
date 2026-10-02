@@ -285,7 +285,7 @@ final class ExportacionInstitucion
                     FROM facturas_administrativas f WHERE f.institucion_id IN (:ids)
                 UNION ALL
                 SELECT 'Cartera recibida', c.fecha_envio,
-                        CONCAT_WS(' · ', CONCAT('Solicitada por ', c.nombre_funcionario), c.correo_solicitante, CONCAT('Llegó desde ', c.correo_remitente)),
+                        CONCAT_WS(' · ', CONCAT('Solicitada por ', c.nombre_funcionario), c.correo_solicitante, CONCAT('Enviada por ', c.nombre_remitente), CONCAT('Llegó desde ', c.correo_remitente)),
                         c.archivo_path,
                         c.fecha_registro, c.eliminado_en
                     FROM cartera_envios c WHERE c.institucion_id IN (:ids)
