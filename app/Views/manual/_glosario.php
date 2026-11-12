@@ -13,6 +13,11 @@
                 (formato FO-ADMI-009 de la Alcaldía), listo para imprimir o entregar — en vez de generar un
                 comprobante distinto por cada bien reintegrado.</dd>
 
+            <dt class="mt-2">Ayuda de los campos (?)</dt>
+            <dd class="text-muted">El ícono pequeño junto al título de un campo. Al pasar el cursor, al llegar con la
+                tecla Tab o al tocarlo en el celular, explica qué escribir en ese campo y para qué sirve. Se cierra al
+                salir, con Escape o tocando fuera.</dd>
+
             <dt class="mt-2">Código con varias unidades</dt>
             <dd class="text-muted">Un código (placa) de la Alcaldía que agrupa varios bienes idénticos, registrado con
                 <em>Alta masiva</em>: por ejemplo la placa 200033042 con 178 sillas. Cada unidad tiene su consecutivo

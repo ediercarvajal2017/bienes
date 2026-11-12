@@ -11,7 +11,8 @@
             <ol class="mb-0 ps-3">
                 <li><strong>Registrar un bien</strong> (Bienes &gt; Registrar bien): código, descripción, categoría,
                     marca, valor y, si aplica, foto y factura. La categoría es obligatoria — sin ella, el bien no se
-                    podrá reintegrar más adelante.</li>
+                    podrá reintegrar más adelante. Junto al título de cada campo hay un ícono <strong>(?)</strong>:
+                    pasa el cursor por encima (o tócalo en el celular) para ver qué escribir.</li>
                 <li><strong>Asignar</strong> un bien, desde su ficha (o varios a la vez en
                     <strong>Bienes &gt; Acciones masivas &gt; Asignar bienes</strong>). Elige la responsabilidad:
                     <ul class="mt-1">

@@ -47,6 +47,7 @@ dispositivo y el navegador.
 - [ ] Lotes de reintegro: marcar uno o varios como reintegrados (fecha de entrega), verlos en la pestaña "Reintegrados" y reabrir uno como rector.
 - [ ] Lotes de reintegro: generar lote (uno por categoría), unificar dos lotes pendientes y separar uno mixto; abrir el Excel de cada lote nuevo.
 - [ ] Reintegrar por cantidad: en un código de alta masiva, reintegrar unidades de un aula y sin asignar; el comprobante muestra la placa con la cantidad en un solo renglón.
+- [ ] Formulario de bienes (registrar, editar y alta masiva): la ayuda (?) de cada campo se abre con el cursor, con Tab y con un toque en el celular; el globo no se sale de la pantalla ni queda detrás de la barra inferior.
 - [ ] Aprobar y rechazar (con motivo) una baja; aprobar y rechazar una solicitud de reintegro.
 - [ ] Carga masiva desde Excel con una fila errónea: la vista previa la señala y el resto se aplica.
 - [ ] Reportes: la cartera descargada abre bien en Excel y un texto que empiece con "=" aparece como texto.

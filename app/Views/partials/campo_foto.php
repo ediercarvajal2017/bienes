@@ -18,7 +18,10 @@
  * - $idCampo: string, opcional: id fijo del <input> (si la página lo usa desde su propio JS).
  * - $capturaNativa: bool, opcional (default true). Con false se omite capture: en el
  *   celular el campo ofrece cámara Y galería (con capture solo abre la cámara).
+ * - $ayuda: string, opcional: clave de App\Helpers\AyudaCampo para el ícono (?) del título.
  */
+
+use App\Helpers\AyudaCampo;
 
 $requerido = !empty($required);
 $accept = $accept ?? 'image/jpeg,image/png';
@@ -28,7 +31,11 @@ $idCampoFoto = !empty($idCampo)
     : 'campoFoto-' . preg_replace('/[^a-z0-9_-]/i', '', (string) $nombreCampo) . '-' . bin2hex(random_bytes(3));
 ?>
 <div class="campo-foto" data-campo-foto>
-    <label for="<?= $idCampoFoto ?>" class="form-label small d-block<?= $requerido ? ' requerido' : '' ?>"><?= htmlspecialchars($etiqueta ?? 'Fotografía', ENT_QUOTES) ?></label>
+    <?php if (!empty($ayuda)): ?>
+        <?= AyudaCampo::etiqueta($idCampoFoto, $etiqueta ?? 'Fotografía', (string) $ayuda, $requerido) ?>
+    <?php else: ?>
+        <label for="<?= $idCampoFoto ?>" class="form-label small d-block<?= $requerido ? ' requerido' : '' ?>"><?= htmlspecialchars($etiqueta ?? 'Fotografía', ENT_QUOTES) ?></label>
+    <?php endif; ?>
 
     <?php if (!empty($fotoActualUrl)): ?>
         <img src="<?= htmlspecialchars($fotoActualUrl, ENT_QUOTES) ?>"

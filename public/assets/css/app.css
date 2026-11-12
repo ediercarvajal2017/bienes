@@ -284,6 +284,51 @@ select.selector-buscable.is-invalid + .ts-wrapper .ts-control {
   color: var(--sigebi-danger);
 }
 
+/* Ayuda emergente de los campos (App\Helpers\AyudaCampo, ayuda-campo.js): un ícono (?)
+   pequeño y tenue junto al título; el globo se abre con el cursor, el teclado o un toque.
+   Área de toque de 24 × 24 px aunque el ícono se vea de 16. */
+.etiqueta-ayuda { display: flex; align-items: center; gap: .1rem; margin-bottom: .5rem; }
+.etiqueta-ayuda > .form-label { margin-bottom: 0; }
+.ayuda-campo {
+  display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto;
+  width: 24px; height: 24px; margin: -4px 0; padding: 0; border: 0; border-radius: 50%;
+  background: transparent; color: var(--bs-secondary-color); font-size: .8rem; line-height: 1;
+  vertical-align: middle; cursor: help;
+}
+.ayuda-campo:hover, .ayuda-campo[aria-expanded="true"] { color: var(--sigebi-primary); }
+.ayuda-campo:focus-visible { outline: 2px solid var(--sigebi-primary); outline-offset: 0; }
+.form-check .ayuda-campo { margin-left: .1rem; }
+/* En pantallas táctiles el área de toque crece a 44 × 44 px (la regla de MIA para los
+   controles táctiles); los márgenes negativos la dejan ocupar el mismo espacio y el ícono
+   se ve igual. */
+@media (pointer: coarse) {
+  .ayuda-campo, .form-check .ayuda-campo { width: 44px; height: 44px; margin: -10px -10px -10px -10px; }
+}
+.ayuda-campo-globo {
+  position: fixed; z-index: 1090; width: max-content; max-width: min(320px, calc(100vw - 24px));
+  padding: .6rem .75rem; border-radius: .5rem;
+  background: #1F2937; color: #F3F4F6; box-shadow: 0 8px 24px rgba(0, 0, 0, .2);
+  font-size: .8125rem; font-weight: 400; line-height: 1.45; text-align: left; text-transform: none;
+}
+.ayuda-campo-globo p { margin: 0; }
+.ayuda-campo-globo p + p { margin-top: .45rem; }
+.ayuda-campo-globo strong { color: #fff; font-weight: 600; }
+.ayuda-campo-globo::before {
+  content: ""; position: absolute; top: -5px; left: calc(var(--flecha-x, 20px) - 5px);
+  width: 10px; height: 10px; background: inherit; border-radius: 2px; transform: rotate(45deg);
+}
+.ayuda-campo-globo.arriba::before { top: auto; bottom: -5px; }
+[data-bs-theme="dark"] .ayuda-campo-globo { background: #E5E7EB; color: #111827; box-shadow: 0 8px 24px rgba(0, 0, 0, .5); }
+[data-bs-theme="dark"] .ayuda-campo-globo strong { color: #000; }
+@media print { .ayuda-campo, .ayuda-campo-globo { display: none !important; } }
+
+/* Formulario de bienes: los datos agrupados en tarjetas (Datos del bien, Ubicación, Foto
+   y documentos) en lugar de una sola cuadrícula. */
+.formulario-secciones { max-width: 720px; }
+.formulario-secciones .card-body { padding: 1rem 1.1rem 1.1rem; }
+.formulario-secciones .titulo-seccion { font-size: .95rem; font-weight: 600; margin-bottom: .85rem; }
+.nota-campo { font-size: .8rem; color: var(--bs-secondary-color); }
+
 .auth-shell {
   min-height: 100vh;
   display: flex;

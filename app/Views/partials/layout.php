@@ -228,6 +228,7 @@ foreach (['/manual', '/mi-cuenta'] as $rutaPie) {
 <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js" integrity="sha384-cnROoUgVILyibe3J0zhzWoJ9p2WmdnK7j/BOTSWqVDbC1pVw2d+i6Q/1ESKJKCYf" crossorigin="anonymous"></script>
 <script src="<?= Url::asset('/assets/js/selector-buscable.js') ?>"></script>
 <script src="<?= Url::asset('/assets/js/responsabilidad.js') ?>"></script>
+<script src="<?= Url::asset('/assets/js/ayuda-campo.js') ?>"></script>
 <script>
 if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register(<?= json_encode(Url::to('/sw.js')) ?>).catch(function () {});

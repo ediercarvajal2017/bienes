@@ -17,7 +17,12 @@
  *  - $textoSinEspacio: texto de la opción vacía del espacio en Grupal;
  *  - $deshabilitado: los campos empiezan deshabilitados (la ficha los habilita al elegir la acción);
  *  - $tamano: '' o '-sm' (tamaño de los selectores).
+ *
+ * Las explicaciones de Grupal / Individual, de la persona y del espacio están en la ayuda
+ * (?) de cada título (App\Helpers\AyudaCampo), no como texto suelto.
  */
+
+use App\Helpers\AyudaCampo;
 
 $tipo = ($valores['tipo'] ?? '') === 'individual' ? 'individual' : 'grupal';
 $espacioElegido = (string) ($valores['espacio'] ?? '');
@@ -33,28 +38,26 @@ $e = static fn (mixed $valor): string => htmlspecialchars((string) $valor, ENT_Q
 ?>
 <div class="campos-responsabilidad" data-responsabilidad<?= $espacioObligatorio ? ' data-espacio-obligatorio' : '' ?>
      data-texto-sin-espacio="<?= $e($textoSinEspacio) ?>">
-    <fieldset class="mb-2">
-        <legend class="form-label small mb-1">Responsabilidad</legend>
+    <fieldset class="mb-2" aria-labelledby="<?= $e($prefijo) ?>TituloResponsabilidad">
+        <legend class="form-label small mb-1 d-flex align-items-center gap-1">
+            <span id="<?= $e($prefijo) ?>TituloResponsabilidad">Responsabilidad</span><?= AyudaCampo::boton('responsabilidad') ?>
+        </legend>
         <div class="d-flex flex-wrap column-gap-4">
             <div class="form-check">
                 <input class="form-check-input" type="radio" name="<?= $e($nombres['tipo']) ?>" id="<?= $e($prefijo) ?>TipoGrupal"
                        value="grupal" data-tipo-responsabilidad<?= $tipo === 'grupal' ? ' checked' : '' ?><?= $apagado ?>>
-                <label class="form-check-label small" for="<?= $e($prefijo) ?>TipoGrupal">
-                    <strong>Grupal</strong>: en un espacio; responden sus responsables
-                </label>
+                <label class="form-check-label small" for="<?= $e($prefijo) ?>TipoGrupal">Grupal</label>
             </div>
             <div class="form-check">
                 <input class="form-check-input" type="radio" name="<?= $e($nombres['tipo']) ?>" id="<?= $e($prefijo) ?>TipoIndividual"
                        value="individual" data-tipo-responsabilidad<?= $tipo === 'individual' ? ' checked' : '' ?><?= $apagado ?>>
-                <label class="form-check-label small" for="<?= $e($prefijo) ?>TipoIndividual">
-                    <strong>Individual</strong>: a cargo de una persona
-                </label>
+                <label class="form-check-label small" for="<?= $e($prefijo) ?>TipoIndividual">Individual</label>
             </div>
         </div>
     </fieldset>
 
     <div class="mb-2" data-solo-tipo="individual"<?= $tipo === 'individual' ? '' : ' hidden' ?>>
-        <label class="form-label small requerido" for="<?= $e($prefijo) ?>Persona">Persona responsable</label>
+        <?= AyudaCampo::etiqueta($prefijo . 'Persona', 'Persona responsable', 'persona', true) ?>
         <select id="<?= $e($prefijo) ?>Persona" name="<?= $e($nombres['persona']) ?>" class="form-select form-select<?= $e($tamano) ?> selector-buscable" required
             <?= $deshabilitado || $tipo !== 'individual' ? ' disabled' : '' ?>>
             <option value="">-- Selecciona --</option>
@@ -64,13 +67,10 @@ $e = static fn (mixed $valor): string => htmlspecialchars((string) $valor, ENT_Q
                 </option>
             <?php endforeach; ?>
         </select>
-        <div class="form-text">Responde solo esta persona, aunque el bien esté guardado en un espacio con otros responsables.</div>
     </div>
 
     <div class="mb-2">
-        <label class="form-label small<?= $espacioRequerido ? ' requerido' : '' ?>" for="<?= $e($idEspacio) ?>" data-etiqueta-espacio>
-            <?= $tipo === 'individual' ? 'Guardado en (espacio, opcional)' : 'Espacio' ?>
-        </label>
+        <?= AyudaCampo::etiqueta($idEspacio, $tipo === 'individual' ? 'Guardado en (espacio, opcional)' : 'Espacio', 'espacio', $espacioRequerido, ' data-etiqueta-espacio') ?>
         <select id="<?= $e($idEspacio) ?>" name="<?= $e($nombres['espacio']) ?>" class="form-select form-select<?= $e($tamano) ?> selector-buscable"
                 data-campo-espacio<?= $espacioRequerido ? ' required' : '' ?><?= $apagado ?>>
             <option value=""><?= $e($tipo === 'individual' ? '-- Sin espacio --' : $textoSinEspacio) ?></option>
