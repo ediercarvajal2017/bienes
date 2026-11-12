@@ -227,7 +227,8 @@ final class ExportacionInstitucion
                 LEFT JOIN usuarios re ON re.id = s.resuelta_por
                 WHERE s.institucion_id IN (:ids) ORDER BY s.id",
             'lotes_reintegro' => "SELECT l.id AS `Id`, i.nombre AS `Sede`, l.fecha AS `Fecha`, l.destino_texto AS `Destino`,
-                    l.observaciones AS `Observaciones`, {$persona('r')} AS `Registrado por`, l.created_at AS `Registrado en`,
+                    l.observaciones AS `Observaciones`, l.estado AS `Estado`, l.reintegrado_fecha AS `Fecha de entrega a la Alcaldía`,
+                    l.reintegrado_nota AS `Nota de la entrega`, {$persona('r')} AS `Registrado por`, l.created_at AS `Registrado en`,
                     (SELECT COUNT(*) FROM movimientos m WHERE m.lote_reintegro_id = l.id) AS `Bienes`
                 FROM lotes_reintegro l
                 JOIN instituciones i ON i.id = l.institucion_id

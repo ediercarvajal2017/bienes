@@ -40,6 +40,13 @@ final class AuditoriaFormato
         'estado' => 'Estado',
         'fecha_factura' => 'Fecha de la factura',
         'fecha_reintegro' => 'Fecha de reintegro',
+        'reintegrado_fecha' => 'Fecha de entrega a la Alcaldía',
+        'reintegrado_nota' => 'Nota de la entrega',
+        'motivo' => 'Motivo',
+        'movimientos' => 'Reintegros incluidos',
+        'categoria' => 'Categoría',
+        'lotes_origen' => 'Lotes de origen',
+        'lotes_destino' => 'Lotes nuevos',
         'fecha_plaqueteo' => 'Fecha de plaqueteo',
         'funcionario_asistio' => 'Funcionario que asistió',
         'fecha_envio' => 'Fecha de envío',
@@ -59,6 +66,9 @@ final class AuditoriaFormato
         'reintegrado' => 'Reintegrado',
         'en_reparacion' => 'En reparación',
         'dado_de_baja' => 'Dado de baja',
+        // Estados de un lote de reintegro ('reintegrado' ya está arriba).
+        'pendiente' => 'Pendiente',
+        'unificado' => 'Unificado',
     ];
 
     private const TIPOS_SEDE = ['principal' => 'Principal', 'seccion' => 'Sección'];

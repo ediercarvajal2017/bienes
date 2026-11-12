@@ -112,6 +112,13 @@
                     los movimientos pendientes de agrupar.</li>
                 <li>Desde el detalle del lote, descarga el <strong>comprobante</strong>: el formato oficial que
                     exige la Alcaldía, ya organizado por categoría y listo para imprimir.</li>
+                <li>Cuando entregues el lote a la Alcaldía, márcalo como <strong>reintegrado</strong> (fecha de
+                    entrega y una nota opcional). Sale de la pestaña <strong>Pendientes</strong> y ya no se mezcla
+                    con los reintegros nuevos; su Excel se sigue pudiendo descargar.</li>
+                <li>Para ponerte al día con lotes viejos, marca varios a la vez: filtra con <em>Lote hasta</em>,
+                    selecciónalos en la lista y usa <strong>Marcar como reintegrados</strong>.</li>
+                <li>Si marcaste un lote por error, ábrelo y usa <strong>Reabrir el lote</strong> (con el motivo):
+                    vuelve a quedar pendiente. Solo el rector puede hacerlo.</li>
             </ol>
         </div>
     </details>

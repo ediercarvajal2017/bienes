@@ -70,6 +70,7 @@ use App\Controllers\FormatoReintegroController;
 use App\Controllers\HallazgoController;
 use App\Controllers\InstitucionController;
 use App\Controllers\ManualController;
+use App\Controllers\LoteReintegroController;
 use App\Controllers\MovimientoController;
 use App\Controllers\NotaController;
 use App\Controllers\PapeleraController;
@@ -358,10 +359,10 @@ $router->post('/reintegros', [ReintegroController::class, 'guardar'], [
 $router->get('/reintegros/buscar-qr', [ReintegroController::class, 'buscarPorQr'], [
     AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':asignaciones.crear',
 ]);
-$router->get('/reintegros/lotes/generar', [ReintegroController::class, 'pendientesDeLote'], [
+$router->get('/reintegros/lotes/generar', [LoteReintegroController::class, 'pendientesDeLote'], [
     AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':asignaciones.crear',
 ]);
-$router->post('/reintegros/lotes/generar', [ReintegroController::class, 'generarLote'], [
+$router->post('/reintegros/lotes/generar', [LoteReintegroController::class, 'generarLote'], [
     AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':asignaciones.crear',
 ]);
 // Solicitudes de reintegro (docente solicita; rector/secretario aprueba o rechaza).
@@ -384,13 +385,21 @@ $router->post('/reintegros/solicitudes/{id}/rechazar', [SolicitudReintegroContro
 $router->post('/reintegros/solicitudes/{id}/cancelar', [SolicitudReintegroController::class, 'cancelar'], [
     AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':reintegros.solicitar',
 ]);
-$router->get('/reintegros/lotes', [ReintegroController::class, 'lotes'], [
+$router->get('/reintegros/lotes', [LoteReintegroController::class, 'lotes'], [
     AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':asignaciones.crear',
 ]);
-$router->get('/reintegros/lotes/{id}', [ReintegroController::class, 'loteDetalle'], [
+// Estado de los lotes: marcar como reintegrados (entregados a la Alcaldía) y reabrir
+// (solo rector o superusuario: el controlador valida el rol). Antes de /lotes/{id}.
+$router->post('/reintegros/lotes/marcar-reintegrados', [LoteReintegroController::class, 'marcarReintegrados'], [
     AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':asignaciones.crear',
 ]);
-$router->get('/reintegros/lotes/{id}/formato.xlsx', [ReintegroController::class, 'loteFormato'], [
+$router->get('/reintegros/lotes/{id}', [LoteReintegroController::class, 'loteDetalle'], [
+    AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':asignaciones.crear',
+]);
+$router->get('/reintegros/lotes/{id}/formato.xlsx', [LoteReintegroController::class, 'loteFormato'], [
+    AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':asignaciones.crear',
+]);
+$router->post('/reintegros/lotes/{id}/reabrir', [LoteReintegroController::class, 'reabrir'], [
     AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':asignaciones.crear',
 ]);
 

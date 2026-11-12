@@ -47,7 +47,7 @@ return [
             ['texto' => 'Solicitudes', 'icono' => 'inbox', 'iconoActivo' => 'inbox-fill', 'ruta' => '/reintegros/solicitudes',
                 'activo' => ['/reintegros/solicitudes'], 'visible' => $puede('asignaciones.crear') || Auth::tienePermiso('reintegros.solicitar'), 'contador' => 'solicitudes'],
             ['texto' => 'Lotes de reintegro', 'icono' => 'file-earmark-spreadsheet', 'iconoActivo' => 'file-earmark-spreadsheet-fill', 'ruta' => '/reintegros/lotes',
-                'activo' => ['/reintegros/lotes'], 'visible' => $puede('asignaciones.crear')],
+                'activo' => ['/reintegros/lotes'], 'visible' => $puede('asignaciones.crear'), 'contador' => 'lotes'],
         ],
     ],
     [

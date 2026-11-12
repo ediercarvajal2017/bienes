@@ -1,0 +1,186 @@
+import { test, expect } from '@playwright/test';
+import { datos, comoRol, bd } from './helpers/datos.js';
+
+// Solo en modo local: crea lotes directamente en la base de pruebas.
+test.beforeEach(() => test.skip(datos().remoto === true, 'Necesita la base de pruebas local'));
+
+/**
+ * Estado de los lotes de reintegro: pendiente → reintegrado (entregado a la Alcaldía),
+ * reabrir, y que todo sea "todo o nada" (un lote que no cumple no deja cambiar ninguno).
+ *
+ * Los lotes se crean por SQL (rápido y sin depender de otras pantallas), cada uno con su
+ * propia fecha para poder aislarlo con el filtro "desde/hasta" de la lista.
+ */
+let contador = 0;
+
+/** Lote PENDIENTE con un bien reintegrado por cada categoría ('Muebles', 'Tecnolog'…). */
+function crearLote(institucion, categorias, fecha) {
+    const d = datos();
+    const sufijo = `${Date.now()}-${++contador}`;
+    const bienes = categorias.map((categoria, i) => `
+        INSERT INTO bienes (institucion_id, codigo_identificacion, descripcion, categoria_id, fecha_ingreso, valor, estado, qr_token, created_by)
+        VALUES (${institucion}, 'PW-LT-${sufijo}-${i}', 'PW-TEST bien de lote ${sufijo}-${i}',
+                (SELECT id FROM categorias_bienes WHERE institucion_id = ${institucion} AND nombre LIKE '${categoria}%' ORDER BY id LIMIT 1),
+                '2024-01-15', 1000, 'reintegrado', UUID(), ${d.usuarios.superusuario.id});
+        INSERT INTO movimientos (bien_id, tipo, fecha, responsable_id, destino_texto, lote_reintegro_id)
+        VALUES (LAST_INSERT_ID(), 'reintegro', '${fecha}', ${d.usuarios.rector.id}, 'Bodega de reintegro', @lote);`).join('');
+
+    return Number(bd(`
+        INSERT INTO lotes_reintegro (institucion_id, fecha, destino_texto, registrado_por)
+        VALUES (${institucion}, '${fecha}', 'PW-TEST lote ${sufijo}', ${d.usuarios.rector.id});
+        SET @lote = LAST_INSERT_ID();
+        ${bienes}
+        SELECT @lote;`));
+}
+
+function estadoDe(lote) {
+    // Con "|": bd() recorta los espacios y tabuladores del final.
+    return bd(`SELECT CONCAT_WS('|', estado, IFNULL(reintegrado_fecha, ''), IFNULL(reintegrado_nota, '')) FROM lotes_reintegro WHERE id = ${lote}`);
+}
+
+async function sesionDe(browser, rol) {
+    const contexto = await comoRol(browser, rol);
+    const pagina = await contexto.newPage();
+    await pagina.goto('reintegros/lotes');
+    const token = await pagina.locator('input[name="_csrf"]').first().inputValue();
+    return { contexto, pagina, token };
+}
+
+/** POST de formulario con campos repetidos (lotes[]=…&lotes[]=…). */
+function postFormulario(contexto, url, campos) {
+    const cuerpo = new URLSearchParams();
+    for (const [nombre, valor] of campos) {
+        cuerpo.append(nombre, String(valor));
+    }
+    return contexto.request.post(url, {
+        data: cuerpo.toString(),
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        // Sin seguir la redirección: así el mensaje queda para la página que se abre después.
+        maxRedirects: 0,
+    });
+}
+
+const filaDeLote = (pagina, lote) => pagina.locator('tbody tr', {
+    has: pagina.locator('td[data-label="Lote"] .mono', { hasText: new RegExp(`^#${lote}$`) }),
+});
+
+test('marcar varios lotes como reintegrados desde la lista', async ({ browser }) => {
+    const d = datos();
+    const loteMuebles = crearLote(d.instituciones.A, ['Muebles'], '2024-05-10');
+    const loteMixto = crearLote(d.instituciones.A, ['Muebles', 'Tecnolog'], '2024-05-11');
+    const rector = await sesionDe(browser, 'rector');
+    const { pagina } = rector;
+
+    await pagina.goto('reintegros/lotes?estado=pendiente&desde=2024-05-10&hasta=2024-05-11');
+    await expect(filaDeLote(pagina, loteMuebles)).toBeVisible();
+    await expect(filaDeLote(pagina, loteMuebles).locator('td[data-label="Estado"]')).toContainText(/Pendiente\s*hace \d+ años?/);
+    await expect(filaDeLote(pagina, loteMixto).locator('td[data-label="Categoría"]')).toContainText('(mixto)');
+
+    // Sin selección, el botón está desactivado.
+    await expect(pagina.locator('#botonMostrarMarcar')).toBeDisabled();
+    await filaDeLote(pagina, loteMuebles).locator('.casilla-lote').check();
+    await filaDeLote(pagina, loteMixto).locator('.casilla-lote').check();
+    await pagina.locator('#botonMostrarMarcar').click();
+    await expect(pagina.locator('#panelMarcar')).toBeVisible();
+    await pagina.locator('#campoFechaEntrega').fill('2024-06-01');
+    await pagina.locator('#campoNota').fill('PW-TEST recibido por Bienes Muebles');
+
+    pagina.once('dialog', (dialogo) => dialogo.accept());
+    await pagina.locator('#botonConfirmarMarcar').click();
+
+    await expect(pagina.locator('.alert-success')).toContainText('2 lotes marcados como reintegrados');
+    // Vuelve a la misma vista filtrada, donde ya no aparecen.
+    await expect(pagina).toHaveURL(/estado=pendiente/);
+    await expect(filaDeLote(pagina, loteMuebles)).toHaveCount(0);
+    await expect(filaDeLote(pagina, loteMixto)).toHaveCount(0);
+
+    expect(estadoDe(loteMuebles)).toBe('reintegrado|2024-06-01|PW-TEST recibido por Bienes Muebles');
+    expect(estadoDe(loteMixto)).toBe('reintegrado|2024-06-01|PW-TEST recibido por Bienes Muebles');
+    expect(bd(`SELECT reintegrado_por FROM lotes_reintegro WHERE id = ${loteMuebles}`)).toBe(String(d.usuarios.rector.id));
+    expect(bd(`SELECT COUNT(*) FROM auditoria WHERE entidad = 'lote_reintegro' AND accion = 'marcar_reintegrado'
+               AND entidad_id IN (${loteMuebles}, ${loteMixto})`), 'una auditoría por lote').toBe('2');
+
+    // En "Reintegrados" se ven con su fecha de entrega, y el Excel se sigue descargando.
+    await pagina.goto('reintegros/lotes?estado=reintegrado&desde=2024-05-10&hasta=2024-05-11');
+    await expect(filaDeLote(pagina, loteMuebles).locator('td[data-label="Estado"]')).toContainText('Entregado el 2024-06-01');
+    await expect(filaDeLote(pagina, loteMuebles).locator('.casilla-lote')).toHaveCount(0);
+    const excel = await rector.contexto.request.get(`reintegros/lotes/${loteMuebles}/formato.xlsx`);
+    expect(excel.status()).toBe(200);
+    expect(excel.headers()['content-type']).toContain('spreadsheetml');
+
+    await rector.contexto.close();
+});
+
+test('todo o nada: no se marca un lote ya reintegrado ni uno de otra institución', async ({ browser }) => {
+    const d = datos();
+    const lotePendiente = crearLote(d.instituciones.A, ['Muebles'], '2024-07-01');
+    const loteYaEntregado = crearLote(d.instituciones.A, ['Muebles'], '2024-07-02');
+    bd(`UPDATE lotes_reintegro SET estado = 'reintegrado', reintegrado_fecha = '2024-07-05' WHERE id = ${loteYaEntregado}`);
+
+    // Rector de A: uno pendiente + uno ya reintegrado → no cambia ninguno.
+    const rector = await sesionDe(browser, 'rector');
+    await postFormulario(rector.contexto, 'reintegros/lotes/marcar-reintegrados', [
+        ['_csrf', rector.token], ['lotes[]', lotePendiente], ['lotes[]', loteYaEntregado], ['fecha_entrega', '2024-08-01'],
+    ]);
+    await rector.pagina.goto('reintegros/lotes');
+    await expect(rector.pagina.locator('.alert-danger')).toContainText(`El lote #${loteYaEntregado} ya no está pendiente`);
+    expect(estadoDe(lotePendiente)).toBe('pendiente||');
+    expect(estadoDe(loteYaEntregado), 'conserva su fecha de entrega').toBe('reintegrado|2024-07-05|');
+
+    // Fecha futura: rechazada.
+    await postFormulario(rector.contexto, 'reintegros/lotes/marcar-reintegrados', [
+        ['_csrf', rector.token], ['lotes[]', lotePendiente], ['fecha_entrega', '2999-01-01'],
+    ]);
+    await rector.pagina.goto('reintegros/lotes');
+    await expect(rector.pagina.locator('.alert-danger')).toContainText('posterior a hoy');
+    expect(estadoDe(lotePendiente)).toBe('pendiente||');
+    await rector.contexto.close();
+
+    // Rector de B: no puede tocar un lote de A.
+    const rectorB = await sesionDe(browser, 'rector_b');
+    await postFormulario(rectorB.contexto, 'reintegros/lotes/marcar-reintegrados', [
+        ['_csrf', rectorB.token], ['lotes[]', lotePendiente], ['fecha_entrega', '2024-08-01'],
+    ]);
+    await rectorB.pagina.goto('reintegros/lotes');
+    await expect(rectorB.pagina.locator('.alert-danger')).toContainText('No tienes acceso');
+    expect(estadoDe(lotePendiente)).toBe('pendiente||');
+    await rectorB.contexto.close();
+});
+
+test('reabrir un lote: el secretario no puede; el rector sí, con motivo', async ({ browser }) => {
+    const d = datos();
+    const lote = crearLote(d.instituciones.A, ['Muebles'], '2024-09-01');
+    bd(`UPDATE lotes_reintegro SET estado = 'reintegrado', reintegrado_fecha = '2024-09-03', reintegrado_por = ${d.usuarios.rector.id} WHERE id = ${lote}`);
+
+    const secretario = await sesionDe(browser, 'secretario');
+    const intento = await secretario.contexto.request.post(`reintegros/lotes/${lote}/reabrir`, {
+        form: { _csrf: secretario.token, motivo: 'Intento del secretario' }, maxRedirects: 0,
+    });
+    expect(intento.status()).toBe(403);
+    // El secretario ve el estado, pero no la opción de reabrir.
+    await secretario.pagina.goto(`reintegros/lotes/${lote}`);
+    await expect(secretario.pagina.locator('.estado-lote')).toContainText('entregado a la Alcaldía el 2024-09-03');
+    await expect(secretario.pagina.getByText('Reabrir el lote')).toHaveCount(0);
+    await secretario.contexto.close();
+    expect(estadoDe(lote)).toBe('reintegrado|2024-09-03|');
+
+    const rector = await sesionDe(browser, 'rector');
+    await rector.pagina.goto(`reintegros/lotes/${lote}`);
+    await rector.pagina.getByText('Reabrir el lote').click();
+    await rector.pagina.locator('#campoMotivo').fill('PW-TEST se marcó el lote equivocado');
+    rector.pagina.once('dialog', (dialogo) => dialogo.accept());
+    await rector.pagina.getByRole('button', { name: 'Reabrir', exact: true }).click();
+
+    await expect(rector.pagina.locator('.alert-success').first()).toContainText('volvió a quedar pendiente');
+    await expect(rector.pagina.getByRole('button', { name: 'Marcar como reintegrado' })).toBeVisible();
+    expect(estadoDe(lote)).toBe('pendiente||');
+    expect(bd(`SELECT COUNT(*) FROM auditoria WHERE entidad = 'lote_reintegro' AND accion = 'reabrir' AND entidad_id = ${lote}`)).toBe('1');
+
+    // Marcarlo de nuevo desde el detalle.
+    await rector.pagina.locator('#campoFechaEntrega').fill('2024-09-10');
+    rector.pagina.once('dialog', (dialogo) => dialogo.accept());
+    await rector.pagina.getByRole('button', { name: 'Marcar como reintegrado' }).click();
+    await expect(rector.pagina.locator('.alert-success').first()).toContainText('Lote marcado como reintegrado');
+    expect(estadoDe(lote)).toBe('reintegrado|2024-09-10|');
+    await rector.contexto.close();
+});

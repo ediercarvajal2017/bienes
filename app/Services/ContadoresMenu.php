@@ -9,11 +9,12 @@ use App\Core\ErrorHandler;
 use App\Core\Session;
 use App\Models\Baja;
 use App\Models\Hallazgo;
+use App\Models\LoteReintegro;
 use App\Models\SolicitudReintegro;
 
 /**
  * Pendientes que el menú muestra junto a cada opción (bajas por aprobar, solicitudes de
- * reintegro por revisar, hallazgos de verificación por resolver). Mismas reglas que los
+ * reintegro por revisar, lotes de reintegro por entregar, hallazgos de verificación por resolver). Mismas reglas que los
  * indicadores del panel principal (DashboardController::indicadores): cada cifra solo se
  * calcula para quien puede actuar sobre ella.
  *
@@ -44,6 +45,7 @@ final class ContadoresMenu
             }
             if ($puede('asignaciones.crear')) {
                 $valores['solicitudes'] = SolicitudReintegro::contar($institucionId, null, 'pendiente');
+                $valores['lotes'] = LoteReintegro::contarPendientes($institucionId);
             }
             if ($puede('verificaciones.gestionar')) {
                 $valores['hallazgos'] = Hallazgo::contarPendientesInstitucion($institucionId);

@@ -685,6 +685,20 @@ summary { cursor: pointer; }
 [data-bs-theme="dark"] .badge-solicitud-rechazada { background: #262c33; color: #c3cad2; border-color: #4a535d; }
 [data-bs-theme="dark"] .badge-solicitud-cancelada { color: #9aa3ad; border-color: #4a535d; }
 
+/* Estado de los lotes de reintegro (mismos colores que las solicitudes). */
+.badge-lote { border-radius: 50rem; border: 1px solid; font-weight: 600; }
+.badge-lote-pendiente { background: #fff4d6; color: #7a5200; border-color: #e0b54d; }
+.badge-lote-reintegrado { background: #e3f3e9; color: #1b5e37; border-color: #7cbf96; }
+.badge-lote-unificado { background: transparent; color: #5f6873; border-color: #c4c9cf; border-style: dashed; }
+[data-bs-theme="dark"] .badge-lote-pendiente { background: #3a2f12; color: #f3cf73; border-color: #8a6d24; }
+[data-bs-theme="dark"] .badge-lote-reintegrado { background: #16301f; color: #86d7a4; border-color: #2f6b46; }
+[data-bs-theme="dark"] .badge-lote-unificado { color: #9aa3ad; border-color: #4a535d; }
+/* Recuadro con el estado del lote en su detalle: no es un mensaje, así que no se cierra. */
+.estado-lote { padding: .6rem 1rem; margin-bottom: 1rem; border: 1px solid; border-radius: var(--bs-border-radius); font-size: .875em; }
+.estado-lote-pendiente { background: var(--bs-warning-bg-subtle); border-color: var(--bs-warning-border-subtle); color: var(--bs-warning-text-emphasis); }
+.estado-lote-reintegrado { background: var(--bs-success-bg-subtle); border-color: var(--bs-success-border-subtle); color: var(--bs-success-text-emphasis); }
+.estado-lote-unificado { background: var(--bs-secondary-bg-subtle); border-color: var(--bs-secondary-border-subtle); color: var(--bs-secondary-text-emphasis); }
+
 /* Miniaturas de los listados (servidas a 96 px con ?w=96) */
 .miniatura-36 { width: 36px; height: 36px; object-fit: cover; border-radius: 4px; }
 .miniatura-ampliable { cursor: zoom-in; }
@@ -808,11 +822,13 @@ main.flex-fill { padding-bottom: max(1.5rem, env(safe-area-inset-bottom)) !impor
 }
 
 /* Selección masiva en el celular: el botón de acción ("Asignar (3)") queda fijo abajo
-   mientras se recorre la lista, en lugar de quedar fuera de la vista. */
+   mientras se recorre la lista, en lugar de quedar fuera de la vista. Se apoya ENCIMA de
+   la barra inferior del menú (--alto-barra-inferior, que ya incluye el área segura del
+   teléfono); antes quedaba escondido detrás de ella. */
 @media (max-width: 767.98px) {
   .accion-fija-movil {
-    position: sticky; bottom: 0; z-index: 5;
-    margin: .75rem -1rem 0; padding: .6rem 1rem calc(.6rem + env(safe-area-inset-bottom));
+    position: sticky; bottom: var(--alto-barra-inferior, 0px); z-index: 5;
+    margin: .75rem -1rem 0; padding: .6rem 1rem;
     background: var(--bs-body-bg); border-top: 1px solid var(--bs-border-color);
     box-shadow: 0 -4px 12px rgba(0, 0, 0, .08);
   }
