@@ -41,6 +41,54 @@ final class LotesReintegroTest extends TestCase
         self::assertSame([], LoteReintegroService::idsUnicos([]));
     }
 
+    public function testAgrupaPorCategoriaConSinCategoriaAlFinal(): void
+    {
+        $grupos = LoteReintegroService::agruparPorCategoria([
+            ['id' => 10, 'categoria_id' => 7, 'categoria_nombre' => 'Tecnología'],
+            ['id' => 11, 'categoria_id' => null, 'categoria_nombre' => null],
+            ['id' => 12, 'categoria_id' => 5, 'categoria_nombre' => 'Muebles'],
+            ['id' => 9, 'categoria_id' => '5', 'categoria_nombre' => 'Muebles'],
+        ]);
+
+        self::assertSame(['Muebles', 'Tecnología', 'Sin categoría'], array_column($grupos, 'categoria'));
+        self::assertSame([5, 7, null], array_column($grupos, 'categoria_id'));
+        self::assertSame([9, 12], $grupos[0]['movimientos'], 'ordenados y sin perder ninguno');
+        self::assertSame([10], $grupos[1]['movimientos']);
+        self::assertSame([11], $grupos[2]['movimientos']);
+        self::assertSame([], $grupos[0]['origenes'], 'reintegros sueltos: sin lote de origen');
+    }
+
+    public function testAgrupaRecordandoLosLotesDeOrigen(): void
+    {
+        // Lote #3 mixto, #5 de Muebles y #8 de Tecnología.
+        $grupos = LoteReintegroService::agruparPorCategoria([
+            ['id' => 1, 'categoria_id' => 5, 'categoria_nombre' => 'Muebles', 'lote_reintegro_id' => 3],
+            ['id' => 2, 'categoria_id' => 7, 'categoria_nombre' => 'Tecnología', 'lote_reintegro_id' => 3],
+            ['id' => 3, 'categoria_id' => 5, 'categoria_nombre' => 'Muebles', 'lote_reintegro_id' => 5],
+            ['id' => 4, 'categoria_id' => 7, 'categoria_nombre' => 'Tecnología', 'lote_reintegro_id' => 8],
+            ['id' => 5, 'categoria_id' => 5, 'categoria_nombre' => 'Muebles', 'lote_reintegro_id' => '5'],
+        ]);
+
+        self::assertCount(2, $grupos);
+        self::assertSame(['categoria_id' => 5, 'categoria' => 'Muebles', 'movimientos' => [1, 3, 5], 'origenes' => [3, 5]], $grupos[0]);
+        self::assertSame(['categoria_id' => 7, 'categoria' => 'Tecnología', 'movimientos' => [2, 4], 'origenes' => [3, 8]], $grupos[1]);
+        self::assertSame([], LoteReintegroService::agruparPorCategoria([]));
+    }
+
+    public function testResumenDeLotesCreados(): void
+    {
+        self::assertSame('#14 Muebles (3 bienes)', LoteReintegroService::resumenLotes([['id' => 14, 'categoria' => 'Muebles', 'bienes' => 3]]));
+        self::assertSame('#14 Muebles (3 bienes) y #15 Tecnología (1 bien)', LoteReintegroService::resumenLotes([
+            ['id' => 14, 'categoria' => 'Muebles', 'bienes' => 3],
+            ['id' => 15, 'categoria' => 'Tecnología', 'bienes' => 1],
+        ]));
+        self::assertSame('#1 A (1 bien), #2 B (2 bienes) y #3 Sin categoría (4 bienes)', LoteReintegroService::resumenLotes([
+            ['id' => 1, 'categoria' => 'A', 'bienes' => 1],
+            ['id' => 2, 'categoria' => 'B', 'bienes' => 2],
+            ['id' => 3, 'categoria' => 'Sin categoría', 'bienes' => 4],
+        ]));
+    }
+
     public function testEtiquetaDeEstado(): void
     {
         self::assertSame('Pendiente', LoteReintegroService::etiquetaEstado('pendiente'));

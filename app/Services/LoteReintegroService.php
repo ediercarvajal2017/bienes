@@ -9,10 +9,12 @@ use App\Core\Database;
 use App\Helpers\FechaMovimiento;
 use App\Models\Auditoria;
 use App\Models\LoteReintegro;
+use App\Models\Movimiento;
 
 /**
- * Reglas de los lotes de reintegro: marcar como reintegrado (entregado a la Alcaldía) y
- * reabrir. Cada operación es todo o nada: si un lote no cumple, no cambia ninguno.
+ * Reglas de los lotes de reintegro: generarlos (un lote por categoría), marcarlos como
+ * reintegrados (entregados a la Alcaldía) y reabrirlos. Cada operación es todo o nada:
+ * si algo no cumple, no cambia nada.
  *
  * Las reglas lanzan \DomainException con un mensaje para el usuario; cualquier otra
  * excepción es un error real y se reporta aparte.
@@ -20,6 +22,149 @@ use App\Models\LoteReintegro;
 final class LoteReintegroService
 {
     private const LARGO_MAXIMO_NOTA = 500;
+    private const LARGO_MAXIMO_DESCRIPCION = 200;
+
+    /**
+     * Agrupa en lotes los reintegros sueltos seleccionados: UN LOTE POR CATEGORÍA (Muebles,
+     * Tecnología…) y por institución, cada uno con su comprobante. Solo cuenta los
+     * reintegros que siguen sin lote y a los que el usuario tiene acceso.
+     *
+     * @param ?int $institucionId null = todas (superusuario)
+     * @param array<mixed> $movimientoIds
+     * @return list<array{id: int, categoria: string, bienes: int}> lotes creados
+     */
+    public static function generarPorCategoria(?int $institucionId, array $movimientoIds, ?string $descripcion, ?string $observaciones): array
+    {
+        $movimientoIds = self::idsUnicos($movimientoIds);
+        if ($movimientoIds === []) {
+            throw new \DomainException('Selecciona al menos un reintegro para agrupar en el lote.');
+        }
+        $descripcion = self::textoOpcional($descripcion, 'La descripción', self::LARGO_MAXIMO_DESCRIPCION);
+        $observaciones = self::textoOpcional($observaciones, 'Las observaciones');
+
+        $seleccionados = array_flip($movimientoIds);
+        $porInstitucion = [];
+        foreach (Movimiento::pendientesDeLoteTodos($institucionId) as $movimiento) {
+            if (isset($seleccionados[(int) $movimiento['id']])) {
+                $porInstitucion[(int) $movimiento['institucion_id']][] = $movimiento;
+            }
+        }
+        if ($porInstitucion === []) {
+            throw new \DomainException('Ningún reintegro seleccionado pudo agruparse (verifica que sigan sin lote y que tengas acceso).');
+        }
+
+        return Database::transaccion(static function () use ($porInstitucion, $descripcion, $observaciones): array {
+            $creados = [];
+            foreach ($porInstitucion as $institucion => $movimientos) {
+                $grupos = self::agruparPorCategoria($movimientos);
+                $creados = [...$creados, ...self::crearPorCategoria($institucion, $grupos, FechaMovimiento::hoy(), $descripcion, $observaciones)];
+            }
+
+            return $creados;
+        });
+    }
+
+    /**
+     * Reparte movimientos de reintegro por la categoría de su bien. Los bienes sin
+     * categoría forman su propio grupo, al final. Si los movimientos vienen de lotes
+     * (al unificar), cada grupo recuerda de qué lotes salió.
+     *
+     * @param array<int, array<string, mixed>> $movimientos con id, categoria_id, categoria_nombre
+     *        y, si ya estaban en un lote, lote_reintegro_id
+     * @return list<array{categoria_id: ?int, categoria: string, movimientos: list<int>, origenes: list<int>}>
+     */
+    public static function agruparPorCategoria(array $movimientos): array
+    {
+        $grupos = [];
+        foreach ($movimientos as $movimiento) {
+            $categoriaId = $movimiento['categoria_id'] !== null ? (int) $movimiento['categoria_id'] : null;
+            $clave = $categoriaId ?? 0;
+            $grupos[$clave] ??= [
+                'categoria_id' => $categoriaId,
+                'categoria' => $categoriaId !== null ? (string) ($movimiento['categoria_nombre'] ?? '') : LoteReintegro::NOMBRE_SIN_CATEGORIA,
+                'movimientos' => [],
+                'origenes' => [],
+            ];
+            $grupos[$clave]['movimientos'][] = (int) $movimiento['id'];
+            $origen = (int) ($movimiento['lote_reintegro_id'] ?? 0);
+            if ($origen > 0 && !in_array($origen, $grupos[$clave]['origenes'], true)) {
+                $grupos[$clave]['origenes'][] = $origen;
+            }
+        }
+
+        foreach ($grupos as &$grupo) {
+            sort($grupo['movimientos']);
+            sort($grupo['origenes']);
+        }
+        unset($grupo);
+
+        // Por nombre de categoría; "Sin categoría" siempre al final.
+        usort($grupos, static fn (array $a, array $b): int => [$a['categoria_id'] === null, mb_strtolower($a['categoria'])]
+            <=> [$b['categoria_id'] === null, mb_strtolower($b['categoria'])]);
+
+        return $grupos;
+    }
+
+    /**
+     * "#14 Muebles (3 bienes) y #15 Tecnología (1 bien)", para los mensajes.
+     *
+     * @param list<array{id: int, categoria: string, bienes: int}> $lotes
+     */
+    public static function resumenLotes(array $lotes): string
+    {
+        $partes = array_map(
+            static fn (array $l): string => "#{$l['id']} {$l['categoria']} (" . $l['bienes'] . ($l['bienes'] === 1 ? ' bien)' : ' bienes)'),
+            $lotes
+        );
+        $ultimo = array_pop($partes);
+
+        return $partes === [] ? (string) $ultimo : implode(', ', $partes) . ' y ' . $ultimo;
+    }
+
+    /**
+     * Crea un lote por cada grupo (ver agruparPorCategoria) y le pasa sus movimientos:
+     * los sueltos se asignan; los que vienen de otros lotes se mueven y se anota el
+     * origen. Si otra petición tocó alguno entre la lectura y ahora, se deshace todo.
+     *
+     * @param list<array{categoria_id: ?int, categoria: string, movimientos: list<int>, origenes: list<int>}> $grupos
+     * @return list<array{id: int, categoria: string, bienes: int}>
+     */
+    private static function crearPorCategoria(int $institucionId, array $grupos, string $fecha, ?string $descripcion, ?string $observaciones): array
+    {
+        return Database::transaccion(static function () use ($institucionId, $grupos, $fecha, $descripcion, $observaciones): array {
+            $creados = [];
+            foreach ($grupos as $grupo) {
+                $loteId = LoteReintegro::create([
+                    'institucion_id' => $institucionId,
+                    'fecha' => $fecha,
+                    'destino_texto' => $descripcion,
+                    'observaciones' => $observaciones,
+                    'registrado_por' => Auth::id(),
+                ]);
+
+                $asignados = $grupo['origenes'] === []
+                    ? LoteReintegro::asignarMovimientos($loteId, $grupo['movimientos'])
+                    : LoteReintegro::moverMovimientos($loteId, $grupo['movimientos'], $grupo['origenes']);
+                if ($asignados !== count($grupo['movimientos'])) {
+                    throw new \DomainException('Otro usuario agrupó alguno de estos reintegros al mismo tiempo. No se aplicó ningún cambio; intenta de nuevo.');
+                }
+                if ($grupo['origenes'] !== []) {
+                    LoteReintegro::registrarOrigenes($loteId, $grupo['origenes']);
+                }
+
+                Auditoria::registrar(Auth::id(), $institucionId, 'crear', 'lote_reintegro', $loteId, null, [
+                    'categoria' => $grupo['categoria'],
+                    'movimientos' => $grupo['movimientos'],
+                    'descripcion' => $descripcion,
+                    'observaciones' => $observaciones,
+                ] + ($grupo['origenes'] !== [] ? ['lotes_origen' => $grupo['origenes']] : []));
+
+                $creados[] = ['id' => $loteId, 'categoria' => $grupo['categoria'], 'bienes' => count($grupo['movimientos'])];
+            }
+
+            return $creados;
+        });
+    }
 
     /**
      * Marca como 'reintegrado' uno o varios lotes pendientes (la entrega a la Alcaldía
@@ -123,14 +268,14 @@ final class LoteReintegroService
             . '"). No se aplicó ningún cambio.';
     }
 
-    private static function textoOpcional(?string $texto, string $nombre): ?string
+    private static function textoOpcional(?string $texto, string $nombre, int $maximo = self::LARGO_MAXIMO_NOTA): ?string
     {
         $texto = trim((string) $texto);
         if ($texto === '') {
             return null;
         }
-        if (mb_strlen($texto) > self::LARGO_MAXIMO_NOTA) {
-            throw new \DomainException("{$nombre} no puede tener más de " . self::LARGO_MAXIMO_NOTA . ' caracteres.');
+        if (mb_strlen($texto) > $maximo) {
+            throw new \DomainException("{$nombre} no puede tener más de {$maximo} caracteres.");
         }
 
         return $texto;

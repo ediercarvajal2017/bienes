@@ -199,102 +199,47 @@ final class LoteReintegroController
         ]);
     }
 
+    /**
+     * Agrupa los reintegros sueltos seleccionados en lotes: uno por categoría (Muebles,
+     * Tecnología…), cada uno con su comprobante FO-ADMI-009.
+     */
     public function generarLote(): void
     {
         $request = new Request();
 
-        $movimientoIds = array_unique(array_map('intval', (array) $request->input('movimientos', [])));
-        $descripcion = trim((string) $request->input('descripcion')) ?: null;
-        $observaciones = trim((string) $request->input('observaciones')) ?: null;
+        $movimientoIds = LoteReintegroService::idsUnicos((array) $request->input('movimientos', []));
+        $descripcion = trim((string) $request->input('descripcion'));
+        $observaciones = trim((string) $request->input('observaciones'));
         $viejo = ['movimientos' => $movimientoIds, 'descripcion' => $descripcion, 'observaciones' => $observaciones];
 
         Csrf::verificarORedirigir($request, '/reintegros/lotes/generar', $viejo);
 
-        if (empty($movimientoIds)) {
-            Session::flash('error', 'Selecciona al menos un reintegro para agrupar en el lote.');
-            Session::flashOld($viejo);
-            header('Location: ' . Url::to('/reintegros/lotes/generar'));
+        try {
+            $creados = LoteReintegroService::generarPorCategoria($this->institucionAListar(), $movimientoIds, $descripcion, $observaciones);
+        } catch (\DomainException $e) {
+            $this->volverAGenerar($e->getMessage(), $viejo);
+        } catch (\Throwable $e) {
+            $incidente = ErrorHandler::reportar($e, __METHOD__);
+            $this->volverAGenerar('Ocurrió un error al generar el lote. No se aplicó ningún cambio.' . self::textoIncidente($incidente), $viejo);
+        }
+
+        if (count($creados) === 1) {
+            Session::flash('ok', 'Lote ' . LoteReintegroService::resumenLotes($creados) . ' generado. Ya puedes descargar el comprobante en Excel.');
+            header('Location: ' . Url::to('/reintegros/lotes/' . $creados[0]['id']));
             exit;
         }
 
-        $lotesCreados = $this->crearLotesDesdeMovimientos($movimientoIds, $descripcion, $observaciones);
-
-        if ($lotesCreados === null) {
-            Session::flash('error', 'Ocurrió un error al generar el lote. No se aplicó ningún cambio.');
-            Session::flashOld($viejo);
-            header('Location: ' . Url::to('/reintegros/lotes/generar'));
-            exit;
-        }
-
-        if (empty($lotesCreados)) {
-            Session::flash('error', 'Ningún reintegro seleccionado pudo agruparse (verifica que sigan sin lote y que tengas acceso).');
-            Session::flashOld($viejo);
-            header('Location: ' . Url::to('/reintegros/lotes/generar'));
-            exit;
-        }
-
-        Session::flash('ok', count($lotesCreados) === 1 ? 'Lote de reintegro generado. Ya puedes descargar el formato.' : count($lotesCreados) . ' lotes generados (uno por institución).');
-        header('Location: ' . Url::to(
-            count($lotesCreados) === 1 ? '/reintegros/lotes/' . $lotesCreados[0] : '/reintegros/lotes'
-        ));
+        Session::flash('ok', 'Se generaron ' . count($creados) . ' lotes, uno por categoría: ' . LoteReintegroService::resumenLotes($creados) . '.');
+        header('Location: ' . Url::to('/reintegros/lotes?estado=pendiente'));
         exit;
     }
 
-    /**
-     * Crea un lote y reasigna los movimientos de reintegro seleccionados que todavía no
-     * pertenecen a ningún lote y a los que el usuario tiene acceso. Los agrupa por
-     * institución (un superusuario podría, en teoría, seleccionar movimientos de varias)
-     * y crea un lote por cada grupo. Si ninguno califica, devuelve un arreglo vacío
-     * (no null: null solo indica un error real de BD).
-     */
-    private function crearLotesDesdeMovimientos(array $movimientoIds, ?string $descripcion, ?string $observaciones): ?array
+    private function volverAGenerar(string $error, array $viejo): never
     {
-        $pendientes = Movimiento::pendientesDeLoteTodos($this->institucionAListar());
-        $pendientesPorId = [];
-        foreach ($pendientes as $p) {
-            $pendientesPorId[(int) $p['id']] = $p;
-        }
-
-        $validos = array_values(array_intersect_key($pendientesPorId, array_flip($movimientoIds)));
-        if (empty($validos)) {
-            return [];
-        }
-
-        $gruposPorInstitucion = [];
-        foreach ($validos as $movimiento) {
-            $gruposPorInstitucion[(int) $movimiento['institucion_id']][] = (int) $movimiento['id'];
-        }
-
-        try {
-            return Database::transaccion(static function () use ($gruposPorInstitucion, $descripcion, $observaciones): array {
-                $lotesCreados = [];
-
-                foreach ($gruposPorInstitucion as $institucionId => $idsMovimientos) {
-                    $loteId = LoteReintegro::create([
-                        'institucion_id' => $institucionId,
-                        'fecha' => date('Y-m-d'),
-                        'destino_texto' => $descripcion,
-                        'observaciones' => $observaciones,
-                        'registrado_por' => Auth::id(),
-                    ]);
-
-                    // Si otra solicitud ya agrupó alguno de estos reintegros entre la lectura y
-                    // ahora, se deshace todo: nunca un reintegro en dos lotes ni un lote a medias.
-                    if (LoteReintegro::asignarMovimientos($loteId, $idsMovimientos) !== count($idsMovimientos)) {
-                        throw new \RuntimeException('Alguno de los reintegros ya fue agrupado en otro lote.');
-                    }
-                    Auditoria::registrar(Auth::id(), $institucionId, 'crear', 'lote_reintegro', $loteId, null,
-                        ['movimientos' => $idsMovimientos, 'descripcion' => $descripcion, 'observaciones' => $observaciones]);
-                    $lotesCreados[] = $loteId;
-                }
-
-                return $lotesCreados;
-            });
-        } catch (\Throwable $e) {
-            ErrorHandler::reportar($e, __METHOD__);
-
-            return null;
-        }
+        Session::flash('error', $error);
+        Session::flashOld($viejo);
+        header('Location: ' . Url::to('/reintegros/lotes/generar'));
+        exit;
     }
 
     /**
@@ -316,7 +261,7 @@ final class LoteReintegroController
     }
 
     /**
-     * Usada por pendientesDeLote() y crearLotesDesdeMovimientos() — a diferencia de
+     * Usada por pendientesDeLote() y generarLote() — a diferencia de
      * lotes() (arriba), estas alimentan la CREACIÓN de un lote nuevo, así que
      * deliberadamente no respetan el filtro del superusuario: si lo hicieran, un
      * movimiento fuera del filtro activo podría quedar descartado en silencio de la

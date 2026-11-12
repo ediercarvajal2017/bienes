@@ -283,6 +283,45 @@ final class LoteReintegro
         return $stmt->rowCount();
     }
 
+    /**
+     * Pasa movimientos de los lotes de origen al lote nuevo (al unificar). Solo mueve los
+     * que siguen en alguno de esos lotes; el llamador compara el resultado con lo pedido.
+     *
+     * @param list<int> $movimientoIds
+     * @param list<int> $lotesOrigen
+     */
+    public static function moverMovimientos(int $loteDestinoId, array $movimientoIds, array $lotesOrigen): int
+    {
+        if ($movimientoIds === [] || $lotesOrigen === []) {
+            return 0;
+        }
+
+        $marcadoresMovimientos = implode(',', array_fill(0, count($movimientoIds), '?'));
+        $marcadoresLotes = implode(',', array_fill(0, count($lotesOrigen), '?'));
+        $stmt = Database::connection()->prepare(
+            "UPDATE movimientos SET lote_reintegro_id = ?
+             WHERE id IN ({$marcadoresMovimientos}) AND tipo = 'reintegro' AND lote_reintegro_id IN ({$marcadoresLotes})"
+        );
+        $stmt->execute([$loteDestinoId, ...$movimientoIds, ...$lotesOrigen]);
+
+        return $stmt->rowCount();
+    }
+
+    /**
+     * Anota de qué lotes salió un lote nuevo (al unificar).
+     *
+     * @param list<int> $lotesOrigen
+     */
+    public static function registrarOrigenes(int $loteDestinoId, array $lotesOrigen): void
+    {
+        $stmt = Database::connection()->prepare(
+            'INSERT IGNORE INTO lotes_reintegro_unificaciones (lote_origen_id, lote_destino_id) VALUES (?, ?)'
+        );
+        foreach ($lotesOrigen as $origenId) {
+            $stmt->execute([$origenId, $loteDestinoId]);
+        }
+    }
+
     public static function bienesDe(int $loteId): array
     {
         $stmt = Database::connection()->prepare(

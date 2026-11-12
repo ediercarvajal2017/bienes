@@ -10,7 +10,7 @@ $movimientosSeleccionados = $viejo['movimientos'] ?? [];
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
     <div>
         <h1 class="h4 mb-0">Generar lote de reintegro</h1>
-        <p class="text-muted small mb-0">Reintegros ya registrados que todavía no están agrupados en ningún lote. Selecciona los que quieras consolidar y genera el formato.</p>
+        <p class="text-muted small mb-0">Reintegros ya registrados que todavía no están agrupados en ningún lote. Selecciona los que quieras consolidar: se crea <strong>un lote por cada categoría</strong> (Muebles, Tecnología…), cada uno con su comprobante en Excel.</p>
     </div>
     <a href="<?= Url::to('/reintegros/lotes') ?>" class="btn btn-sm btn-outline-secondary">Ver lotes</a>
 </div>
@@ -54,6 +54,7 @@ $movimientosSeleccionados = $viejo['movimientos'] ?? [];
                     <th></th>
                     <th>Código</th>
                     <th>Descripción</th>
+                    <th>Categoría</th>
                     <th>Fecha de reintegro</th>
                     <th>Reintegrado por</th>
                     <th>Destino</th>
@@ -80,6 +81,13 @@ $movimientosSeleccionados = $viejo['movimientos'] ?? [];
                         </td>
                         <td class="mono" data-label="Código"><?= htmlspecialchars($p['codigo_identificacion'], ENT_QUOTES) ?></td>
                         <td data-label="Descripción"><?= htmlspecialchars($p['descripcion'], ENT_QUOTES) ?></td>
+                        <td data-label="Categoría">
+                            <?php if (!empty($p['categoria_nombre'])): ?>
+                                <span class="badge text-bg-light border"><?= htmlspecialchars($p['categoria_nombre'], ENT_QUOTES) ?></span>
+                            <?php else: ?>
+                                <span class="text-muted">Sin categoría</span>
+                            <?php endif; ?>
+                        </td>
                         <td class="text-muted mono" data-label="Fecha de reintegro"><?= htmlspecialchars($p['fecha_reintegro'], ENT_QUOTES) ?></td>
                         <td class="text-muted small" data-label="Reintegrado por">
                             <?= !empty($p['responsable_nombre']) ? htmlspecialchars($p['responsable_nombre'], ENT_QUOTES) : '—' ?>
@@ -137,7 +145,7 @@ $movimientosSeleccionados = $viejo['movimientos'] ?? [];
                 e.preventDefault();
                 return;
             }
-            if (!confirm('¿Generar un lote con ' + seleccionados + ' reintegro(s) seleccionado(s)?')) {
+            if (!confirm('¿Agrupar ' + seleccionados + ' reintegro(s)? Se creará un lote por cada categoría.')) {
                 e.preventDefault();
             }
         });

@@ -108,8 +108,9 @@
         <summary class="fw-semibold">7. Lotes de reintegro y el comprobante oficial (FO-ADMI-009)</summary>
         <div class="mt-2 small">
             <ol class="mb-0 ps-3">
-                <li>Después de reintegrar bienes, entra a <strong>Lotes de reintegro</strong> y genera un lote con
-                    los movimientos pendientes de agrupar.</li>
+                <li>Después de reintegrar bienes, entra a <strong>Lotes de reintegro</strong> y genera el lote con
+                    los reintegros pendientes de agrupar. MIA crea <strong>un lote por cada categoría</strong>
+                    (Muebles, Tecnología…), cada uno con su propio comprobante.</li>
                 <li>Desde el detalle del lote, descarga el <strong>comprobante</strong>: el formato oficial que
                     exige la Alcaldía, ya organizado por categoría y listo para imprimir.</li>
                 <li>Cuando entregues el lote a la Alcaldía, márcalo como <strong>reintegrado</strong> (fecha de

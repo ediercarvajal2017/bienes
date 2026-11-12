@@ -184,3 +184,54 @@ test('reabrir un lote: el secretario no puede; el rector sí, con motivo', async
     expect(estadoDe(lote)).toBe('reintegrado|2024-09-10|');
     await rector.contexto.close();
 });
+
+/** Reintegro SUELTO (sin lote) de un bien de la categoría indicada; null = sin categoría. */
+function crearReintegroSuelto(institucion, categoria) {
+    const d = datos();
+    const codigo = `PW-RS-${Date.now()}-${++contador}`;
+    const categoriaSql = categoria === null
+        ? 'NULL'
+        : `(SELECT id FROM categorias_bienes WHERE institucion_id = ${institucion} AND nombre LIKE '${categoria}%' ORDER BY id LIMIT 1)`;
+    const movimiento = Number(bd(`
+        INSERT INTO bienes (institucion_id, codigo_identificacion, descripcion, categoria_id, fecha_ingreso, valor, estado, qr_token, created_by)
+        VALUES (${institucion}, '${codigo}', 'PW-TEST reintegro suelto ${codigo}', ${categoriaSql}, '2024-01-15', 1000, 'reintegrado', UUID(), ${d.usuarios.superusuario.id});
+        INSERT INTO movimientos (bien_id, tipo, fecha, responsable_id, destino_texto)
+        VALUES (LAST_INSERT_ID(), 'reintegro', '2026-11-01', ${d.usuarios.rector.id}, 'Bodega de reintegro');
+        SELECT LAST_INSERT_ID();`));
+    return { codigo, movimiento };
+}
+
+test('generar lote: un lote por categoría', async ({ browser }) => {
+    const d = datos();
+    const muebles = crearReintegroSuelto(d.instituciones.A, 'Muebles');
+    const tecnologia = crearReintegroSuelto(d.instituciones.A, 'Tecnolog');
+    const sinCategoria = crearReintegroSuelto(d.instituciones.A, null);
+    const rector = await sesionDe(browser, 'rector');
+    const { pagina } = rector;
+
+    await pagina.goto('reintegros/lotes/generar?porPagina=0');
+    await expect(pagina.getByText('un lote por cada categoría')).toBeVisible();
+    await expect(pagina.locator('tr', { hasText: muebles.codigo }).locator('td[data-label="Categoría"]')).toHaveText('Muebles');
+    await expect(pagina.locator('tr', { hasText: sinCategoria.codigo }).locator('td[data-label="Categoría"]')).toHaveText('Sin categoría');
+    for (const r of [muebles, tecnologia, sinCategoria]) {
+        await pagina.locator('tr', { hasText: r.codigo }).locator('.casilla-bien').check();
+    }
+    await pagina.locator('input[name="descripcion"]').fill('PW-TEST entrega por categoría');
+
+    pagina.once('dialog', (dialogo) => dialogo.accept());
+    await pagina.locator('#botonGenerar').click();
+
+    await expect(pagina).toHaveURL(/\/reintegros\/lotes\?estado=pendiente$/);
+    await expect(pagina.locator('.alert-success')).toContainText(/Se generaron 3 lotes, uno por categoría: #\d+ Muebles \(1 bien\), #\d+ Tecnología \(1 bien\) y #\d+ Sin categoría \(1 bien\)\./);
+
+    // Cada reintegro quedó en un lote distinto, y cada lote tiene una sola categoría.
+    const ids = `${muebles.movimiento}, ${tecnologia.movimiento}, ${sinCategoria.movimiento}`;
+    expect(bd(`SELECT COUNT(DISTINCT lote_reintegro_id), COUNT(lote_reintegro_id) FROM movimientos WHERE id IN (${ids})`)).toBe('3\t3');
+    expect(bd(`SELECT COUNT(*) FROM (
+                 SELECT m.lote_reintegro_id FROM movimientos m JOIN bienes b ON b.id = m.bien_id
+                 WHERE m.lote_reintegro_id IN (SELECT lote_reintegro_id FROM movimientos WHERE id IN (${ids}))
+                 GROUP BY m.lote_reintegro_id HAVING COUNT(DISTINCT IFNULL(b.categoria_id, 0)) > 1) mezclados`), 'ningún lote mezcla categorías').toBe('0');
+    expect(bd(`SELECT COUNT(*) FROM lotes_reintegro WHERE estado = 'pendiente' AND destino_texto LIKE 'PW-TEST entrega por categor%'
+               AND id IN (SELECT lote_reintegro_id FROM movimientos WHERE id IN (${ids}))`)).toBe('3');
+    await rector.contexto.close();
+});
