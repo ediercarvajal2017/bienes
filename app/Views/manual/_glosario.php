@@ -17,6 +17,11 @@
             <dd class="text-muted">Un lote está <strong>pendiente</strong> mientras no se haya entregado a la Alcaldía.
                 Cuando se entrega, se marca como <strong>reintegrado</strong> con la fecha de entrega: queda guardado
                 como historial y ya no aparece entre los pendientes.</dd>
+
+            <dt class="mt-2">Lote unificado</dt>
+            <dd class="text-muted">Lote cuyos bienes se pasaron a lotes nuevos, uno por categoría, al unificar varios
+                lotes pendientes (o al separar uno que mezclaba categorías). Se conserva como historial, con enlace a
+                los lotes nuevos.</dd>
         </dl>
     </div>
 </details>

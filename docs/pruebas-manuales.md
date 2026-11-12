@@ -45,6 +45,7 @@ dispositivo y el navegador.
 - [ ] Asignar varios bienes a la vez; en el celular, el botón "Asignar (N)" queda fijo abajo.
 - [ ] Trasladar, reintegrar, generar un lote y descargar el comprobante FO-ADMI-009 en Excel.
 - [ ] Lotes de reintegro: marcar uno o varios como reintegrados (fecha de entrega), verlos en la pestaña "Reintegrados" y reabrir uno como rector.
+- [ ] Lotes de reintegro: generar lote (uno por categoría), unificar dos lotes pendientes y separar uno mixto; abrir el Excel de cada lote nuevo.
 - [ ] Aprobar y rechazar (con motivo) una baja; aprobar y rechazar una solicitud de reintegro.
 - [ ] Carga masiva desde Excel con una fila errónea: la vista previa la señala y el resto se aplica.
 - [ ] Reportes: la cartera descargada abre bien en Excel y un texto que empiece con "=" aparece como texto.

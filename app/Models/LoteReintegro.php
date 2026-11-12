@@ -225,6 +225,102 @@ final class LoteReintegro
     }
 
     /**
+     * Los lotes indicados, sin bloquearlos (para la vista previa de una unificación).
+     *
+     * @param list<int> $ids
+     */
+    public static function buscarVarios(array $ids): array
+    {
+        if ($ids === []) {
+            return [];
+        }
+
+        $marcadores = implode(',', array_fill(0, count($ids), '?'));
+        $stmt = Database::connection()->prepare("SELECT * FROM lotes_reintegro WHERE id IN ({$marcadores}) ORDER BY id");
+        $stmt->execute($ids);
+
+        return $stmt->fetchAll();
+    }
+
+    /**
+     * Movimientos de reintegro de los lotes indicados, con la categoría de su bien (para
+     * repartirlos por categoría al unificar).
+     *
+     * @param list<int> $ids
+     */
+    public static function movimientosDeLotes(array $ids): array
+    {
+        if ($ids === []) {
+            return [];
+        }
+
+        $marcadores = implode(',', array_fill(0, count($ids), '?'));
+        $stmt = Database::connection()->prepare(
+            "SELECT m.id, m.lote_reintegro_id, b.categoria_id, c.nombre AS categoria_nombre
+             FROM movimientos m
+             JOIN bienes b ON b.id = m.bien_id
+             LEFT JOIN categorias_bienes c ON c.id = b.categoria_id
+             WHERE m.tipo = 'reintegro' AND m.lote_reintegro_id IN ({$marcadores})
+             ORDER BY m.id"
+        );
+        $stmt->execute($ids);
+
+        return $stmt->fetchAll();
+    }
+
+    /**
+     * Pasa a 'unificado' solo los lotes que siguen 'pendiente' y devuelve cuántos cambió.
+     *
+     * @param list<int> $ids
+     */
+    public static function marcarUnificados(array $ids, int $usuarioId): int
+    {
+        if ($ids === []) {
+            return 0;
+        }
+
+        $marcadores = implode(',', array_fill(0, count($ids), '?'));
+        $stmt = Database::connection()->prepare(
+            "UPDATE lotes_reintegro SET estado = 'unificado', unificado_por = ?, unificado_en = NOW()
+             WHERE id IN ({$marcadores}) AND estado = 'pendiente'"
+        );
+        $stmt->execute([$usuarioId, ...$ids]);
+
+        return $stmt->rowCount();
+    }
+
+    /** Lotes de los que salió este lote (si nació de una unificación). */
+    public static function origenesDe(int $loteId): array
+    {
+        $stmt = Database::connection()->prepare(
+            'SELECT l.id, l.fecha FROM lotes_reintegro_unificaciones u
+             JOIN lotes_reintegro l ON l.id = u.lote_origen_id
+             WHERE u.lote_destino_id = ? ORDER BY l.id'
+        );
+        $stmt->execute([$loteId]);
+
+        return $stmt->fetchAll();
+    }
+
+    /** Lotes nuevos a los que pasaron los bienes de este lote (si se unificó), con su categoría. */
+    public static function destinosDe(int $loteId): array
+    {
+        $stmt = Database::connection()->prepare(
+            'SELECT l.id, l.fecha, l.estado,
+                    (SELECT GROUP_CONCAT(DISTINCT COALESCE(c.nombre, ?) ORDER BY c.nombre SEPARATOR ", ")
+                       FROM movimientos m JOIN bienes b ON b.id = m.bien_id
+                       LEFT JOIN categorias_bienes c ON c.id = b.categoria_id
+                      WHERE m.lote_reintegro_id = l.id) AS categorias
+             FROM lotes_reintegro_unificaciones u
+             JOIN lotes_reintegro l ON l.id = u.lote_destino_id
+             WHERE u.lote_origen_id = ? ORDER BY l.id'
+        );
+        $stmt->execute([self::NOMBRE_SIN_CATEGORIA, $loteId]);
+
+        return $stmt->fetchAll();
+    }
+
+    /**
      * Pasa a 'reintegrado' solo los lotes que siguen 'pendiente' y devuelve cuántos
      * cambió; el llamador lo compara con lo pedido.
      *

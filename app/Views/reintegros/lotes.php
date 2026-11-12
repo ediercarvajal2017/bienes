@@ -33,7 +33,7 @@ $e = static fn (?string $texto): string => htmlspecialchars((string) $texto, ENT
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
     <div>
         <h1 class="h4 mb-0">Lotes de reintegro</h1>
-        <p class="text-muted small mb-0">Cada lote agrupa reintegros para entregarlos a la Alcaldía con el comprobante FO-ADMI-009 (Excel). Cuando lo entregues, márcalo como reintegrado.</p>
+        <p class="text-muted small mb-0">Cada lote agrupa reintegros de una categoría para entregarlos a la Alcaldía con el comprobante FO-ADMI-009 (Excel). Puedes unificar varios lotes pendientes; cuando los entregues, márcalos como reintegrados.</p>
     </div>
     <div class="d-flex gap-2">
         <a href="<?= Url::to('/reintegros') ?>" class="btn btn-sm btn-outline-secondary">Ir a reintegrar</a>
@@ -209,6 +209,11 @@ $e = static fn (?string $texto): string => htmlspecialchars((string) $texto, ENT
                     <button type="button" class="btn btn-success" id="botonMostrarMarcar" disabled aria-expanded="false" aria-controls="panelMarcar">
                         <i class="bi bi-check2-circle me-1"></i>Marcar como reintegrados (<span class="contador-lotes">0</span>)
                     </button>
+                    <button type="button" class="btn btn-outline-primary" id="botonUnificar" disabled
+                            data-url="<?= Url::to('/reintegros/lotes/unificar') ?>"
+                            title="Juntar los lotes elegidos y dejarlos separados en un lote por categoría">
+                        <i class="bi bi-diagram-3 me-1"></i>Unificar por categoría (<span class="contador-lotes">0</span>)
+                    </button>
                 </div>
             </div>
 
@@ -250,6 +255,7 @@ $e = static fn (?string $texto): string => htmlspecialchars((string) $texto, ENT
             const casillas = document.querySelectorAll('.casilla-lote');
             const todos = document.getElementById('seleccionarTodos');
             const botonMostrar = document.getElementById('botonMostrarMarcar');
+            const botonUnificar = document.getElementById('botonUnificar');
             const panel = document.getElementById('panelMarcar');
             const contadores = document.querySelectorAll('.contador-lotes');
 
@@ -261,6 +267,7 @@ $e = static fn (?string $texto): string => htmlspecialchars((string) $texto, ENT
                 const n = seleccionados();
                 contadores.forEach(function (c) { c.textContent = n; });
                 botonMostrar.disabled = n === 0;
+                botonUnificar.disabled = n === 0;
                 todos.checked = n > 0 && n === casillas.length;
                 todos.indeterminate = n > 0 && n < casillas.length;
                 if (n === 0) { mostrarPanel(false); }
@@ -282,6 +289,13 @@ $e = static fn (?string $texto): string => htmlspecialchars((string) $texto, ENT
             casillas.forEach(function (c) { c.addEventListener('change', actualizar); });
             botonMostrar.addEventListener('click', function () { mostrarPanel(panel.hidden); });
             document.getElementById('botonCancelarMarcar').addEventListener('click', function () { mostrarPanel(false); });
+
+            // Unificar: abre la vista previa con los lotes elegidos (no cambia nada todavía).
+            botonUnificar.addEventListener('click', function () {
+                const parametros = new URLSearchParams();
+                document.querySelectorAll('.casilla-lote:checked').forEach(function (c) { parametros.append('lotes[]', c.value); });
+                window.location.href = botonUnificar.dataset.url + '?' + parametros.toString();
+            });
 
             document.getElementById('formLotes').addEventListener('submit', function (evento) {
                 const n = seleccionados();

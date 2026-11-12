@@ -80,14 +80,87 @@ final class LoteReintegroController
         $lote = LoteReintegro::find((int) $id);
         $this->verificarAccesoLote($lote);
 
+        $bienes = LoteReintegro::bienesDe((int) $id);
+        $categorias = array_unique(array_map(static fn (array $b): string => (string) ($b['categoria_nombre'] ?? ''), $bienes));
+
         View::layout('partials/layout', 'reintegros/lote_detalle', [
             'title' => 'Lote de reintegro',
             'lote' => $lote,
-            'bienes' => LoteReintegro::bienesDe((int) $id),
+            'bienes' => $bienes,
+            // Un lote pendiente con varias categorías se puede separar (un lote por categoría).
+            'separable' => $lote['estado'] === 'pendiente' && count($categorias) > 1,
+            'origenes' => LoteReintegro::origenesDe((int) $id),
+            'destinos' => LoteReintegro::destinosDe((int) $id),
             'puedeReabrir' => self::puedeReabrir(),
             'mensaje' => Session::pullFlash('ok'),
             'error' => Session::pullFlash('error'),
         ]);
+    }
+
+    /**
+     * Vista previa de la unificación de los lotes elegidos (?lotes[]=3&lotes[]=5): qué
+     * lotes nuevos saldrían, uno por categoría. No cambia nada.
+     */
+    public function unificarPrevia(): void
+    {
+        $loteIds = LoteReintegroService::idsUnicos((array) ($_GET['lotes'] ?? []));
+
+        try {
+            $previa = LoteReintegroService::previsualizarUnificacion($loteIds);
+        } catch (\DomainException $e) {
+            Session::flash('error', $e->getMessage());
+            header('Location: ' . Url::to('/reintegros/lotes'));
+            exit;
+        }
+
+        View::layout('partials/layout', 'reintegros/lote_unificar', [
+            'title' => count($loteIds) === 1 ? 'Separar lote por categoría' : 'Unificar lotes',
+            'loteIds' => $loteIds,
+            'lotes' => $previa['lotes'],
+            'grupos' => $previa['grupos'],
+            'bienesPorLote' => $previa['bienesPorLote'],
+            'descripcionSugerida' => LoteReintegroService::descripcionUnificacion($loteIds),
+            'error' => Session::pullFlash('error'),
+            'viejo' => Session::pullOld(),
+        ]);
+    }
+
+    /** Confirma la unificación: lotes nuevos por categoría; los de origen quedan "unificado". */
+    public function unificar(): void
+    {
+        $request = new Request();
+        $loteIds = LoteReintegroService::idsUnicos((array) $request->input('lotes', []));
+        $descripcion = (string) $request->input('descripcion');
+        $observaciones = (string) $request->input('observaciones');
+        $volverA = '/reintegros/lotes/unificar?' . http_build_query(['lotes' => $loteIds]);
+        Csrf::verificarORedirigir($request, $volverA);
+
+        try {
+            $creados = LoteReintegroService::unificar($loteIds, $descripcion, $observaciones);
+        } catch (\DomainException $e) {
+            $this->volverAUnificar($volverA, $e->getMessage(), $descripcion, $observaciones);
+        } catch (\Throwable $e) {
+            $incidente = ErrorHandler::reportar($e, __METHOD__);
+            $this->volverAUnificar($volverA, 'Ocurrió un error al unificar los lotes. No se aplicó ningún cambio.' . self::textoIncidente($incidente), $descripcion, $observaciones);
+        }
+
+        if (count($creados) === 1) {
+            Session::flash('ok', 'Lotes unificados en el lote ' . LoteReintegroService::resumenLotes($creados) . '. Ya puedes descargar su comprobante en Excel.');
+            header('Location: ' . Url::to('/reintegros/lotes/' . $creados[0]['id']));
+            exit;
+        }
+
+        Session::flash('ok', 'Listo: ' . count($creados) . ' lotes nuevos, uno por categoría: ' . LoteReintegroService::resumenLotes($creados) . '.');
+        header('Location: ' . Url::to('/reintegros/lotes?estado=pendiente'));
+        exit;
+    }
+
+    private function volverAUnificar(string $volverA, string $error, string $descripcion, string $observaciones): never
+    {
+        Session::flash('error', $error);
+        Session::flashOld(['descripcion' => $descripcion, 'observaciones' => $observaciones]);
+        header('Location: ' . Url::to($volverA));
+        exit;
     }
 
     public function loteFormato(string $id): void

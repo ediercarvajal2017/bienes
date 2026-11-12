@@ -89,6 +89,30 @@ final class LotesReintegroTest extends TestCase
         ]));
     }
 
+    public function testDetectaCuandoUnificarNoCambiaNada(): void
+    {
+        $grupo = static fn (array $origenes): array => ['origenes' => $origenes];
+
+        // Un lote de una sola categoría: nada que separar.
+        self::assertTrue(LoteReintegroService::esUnificacionSinCambios([$grupo([5])]));
+        // #5 de Muebles y #8 de Tecnología: cada uno seguiría igual.
+        self::assertTrue(LoteReintegroService::esUnificacionSinCambios([$grupo([5]), $grupo([8])]));
+        // Dos lotes de Muebles: se juntan.
+        self::assertFalse(LoteReintegroService::esUnificacionSinCambios([$grupo([5, 6])]));
+        // Un lote mixto: se separa en dos.
+        self::assertFalse(LoteReintegroService::esUnificacionSinCambios([$grupo([3]), $grupo([3])]));
+        // Mixto + otro: cambia.
+        self::assertFalse(LoteReintegroService::esUnificacionSinCambios([$grupo([3, 5]), $grupo([3, 8])]));
+    }
+
+    public function testDescripcionDeLaUnificacion(): void
+    {
+        self::assertSame('Separación por categoría del lote #3', LoteReintegroService::descripcionUnificacion([3]));
+        self::assertSame('Unificación de los lotes #3 y #5', LoteReintegroService::descripcionUnificacion([3, 5]));
+        self::assertSame('Unificación de los lotes #3, #5 y #8', LoteReintegroService::descripcionUnificacion([3, 5, 8]));
+        self::assertSame('Unificación de 9 lotes', LoteReintegroService::descripcionUnificacion(range(1, 9)));
+    }
+
     public function testEtiquetaDeEstado(): void
     {
         self::assertSame('Pendiente', LoteReintegroService::etiquetaEstado('pendiente'));

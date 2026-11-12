@@ -113,6 +113,11 @@
                     (Muebles, Tecnología…), cada uno con su propio comprobante.</li>
                 <li>Desde el detalle del lote, descarga el <strong>comprobante</strong>: el formato oficial que
                     exige la Alcaldía, ya organizado por categoría y listo para imprimir.</li>
+                <li>¿Tienes varios lotes pendientes de fechas distintas? Selecciónalos y usa <strong>Unificar por
+                    categoría</strong>: MIA muestra primero el resultado y, al confirmar, crea un lote nuevo por
+                    categoría (uno de Muebles, otro de Tecnología…). Los lotes de origen quedan como
+                    <strong>Unificado</strong>, con enlace a los nuevos. Un lote viejo que mezcla categorías se
+                    puede <strong>separar por categoría</strong> desde su detalle.</li>
                 <li>Cuando entregues el lote a la Alcaldía, márcalo como <strong>reintegrado</strong> (fecha de
                     entrega y una nota opcional). Sale de la pestaña <strong>Pendientes</strong> y ya no se mezcla
                     con los reintegros nuevos; su Excel se sigue pudiendo descargar.</li>

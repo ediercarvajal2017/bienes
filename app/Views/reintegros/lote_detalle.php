@@ -53,6 +53,14 @@ $insignias = [
                 <button type="submit" class="btn btn-sm btn-success w-100"><i class="bi bi-check2-circle me-1"></i>Marcar como reintegrado</button>
             </div>
         </form>
+        <?php if ($separable): ?>
+            <div class="mt-2 pt-2 border-top">
+                Este lote mezcla varias categorías.
+                <a href="<?= Url::to('/reintegros/lotes/unificar') . '?' . http_build_query(['lotes' => [(int) $lote['id']]]) ?>" class="btn btn-sm btn-outline-primary ms-1">
+                    <i class="bi bi-diagram-3 me-1"></i>Separar por categoría
+                </a>
+            </div>
+        <?php endif; ?>
     </div>
 <?php elseif ($estado === 'reintegrado'): ?>
     <div class="estado-lote estado-lote-reintegrado" style="max-width: 680px;">
@@ -79,8 +87,17 @@ $insignias = [
 <?php elseif ($estado === 'unificado'): ?>
     <div class="estado-lote estado-lote-unificado" style="max-width: 680px;">
         <strong>Unificado</strong><?php if (!empty($lote['unificado_en'])): ?> el <span class="mono"><?= $e(substr((string) $lote['unificado_en'], 0, 10)) ?></span><?php endif; ?><?php if (!empty($lote['unificado_por_nombre'])): ?> por <?= $e($lote['unificado_por_nombre']) ?><?php endif; ?>:
-        sus bienes pasaron a lotes nuevos, uno por categoría.
+        sus bienes pasaron a lotes nuevos, uno por categoría:
+        <?php foreach ($destinos as $i => $destino): ?><?= $i > 0 ? ', ' : ' ' ?><a href="<?= Url::to('/reintegros/lotes/' . (int) $destino['id']) ?>" class="fw-semibold">#<?= (int) $destino['id'] ?></a> <?= $e($destino['categorias'] ?? '') ?> (<?= $e(LoteReintegro::ESTADOS[$destino['estado']] ?? $destino['estado']) ?>)<?php endforeach; ?>.
     </div>
+<?php endif; ?>
+
+<?php if (!empty($origenes)): ?>
+    <p class="small text-muted" style="max-width: 680px;">
+        <i class="bi bi-diagram-3 me-1"></i>Formado a partir de
+        <?= count($origenes) === 1 ? 'el lote' : 'los lotes' ?>
+        <?php foreach ($origenes as $i => $origen): ?><?= $i > 0 ? ($i === count($origenes) - 1 ? ' y ' : ', ') : '' ?><a href="<?= Url::to('/reintegros/lotes/' . (int) $origen['id']) ?>">#<?= (int) $origen['id'] ?></a><?php endforeach; ?>.
+    </p>
 <?php endif; ?>
 
 <div class="card mb-3" style="max-width: 680px;">
@@ -98,7 +115,7 @@ $insignias = [
 </div>
 
 <?php if (empty($bienes)): ?>
-    <p class="text-muted">Este lote no tiene bienes.</p>
+    <p class="text-muted"><?= $estado === 'unificado' ? 'Sus bienes están ahora en los lotes nuevos (enlaces arriba).' : 'Este lote no tiene bienes.' ?></p>
 <?php else: ?>
     <div class="table-responsive" style="max-width: 680px;">
         <table class="table table-sm bg-white tabla-cards">

@@ -393,6 +393,13 @@ $router->get('/reintegros/lotes', [LoteReintegroController::class, 'lotes'], [
 $router->post('/reintegros/lotes/marcar-reintegrados', [LoteReintegroController::class, 'marcarReintegrados'], [
     AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':asignaciones.crear',
 ]);
+// Unificar lotes pendientes en lotes nuevos, uno por categoría (vista previa y confirmación).
+$router->get('/reintegros/lotes/unificar', [LoteReintegroController::class, 'unificarPrevia'], [
+    AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':asignaciones.crear',
+]);
+$router->post('/reintegros/lotes/unificar', [LoteReintegroController::class, 'unificar'], [
+    AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':asignaciones.crear',
+]);
 $router->get('/reintegros/lotes/{id}', [LoteReintegroController::class, 'loteDetalle'], [
     AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':asignaciones.crear',
 ]);
