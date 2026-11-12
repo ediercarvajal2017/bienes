@@ -678,7 +678,10 @@ final class Bien
         if (!in_array($bien['estado'], self::ESTADOS_REINTEGRABLES, true)) {
             return 'el bien está "' . self::etiquetaEstado($bien['estado']) . '"';
         }
-        if (!$tieneAsignacionActiva) {
+        // Las unidades de un código con varias unidades (alta masiva: bienes.lote) suelen
+        // estar en la institución sin espacio ni responsable; se pueden reintegrar igual.
+        // A un bien suelto se le sigue exigiendo la asignación.
+        if (!$tieneAsignacionActiva && empty($bien['lote'])) {
             return 'el bien no tiene una asignación activa';
         }
         if ($bien['categoria_id'] === null) {
@@ -1182,7 +1185,10 @@ final class Bien
                     SUM(CASE WHEN b.estado = "reintegrado" THEN 1 ELSE 0 END) AS reintegrados,
                     SUM(CASE WHEN b.estado = "en_reparacion" THEN 1 ELSE 0 END) AS en_reparacion,
                     SUM(CASE WHEN b.estado = "dado_de_baja" THEN 1 ELSE 0 END) AS dados_de_baja,
-                    SUM(b.valor) AS valor_total
+                    SUM(b.valor) AS valor_total,
+                    -- Lo que queda del código en la institución (no reintegrado ni dado de baja).
+                    SUM(CASE WHEN b.estado IN ("activo", "en_reparacion") THEN 1 ELSE 0 END) AS en_cartera,
+                    SUM(CASE WHEN b.estado IN ("activo", "en_reparacion") THEN b.valor ELSE 0 END) AS valor_en_cartera
              FROM bienes b
              LEFT JOIN categorias_bienes c ON c.id = b.categoria_id
              WHERE ' . implode(' AND ', $condiciones) . '
@@ -1192,6 +1198,143 @@ final class Bien
         $stmt->execute($params);
 
         return $stmt->fetchAll();
+    }
+
+    /**
+     * El bien "resumen" de un código con varias unidades: el renglón de la cartera de la
+     * Alcaldía registrado como un bien suelto con el MISMO código que el lote (p. ej. el bien
+     * 200033042 "178 SILLAS UNIVERSITARIAS"), además de sus unidades 200033042-001…-178.
+     * null si el código no tiene uno. Con $bloquear, lo lee con FOR UPDATE (en transacción).
+     */
+    public static function resumenDeCodigo(int $institucionId, string $lote, bool $bloquear = false): ?array
+    {
+        $stmt = Database::connection()->prepare(
+            'SELECT id, institucion_id, codigo_identificacion, descripcion, valor, estado
+             FROM bienes
+             WHERE institucion_id = ? AND codigo_identificacion = ? AND lote IS NULL
+             ORDER BY id LIMIT 1' . ($bloquear ? ' FOR UPDATE' : '')
+        );
+        $stmt->execute([$institucionId, $lote]);
+
+        return $stmt->fetch() ?: null;
+    }
+
+    /** Ajusta la descripción y el valor de un bien resumen (ver resumenDeCodigo). */
+    public static function actualizarResumenDeCodigo(int $id, string $descripcion, float $valor): void
+    {
+        $stmt = Database::connection()->prepare('UPDATE bienes SET descripcion = ?, valor = ? WHERE id = ?');
+        $stmt->execute([$descripcion, $valor, $id]);
+    }
+
+    /**
+     * La cartera por PLACA: una fila por código con varias unidades (bienes.lote) o por bien
+     * suelto, con cuántas unidades quedan en cartera (activas o en reparación), cuántas se
+     * reintegraron o se dieron de baja, y su valor. null = todas las instituciones.
+     */
+    public static function carteraPorPlaca(?int $institucionId): array
+    {
+        $sql = 'SELECT MIN(i.nombre) AS institucion_nombre, COALESCE(b.lote, b.codigo_identificacion) AS placa,
+                       MIN(b.descripcion) AS descripcion, MIN(b.marca) AS marca, MIN(c.nombre) AS categoria_nombre,
+                       SUM(CASE WHEN b.estado IN ("activo", "en_reparacion") THEN 1 ELSE 0 END) AS en_cartera,
+                       SUM(CASE WHEN b.estado = "reintegrado" THEN 1 ELSE 0 END) AS reintegradas,
+                       SUM(CASE WHEN b.estado = "dado_de_baja" THEN 1 ELSE 0 END) AS dadas_de_baja,
+                       MIN(b.valor) AS valor_unitario,
+                       SUM(CASE WHEN b.estado IN ("activo", "en_reparacion") THEN b.valor ELSE 0 END) AS valor_en_cartera
+                FROM bienes b
+                JOIN instituciones i ON i.id = b.institucion_id
+                LEFT JOIN categorias_bienes c ON c.id = b.categoria_id
+                -- El bien "resumen" de un código con unidades (ver resumenDeCodigo) es el mismo
+                -- código: se cuentan sus unidades, no se suma también el resumen.
+                WHERE NOT (b.lote IS NULL AND EXISTS (
+                    SELECT 1 FROM bienes u WHERE u.institucion_id = b.institucion_id AND u.lote = b.codigo_identificacion))';
+        $params = [];
+        if ($institucionId !== null) {
+            $sql .= ' AND b.institucion_id = ?';
+            $params[] = $institucionId;
+        }
+
+        $stmt = Database::connection()->prepare($sql . ' GROUP BY b.institucion_id, placa ORDER BY institucion_nombre, placa');
+        $stmt->execute($params);
+
+        return $stmt->fetchAll();
+    }
+
+    /**
+     * Resumen de un código con varias unidades (bienes.lote): cuántas hay en total, cuántas
+     * quedan en cartera (activas o en reparación), reintegradas y dadas de baja. null si
+     * el código no existe en la institución.
+     */
+    public static function resumenDeLote(int $institucionId, string $lote): ?array
+    {
+        $stmt = Database::connection()->prepare(
+            'SELECT b.lote, MIN(b.descripcion) AS descripcion, MIN(b.marca) AS marca,
+                    MIN(b.categoria_id) AS categoria_id, MIN(c.nombre) AS categoria_nombre,
+                    COUNT(*) AS total,
+                    SUM(CASE WHEN b.estado IN ("activo", "en_reparacion") THEN 1 ELSE 0 END) AS en_cartera,
+                    SUM(CASE WHEN b.estado = "reintegrado" THEN 1 ELSE 0 END) AS reintegradas,
+                    SUM(CASE WHEN b.estado = "dado_de_baja" THEN 1 ELSE 0 END) AS dadas_de_baja,
+                    SUM(CASE WHEN b.estado IN ("activo", "en_reparacion") THEN b.valor ELSE 0 END) AS valor_en_cartera
+             FROM bienes b
+             LEFT JOIN categorias_bienes c ON c.id = b.categoria_id
+             WHERE b.institucion_id = ? AND b.lote = ?
+             GROUP BY b.lote'
+        );
+        $stmt->execute([$institucionId, $lote]);
+
+        return $stmt->fetch() ?: null;
+    }
+
+    /**
+     * Unidades de un código que siguen en cartera (activas o en reparación), contadas por
+     * ubicación: cada espacio/persona de su asignación activa, y las que no tienen
+     * asignación ("sin asignar", espacio y persona en null, sin_asignar = 1).
+     */
+    public static function disponiblesDeLotePorUbicacion(int $institucionId, string $lote): array
+    {
+        $stmt = Database::connection()->prepare(
+            'SELECT a.espacio_id, a.usuario_responsable_id,
+                    MAX(CASE WHEN a.id IS NULL THEN 1 ELSE 0 END) AS sin_asignar,
+                    MIN(CONCAT(e.codigo, " - ", e.nombre)) AS espacio_nombre,
+                    MIN(' . self::sqlResponsable() . ') AS responsables_nombres,
+                    COUNT(*) AS disponibles
+             FROM bienes b
+             LEFT JOIN asignaciones a ON a.bien_id = b.id AND a.activa = 1
+             LEFT JOIN espacios e ON e.id = a.espacio_id
+             WHERE b.institucion_id = ? AND b.lote = ? AND b.estado IN ("activo", "en_reparacion")
+             GROUP BY a.espacio_id, a.usuario_responsable_id
+             ORDER BY sin_asignar, espacio_nombre, responsables_nombres'
+        );
+        $stmt->execute([$institucionId, $lote]);
+
+        return $stmt->fetchAll();
+    }
+
+    /**
+     * Ids de $cantidad unidades del código en cartera y en esa ubicación, empezando por los
+     * últimos consecutivos, BLOQUEADAS (FOR UPDATE) para reintegrarlas. Debe llamarse dentro
+     * de una transacción. Puede devolver menos de las pedidas si ya no quedan.
+     *
+     * @return list<int>
+     */
+    public static function unidadesDeLoteParaReintegrar(int $institucionId, string $lote, ?int $espacioId, ?int $usuarioId, bool $sinAsignar, int $cantidad): array
+    {
+        $ubicacion = $sinAsignar
+            ? 'a.id IS NULL'
+            : 'a.id IS NOT NULL AND a.espacio_id <=> ? AND a.usuario_responsable_id <=> ?';
+        $params = $sinAsignar ? [$institucionId, $lote] : [$institucionId, $lote, $espacioId, $usuarioId];
+
+        $stmt = Database::connection()->prepare(
+            'SELECT b.id
+             FROM bienes b
+             LEFT JOIN asignaciones a ON a.bien_id = b.id AND a.activa = 1
+             WHERE b.institucion_id = ? AND b.lote = ? AND b.estado IN ("activo", "en_reparacion") AND ' . $ubicacion . '
+             ORDER BY b.codigo_identificacion DESC, b.id DESC
+             LIMIT ' . max(0, $cantidad) . '
+             FOR UPDATE'
+        );
+        $stmt->execute($params);
+
+        return array_values(array_map('intval', $stmt->fetchAll(\PDO::FETCH_COLUMN)));
     }
 
     private static function generarUuid(): string

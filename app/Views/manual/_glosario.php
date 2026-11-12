@@ -13,6 +13,11 @@
                 (formato FO-ADMI-009 de la Alcaldía), listo para imprimir o entregar — en vez de generar un
                 comprobante distinto por cada bien reintegrado.</dd>
 
+            <dt class="mt-2">Código con varias unidades</dt>
+            <dd class="text-muted">Un código (placa) de la Alcaldía que agrupa varios bienes idénticos, registrado con
+                <em>Alta masiva</em>: por ejemplo la placa 200033042 con 178 sillas. Cada unidad tiene su consecutivo
+                (200033042-001, -002…) y se puede reintegrar por cantidad.</dd>
+
             <dt class="mt-2">Lote pendiente / Lote reintegrado</dt>
             <dd class="text-muted">Un lote está <strong>pendiente</strong> mientras no se haya entregado a la Alcaldía.
                 Cuando se entrega, se marca como <strong>reintegrado</strong> con la fecha de entrega: queda guardado

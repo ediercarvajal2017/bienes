@@ -98,6 +98,8 @@ final class BienController
             'title' => 'Bienes',
             'bienes' => $bienes,
             'lotes' => $lotes,
+            // El superusuario trabaja sobre una institución elegida: los enlaces la llevan.
+            'sufijoInstitucion' => Auth::esSuperusuario() && $institucionId !== null ? '?institucion=' . $institucionId : '',
             'bodegaReintegroTotal' => $bodegaReintegroTotal,
             'bodegaBajaTotal' => $bodegaBajaTotal,
             'soloPropios' => $soloPropios,

@@ -267,6 +267,7 @@ final class LoteReintegroController
             'opcionesPorPagina' => self::OPCIONES_POR_PAGINA,
             'total' => $total,
             'totalPaginas' => Paginador::totalPaginas($total, $porPagina),
+            'mensaje' => Session::pullFlash('ok'),
             'error' => Session::pullFlash('error'),
             'viejo' => Session::pullOld(),
         ]);

@@ -54,7 +54,9 @@ final class CicloVidaBien
             if ($familiaSedesDestino !== []) {
                 $acciones['trasladar_sede'] = 'Trasladar a otra sede';
             }
-            if ($asignacionActiva && !$sinCartera) {
+            // Una unidad de un código con varias unidades (alta masiva) se puede reintegrar
+            // aunque no esté asignada (ver Bien::motivoNoReintegrable).
+            if (($asignacionActiva || !empty($bien['lote'])) && !$sinCartera) {
                 $acciones['reintegrar'] = 'Reintegrar';
             }
         }
@@ -234,11 +236,9 @@ final class CicloVidaBien
     {
         self::verificarEnCirculacion($bien);
         $asignacionActiva = Asignacion::activaDe((int) $bien['id']);
-        if (!$asignacionActiva) {
-            throw new \DomainException('Este bien no tiene una asignación activa.');
-        }
-        // Misma regla que el reintegro masivo y el escáner.
-        if ($motivo = Bien::motivoNoReintegrable($bien, true)) {
+        // Misma regla que el reintegro masivo, el escáner y el reintegro por cantidad (una
+        // unidad de un lote puede no estar asignada).
+        if ($motivo = Bien::motivoNoReintegrable($bien, $asignacionActiva !== null)) {
             throw new \DomainException('No se puede reintegrar: ' . $motivo . '.');
         }
         self::verificarFecha($fecha);

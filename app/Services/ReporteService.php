@@ -72,6 +72,11 @@ final class ReporteService
         self::autoajustarColumnas($sheet, 'A', 'J');
 
         $descripcion = $filtros !== null ? FiltrosBienes::descripcion($filtros) : [];
+        if ($descripcion === []) {
+            // Cartera completa: además, cuánto queda de cada placa (los códigos con varias
+            // unidades en una sola fila, con su cantidad).
+            self::hojaCarteraPorPlaca($spreadsheet, $institucionId);
+        }
         if ($descripcion !== []) {
             $hojaFiltros = $spreadsheet->createSheet();
             $hojaFiltros->setTitle('Filtros');
@@ -83,6 +88,35 @@ final class ReporteService
         }
 
         return $spreadsheet;
+    }
+
+    /**
+     * Hoja "Cartera por placa": una fila por código (los de varias unidades, como la placa
+     * 200033042 con 178 sillas, en una sola fila) con lo que queda en cartera, lo reintegrado
+     * y lo dado de baja. Al reintegrar unidades, la cantidad en cartera de su placa baja.
+     */
+    private static function hojaCarteraPorPlaca(Spreadsheet $spreadsheet, ?int $institucionId): void
+    {
+        $hoja = $spreadsheet->createSheet();
+        $hoja->setTitle('Cartera por placa');
+        $conInstitucion = $institucionId === null;
+        $encabezados = ['Placa', 'Descripción', 'Marca', 'Categoría', 'Cantidad en cartera', 'Reintegradas', 'Dadas de baja', 'Valor unitario', 'Valor en cartera'];
+        $hoja->fromArray($conInstitucion ? ['Institución', ...$encabezados] : $encabezados, null, 'A1');
+
+        $fila = 2;
+        foreach (Bien::carteraPorPlaca($institucionId) as $p) {
+            $valores = [$p['placa'], $p['descripcion'], $p['marca'] ?? null, $p['categoria_nombre'] ?? null,
+                (int) $p['en_cartera'], (int) $p['reintegradas'], (int) $p['dadas_de_baja'], (float) $p['valor_unitario'], (float) $p['valor_en_cartera']];
+            // Comparación estricta: sin ella fromArray() deja en blanco los ceros (0 == null).
+            $hoja->fromArray($conInstitucion ? [$p['institucion_nombre'], ...$valores] : $valores, null, "A{$fila}", true);
+            // La placa siempre como texto (sin perder ceros ni volverse número).
+            $hoja->getCell([$conInstitucion ? 2 : 1, $fila])->setValueExplicit((string) $p['placa'], DataType::TYPE_STRING);
+            $fila++;
+        }
+
+        self::autoajustarColumnas($hoja, 'A', $conInstitucion ? 'J' : 'I');
+        $hoja->freezePane('A2');
+        $spreadsheet->setActiveSheetIndex(0);
     }
 
     public static function planillaReintegros(?int $institucionId): Spreadsheet
@@ -169,9 +203,11 @@ final class ReporteService
         $spreadsheet = self::libroNuevo();
         $spreadsheet->removeSheetByIndex(0);
 
+        // Un renglón por placa: las unidades de un mismo código (alta masiva) se suman en
+        // CANT. en vez de ocupar un renglón cada una.
         $grupos = [];
-        foreach ($bienes as $bien) {
-            $grupos[$bien['categoria_nombre'] ?? 'Sin categoría'][] = $bien;
+        foreach (self::renglonesPorPlaca($bienes) as $renglon) {
+            $grupos[$renglon['categoria_nombre'] ?? 'Sin categoría'][] = $renglon;
         }
         if ($grupos === []) {
             $grupos = ['Sin bienes' => []];
@@ -192,6 +228,73 @@ final class ReporteService
         $spreadsheet->setActiveSheetIndex(0);
 
         return $spreadsheet;
+    }
+
+    /**
+     * Junta los bienes de un lote de reintegro en un renglón por PLACA: las unidades de un
+     * mismo código con varias unidades (alta masiva, bienes.lote) suman su cantidad (p. ej.
+     * placa 200033042, CANT. 3); un bien suelto es un renglón con cantidad 1. Respeta el
+     * orden en que llegan los bienes. Lo usan el comprobante FO-ADMI-009 y el detalle del lote.
+     *
+     * @param array<int, array<string, mixed>> $bienes filas de LoteReintegro::bienesDe()
+     * @return list<array{placa: string, descripcion: string, marca: ?string, categoria_nombre: ?string, cantidad: int,
+     *     unidades: list<string>, fecha_desde: ?string, fecha_hasta: ?string, destinos: list<string>, origenes: list<string>, valor: float}>
+     */
+    public static function renglonesPorPlaca(array $bienes): array
+    {
+        // 1) Las unidades de cada placa (dentro de su categoría), en el orden en que llegan.
+        $grupos = [];
+        foreach ($bienes as $bien) {
+            $placa = !empty($bien['lote']) ? (string) $bien['lote'] : (string) $bien['codigo_identificacion'];
+            $clave = ($bien['categoria_nombre'] ?? '') . '|' . $placa;
+            $grupos[$clave] ??= ['placa' => $placa, 'bienes' => []];
+            $grupos[$clave]['bienes'][] = $bien;
+        }
+
+        // 2) Un renglón por placa, con la cantidad y lo que comparten sus unidades.
+        $renglones = [];
+        foreach ($grupos as $grupo) {
+            $unidades = $grupo['bienes'];
+            $primera = $unidades[0];
+            $fechas = array_values(array_filter(
+                array_map(static fn (array $b): string => (string) ($b['fecha_reintegro'] ?? ''), $unidades),
+                static fn (string $f): bool => $f !== ''
+            ));
+            $renglones[] = [
+                'placa' => $grupo['placa'],
+                'descripcion' => (string) $primera['descripcion'],
+                'marca' => isset($primera['marca']) ? (string) $primera['marca'] : null,
+                'categoria_nombre' => isset($primera['categoria_nombre']) ? (string) $primera['categoria_nombre'] : null,
+                'cantidad' => count($unidades),
+                'unidades' => array_map(static fn (array $b): string => (string) $b['codigo_identificacion'], $unidades),
+                'fecha_desde' => $fechas === [] ? null : min($fechas),
+                'fecha_hasta' => $fechas === [] ? null : max($fechas),
+                'destinos' => self::textosDistintos($unidades, 'destino_texto'),
+                'origenes' => self::textosDistintos($unidades, 'espacio_origen_nombre'),
+                'valor' => (float) array_sum(array_map(static fn (array $b): float => (float) ($b['valor'] ?? 0), $unidades)),
+            ];
+        }
+
+        return $renglones;
+    }
+
+    /**
+     * Los valores distintos y no vacíos de un campo, en orden de aparición.
+     *
+     * @param array<int, array<string, mixed>> $filas
+     * @return list<string>
+     */
+    private static function textosDistintos(array $filas, string $campo): array
+    {
+        $textos = [];
+        foreach ($filas as $fila) {
+            $texto = trim((string) ($fila[$campo] ?? ''));
+            if ($texto !== '' && !in_array($texto, $textos, true)) {
+                $textos[] = $texto;
+            }
+        }
+
+        return $textos;
     }
 
     /**
@@ -360,11 +463,11 @@ final class ReporteService
         $sheet->mergeCells('H14:K14')->setCellValue('H14', 'MARCA');
 
         $fila = 15;
-        foreach ($bienes as $bien) {
-            $sheet->mergeCells("A{$fila}:B{$fila}")->setCellValueExplicit("A{$fila}", $bien['codigo_identificacion'], DataType::TYPE_STRING);
-            $sheet->setCellValue("C{$fila}", 1);
-            $sheet->mergeCells("D{$fila}:G{$fila}")->setCellValue("D{$fila}", $bien['descripcion']);
-            $sheet->mergeCells("H{$fila}:K{$fila}")->setCellValue("H{$fila}", $bien['marca'] ?? '');
+        foreach ($bienes as $renglon) {
+            $sheet->mergeCells("A{$fila}:B{$fila}")->setCellValueExplicit("A{$fila}", $renglon['placa'], DataType::TYPE_STRING);
+            $sheet->setCellValue("C{$fila}", $renglon['cantidad']);
+            $sheet->mergeCells("D{$fila}:G{$fila}")->setCellValue("D{$fila}", $renglon['descripcion']);
+            $sheet->mergeCells("H{$fila}:K{$fila}")->setCellValue("H{$fila}", $renglon['marca'] ?? '');
             $fila++;
         }
         // Filas vacías hasta completar la plantilla (siempre 8 renglones, como el

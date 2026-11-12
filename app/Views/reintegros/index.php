@@ -10,7 +10,8 @@ $viejo ??= [];
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
     <div>
         <h1 class="h4 mb-0">Reintegrar bienes</h1>
-        <p class="text-muted small mb-0">Selecciona uno o varios bienes asignados y regístralos como reintegrados.</p>
+        <p class="text-muted small mb-0">Selecciona uno o varios bienes asignados y regístralos como reintegrados.
+            ¿Un código con varias unidades (alta masiva)? <a href="<?= Url::to('/reintegros/unidades') ?>">Reintegrar por cantidad</a>.</p>
     </div>
     <a href="<?= Url::to('/asignaciones') ?>" class="btn btn-sm btn-outline-secondary">
         <i class="bi bi-person-check me-1"></i>Ir a Asignar

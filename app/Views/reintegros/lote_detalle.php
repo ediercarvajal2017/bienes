@@ -117,13 +117,15 @@ $insignias = [
 <?php if (empty($bienes)): ?>
     <p class="text-muted"><?= $estado === 'unificado' ? 'Sus bienes están ahora en los lotes nuevos (enlaces arriba).' : 'Este lote no tiene bienes.' ?></p>
 <?php else: ?>
-    <div class="table-responsive" style="max-width: 680px;">
+    <?php $renglones = \App\Services\ReporteService::renglonesPorPlaca($bienes); ?>
+    <div class="table-responsive" style="max-width: 760px;">
         <table class="table table-sm bg-white tabla-cards">
             <thead>
             <tr>
-                <th>Código</th>
+                <th>Placa</th>
                 <th>Descripción</th>
                 <th>Categoría</th>
+                <th class="text-end">Cant.</th>
                 <th>Fecha de reintegro</th>
                 <th>Destino</th>
                 <th>Espacio de origen</th>
@@ -131,15 +133,26 @@ $insignias = [
             </tr>
             </thead>
             <tbody>
-            <?php foreach ($bienes as $b): ?>
+            <?php foreach ($renglones as $r): ?>
                 <tr>
-                    <td class="mono" data-label="Código"><?= $e($b['codigo_identificacion']) ?></td>
-                    <td data-label="Descripción"><?= $e($b['descripcion']) ?></td>
-                    <td class="text-muted" data-label="Categoría"><?= !empty($b['categoria_nombre']) ? $e($b['categoria_nombre']) : '—' ?></td>
-                    <td class="text-muted mono" data-label="Fecha de reintegro"><?= $e($b['fecha_reintegro']) ?></td>
-                    <td class="text-muted" data-label="Destino"><?= !empty($b['destino_texto']) ? $e($b['destino_texto']) : '—' ?></td>
-                    <td class="text-muted" data-label="Espacio de origen"><?= !empty($b['espacio_origen_nombre']) ? $e($b['espacio_origen_nombre']) : '—' ?></td>
-                    <td class="text-end" data-label="Valor"><?= number_format((float) $b['valor'], 2) ?></td>
+                    <td class="mono" data-label="Placa">
+                        <?= $e($r['placa']) ?>
+                        <?php if ($r['cantidad'] > 1 || $r['unidades'] !== [$r['placa']]): ?>
+                            <?php // Consecutivos de las unidades, sin repetir la placa: "-176, -177". ?>
+                            <div class="small text-muted text-wrap" style="max-width: 14rem;">
+                                <?= $e(implode(', ', array_map(static fn (string $u): string => str_starts_with($u, $r['placa']) ? substr($u, strlen($r['placa'])) : $u, $r['unidades']))) ?>
+                            </div>
+                        <?php endif; ?>
+                    </td>
+                    <td data-label="Descripción"><?= $e($r['descripcion']) ?></td>
+                    <td class="text-muted" data-label="Categoría"><?= !empty($r['categoria_nombre']) ? $e($r['categoria_nombre']) : '—' ?></td>
+                    <td class="text-end fw-semibold" data-label="Cant."><?= (int) $r['cantidad'] ?></td>
+                    <td class="text-muted mono" data-label="Fecha de reintegro">
+                        <?= $e($r['fecha_desde']) ?><?= $r['fecha_hasta'] !== $r['fecha_desde'] ? ' → ' . $e($r['fecha_hasta']) : '' ?>
+                    </td>
+                    <td class="text-muted" data-label="Destino"><?= $r['destinos'] !== [] ? $e(implode(', ', $r['destinos'])) : '—' ?></td>
+                    <td class="text-muted" data-label="Espacio de origen"><?= $r['origenes'] !== [] ? $e(implode(', ', $r['origenes'])) : '—' ?></td>
+                    <td class="text-end" data-label="Valor"><?= number_format($r['valor'], 2) ?></td>
                 </tr>
             <?php endforeach; ?>
             </tbody>

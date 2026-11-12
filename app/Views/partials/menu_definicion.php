@@ -35,7 +35,7 @@ return [
             // Asignar y reintegrar en lote, la carga masiva y los QR se abren desde Bienes >
             // Acciones masivas: en esas pantallas el menú sigue marcando "Bienes".
             ['texto' => 'Bienes', 'icono' => 'box-seam', 'iconoActivo' => 'box-seam-fill', 'ruta' => '/bienes',
-                'activo' => ['/bienes', '=/asignaciones', '=/reintegros', '/cargas-masivas'], 'visible' => $puede('bienes.ver')],
+                'activo' => ['/bienes', '=/asignaciones', '=/reintegros', '/reintegros/unidades', '/cargas-masivas'], 'visible' => $puede('bienes.ver')],
             ['texto' => 'Espacios', 'icono' => 'door-open', 'iconoActivo' => 'door-open-fill', 'ruta' => '/espacios', 'activo' => ['/espacios'], 'visible' => $puede('espacios.ver')],
             ['texto' => 'Escanear QR', 'icono' => 'qr-code-scan', 'ruta' => '/escanear', 'activo' => ['/escanear'], 'visible' => true],
         ],

@@ -52,6 +52,9 @@ $algunFiltroActivo = $busqueda !== '' || $categoriaId !== null || $estado !== nu
                         <li><a class="dropdown-item" href="<?= Url::to('/reintegros') ?>">
                             <i class="bi bi-box-arrow-in-left me-1"></i>Reintegrar bienes
                         </a></li>
+                        <li><a class="dropdown-item" href="<?= Url::to('/reintegros/unidades') ?>">
+                            <i class="bi bi-123 me-1"></i>Reintegrar por cantidad
+                        </a></li>
                     <?php endif; ?>
                     <?php if ($puedeQr): ?>
                         <li><a class="dropdown-item" href="<?= Url::to('/bienes/qr-masivo') ?>">
@@ -244,12 +247,13 @@ $algunFiltroActivo = $busqueda !== '' || $categoriaId !== null || $estado !== nu
                 </td>
                 <td data-label="Descripción">
                     <?= htmlspecialchars($l['descripcion'], ENT_QUOTES) ?>
-                    <div class="small text-muted"><?= (int) $l['total'] ?> unidades</div>
+                    <?php // Lo que queda del código en la institución: baja al reintegrar o dar de baja unidades. ?>
+                    <div class="small text-muted"><strong><?= (int) $l['en_cartera'] ?></strong> en cartera de <?= (int) $l['total'] ?> unidades</div>
                 </td>
                 <td class="text-muted mono" data-label="Código"><?= htmlspecialchars($l['lote'], ENT_QUOTES) ?></td>
                 <td class="text-muted" data-label="Categoría"><?= htmlspecialchars($l['categoria_nombre'] ?? '—', ENT_QUOTES) ?></td>
                 <td class="small text-muted" data-label="Responsable / ubicación">—</td>
-                <td class="mono" data-label="Valor">$<?= number_format((float) $l['valor_total'], 0, ',', '.') ?></td>
+                <td class="mono" data-label="Valor" title="Valor de las unidades en cartera">$<?= number_format((float) $l['valor_en_cartera'], 0, ',', '.') ?></td>
                 <td class="small" data-label="Estado">
                     <?= (int) $l['activos'] ?> activas
                     <?php if ((int) $l['reintegrados'] > 0): ?> · <?= (int) $l['reintegrados'] ?> reintegradas<?php endif; ?>
@@ -261,6 +265,12 @@ $algunFiltroActivo = $busqueda !== '' || $categoriaId !== null || $estado !== nu
                     <a href="<?= Url::to('/bienes') ?>?q=<?= urlencode($l['lote']) ?>" class="btn btn-sm btn-outline-secondary">
                         <i class="bi bi-eye me-1"></i>Ver detalles
                     </a>
+                    <?php if ($puedeAsignar && (int) $l['en_cartera'] > 0): ?>
+                        <a href="<?= Url::to('/reintegros/unidades/' . rawurlencode((string) $l['lote'])) . $sufijoInstitucion ?>" class="btn btn-sm btn-outline-primary"
+                           title="Reintegrar solo algunas unidades de este código">
+                            <i class="bi bi-box-arrow-in-left me-1"></i>Reintegrar por cantidad
+                        </a>
+                    <?php endif; ?>
                 </td>
             </tr>
         <?php endforeach; ?>

@@ -79,6 +79,7 @@ use App\Controllers\PoliticaController;
 use App\Controllers\QrController;
 use App\Controllers\QrMasivoController;
 use App\Controllers\ReintegroController;
+use App\Controllers\ReintegroUnidadesController;
 use App\Controllers\ReporteController;
 use App\Controllers\SedeActivaController;
 use App\Controllers\SolicitudReintegroController;
@@ -357,6 +358,16 @@ $router->post('/reintegros', [ReintegroController::class, 'guardar'], [
     AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':asignaciones.crear',
 ]);
 $router->get('/reintegros/buscar-qr', [ReintegroController::class, 'buscarPorQr'], [
+    AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':asignaciones.crear',
+]);
+// Reintegro por cantidad de un código con varias unidades (alta masiva).
+$router->get('/reintegros/unidades', [ReintegroUnidadesController::class, 'index'], [
+    AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':asignaciones.crear',
+]);
+$router->get('/reintegros/unidades/{lote}', [ReintegroUnidadesController::class, 'formulario'], [
+    AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':asignaciones.crear',
+]);
+$router->post('/reintegros/unidades/{lote}', [ReintegroUnidadesController::class, 'reintegrar'], [
     AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':asignaciones.crear',
 ]);
 $router->get('/reintegros/lotes/generar', [LoteReintegroController::class, 'pendientesDeLote'], [

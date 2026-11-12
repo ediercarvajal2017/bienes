@@ -47,6 +47,8 @@ final class AuditoriaFormato
         'categoria' => 'Categoría',
         'lotes_origen' => 'Lotes de origen',
         'lotes_destino' => 'Lotes nuevos',
+        'placa' => 'Placa (código con varias unidades)',
+        'por_cantidad' => 'Reintegro por cantidad',
         'fecha_plaqueteo' => 'Fecha de plaqueteo',
         'funcionario_asistio' => 'Funcionario que asistió',
         'fecha_envio' => 'Fecha de envío',
