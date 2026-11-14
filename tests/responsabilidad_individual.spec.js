@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { datos, bd, comoRol, csrf } from './helpers/datos.js';
 import { seleccionarTomSelect } from './helpers/tomSelect.js';
+import { confirmar } from './helpers/confirmacion.js';
 
 /**
  * Responsabilidad de un bien (App\Models\Asignacion):
@@ -186,8 +187,7 @@ test('un bien Individual se reintegra y el movimiento guarda de quién salió', 
     await pagina.goto(`bienes/${bien}/editar`);
     await pagina.locator('#accionBien').selectOption('reintegrar');
     await pagina.locator('#accionDestino').fill('Almacén de la Alcaldía');
-    pagina.once('dialog', (dialogo) => dialogo.accept());
-    await pagina.getByRole('button', { name: 'Guardar y reintegrar' }).click();
+    await confirmar(pagina, () => pagina.getByRole('button', { name: 'Guardar y reintegrar' }).click());
     await expect(pagina.locator('.alert-success')).toContainText('Reintegro registrado');
 
     expect(bd(`SELECT estado FROM bienes WHERE id = ${bien}`)).toBe('reintegrado');

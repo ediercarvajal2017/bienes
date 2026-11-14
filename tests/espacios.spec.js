@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { seleccionarTomSelect } from './helpers/tomSelect.js';
+import { confirmar } from './helpers/confirmacion.js';
 
 test('crear, editar y eliminar un espacio', async ({ page }) => {
     const codigo = `PWT-${Date.now()}`;
@@ -28,8 +29,7 @@ test('crear, editar y eliminar un espacio', async ({ page }) => {
     fila = page.locator('tr', { hasText: nombreEditado });
     await expect(fila).toBeVisible();
 
-    page.once('dialog', (dialog) => dialog.accept());
-    await fila.getByRole('button', { name: 'Eliminar' }).click();
+    await confirmar(page, () => fila.getByRole('button', { name: 'Eliminar' }).click());
 
     await expect(page.locator('tr', { hasText: nombreEditado })).toHaveCount(0);
 });
@@ -43,8 +43,7 @@ test('al intentar eliminar un espacio en uso, el aviso dice qué bienes lo usan'
     const contexto = await comoRol(browser, 'rector');
     const pagina = await contexto.newPage();
     await pagina.goto('espacios');
-    pagina.once('dialog', (dialogo) => dialogo.accept());
-    await pagina.locator(`form[action$="/espacios/${aula}/eliminar"] button`).click();
+    await confirmar(pagina, () => pagina.locator(`form[action$="/espacios/${aula}/eliminar"] button`).click());
 
     const aviso = pagina.getByRole('alert');
     await expect(aviso).toContainText('No se puede eliminar el espacio');

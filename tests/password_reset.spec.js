@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { seleccionarPrimeraOpcionTomSelect } from './helpers/tomSelect.js';
+import { confirmar } from './helpers/confirmacion.js';
 
 /**
  * PasswordController es el flujo de autenticación más sensible después del login
@@ -73,8 +74,7 @@ test('recuperación de contraseña y de correo', async ({ page }) => {
     // --- Limpieza del usuario desechable ---
     await page.goto('usuarios');
     const fila = page.locator('tr', { hasText: email });
-    await fila.getByRole('button', { name: 'Desactivar' }).click();
-    page.once('dialog', (dialog) => dialog.accept());
-    await fila.getByRole('button', { name: 'Eliminar' }).click();
+    await confirmar(page, () => fila.getByRole('button', { name: 'Desactivar' }).click());
+    await confirmar(page, () => fila.getByRole('button', { name: 'Eliminar' }).click());
     await expect(page.locator('tr', { hasText: email })).toHaveCount(0);
 });

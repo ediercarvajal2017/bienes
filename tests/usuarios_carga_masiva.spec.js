@@ -4,6 +4,7 @@ import { PHP_BIN } from '../playwright.config.js';
 import path from 'node:path';
 import os from 'node:os';
 import { fileURLToPath } from 'node:url';
+import { confirmar } from './helpers/confirmacion.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -29,8 +30,7 @@ test('carga masiva de usuarios: la fila inválida no se crea, la válida sí', a
     await expect(page.locator('.badge', { hasText: 'Inválido' })).toBeVisible();
     await expect(page.getByText('Correo electrónico inválido')).toBeVisible();
 
-    page.once('dialog', (dialog) => dialog.accept());
-    await page.getByRole('button', { name: 'Confirmar importación' }).click();
+    await confirmar(page, () => page.getByRole('button', { name: 'Confirmar importación' }).click());
 
     await expect(page.locator('.alert-success')).toContainText('Carga masiva aplicada correctamente.');
 
@@ -41,8 +41,7 @@ test('carga masiva de usuarios: la fila inválida no se crea, la válida sí', a
     // Limpieza del usuario que sí se creó (fila válida) -- desactivar y eliminar,
     // igual que usuarios.spec.js.
     const fila = page.locator('tr', { hasText: emailValido });
-    await fila.getByRole('button', { name: 'Desactivar' }).click();
-    page.once('dialog', (dialog) => dialog.accept());
-    await fila.getByRole('button', { name: 'Eliminar' }).click();
+    await confirmar(page, () => fila.getByRole('button', { name: 'Desactivar' }).click());
+    await confirmar(page, () => fila.getByRole('button', { name: 'Eliminar' }).click());
     await expect(page.locator('tr', { hasText: emailValido })).toHaveCount(0);
 });

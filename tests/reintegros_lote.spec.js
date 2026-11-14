@@ -2,6 +2,7 @@ import { test, expect } from '@playwright/test';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { seleccionarTomSelect, seleccionarPrimeraOpcionTomSelect } from './helpers/tomSelect.js';
+import { confirmar } from './helpers/confirmacion.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const fotoFixture = path.join(__dirname, 'fixtures', 'foto_busqueda.jpg');
@@ -64,8 +65,7 @@ test('reintegrar un bien y agruparlo en un lote', async ({ page }) => {
     await page.locator('input[name="destino_texto"]').fill('PW-TEST Almacén institucional');
     await page.locator('.casilla-bien').first().check();
 
-    page.once('dialog', (dialog) => dialog.accept());
-    await page.locator('.boton-reintegrar').first().click();
+    await confirmar(page, () => page.locator('.boton-reintegrar').first().click());
 
     await expect(page.locator('.alert-success')).toBeVisible();
 
@@ -84,8 +84,7 @@ test('reintegrar un bien y agruparlo en un lote', async ({ page }) => {
 
     await filaPendiente.locator('.casilla-bien').check();
 
-    page.once('dialog', (dialog) => dialog.accept());
-    await page.locator('#botonGenerar').click();
+    await confirmar(page, () => page.locator('#botonGenerar').click());
 
     await expect(page).toHaveURL(/\/reintegros\/lotes\/\d+$/);
     await expect(page.locator('tr', { hasText: codigoBien })).toBeVisible();

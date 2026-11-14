@@ -5,6 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { PHP_BIN } from '../playwright.config.js';
 import { datos, comoRol, bd } from './helpers/datos.js';
+import { confirmar } from './helpers/confirmacion.js';
 
 // Solo en modo local: crea lotes directamente en la base de pruebas.
 test.beforeEach(() => test.skip(datos().remoto === true, 'Necesita la base de pruebas local'));
@@ -90,8 +91,7 @@ test('marcar varios lotes como reintegrados desde la lista', async ({ browser })
     await pagina.locator('#campoFechaEntrega').fill('2024-06-01');
     await pagina.locator('#campoNota').fill('PW-TEST recibido por Bienes Muebles');
 
-    pagina.once('dialog', (dialogo) => dialogo.accept());
-    await pagina.locator('#botonConfirmarMarcar').click();
+    await confirmar(pagina, () => pagina.locator('#botonConfirmarMarcar').click());
 
     await expect(pagina.locator('.alert-success')).toContainText('2 lotes marcados como reintegrados');
     // Vuelve a la misma vista filtrada, donde ya no aparecen.
@@ -173,8 +173,7 @@ test('reabrir un lote: el secretario no puede; el rector sí, con motivo', async
     await rector.pagina.goto(`reintegros/lotes/${lote}`);
     await rector.pagina.getByText('Reabrir el lote').click();
     await rector.pagina.locator('#campoMotivo').fill('PW-TEST se marcó el lote equivocado');
-    rector.pagina.once('dialog', (dialogo) => dialogo.accept());
-    await rector.pagina.getByRole('button', { name: 'Reabrir', exact: true }).click();
+    await confirmar(rector.pagina, () => rector.pagina.getByRole('button', { name: 'Reabrir', exact: true }).click());
 
     await expect(rector.pagina.locator('.alert-success').first()).toContainText('volvió a quedar pendiente');
     await expect(rector.pagina.getByRole('button', { name: 'Marcar como reintegrado' })).toBeVisible();
@@ -183,8 +182,7 @@ test('reabrir un lote: el secretario no puede; el rector sí, con motivo', async
 
     // Marcarlo de nuevo desde el detalle.
     await rector.pagina.locator('#campoFechaEntrega').fill('2024-09-10');
-    rector.pagina.once('dialog', (dialogo) => dialogo.accept());
-    await rector.pagina.getByRole('button', { name: 'Marcar como reintegrado' }).click();
+    await confirmar(rector.pagina, () => rector.pagina.getByRole('button', { name: 'Marcar como reintegrado' }).click());
     await expect(rector.pagina.locator('.alert-success').first()).toContainText('Lote marcado como reintegrado');
     expect(estadoDe(lote)).toBe('reintegrado|2024-09-10|');
     await rector.contexto.close();
@@ -223,8 +221,7 @@ test('generar lote: un lote por categoría', async ({ browser }) => {
     }
     await pagina.locator('input[name="descripcion"]').fill('PW-TEST entrega por categoría');
 
-    pagina.once('dialog', (dialogo) => dialogo.accept());
-    await pagina.locator('#botonGenerar').click();
+    await confirmar(pagina, () => pagina.locator('#botonGenerar').click());
 
     await expect(pagina).toHaveURL(/\/reintegros\/lotes\?estado=pendiente$/);
     await expect(pagina.locator('.alert-success')).toContainText(/Se generaron 3 lotes, uno por categoría: #\d+ Muebles \(1 bien\), #\d+ Tecnología \(1 bien\) y #\d+ Sin categoría \(1 bien\)\./);
@@ -280,8 +277,7 @@ test('unificar lotes pendientes: un lote nuevo por categoría', async ({ browser
     await expect(pagina.locator('.card', { hasText: 'Tecnología' }).filter({ hasText: 'Viene de' })).toContainText(`Viene de #${loteMixto}`);
     expect(bd(`SELECT GROUP_CONCAT(estado) FROM lotes_reintegro WHERE id IN (${loteMixto}, ${loteMuebles})`)).toBe('pendiente,pendiente');
 
-    pagina.once('dialog', (dialogo) => dialogo.accept());
-    await pagina.locator('#botonConfirmarUnificar').click();
+    await confirmar(pagina, () => pagina.locator('#botonConfirmarUnificar').click());
 
     await expect(pagina).toHaveURL(/\/reintegros\/lotes\?estado=pendiente$/);
     await expect(pagina.locator('.alert-success')).toContainText(/Listo: 2 lotes nuevos, uno por categoría: #\d+ Muebles \(3 bienes\) y #\d+ Tecnología \(1 bien\)\./);
@@ -367,8 +363,7 @@ test('separar un lote mixto por categoría desde su detalle', async ({ browser }
     await pagina.getByRole('link', { name: 'Separar por categoría' }).click();
     await expect(pagina.getByRole('heading', { name: `Separar el lote #${loteMixto} por categoría` })).toBeVisible();
 
-    pagina.once('dialog', (dialogo) => dialogo.accept());
-    await pagina.getByRole('button', { name: 'Confirmar separación' }).click();
+    await confirmar(pagina, () => pagina.getByRole('button', { name: 'Confirmar separación' }).click());
     await expect(pagina.locator('.alert-success')).toContainText(/Listo: 2 lotes nuevos, uno por categoría: #\d+ Muebles \(2 bienes\) y #\d+ Tecnología \(1 bien\)\./);
 
     expect(estadoDe(loteMixto)).toBe('unificado||');

@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { seleccionarPrimeraOpcionTomSelect } from './helpers/tomSelect.js';
+import { aceptarConfirmaciones } from './helpers/confirmacion.js';
 
 function filaConValor(page, valor) {
     // CSS por atributo: matchea el "value" del HTML tal como lo renderizó el servidor
@@ -9,7 +10,7 @@ function filaConValor(page, valor) {
 
 test('crear, editar, desactivar/activar y eliminar una categoría', async ({ page }) => {
     // Activar/desactivar/eliminar piden confirmación (data-confirmar): se acepta.
-    page.on('dialog', (dialogo) => dialogo.accept());
+    await aceptarConfirmaciones(page);
     const nombre = `PW-TEST-Categoria-${Date.now()}`;
     const nombreEditado = `${nombre}-editada`;
 

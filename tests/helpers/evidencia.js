@@ -1,5 +1,6 @@
 import { expect } from '@playwright/test';
 import { seleccionarPrimeraOpcionTomSelect } from './tomSelect.js';
+import { confirmar } from './confirmacion.js';
 
 /**
  * Recorrido común de las bibliotecas de evidencia en UNA sola ventana (Formatos de
@@ -55,8 +56,7 @@ export async function recorrerVentanaUnica(page, { ruta, archivo, llenar }) {
     expect(editar.headers().location).toContain(`/${ruta}?editar=${id}`);
 
     // Eliminar desde la lista, con confirmación.
-    page.once('dialog', (dialogo) => dialogo.accept());
-    await fila.getByRole('button', { name: 'Eliminar' }).click();
+    await confirmar(page, () => fila.getByRole('button', { name: 'Eliminar' }).click());
     await expect(page.locator('.alert-success')).toContainText('papelera');
     await expect(page.locator('tbody tr', { hasText: textoEditado })).toHaveCount(0);
 }

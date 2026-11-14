@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { datos, bd } from './helpers/datos.js';
 import { seleccionarTomSelect } from './helpers/tomSelect.js';
+import { aceptarConfirmaciones } from './helpers/confirmacion.js';
 
 /**
  * La descripción del bien va en minúscula en "Sin cartera" y en mayúscula en cualquier otra
@@ -14,7 +15,7 @@ const descripcionDe = (id) => bd(`SELECT descripcion FROM bienes WHERE id = ${id
 
 test('crear en "Sin cartera" la deja en minúscula, y cambiar de categoría la ajusta', async ({ page }) => {
     // Al volver a "Sin cartera" MIA pide confirmar el código nuevo: se acepta.
-    page.on('dialog', (dialogo) => dialogo.accept());
+    await aceptarConfirmaciones(page);
 
     await page.goto('bienes/crear');
     await seleccionarTomSelect(page, 'categoriaBien', 'Sin cartera');

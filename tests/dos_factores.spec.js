@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { datos, comoRol, sinSesion, bd, totp } from './helpers/datos.js';
+import { confirmar } from './helpers/confirmacion.js';
 
 // Solo en modo local: en modo remoto no existen los usuarios de cada rol.
 test.beforeEach(() => test.skip(datos().remoto === true, 'Necesita la base de pruebas local (usuarios por rol)'));
@@ -87,12 +88,12 @@ test('verificación en dos pasos: opcional, segundo paso, anti-repetición, recu
     const rector = await comoRol(browser, 'rector');
     const paginaRector = await rector.newPage();
     await paginaRector.goto(`usuarios/${cuenta.id}/editar`);
-    paginaRector.on('dialog', (dialogo) => dialogo.accept());
     await paginaRector.fill('#passwordConfirmacion2fa', 'incorrecta-123');
-    await paginaRector.getByRole('button', { name: 'Restablecer' }).click();
+    await confirmar(paginaRector, () => paginaRector.getByRole('button', { name: 'Restablecer' }).click());
+    await expect(paginaRector.locator('.alert-danger')).toBeVisible();
     expect(bd(`SELECT totp_activado_en IS NOT NULL FROM usuarios WHERE id = ${cuenta.id}`), 'con la contraseña equivocada no se restablece').toBe('1');
     await paginaRector.fill('#passwordConfirmacion2fa', datos().usuarios.rector.clave);
-    await paginaRector.getByRole('button', { name: 'Restablecer' }).click();
+    await confirmar(paginaRector, () => paginaRector.getByRole('button', { name: 'Restablecer' }).click());
     await expect(paginaRector.locator('.alert-success')).toContainText('restablecida');
     expect(bd(`SELECT totp_activado_en IS NULL AND totp_secreto IS NULL FROM usuarios WHERE id = ${cuenta.id}`)).toBe('1');
     expect(bd(`SELECT COUNT(*) FROM auditoria WHERE accion = '2fa_restablecer' AND entidad_id = ${cuenta.id}`)).toBe('1');

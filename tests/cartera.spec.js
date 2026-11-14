@@ -3,6 +3,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { seleccionarPrimeraOpcionTomSelect, seleccionarTomSelect } from './helpers/tomSelect.js';
 import { datos, bd, csrf } from './helpers/datos.js';
+import { confirmar } from './helpers/confirmacion.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const excelPrueba = path.join(__dirname, 'fixtures', 'excel_prueba.xlsx');
@@ -72,8 +73,7 @@ test('registrar, editar y eliminar una cartera recibida', async ({ page }) => {
     expect(historial.headers().location).toContain('/cartera/enviar');
 
     // Eliminar desde la lista.
-    page.once('dialog', (dialog) => dialog.accept());
-    await fila.getByRole('button', { name: 'Eliminar' }).click();
+    await confirmar(page, () => fila.getByRole('button', { name: 'Eliminar' }).click());
     await expect(page.locator('.alert-success')).toContainText('papelera');
     await expect(page.locator('tbody tr', { hasText: correoEditado })).toHaveCount(0);
 });

@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { datos, comoRol, bd } from './helpers/datos.js';
 import { seleccionarTomSelect } from './helpers/tomSelect.js';
+import { confirmar } from './helpers/confirmacion.js';
 
 /**
  * Formulario único de la ficha del bien: los datos y la acción elegida en "¿Qué desea
@@ -82,8 +83,7 @@ test('si la acción no se puede hacer, tampoco se guardan los datos', async ({ p
     await page.selectOption('#accionBien', 'reintegrar');
     // Se salta la validación del navegador para que el servidor reciba el destino vacío.
     await page.evaluate(() => { document.getElementById('datosBien').noValidate = true; });
-    page.once('dialog', (dialogo) => dialogo.accept());
-    await page.getByRole('button', { name: 'Guardar y reintegrar' }).click();
+    await confirmar(page, () => page.getByRole('button', { name: 'Guardar y reintegrar' }).click());
 
     await expect(page).toHaveURL(new RegExp(`/bienes/${bienId}/editar`));
     await expect(page.locator('.alert-danger')).toContainText('destino');
@@ -119,8 +119,7 @@ test('reportar baja desde la ficha queda pendiente de aprobación', async ({ pag
     await page.selectOption('#accionBien', 'reportar_baja');
     await page.locator('#accionEstadoReportado').fill('Dañado');
     await page.locator('#accionDescripcionBaja').fill('Pata partida');
-    page.once('dialog', (dialogo) => dialogo.accept());
-    await page.getByRole('button', { name: 'Guardar y reportar baja' }).click();
+    await confirmar(page, () => page.getByRole('button', { name: 'Guardar y reportar baja' }).click());
 
     await expect(page.locator('.alert-success')).toContainText('pendiente de aprobación');
     expect(bd(`SELECT estado FROM bajas_bienes WHERE bien_id = ${bienId}`)).toBe('pendiente');

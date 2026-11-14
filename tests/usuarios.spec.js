@@ -1,8 +1,9 @@
 import { test, expect } from '@playwright/test';
+import { aceptarConfirmaciones } from './helpers/confirmacion.js';
 
 test('crear, editar, desactivar y eliminar un usuario', async ({ page }) => {
     // Activar/desactivar/eliminar piden confirmación (data-confirmar): se acepta.
-    page.on('dialog', (dialogo) => dialogo.accept());
+    await aceptarConfirmaciones(page);
     const sufijo = Date.now();
     const documento = `PWTEST${sufijo}`;
     const email = `pw-test-${sufijo}@example.com`;

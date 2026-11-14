@@ -5,6 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { PHP_BIN } from '../playwright.config.js';
 import { datos, bd, comoRol } from './helpers/datos.js';
+import { confirmar } from './helpers/confirmacion.js';
 
 /**
  * Filtros de la lista de bienes por Espacio, Responsable y Tipo de responsabilidad
@@ -134,8 +135,7 @@ test('asignación masiva: filtrar los individuales del docente y pasarlos al sec
 
     await pagina.locator('#masivoTipoIndividual').check();
     await pagina.locator('#masivoPersona').selectOption(String(d.usuarios.secretario.id));
-    pagina.once('dialog', (dialogo) => dialogo.accept());
-    await pagina.locator('.boton-asignar').first().click();
+    await confirmar(pagina, () => pagina.locator('.boton-asignar').first().click());
     await expect(pagina.locator('.alert-success')).toContainText('1 bien(es) asignado(s)');
 
     expect(bd(`SELECT CONCAT(usuario_responsable_id, '/', IFNULL(espacio_id, '-')) FROM asignaciones WHERE bien_id = ${ids.I2} AND activa = 1`))

@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { seleccionarTomSelect, seleccionarPrimeraOpcionTomSelect } from './helpers/tomSelect.js';
+import { aceptarConfirmaciones } from './helpers/confirmacion.js';
 
 /**
  * A diferencia de los demás catálogos, un bien nunca se puede borrar en MIA (solo
@@ -9,7 +10,7 @@ import { seleccionarTomSelect, seleccionarPrimeraOpcionTomSelect } from './helpe
  */
 test('un bien recorre crear → asignar → trasladar → reintegrar', async ({ page }) => {
     // Activar/desactivar/eliminar piden confirmación (data-confirmar): se acepta.
-    page.on('dialog', (dialogo) => dialogo.accept());
+    await aceptarConfirmaciones(page);
     const sufijo = Date.now();
     const codigoBien = `PW-TEST-CICLO-${sufijo}`;
     const descripcionBien = `PW-TEST bien de ciclo de vida ${sufijo}`;

@@ -1,124 +1,107 @@
 /**
- * Confirmación (data-confirmar) y overlay de "procesando..." para cualquier formulario de la aplicación — antes solo
- * cubría los que suben archivos, dejando sin ninguna señal de progreso a los demás
- * (crear/editar sin foto, activar/desactivar, eliminar...). Se activa por delegación
- * de eventos en el documento — cualquier formulario nuevo lo obtiene automáticamente,
- * sin inicialización aparte.
+ * Estado "procesando" de los formularios, por delegación (cualquier formulario nuevo lo tiene
+ * sin inicializarlo):
+ *  - el botón que envió queda deshabilitado con un indicador y el resto de botones de envío,
+ *    deshabilitados (evita el doble envío);
+ *  - los formularios que suben archivos (enctype multipart) muestran además un aviso a
+ *    pantalla completa, porque la subida puede tardar.
+ * La confirmación previa (data-confirmar) la hace confirmar.js.
  *
- * Se excluye automáticamente un formulario con target="_blank" (o cualquier target):
- * como la respuesta abre en otra pestaña, la página actual nunca navega y el overlay
- * se quedaría pegado en pantalla sin que nada lo cierre. Un formulario puntual que por
- * algún otro motivo no deba mostrarlo puede marcarse con data-sin-cargando.
- *
- * También deshabilita el botón de envío para evitar doble clic/doble envío mientras
- * la petición está en curso.
+ * Se excluye un formulario con target (la respuesta abre en otra pestaña y la página no
+ * navega) y uno marcado con data-sin-cargando.
  */
 (function () {
-    let overlay = null;
+    var overlay = null;
 
-    function crearOverlay() {
-        overlay = document.createElement('div');
-        overlay.id = 'cargandoOverlay';
-        overlay.style.cssText = [
-            'display:none', 'position:fixed', 'inset:0', 'z-index:1090',
-            'background:rgba(0,0,0,.6)', 'align-items:center', 'justify-content:center',
-            'padding:24px',
-        ].join(';');
-
-        overlay.innerHTML = [
-            '<div class="bg-body text-body rounded-3 shadow p-4 text-center" style="max-width:320px;">',
-            '  <div class="spinner-border text-primary mb-3" role="status" style="width:2.5rem;height:2.5rem;"></div>',
-            '  <div class="fw-semibold">Procesando…</div>',
-            '  <div class="text-muted small mt-1">No cierres ni recargues esta página.</div>',
-            '</div>',
-        ].join('');
-
-        document.body.appendChild(overlay);
+    // Indicador + texto plano (nunca HTML: el texto puede venir de datos).
+    function conIndicador(elemento, texto) {
+        var indicador = document.createElement('span');
+        indicador.className = 'spinner-border spinner-border-sm me-1';
+        indicador.setAttribute('aria-hidden', 'true');
+        elemento.replaceChildren(indicador, document.createTextNode(texto));
     }
 
-    function mostrar() {
-        if (!overlay) { crearOverlay(); }
-        overlay.style.display = 'flex';
+    function mostrarOverlay() {
+        if (!overlay) {
+            overlay = document.createElement('div');
+            overlay.id = 'cargandoOverlay';
+            overlay.className = 'cargando-overlay';
+            overlay.setAttribute('role', 'status');
+            overlay.innerHTML = '<div class="cargando-caja">'
+                + '<div class="spinner-border text-primary mb-3" aria-hidden="true"></div>'
+                + '<div class="fw-semibold">Procesando…</div>'
+                + '<div class="text-muted small mt-1">No cierres ni recargues esta página.</div>'
+                + '</div>';
+            document.body.appendChild(overlay);
+        }
+        overlay.classList.add('visible');
     }
 
-    function requiereOverlay(form) {
-        if (form.hasAttribute('data-sin-cargando')) { return false; }
-        if (form.hasAttribute('target')) { return false; }
+    function marcarProcesando(form, enviador, texto) {
+        form.querySelectorAll('button[type="submit"], input[type="submit"]').forEach(function (boton) {
+            boton.disabled = true;
+        });
+        if (enviador && enviador.tagName === 'BUTTON') {
+            enviador.dataset.textoOriginal = enviador.innerHTML;
+            conIndicador(enviador, texto || enviador.textContent.trim());
+        }
+    }
 
-        return true;
+    function restaurar(form) {
+        form.querySelectorAll('button[type="submit"], input[type="submit"]').forEach(function (boton) {
+            boton.disabled = false;
+            if (boton.dataset.textoOriginal) {
+                boton.innerHTML = boton.dataset.textoOriginal;
+                delete boton.dataset.textoOriginal;
+            }
+        });
     }
 
     document.addEventListener('submit', function (evento) {
-        const form = evento.target;
-        if (!(form instanceof HTMLFormElement)) { return; }
+        var form = evento.target;
+        if (!(form instanceof HTMLFormElement) || form.hasAttribute('data-sin-cargando')) { return; }
+        // Un formulario method="dialog" solo cierra un <dialog> (p. ej. el modal de confirmación).
+        if ((form.getAttribute('method') || '').toLowerCase() === 'dialog') { return; }
+        var enviador = evento.submitter || form.querySelector('button[type="submit"]');
 
-        // Confirmación estándar: <form data-confirmar="¿...?">. Reemplaza los
-        // onsubmit="return confirm(...)" sueltos que había en cada vista.
-        const mensaje = form.getAttribute('data-confirmar');
-        if (mensaje && !window.confirm(mensaje)) {
-            evento.preventDefault();
-            return;
-        }
-
-        if (!requiereOverlay(form)) {
-            if (form.hasAttribute('target')) { manejarEnvioEnPestañaNueva(evento, form); }
-            return;
-        }
-
-        // Si el formulario tiene su propia validación/confirm() que puede cancelar
-        // el envío, esperamos al siguiente tick para no mostrar el overlay si el
-        // usuario canceló el confirm().
+        // Al siguiente ciclo: si otro manejador (validación de la vista) canceló el envío,
+        // no se marca nada.
         window.setTimeout(function () {
             if (evento.defaultPrevented) { return; }
 
-            mostrar();
-            form.querySelectorAll('button[type="submit"], input[type="submit"]').forEach(function (boton) {
-                boton.disabled = true;
-            });
+            if (form.hasAttribute('target')) {
+                // Abre en otra pestaña (PDF, QR masivo): se reactiva al volver a esta pestaña.
+                marcarProcesando(form, enviador, 'Generando…');
+                var reactivar = function () {
+                    restaurar(form);
+                    window.removeEventListener('focus', reactivar);
+                };
+                window.addEventListener('focus', reactivar);
+                window.setTimeout(reactivar, 20000);
+                return;
+            }
+
+            marcarProcesando(form, enviador, null);
+            if ((form.getAttribute('enctype') || '').toLowerCase() === 'multipart/form-data') {
+                mostrarOverlay();
+            }
         }, 0);
     });
 
-    /**
-     * Los formularios target="_blank" (ej. generar QR/PDF masivo) no reciben el overlay
-     * de arriba porque la página actual nunca navega — pero sin ningún feedback, el botón
-     * sigue habilitado mientras el PDF se genera en la pestaña nueva y se puede hacer clic
-     * dos veces. Aquí solo se deshabilita el botón y se cambia su texto, reactivándolo
-     * cuando el usuario vuelve a esta pestaña (evento "focus"), con un tope de tiempo por
-     * si el navegador no dispara ese evento.
-     */
-    function manejarEnvioEnPestañaNueva(evento, form) {
-        if (form.hasAttribute('data-sin-cargando')) { return; }
-
-        window.setTimeout(function () {
-            if (evento.defaultPrevented) { return; }
-
-            const botones = form.querySelectorAll('button[type="submit"], input[type="submit"]');
-            botones.forEach(function (boton) {
-                boton.disabled = true;
-                boton.dataset.textoOriginal = boton.innerHTML;
-                boton.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span>Generando…';
-            });
-
-            const reactivar = function () {
-                botones.forEach(function (boton) {
-                    boton.disabled = false;
-                    if (boton.dataset.textoOriginal) { boton.innerHTML = boton.dataset.textoOriginal; }
-                });
-                window.removeEventListener('focus', reactivar);
-            };
-            window.addEventListener('focus', reactivar);
-            window.setTimeout(reactivar, 20000);
-        }, 0);
-    }
+    // Volver con el botón "atrás" muestra la página desde la caché del navegador: sin esto
+    // los botones quedarían deshabilitados.
+    window.addEventListener('pageshow', function (evento) {
+        if (!evento.persisted) { return; }
+        document.querySelectorAll('form').forEach(restaurar);
+        if (overlay) { overlay.classList.remove('visible'); }
+    });
 
     /**
-     * Enlaces de descarga (reportes .xlsx/.csv): no son formularios ni target="_blank",
-     * son <a> planos que descargan un archivo sin navegar fuera de la página. Se marcan
-     * con data-descarga="texto mientras genera" para dar el mismo tipo de feedback breve
-     * y evitar doble clic mientras el archivo se genera en el servidor.
+     * Enlaces de descarga (reportes .xlsx/.csv): <a data-descarga="texto mientras genera">
+     * descargan sin navegar; se deshabilitan un momento para evitar el doble clic.
      */
     document.addEventListener('click', function (evento) {
-        const enlace = evento.target.closest('a[data-descarga]');
+        var enlace = evento.target.closest('a[data-descarga]');
         if (!enlace) { return; }
 
         if (enlace.classList.contains('disabled')) {
@@ -126,10 +109,10 @@
             return;
         }
 
-        const textoOriginal = enlace.innerHTML;
+        var textoOriginal = enlace.innerHTML;
         enlace.classList.add('disabled');
         enlace.setAttribute('aria-disabled', 'true');
-        enlace.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span>' + enlace.dataset.descarga;
+        conIndicador(enlace, enlace.dataset.descarga);
 
         window.setTimeout(function () {
             enlace.classList.remove('disabled');
@@ -139,15 +122,14 @@
     });
 
     /**
-     * Selección masiva (asignar, QR masivo, generar lote): tocar cualquier parte de la
-     * celda marca la casilla (también la de "seleccionar todos" del encabezado). En el celular la celda ocupa todo el ancho de la tarjeta,
-     * así el área táctil pasa de 24 px a la fila completa.
+     * Selección masiva (asignar, QR masivo, generar lote): tocar cualquier parte de la celda
+     * marca la casilla (también la de "seleccionar todos"). En el celular la celda ocupa todo
+     * el ancho de la tarjeta, así el área táctil es la fila completa.
      */
     document.addEventListener('click', function (evento) {
-        const celda = evento.target.closest('td, th');
+        var celda = evento.target.closest('td, th');
         if (!celda || evento.target.closest('input, a, button, label, select, textarea')) { return; }
-        // Casilla sola en la celda: de un bien o "seleccionar todos" del encabezado.
-        const casilla = celda.querySelector(':scope > input[type="checkbox"]');
+        var casilla = celda.querySelector(':scope > input[type="checkbox"]');
         if (!casilla || casilla.disabled) { return; }
         casilla.checked = !casilla.checked;
         casilla.dispatchEvent(new Event('change', { bubbles: true }));
@@ -159,11 +141,11 @@
      * "abierto"; el CSS decide en qué tamaños se oculta.
      */
     document.addEventListener('click', function (evento) {
-        const boton = evento.target.closest('[data-alternar]');
+        var boton = evento.target.closest('[data-alternar]');
         if (!boton) { return; }
-        const bloque = document.getElementById(boton.getAttribute('data-alternar'));
+        var bloque = document.getElementById(boton.getAttribute('data-alternar'));
         if (!bloque) { return; }
-        const abierto = bloque.classList.toggle('abierto');
+        var abierto = bloque.classList.toggle('abierto');
         boton.setAttribute('aria-expanded', abierto ? 'true' : 'false');
     });
 })();

@@ -5,6 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { PHP_BIN } from '../playwright.config.js';
 import { datos, bd, comoRol } from './helpers/datos.js';
+import { confirmar } from './helpers/confirmacion.js';
 
 /**
  * "Acta de bienes a cargo" (ActaACargo) y la columna "Responsable individual" de la carga
@@ -145,8 +146,7 @@ test('carga masiva: la columna "Responsable individual" deja los bienes a cargo 
     await expect(pagina.getByText(`NOEXISTE${s}`)).toBeVisible();
     await expect(pagina.getByText('Responsable individual')).toBeVisible();
 
-    pagina.once('dialog', (dialogo) => dialogo.accept());
-    await pagina.getByRole('button', { name: 'Confirmar importación' }).click();
+    await confirmar(pagina, () => pagina.getByRole('button', { name: 'Confirmar importación' }).click());
     await expect(pagina.locator('.alert-danger')).toContainText('aplicada parcialmente');
     fs.unlinkSync(archivo);
 

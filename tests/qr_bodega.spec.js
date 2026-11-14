@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { datos, bd } from './helpers/datos.js';
+import { confirmar } from './helpers/confirmacion.js';
 
 /**
  * Bodega de impresión de QR en dos pestañas: "Por imprimir" → (imprimir) → "Impresos,
@@ -45,8 +46,7 @@ test('imprimir pasa el bien a "Impresos, por pegar" y confirmar lo saca de la bo
     await expect(filaPegar).toBeVisible();
 
     await filaPegar.locator('.casilla-bien').check();
-    page.once('dialog', (d) => d.accept());
-    await page.locator('#botonConfirmarPegados').click();
+    await confirmar(page, () => page.locator('#botonConfirmarPegados').click());
     await expect(page.locator('.alert-success')).toContainText('1 sticker confirmado como pegado');
     await expect(page.locator('tr', { hasText: codigo })).toHaveCount(0);
 

@@ -5,6 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { PHP_BIN } from '../playwright.config.js';
 import { datos, comoRol, bd } from './helpers/datos.js';
+import { confirmar } from './helpers/confirmacion.js';
 
 // Solo en modo local: crea los bienes directamente en la base de pruebas.
 test.beforeEach(() => test.skip(datos().remoto === true, 'Necesita la base de pruebas local'));
@@ -88,8 +89,7 @@ test('reintegrar 3 unidades por ubicación: un solo renglón con CANT. 3 en el c
     await expect(pagina.locator('#botonReintegrarUnidades')).toHaveText(/Reintegrar 3 unidad/);
     await expect(pagina.locator('#campoGenerarLote')).toBeChecked();
 
-    pagina.once('dialog', (dialogo) => dialogo.accept());
-    await pagina.locator('#botonReintegrarUnidades').click();
+    await confirmar(pagina, () => pagina.locator('#botonReintegrarUnidades').click());
 
     await expect(pagina).toHaveURL(/\/reintegros\/lotes\/\d+$/);
     await expect(pagina.locator('.alert-success')).toContainText(`Se reintegraron 3 unidades de la placa ${placa}.`);
@@ -186,8 +186,7 @@ test('reintegro por cantidad: todo o nada y sin generar lote', async ({ browser 
     // Sin "generar lote": quedan como reintegros sueltos, listos para agrupar.
     await rector.pagina.locator('input[name="cantidad[sin]"]').fill('2');
     await rector.pagina.locator('#campoGenerarLote').uncheck();
-    rector.pagina.once('dialog', (dialogo) => dialogo.accept());
-    await rector.pagina.locator('#botonReintegrarUnidades').click();
+    await confirmar(rector.pagina, () => rector.pagina.locator('#botonReintegrarUnidades').click());
     await expect(rector.pagina).toHaveURL(/\/reintegros\/lotes\/generar$/);
     await expect(rector.pagina.locator('.alert-success')).toContainText(`Se reintegraron 2 unidades de la placa ${placa}.`);
     expect(reintegradasDe(placa)).toBe('009,010');
