@@ -59,7 +59,6 @@ return [
     'partials/menu_lateral.php' => ['iconos' => 4],
     'partials/notas.php' => ['iconos' => 2],
     'partials/paginacion.php' => ['iconos' => 2],
-    'partials/tabla_vacia.php' => ['estilos' => 1, 'iconos' => 1, 'botones' => 1],
     'qr/mostrar.php' => ['estilos' => 7, 'iconos' => 19, 'botones' => 5],
     'reintegros/generar_lote.php' => ['estilos' => 3, 'iconos' => 2],
     'reintegros/index.php' => ['estilos' => 9, 'iconos' => 6, 'botones' => 1],

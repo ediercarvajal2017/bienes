@@ -18,6 +18,8 @@
  * de una vez, así que no importa cuántas copias del partial haya en la página.
  */
 $separador = str_contains($urlBase, '?') ? '&' : '?';
+// Cifras con separador de miles colombiano (1.340).
+$cifra = static fn (int $n): string => number_format($n, 0, ',', '.');
 $opcionesPorPagina = $opcionesPorPagina ?? [];
 $paramPagina = $paramPagina ?? 'pagina';
 $paramPorPagina = $paramPorPagina ?? 'porPagina';
@@ -46,9 +48,9 @@ if ($totalPaginas > 1) {
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 my-3">
     <span class="text-muted small">
         <?php if ($total > 0 && $porPagina > 0): ?>
-            Mostrando <?= (($pagina - 1) * $porPagina) + 1 ?>–<?= min($pagina * $porPagina, $total) ?> de <?= $total ?>
+            Mostrando <?= $cifra((($pagina - 1) * $porPagina) + 1) ?>–<?= $cifra(min($pagina * $porPagina, $total)) ?> de <?= $cifra($total) ?>
         <?php elseif ($total > 0): ?>
-            Mostrando los <?= $total ?> registros
+            Mostrando los <?= $cifra($total) ?> registros
         <?php else: ?>
             Sin resultados
         <?php endif; ?>

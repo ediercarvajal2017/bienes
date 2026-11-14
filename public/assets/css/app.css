@@ -307,7 +307,6 @@ select.selector-buscable.is-invalid + .ts-wrapper .ts-control {
    y documentos) en lugar de una sola cuadrícula. */
 .formulario-secciones { max-width: var(--sigebi-ancho-md); }
 .formulario-secciones .card-body { padding: 1rem 1.1rem 1.1rem; }
-.formulario-secciones .titulo-seccion { font-size: .95rem; font-weight: 600; margin-bottom: .85rem; }
 .nota-campo { font-size: .8rem; color: var(--bs-secondary-color); }
 
 .auth-shell {
@@ -1105,3 +1104,102 @@ html { scroll-padding-top: calc(var(--alto-navbar) + 0.75rem); }
 .etiqueta-individual { background: #e3e9ff; color: #1e3a8a; border-color: #a9b8f0; }
 [data-bs-theme="dark"] .etiqueta-grupal { background: #173a2a; color: #a7f0c8; border-color: #2f6b4d; }
 [data-bs-theme="dark"] .etiqueta-individual { background: #1e2a52; color: #c3d0ff; border-color: #3b4f94; }
+
+/* ══════════ Componentes (app/Views/partials/ui) ══════════
+   Ver docs/guia-estilo-ui.md y /manual/ui. Solo tokens: nada de colores sueltos. */
+
+/* Encabezado de página: título a la izquierda, acciones a la derecha (debajo en el celular). */
+.encabezado-pagina {
+  display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start;
+  gap: var(--sigebi-espacio-3); margin-bottom: var(--sigebi-espacio-4);
+}
+.titulo-pagina {
+  display: flex; align-items: center; gap: var(--sigebi-espacio-2); margin: 0;
+  font-size: var(--sigebi-texto-h1); font-weight: var(--sigebi-peso-fuerte); line-height: 1.25;
+}
+.titulo-pagina-icono { font-size: var(--sigebi-icono-md); color: var(--sigebi-text-muted); }
+.encabezado-pagina-subtitulo { margin: var(--sigebi-espacio-1) 0 0; font-size: var(--sigebi-texto-pequeno); color: var(--sigebi-text-muted); }
+.encabezado-pagina-acciones { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sigebi-espacio-2); }
+
+/* Título de una sección o tarjeta. */
+.titulo-seccion { margin: 0 0 var(--sigebi-espacio-3); font-size: var(--sigebi-texto-h3); font-weight: var(--sigebi-peso-fuerte); }
+
+/* Tarjeta: borde de 1 px, sin sombra. */
+.tarjeta { margin-bottom: var(--sigebi-espacio-4); box-shadow: none; }
+.tarjeta-encabezado {
+  display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center;
+  gap: var(--sigebi-espacio-2); margin-bottom: var(--sigebi-espacio-3);
+}
+.tarjeta-encabezado .titulo-seccion { margin: 0; }
+.tarjeta-acciones { display: flex; flex-wrap: wrap; gap: var(--sigebi-espacio-2); }
+
+/* Tabla de datos: compacta, números y acciones a la derecha, encabezado fijo en pantallas
+   grandes (la tabla se desplaza dentro de su recuadro y los títulos de columna quedan a la vista). */
+.tabla-datos { border: 1px solid var(--sigebi-border); border-radius: var(--sigebi-radio); background: var(--sigebi-surface); }
+.tabla-datos > .table { margin-bottom: 0; }
+.tabla-datos thead th {
+  background: var(--sigebi-surface-2); color: var(--sigebi-text-muted);
+  font-size: var(--sigebi-texto-minimo); font-weight: var(--sigebi-peso-fuerte); white-space: nowrap;
+}
+@media (min-width: 768px) {
+  .tabla-encabezado-fijo { max-height: calc(100vh - 14rem); overflow-y: auto; }
+  .tabla-encabezado-fijo thead th { position: sticky; top: 0; z-index: 1; }
+}
+@media (max-width: 767.98px) {
+  .tabla-datos { border: 0; background: transparent; }
+}
+.celda-numero { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.celda-acciones { text-align: right; white-space: nowrap; }
+.celda-acciones .btn + .btn, .celda-acciones form + form, .celda-acciones .btn + form, .celda-acciones form + .btn { margin-left: var(--sigebi-espacio-1); }
+
+/* Estado vacío: una línea de texto y, si aplica, una acción. */
+.estado-vacio { padding: var(--sigebi-espacio-5) var(--sigebi-espacio-3); text-align: center; color: var(--sigebi-text-muted); }
+.estado-vacio .btn { margin-top: var(--sigebi-espacio-2); }
+
+/* Botón con solo ícono: área cuadrada (lleva aria-label y title). */
+.btn-icono { display: inline-flex; align-items: center; justify-content: center; min-width: 2.375rem; }
+.btn-sm.btn-icono { min-width: 2rem; }
+
+/* Acciones de un formulario: [Cancelar] [Guardar], a la derecha. */
+.acciones-formulario { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--sigebi-espacio-2); }
+
+/* Avisos con los colores de estado de los tokens (también los mensajes flash existentes). */
+.alert-success { --bs-alert-bg: var(--sigebi-exito-fondo); --bs-alert-color: var(--sigebi-exito-texto); --bs-alert-border-color: var(--sigebi-exito-borde); --bs-alert-link-color: var(--sigebi-exito-texto); }
+.alert-danger { --bs-alert-bg: var(--sigebi-peligro-fondo); --bs-alert-color: var(--sigebi-peligro-texto); --bs-alert-border-color: var(--sigebi-peligro-borde); --bs-alert-link-color: var(--sigebi-peligro-texto); }
+.alert-warning { --bs-alert-bg: var(--sigebi-advertencia-fondo); --bs-alert-color: var(--sigebi-advertencia-texto); --bs-alert-border-color: var(--sigebi-advertencia-borde); --bs-alert-link-color: var(--sigebi-advertencia-texto); }
+.alert-info { --bs-alert-bg: var(--sigebi-info-fondo); --bs-alert-color: var(--sigebi-info-texto); --bs-alert-border-color: var(--sigebi-info-borde); --bs-alert-link-color: var(--sigebi-info-texto); }
+.alert-secondary { --bs-alert-bg: var(--sigebi-neutro-fondo); --bs-alert-color: var(--sigebi-neutro-texto); --bs-alert-border-color: var(--sigebi-neutro-borde); --bs-alert-link-color: var(--sigebi-neutro-texto); }
+.aviso { display: flex; align-items: flex-start; gap: var(--sigebi-espacio-2); }
+.aviso-icono { flex: 0 0 auto; margin-top: .15em; }
+
+/* Modal de confirmación (<dialog> nativo). */
+.modal-confirmar {
+  width: min(440px, calc(100vw - 32px)); padding: 0;
+  border: 1px solid var(--sigebi-border); border-radius: var(--sigebi-radio);
+  background: var(--sigebi-surface); color: var(--sigebi-text); box-shadow: var(--sigebi-sombra-flotante);
+}
+.modal-confirmar::backdrop { background: rgba(17, 24, 39, .45); }
+.modal-confirmar form { padding: var(--sigebi-espacio-5); }
+.modal-confirmar-mensaje { margin: 0 0 var(--sigebi-espacio-5); white-space: pre-line; }
+.modal-confirmar-acciones { display: flex; justify-content: flex-end; gap: var(--sigebi-espacio-2); }
+@media (max-width: 575.98px) {
+  .modal-confirmar-acciones .btn { flex: 1 1 0; }
+}
+
+/* Procesando: el botón queda deshabilitado con un indicador; los formularios con archivos
+   muestran además un aviso a pantalla completa (la subida puede tardar). */
+.cargando-overlay {
+  position: fixed; inset: 0; z-index: 1090; display: none; align-items: center; justify-content: center;
+  padding: var(--sigebi-espacio-5); background: rgba(17, 24, 39, .55);
+}
+.cargando-overlay.visible { display: flex; }
+.cargando-caja {
+  max-width: 320px; padding: var(--sigebi-espacio-5); text-align: center;
+  background: var(--sigebi-surface); color: var(--sigebi-text);
+  border: 1px solid var(--sigebi-border); border-radius: var(--sigebi-radio);
+}
+
+/* Muestras de color de /manual/ui. */
+.muestra-color { display: flex; align-items: center; gap: var(--sigebi-espacio-3); }
+.muestra-color-recuadro { flex: 0 0 auto; width: 40px; height: 40px; border: 1px solid var(--sigebi-border); border-radius: var(--sigebi-radio-sm); }
+.tabla-datos:focus-visible { outline: 2px solid var(--sigebi-primary); outline-offset: 2px; }

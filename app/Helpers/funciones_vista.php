@@ -14,3 +14,27 @@ if (!function_exists('icono')) {
         return \App\Helpers\Icono::html($clave, $clases, $activo);
     }
 }
+
+if (!function_exists('ui')) {
+    /**
+     * HTML de un componente de app/Views/partials/ui (docs/guia-estilo-ui.md):
+     * ui('boton', ['texto' => 'Guardar', 'tipo' => 'primario']).
+     *
+     * @param array<string, mixed> $datos
+     */
+    function ui(string $componente, array $datos = []): string
+    {
+        if (preg_match('/^[a-z_]+$/', $componente) !== 1) {
+            throw new \InvalidArgumentException("Componente no válido: \"{$componente}\".");
+        }
+        ob_start();
+        try {
+            \App\Core\View::render('partials/ui/' . $componente, $datos);
+        } catch (\Throwable $e) {
+            ob_end_clean();
+            throw $e;
+        }
+
+        return (string) ob_get_clean();
+    }
+}

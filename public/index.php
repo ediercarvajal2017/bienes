@@ -494,6 +494,7 @@ $router->post('/hallazgos/{id}/descartar', [HallazgoController::class, 'descarta
 ]);
 
 $router->get('/manual', [ManualController::class, 'index'], [AuthMiddleware::class]);
+$router->get('/manual/ui', [ManualController::class, 'ui'], [AuthMiddleware::class, SuperusuarioMiddleware::class]);
 
 $router->get('/reportes', [ReporteController::class, 'index'], [
     AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':reportes.generar',
