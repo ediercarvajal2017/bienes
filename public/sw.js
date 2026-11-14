@@ -7,8 +7,8 @@
 //
 // Al cambiar CACHE, activate borra las versiones anteriores (incluida 'sigebi-v1', que
 // sí guardaba el panel autenticado).
-const CACHE = 'sigebi-v3'; // v3: nombre y logo de MIA
-const PRECARGA = ['./offline.html', './assets/css/app.css'];
+const CACHE = 'sigebi-v4'; // v4: estándar visual (tokens.css)
+const PRECARGA = ['./offline.html', './assets/css/tokens.css', './assets/css/app.css'];
 
 self.addEventListener('install', (event) => {
     event.waitUntil(

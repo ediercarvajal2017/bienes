@@ -1,23 +1,4 @@
-:root {
-  --sigebi-primary: #1F6F54;
-  --sigebi-secondary: #145C43;
-  --sigebi-accent: #F2B134;
-  --sigebi-success: #237A46; /* 5,3:1 con texto blanco (antes #2E9E5B, 3,4:1) */
-  --sigebi-danger: #C0392B; /* 5,4:1 con texto blanco (antes #D64545, 4,4:1) */
-  --sigebi-bg: #F5F7FA;
-  --sigebi-text: #1F2937;
-
-  --bs-primary: var(--sigebi-primary);
-  --bs-primary-rgb: 31, 111, 84;
-  --bs-success: var(--sigebi-success);
-  --bs-success-rgb: 35, 122, 70;
-  --bs-danger: var(--sigebi-danger);
-  --bs-danger-rgb: 192, 57, 43;
-  --bs-link-color: var(--sigebi-primary);
-  --bs-link-color-rgb: 31, 111, 84;
-  --bs-link-hover-color: var(--sigebi-secondary);
-  --bs-link-hover-color-rgb: 20, 92, 67;
-}
+/* Colores, tipografía, espaciado, radios y sombras: tokens.css (se carga antes). */
 
 body {
   background-color: var(--sigebi-bg);
@@ -204,7 +185,7 @@ select.selector-buscable.is-invalid + .ts-wrapper .ts-control {
 .btn-accent {
   background-color: var(--sigebi-accent);
   border-color: var(--sigebi-accent);
-  color: #1F2937;
+  color: var(--sigebi-gris-800);
 }
 
 /* El gris por defecto de Bootstrap (#6c757d) se pierde junto a los botones de
@@ -212,14 +193,14 @@ select.selector-buscable.is-invalid + .ts-wrapper .ts-control {
    página (--sigebi-text) para que un botón secundario (Volver, Cancelar, Ver,
    filtros) siga siendo claramente un botón y no un texto apagado. */
 .btn-outline-secondary {
-  --bs-btn-color: #1F2937;
-  --bs-btn-border-color: #1F2937;
+  --bs-btn-color: var(--sigebi-gris-800);
+  --bs-btn-border-color: var(--sigebi-gris-800);
   --bs-btn-hover-color: #fff;
-  --bs-btn-hover-bg: #1F2937;
-  --bs-btn-hover-border-color: #1F2937;
+  --bs-btn-hover-bg: var(--sigebi-gris-800);
+  --bs-btn-hover-border-color: var(--sigebi-gris-800);
   --bs-btn-active-color: #fff;
-  --bs-btn-active-bg: #1F2937;
-  --bs-btn-active-border-color: #1F2937;
+  --bs-btn-active-bg: var(--sigebi-gris-800);
+  --bs-btn-active-border-color: var(--sigebi-gris-800);
 }
 
 [data-bs-theme="dark"] .btn-outline-secondary {
@@ -306,8 +287,8 @@ select.selector-buscable.is-invalid + .ts-wrapper .ts-control {
 }
 .ayuda-campo-globo {
   position: fixed; z-index: 1090; width: max-content; max-width: min(320px, calc(100vw - 24px));
-  padding: .6rem .75rem; border-radius: .5rem;
-  background: #1F2937; color: #F3F4F6; box-shadow: 0 8px 24px rgba(0, 0, 0, .2);
+  padding: .6rem .75rem; border-radius: var(--sigebi-radio);
+  background: var(--sigebi-gris-800); color: var(--sigebi-gris-100); box-shadow: var(--sigebi-sombra-flotante);
   font-size: .8125rem; font-weight: 400; line-height: 1.45; text-align: left; text-transform: none;
 }
 .ayuda-campo-globo p { margin: 0; }
@@ -318,13 +299,13 @@ select.selector-buscable.is-invalid + .ts-wrapper .ts-control {
   width: 10px; height: 10px; background: inherit; border-radius: 2px; transform: rotate(45deg);
 }
 .ayuda-campo-globo.arriba::before { top: auto; bottom: -5px; }
-[data-bs-theme="dark"] .ayuda-campo-globo { background: #E5E7EB; color: #111827; box-shadow: 0 8px 24px rgba(0, 0, 0, .5); }
+[data-bs-theme="dark"] .ayuda-campo-globo { background: var(--sigebi-gris-200); color: var(--sigebi-gris-900); }
 [data-bs-theme="dark"] .ayuda-campo-globo strong { color: #000; }
 @media print { .ayuda-campo, .ayuda-campo-globo { display: none !important; } }
 
 /* Formulario de bienes: los datos agrupados en tarjetas (Datos del bien, Ubicación, Foto
    y documentos) en lugar de una sola cuadrícula. */
-.formulario-secciones { max-width: 720px; }
+.formulario-secciones { max-width: var(--sigebi-ancho-md); }
 .formulario-secciones .card-body { padding: 1rem 1.1rem 1.1rem; }
 .formulario-secciones .titulo-seccion { font-size: .95rem; font-weight: 600; margin-bottom: .85rem; }
 .nota-campo { font-size: .8rem; color: var(--bs-secondary-color); }
@@ -334,16 +315,18 @@ select.selector-buscable.is-invalid + .ts-wrapper .ts-control {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(160deg, var(--sigebi-primary), var(--sigebi-secondary));
+  background: var(--sigebi-bg);
 }
 
 .auth-card {
   width: 100%;
   max-width: 380px;
-  background: #fff;
-  border-radius: 10px;
+  background: var(--sigebi-surface);
+  color: var(--sigebi-text);
+  border: 1px solid var(--sigebi-border);
+  border-radius: var(--sigebi-radio);
   padding: 2.25rem 2rem;
-  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.18);
+  box-shadow: var(--sigebi-sombra);
 }
 
 .auth-card .brand {
@@ -355,7 +338,7 @@ select.selector-buscable.is-invalid + .ts-wrapper .ts-control {
 
 .auth-card .brand-sub {
   font-size: 0.8rem;
-  color: #6b7280;
+  color: var(--sigebi-text-muted);
   margin-bottom: 1.75rem;
 }
 
@@ -416,47 +399,12 @@ select.selector-buscable.is-invalid + .ts-wrapper .ts-control {
 }
 
 .mono {
-  font-family: ui-monospace, "Cascadia Code", "SF Mono", Consolas, monospace;
+  font-family: var(--sigebi-fuente-mono);
   font-size: 0.85em;
 }
 
 /* ---------- Modo oscuro ---------- */
-/* Se redefinen tanto las variables propias como las de Bootstrap para que TODA la
-   interfaz (fondo, tarjetas, tablas, dropdowns, bordes, texto) herede el tema oscuro
-   de forma coherente, sin necesidad de parchear elemento por elemento. */
-[data-bs-theme="dark"] {
-  color-scheme: dark;
-
-  --sigebi-bg: #0f141a;
-  --sigebi-text: #e6eaef;
-  --sigebi-primary: #2f9c72;
-  --sigebi-secondary: #23855f;
-
-  --sigebi-surface: #171f28;
-  --sigebi-surface-2: #1e2831;
-  --sigebi-border: #2b3742;
-
-  --bs-body-bg: #0f141a;
-  --bs-body-bg-rgb: 15, 20, 26;
-  --bs-body-color: #e6eaef;
-  --bs-body-color-rgb: 230, 234, 239;
-  --bs-emphasis-color: #ffffff;
-  --bs-secondary-color: rgba(230, 234, 239, 0.65);
-  --bs-secondary-bg: var(--sigebi-surface-2);
-  --bs-tertiary-bg: var(--sigebi-surface);
-  --bs-tertiary-color: rgba(230, 234, 239, 0.5);
-  --bs-border-color: var(--sigebi-border);
-  --bs-border-color-translucent: rgba(255, 255, 255, 0.1);
-
-  --bs-card-bg: var(--sigebi-surface);
-  --bs-card-cap-bg: var(--sigebi-surface);
-  --bs-card-border-color: var(--sigebi-border);
-
-  --bs-link-color: #6fe3a8;
-  --bs-link-color-rgb: 111, 227, 168;
-  --bs-link-hover-color: #8ff0bf;
-  --bs-link-hover-color-rgb: 143, 240, 191;
-}
+/* Las variables del tema oscuro están en tokens.css; aquí solo quedan ajustes de componentes. */
 
 /* Navbar y sidebar como superficies oscuras (en claro el navbar es verde de marca). */
 [data-bs-theme="dark"] .navbar-sigebi {
@@ -468,16 +416,6 @@ select.selector-buscable.is-invalid + .ts-wrapper .ts-control {
 /* Rojo de aviso legible sobre el fondo oscuro (el rojo del modo claro no alcanza 4,5:1). */
 [data-bs-theme="dark"] .text-danger {
   color: #f19a8f !important;
-}
-
-[data-bs-theme="dark"] .auth-shell {
-  background: linear-gradient(160deg, #0f141a, #12201a);
-}
-
-[data-bs-theme="dark"] .auth-card {
-  background: var(--sigebi-surface);
-  color: var(--sigebi-text);
-  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.45);
 }
 
 [data-bs-theme="dark"] .auth-card .brand,
@@ -658,7 +596,7 @@ summary { cursor: pointer; }
 .tarjeta-cifra-icono { font-size: 1.35rem; color: var(--sigebi-primary); }
 .tarjeta-cifra-valor { font-size: clamp(1.15rem, .95rem + .8vw, 1.6rem); font-weight: 700; line-height: 1.1; color: var(--bs-emphasis-color); font-variant-numeric: tabular-nums; }
 .tarjeta-cifra-progreso { height: .4rem; }
-.tarjeta-cifra-progreso .progress-bar { background-color: var(--sigebi-primary); }
+.tarjeta-cifra-progreso .progress-bar { background-color: var(--sigebi-primary-relleno); }
 .barra-apilada { display: flex; height: 1.1rem; border-radius: .5rem; overflow: hidden; background: var(--bs-secondary-bg); }
 .barra-apilada span { display: block; height: 100%; }
 .leyenda-punto { width: .75rem; height: .75rem; border-radius: 50%; flex: 0 0 auto; }
@@ -667,7 +605,12 @@ summary { cursor: pointer; }
 .barra-categoria span { display: block; height: 100%; background: var(--sigebi-primary); border-radius: .3rem; }
 @media (prefers-reduced-motion: reduce) { .tarjeta-cifra { transition: none; } .tarjeta-cifra:hover { transform: none; } }
 .tarjeta-cifra-unidad { font-size: .8rem; color: var(--bs-secondary-color); font-weight: 600; }
-.contenedor-manual { max-width: 760px; }
+.contenedor-manual { max-width: var(--sigebi-ancho-md); }
+/* Anchos de contenido: formularios cortos (sm), formularios y páginas de lectura (md) y
+   paneles amplios (lg). Reemplazan los max-width sueltos de cada vista. */
+.contenedor-sm { max-width: var(--sigebi-ancho-sm); }
+.contenedor-md { max-width: var(--sigebi-ancho-md); }
+.contenedor-lg { max-width: var(--sigebi-ancho-lg); }
 
 
 /* Selector de institución (Tom Select): la flecha ya no se monta sobre el texto. */
@@ -679,11 +622,11 @@ summary { cursor: pointer; }
    --bs-primary: por eso los botones principales salían azules en una interfaz verde.
    Todos los pares cumplen WCAG AA (4,5:1) con su texto. */
 .btn-primary {
-  --bs-btn-bg: var(--sigebi-primary); --bs-btn-border-color: var(--sigebi-primary);
-  --bs-btn-hover-bg: var(--sigebi-secondary); --bs-btn-hover-border-color: var(--sigebi-secondary);
-  --bs-btn-active-bg: var(--sigebi-secondary); --bs-btn-active-border-color: var(--sigebi-secondary);
-  --bs-btn-disabled-bg: var(--sigebi-primary); --bs-btn-disabled-border-color: var(--sigebi-primary);
-  --bs-btn-focus-shadow-rgb: 31, 111, 84;
+  --bs-btn-bg: var(--sigebi-primary-relleno); --bs-btn-border-color: var(--sigebi-primary-relleno);
+  --bs-btn-hover-bg: var(--sigebi-primary-relleno-hover); --bs-btn-hover-border-color: var(--sigebi-primary-relleno-hover);
+  --bs-btn-active-bg: var(--sigebi-primary-relleno-hover); --bs-btn-active-border-color: var(--sigebi-primary-relleno-hover);
+  --bs-btn-disabled-bg: var(--sigebi-primary-relleno); --bs-btn-disabled-border-color: var(--sigebi-primary-relleno);
+  --bs-btn-focus-shadow-rgb: var(--sigebi-primary-rgb);
 }
 .btn-outline-primary {
   --bs-btn-color: var(--sigebi-primary); --bs-btn-border-color: var(--sigebi-primary);
@@ -694,20 +637,14 @@ summary { cursor: pointer; }
 }
 .btn-success { --bs-btn-bg: var(--sigebi-success); --bs-btn-border-color: var(--sigebi-success); --bs-btn-hover-bg: #1c6439; --bs-btn-hover-border-color: #1c6439; }
 .btn-outline-success { --bs-btn-color: var(--sigebi-success); --bs-btn-border-color: var(--sigebi-success); --bs-btn-hover-bg: var(--sigebi-success); --bs-btn-hover-border-color: var(--sigebi-success); }
-.btn-danger { --bs-btn-bg: var(--sigebi-danger); --bs-btn-border-color: var(--sigebi-danger); --bs-btn-hover-bg: #a13024; --bs-btn-hover-border-color: #a13024; }
+.btn-danger { --bs-btn-bg: var(--sigebi-danger); --bs-btn-border-color: var(--sigebi-danger); --bs-btn-hover-bg: var(--sigebi-danger-hover); --bs-btn-hover-border-color: var(--sigebi-danger-hover); }
 .btn-outline-danger { --bs-btn-color: var(--sigebi-danger); --bs-btn-border-color: var(--sigebi-danger); --bs-btn-hover-bg: var(--sigebi-danger); --bs-btn-hover-border-color: var(--sigebi-danger); }
-.progress-bar { background-color: var(--sigebi-primary); }
-.form-check-input:checked { background-color: var(--sigebi-primary); border-color: var(--sigebi-primary); }
-.form-control:focus, .form-select:focus { border-color: var(--sigebi-primary); box-shadow: 0 0 0 .2rem rgba(31, 111, 84, .25); }
+.progress-bar { background-color: var(--sigebi-primary-relleno); }
+.form-check-input:checked { background-color: var(--sigebi-primary-relleno); border-color: var(--sigebi-primary-relleno); }
+.form-control:focus, .form-select:focus { border-color: var(--sigebi-primary); box-shadow: var(--sigebi-foco); }
 
 /* Modo oscuro: el verde de los botones se oscurece (4,9:1 con texto blanco) y los
    contornos se aclaran para leerse sobre el fondo oscuro. */
-[data-bs-theme="dark"] .btn-primary {
-  --bs-btn-bg: #23805d; --bs-btn-border-color: #23805d;
-  --bs-btn-hover-bg: #1d6b4e; --bs-btn-hover-border-color: #1d6b4e;
-  --bs-btn-active-bg: #1d6b4e; --bs-btn-active-border-color: #1d6b4e;
-  --bs-btn-disabled-bg: #23805d; --bs-btn-disabled-border-color: #23805d;
-}
 [data-bs-theme="dark"] .btn-outline-primary {
   --bs-btn-color: #6fd3a6; --bs-btn-border-color: #3fae82;
   --bs-btn-hover-bg: #23805d; --bs-btn-hover-border-color: #23805d; --bs-btn-hover-color: #fff;
@@ -715,34 +652,23 @@ summary { cursor: pointer; }
 }
 [data-bs-theme="dark"] .btn-outline-success { --bs-btn-color: #5fcf8e; --bs-btn-border-color: #3f9e66; }
 [data-bs-theme="dark"] .btn-outline-danger { --bs-btn-color: #f08a80; --bs-btn-border-color: #d25a4e; }
-[data-bs-theme="dark"] .form-check-input:checked { background-color: #23805d; border-color: #23805d; }
 
 /* Estado de una SOLICITUD (baja, reintegro): pastilla con fondo suave y borde, para no
    confundirla con el estado del BIEN (badge-estado-*, colores sólidos). Antes una baja
    "Aprobada" usaba el mismo rojo sólido que un bien "Dado de baja". */
-.badge-solicitud { border-radius: 50rem; border: 1px solid; font-weight: 600; }
-.badge-solicitud-pendiente { background: #fff4d6; color: #7a5200; border-color: #e0b54d; }
-.badge-solicitud-aprobada { background: #e3f3e9; color: #1b5e37; border-color: #7cbf96; }
-.badge-solicitud-rechazada { background: #f1f2f4; color: #3f4650; border-color: #b3b9c1; }
-.badge-solicitud-cancelada { background: transparent; color: #5f6873; border-color: #c4c9cf; border-style: dashed; }
-[data-bs-theme="dark"] .badge-solicitud-pendiente { background: #3a2f12; color: #f3cf73; border-color: #8a6d24; }
-[data-bs-theme="dark"] .badge-solicitud-aprobada { background: #16301f; color: #86d7a4; border-color: #2f6b46; }
-[data-bs-theme="dark"] .badge-solicitud-rechazada { background: #262c33; color: #c3cad2; border-color: #4a535d; }
-[data-bs-theme="dark"] .badge-solicitud-cancelada { color: #9aa3ad; border-color: #4a535d; }
+.badge-solicitud { border-radius: var(--sigebi-radio-sm); border: 1px solid; font-weight: 600; }
+.badge-solicitud-pendiente, .badge-lote-pendiente { background: var(--sigebi-advertencia-fondo); color: var(--sigebi-advertencia-texto); border-color: var(--sigebi-advertencia-borde); }
+.badge-solicitud-aprobada, .badge-lote-reintegrado { background: var(--sigebi-exito-fondo); color: var(--sigebi-exito-texto); border-color: var(--sigebi-exito-borde); }
+.badge-solicitud-rechazada { background: var(--sigebi-neutro-fondo); color: var(--sigebi-neutro-texto); border-color: var(--sigebi-neutro-borde); }
+.badge-solicitud-cancelada, .badge-lote-unificado { background: transparent; color: var(--sigebi-text-muted); border-color: var(--sigebi-neutro-borde); border-style: dashed; }
 
 /* Estado de los lotes de reintegro (mismos colores que las solicitudes). */
-.badge-lote { border-radius: 50rem; border: 1px solid; font-weight: 600; }
-.badge-lote-pendiente { background: #fff4d6; color: #7a5200; border-color: #e0b54d; }
-.badge-lote-reintegrado { background: #e3f3e9; color: #1b5e37; border-color: #7cbf96; }
-.badge-lote-unificado { background: transparent; color: #5f6873; border-color: #c4c9cf; border-style: dashed; }
-[data-bs-theme="dark"] .badge-lote-pendiente { background: #3a2f12; color: #f3cf73; border-color: #8a6d24; }
-[data-bs-theme="dark"] .badge-lote-reintegrado { background: #16301f; color: #86d7a4; border-color: #2f6b46; }
-[data-bs-theme="dark"] .badge-lote-unificado { color: #9aa3ad; border-color: #4a535d; }
+.badge-lote { border-radius: var(--sigebi-radio-sm); border: 1px solid; font-weight: 600; }
 /* Recuadro con el estado del lote en su detalle: no es un mensaje, así que no se cierra. */
 .estado-lote { padding: .6rem 1rem; margin-bottom: 1rem; border: 1px solid; border-radius: var(--bs-border-radius); font-size: .875em; }
-.estado-lote-pendiente { background: var(--bs-warning-bg-subtle); border-color: var(--bs-warning-border-subtle); color: var(--bs-warning-text-emphasis); }
-.estado-lote-reintegrado { background: var(--bs-success-bg-subtle); border-color: var(--bs-success-border-subtle); color: var(--bs-success-text-emphasis); }
-.estado-lote-unificado { background: var(--bs-secondary-bg-subtle); border-color: var(--bs-secondary-border-subtle); color: var(--bs-secondary-text-emphasis); }
+.estado-lote-pendiente { background: var(--sigebi-advertencia-fondo); border-color: var(--sigebi-advertencia-borde); color: var(--sigebi-advertencia-texto); }
+.estado-lote-reintegrado { background: var(--sigebi-exito-fondo); border-color: var(--sigebi-exito-borde); color: var(--sigebi-exito-texto); }
+.estado-lote-unificado { background: var(--sigebi-neutro-fondo); border-color: var(--sigebi-neutro-borde); color: var(--sigebi-neutro-texto); }
 
 /* Miniaturas de los listados (servidas a 96 px con ?w=96) */
 .miniatura-36 { width: 36px; height: 36px; object-fit: cover; border-radius: 4px; }
@@ -750,7 +676,7 @@ summary { cursor: pointer; }
 .foto-resultado { height: 140px; object-fit: cover; }
 
 /* Paginación con los colores de la marca */
-.pagination { --bs-pagination-active-bg: var(--sigebi-primary); --bs-pagination-active-border-color: var(--sigebi-primary); --bs-pagination-color: var(--sigebi-primary); --bs-pagination-hover-color: var(--sigebi-secondary); --bs-pagination-focus-box-shadow: 0 0 0 .2rem rgba(31, 111, 84, .25); }
+.pagination { --bs-pagination-active-bg: var(--sigebi-primary); --bs-pagination-active-border-color: var(--sigebi-primary); --bs-pagination-color: var(--sigebi-primary); --bs-pagination-hover-color: var(--sigebi-secondary); --bs-pagination-focus-box-shadow: var(--sigebi-foco); --bs-pagination-active-bg: var(--sigebi-primary-relleno); --bs-pagination-active-border-color: var(--sigebi-primary-relleno); }
 [data-bs-theme="dark"] .pagination { --bs-pagination-active-bg: #23805d; --bs-pagination-active-border-color: #23805d; --bs-pagination-color: #6fd3a6; --bs-pagination-hover-color: #8fe3bc; }
 /* Foto que no carga (archivo faltante): el texto alternativo no desborda la celda de
    36 px (sigue disponible para lectores de pantalla). */
@@ -944,7 +870,7 @@ html { scroll-padding-top: calc(var(--alto-navbar) + 0.75rem); }
 
 .menu-encabezado { display: flex; align-items: center; gap: 0.7rem; padding: 1rem 1rem 0.9rem; border-bottom: 1px solid var(--menu-borde); }
 .menu-encabezado-icono {
-  width: 36px; height: 36px; flex: 0 0 auto; border-radius: 10px;
+  width: 36px; height: 36px; flex: 0 0 auto; border-radius: var(--sigebi-radio);
   display: inline-flex; align-items: center; justify-content: center;
   background: rgba(255, 255, 255, 0.12); color: #fff; font-size: 1.05rem;
 }

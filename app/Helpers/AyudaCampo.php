@@ -133,7 +133,7 @@ final class AyudaCampo
 
         return '<button type="button" class="ayuda-campo" data-ayuda-campo aria-expanded="false" aria-controls="' . $id . '"'
             . ' aria-label="Ayuda: ' . self::e($ayuda['titulo']) . '">'
-            . '<i class="bi bi-question-circle" aria-hidden="true"></i></button>'
+            . Icono::html('ayuda') . '</button>'
             . '<div class="ayuda-campo-globo" id="' . $id . '" role="tooltip" hidden>' . self::parrafos($ayuda['texto']) . '</div>';
     }
 

@@ -5,6 +5,7 @@ declare(strict_types=1);
 header_remove('X-Powered-By');
 
 require dirname(__DIR__) . '/vendor/autoload.php';
+require dirname(__DIR__) . '/app/Helpers/funciones_vista.php';
 
 \App\Helpers\PoliticaContenido::enviar();
 

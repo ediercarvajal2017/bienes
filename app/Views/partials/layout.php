@@ -60,10 +60,7 @@ foreach (['/manual', '/mi-cuenta'] as $rutaPie) {
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <title><?= htmlspecialchars($title ?? 'MIA', ENT_QUOTES) ?> · MIA</title>
     <link rel="icon" type="image/png" sizes="32x32" href="<?= Url::asset('/assets/img/favicon-32.png') ?>">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" integrity="sha384-tViUnnbYAV00FLIhhi3v/dWt3Jxw4gZQcNoSCxCIFNJVCx7/D55/wXsrNIRANwdD" crossorigin="anonymous" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.min.css" integrity="sha384-piG3EtH1fBnPi68q4spy+Qgpb0dHK1D1dwk0GaHwFkvmUxYi526bBlk3xJcjEBsD" crossorigin="anonymous" rel="stylesheet">
-    <link href="<?= Url::asset('/assets/css/app.css') ?>" rel="stylesheet">
+    <?php \App\Core\View::render('partials/ui/hojas_estilo', ['conTomSelect' => true]) ?>
     <link rel="manifest" href="<?= Url::to('/manifest.json') ?>">
     <meta name="theme-color" content="#1F6F54" media="(prefers-color-scheme: light)">
     <meta name="theme-color" content="#0f141a" media="(prefers-color-scheme: dark)">
