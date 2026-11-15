@@ -70,7 +70,7 @@ Se usan con la función `ui('componente', [...])`, que devuelve el HTML. Las pie
         . ui('boton', ['texto' => 'Registrar bien', 'tipo' => 'primario', 'icono' => 'crear', 'url' => $urlCrear]),
 ]) ?>
 ```
-Las migas de pan no van aquí: las arma el layout a partir del menú (una sola fuente).
+Las migas de pan no van aquí: las arma el layout a partir del menú (una sola fuente). Si el registro tiene un estado, va junto al título con `'insignia' => ui('insignia_estado', [...])`.
 
 ### Botón
 ```php
@@ -118,8 +118,27 @@ La ayuda (?) viene de `App\Helpers\AyudaCampo`. El error va debajo del campo y q
   - solicitud: pendiente, aprobada, rechazada, cancelada;
   - baja: pendiente, aprobada, rechazada;
   - lote: pendiente, reintegrado, unificado;
-  - responsabilidad: Grupal, Individual.
-- **Confirmación:** la pide cualquier formulario, botón o enlace con `data-confirmar="…"`. Abre el modal único (`partials/ui/modal_confirmar.php`, `confirmar.js`). Desde JavaScript: `miaConfirmar({ mensaje, boton, peligro }).then(...)`.
+  - responsabilidad: Grupal, Individual;
+  - etiqueta QR: confirmada, sin confirmar, sin imprimir.
+- **Otras insignias** (contadores, acciones de la auditoría): `badge-exito`, `badge-advertencia`, `badge-peligro`, `badge-info` y `badge-neutro`, con los colores de estado de los tokens. No se usan los `text-bg-*` de Bootstrap.
+- **Confirmación:** la pide cualquier formulario, botón o enlace con `data-confirmar="…"`. Abre el modal único (`partials/ui/modal_confirmar.php`, `confirmar.js`). Todos los diálogos de MIA usan ese modal:
+
+| Necesidad | Cómo |
+|---|---|
+| Confirmar antes de enviar o seguir un enlace | `data-confirmar="…"` (+ `data-confirmar-boton`, `data-confirmar-tipo="peligro"`) |
+| Confirmar con un mensaje que la vista calcula al enviar | `if (!miaConfirmarEnvio(e, { mensaje, boton })) { return; }` en el manejador `submit` |
+| Pedir un motivo obligatorio (rechazos) | `<form data-pedir-texto="Motivo del rechazo" data-pedir-texto-campo="nombre_del_campo">` |
+| Avisar algo, con un solo botón | `miaConfirmar({ mensaje, boton: 'Entendido', soloAceptar: true })` |
+| Preguntar desde un script | `miaConfirmar({ mensaje, boton, peligro }).then(...)` y `miaPedirTexto({...}).then(...)` |
+
+No se usan `alert()`, `confirm()` ni `prompt()` del navegador.
+
+### Barra de proporciones
+```php
+<?= ui('barra', ['clase' => 'barra-apilada', 'rol' => 'img', 'etiqueta' => 'Activos: 8, En reparación: 1',
+    'segmentos' => [['porcentaje' => 89, 'token' => 'sigebi-estado-activo'], ['porcentaje' => 11, 'token' => 'sigebi-estado-reparacion']]]) ?>
+```
+Es el único lugar donde el ancho va en línea: es un dato, no un estilo de diseño.
 
 ### Estado vacío y paginación
 - **Estado vacío:** `partials/tabla_vacia.php`, con una línea de texto y, si aplica, una acción.
@@ -154,10 +173,15 @@ La ayuda (?) viene de `App\Helpers\AyudaCampo`. El error va debajo del campo y q
 ## 5. Verificación
 
 - **Verificador:** `php database/herramientas/verificar_ui.php` (también corre en PHPUnit) falla si una vista suma `style="`, `bi bi-` escrito a mano o un botón fuera de la jerarquía.
-  - Las vistas que aún no se migraron están en `tests/Unit/datos/ui_pendientes.php`, con lo que les falta. Esa lista solo puede bajar: al migrar una vista se actualiza con `--actualizar`.
+  - La lista de pendientes (`tests/Unit/datos/ui_pendientes.php`) sirvió para migrar módulo por módulo y hoy está **vacía**: todas las vistas cumplen y cualquier desviación nueva hace fallar las pruebas.
 - **Accesibilidad:** `tests/accesibilidad.spec.js` (axe, sin violaciones graves) y `tests/responsive.spec.js` (sin desbordes; zonas táctiles de 44 px).
 - **Capturas de referencia:** `CAPTURAS_UI=<carpeta> npx playwright test tests/capturas_ui.spec.js`. Las del antes y el después están en `docs/capturas/`.
 - **Caché de la PWA:** al cambiar los estilos, sube la versión `CACHE` de `public/sw.js`.
+
+**Excepciones documentadas:**
+- **Páginas sueltas sin menú** (inicio de sesión y recuperación, verificación en dos pasos, política de datos, páginas de error, ficha pública del QR e impresión de QR) llevan su título dentro de la tarjeta, no `encabezado_pagina`. Cargan las mismas hojas con `partials/ui/hojas_estilo.php`.
+- **Formas circulares** solo para personas (avatar), contadores del menú y casillas de color de la leyenda: son convenciones reconocibles. El resto usa radios de 4 a 6 px.
+- **Estilos en línea** solo dentro de `partials/ui/` (anchos de las barras, recuadros de color de `/manual/ui`).
 
 ## 6. Decisiones
 
@@ -170,3 +194,5 @@ La ayuda (?) viene de `App\Helpers\AyudaCampo`. El error va debajo del campo y q
 | Las migas de pan las arma el layout | Salen del menú; no se desincronizan | Migas por vista: había que mantenerlas a mano en cada pantalla |
 | Verificador con lista de pendientes que solo baja | Permite migrar módulo por módulo sin bloquear y sin retroceder | Prohibir todo desde el primer día: obligaba a migrar las 86 vistas de una vez |
 | Encabezado fijo con desplazamiento dentro de la tabla (pantallas grandes) | Las columnas se siguen leyendo en tablas largas | Encabezado fijo a la página: no funciona dentro de `.table-responsive`, que hace falta para las tablas anchas |
+| Accesos rápidos del panel como lista de enlaces | Densidad y lectura rápida; no compite con las cifras | Diecinueve tarjetas iguales con ícono grande: simetría sin contenido que la pida |
+| Una sola confirmación al cerrar una jornada con hallazgos | El mensaje dice las dos cosas (hallazgos y pendientes) y el usuario decide una vez | Dos diálogos seguidos: el segundo se ignora por costumbre |

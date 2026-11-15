@@ -120,6 +120,38 @@
         return false;
     };
 
+    // Formularios que piden un texto antes de enviar (motivo de un rechazo):
+    //   <form data-pedir-texto="Motivo del rechazo" data-pedir-texto-campo="respuesta"
+    //         data-pedir-texto-mensaje="…" data-pedir-texto-boton="Rechazar">
+    // El texto va al campo oculto con ese name y el formulario se envía.
+    document.addEventListener('submit', function (evento) {
+        var form = evento.target;
+        if (!(form instanceof HTMLFormElement) || !form.hasAttribute('data-pedir-texto')) { return; }
+        if (form.dataset.textoListo === '1') {
+            delete form.dataset.textoListo;
+            return;
+        }
+        evento.preventDefault();
+        evento.stopImmediatePropagation();
+        var enviador = evento.submitter;
+        pedirTexto({
+            titulo: form.getAttribute('data-pedir-texto-titulo') || 'Escribe el motivo',
+            mensaje: form.getAttribute('data-pedir-texto-mensaje') || '',
+            etiqueta: form.getAttribute('data-pedir-texto'),
+            boton: form.getAttribute('data-pedir-texto-boton') || 'Enviar',
+            peligro: form.getAttribute('data-pedir-texto-tipo') === 'peligro'
+        }).then(function (texto) {
+            if (texto === null) { return; }
+            form.elements[form.getAttribute('data-pedir-texto-campo')].value = texto;
+            form.dataset.textoListo = '1';
+            if (typeof form.requestSubmit === 'function') {
+                form.requestSubmit(enviador || undefined);
+            } else {
+                form.submit();
+            }
+        });
+    }, true);
+
     // Formularios: se detiene el envío, se pregunta y, si se confirma, se vuelve a enviar
     // con el mismo botón. La marca data-confirmado evita volver a preguntar en ese envío.
     document.addEventListener('submit', function (evento) {

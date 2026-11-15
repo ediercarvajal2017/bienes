@@ -93,6 +93,14 @@ final class AyudaCampo
             'titulo' => 'Selección en varias páginas',
             'texto' => 'La selección se mantiene al buscar o al cambiar de página: puedes ir marcando bienes en varias páginas antes de confirmar. "Vaciar selección" la borra toda.',
         ],
+        'estado_cargo' => [
+            'titulo' => 'Estado del cargo',
+            'texto' => 'Desactivar un cargo lo oculta al registrar usuarios nuevos, pero conserva los usuarios que ya lo tienen.',
+        ],
+        'estado_categoria' => [
+            'titulo' => 'Estado de la categoría',
+            'texto' => 'Desactivar una categoría la oculta al registrar bienes nuevos, pero conserva los bienes que ya la usan.',
+        ],
         'lote_codigo' => [
             'titulo' => 'Código de lote',
             'texto' => 'El código que comparten todas las unidades (ej. la placa de la Alcaldía). Solo letras, números y guiones. Cada unidad queda como CÓDIGO-001, CÓDIGO-002…',

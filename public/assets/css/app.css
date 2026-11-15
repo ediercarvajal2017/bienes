@@ -584,19 +584,18 @@ select.selector-buscable.is-invalid + .ts-wrapper .ts-control {
 :root {
   --sigebi-estado-activo: var(--sigebi-success);
   --sigebi-estado-reparacion: var(--sigebi-accent);
-  --sigebi-estado-reintegrado: #6c757d;
+  --sigebi-estado-reintegrado: var(--sigebi-gris-500);
   --sigebi-estado-baja: var(--sigebi-danger);
 }
-.text-sigebi-primary { color: var(--sigebi-primary); }
 .contenedor-form { max-width: 640px; }
 summary { cursor: pointer; }
-.tarjeta-cifra { transition: border-color .15s ease, transform .15s ease; }
-.tarjeta-cifra:hover, .tarjeta-cifra:focus-visible { border-color: var(--sigebi-primary); transform: translateY(-1px); }
+.tarjeta-cifra { transition: border-color var(--sigebi-transicion); }
+.tarjeta-cifra:hover, .tarjeta-cifra:focus-visible { border-color: var(--sigebi-primary); }
 .tarjeta-cifra-icono { font-size: 1.35rem; color: var(--sigebi-primary); }
-.tarjeta-cifra-valor { font-size: clamp(1.15rem, .95rem + .8vw, 1.6rem); font-weight: 700; line-height: 1.1; color: var(--bs-emphasis-color); font-variant-numeric: tabular-nums; }
+.tarjeta-cifra-valor { font-size: clamp(1.15rem, .95rem + .8vw, 1.6rem); font-weight: var(--sigebi-peso-fuerte); line-height: 1.1; color: var(--bs-emphasis-color); font-variant-numeric: tabular-nums; }
 .tarjeta-cifra-progreso { height: .4rem; }
 .tarjeta-cifra-progreso .progress-bar { background-color: var(--sigebi-primary-relleno); }
-.barra-apilada { display: flex; height: 1.1rem; border-radius: .5rem; overflow: hidden; background: var(--bs-secondary-bg); }
+.barra-apilada { display: flex; height: 1.1rem; border-radius: var(--sigebi-radio-sm); overflow: hidden; background: var(--bs-secondary-bg); }
 .barra-apilada span { display: block; height: 100%; }
 .leyenda-punto { width: .75rem; height: .75rem; border-radius: 50%; flex: 0 0 auto; }
 .leyenda-porcentaje { min-width: 3.2rem; text-align: right; }
@@ -1239,7 +1238,51 @@ html { scroll-padding-top: calc(var(--alto-navbar) + 0.75rem); }
 .filtros-n5 { --filtros: 5; --filtros-medio: 3; }
 .buscador-flexible { max-width: 420px; flex: 1 1 260px; }
 .fila-seleccionable { cursor: pointer; }
-summary { cursor: pointer; }
 .celda-cantidad { width: 9rem; }
 .texto-acotado { max-width: 14rem; }
 .cuenta-pendiente { background: var(--sigebi-advertencia-fondo); color: var(--sigebi-advertencia-texto); border-color: var(--sigebi-advertencia-borde); }
+.miniatura-52 { width: 52px; height: 52px; object-fit: cover; border-radius: var(--sigebi-radio); }
+.selector-filtro { min-width: 200px; }
+.tabla-detalle { min-width: 260px; }
+.texto-minimo { font-size: var(--sigebi-texto-minimo); }
+.badge-neutro { background: var(--sigebi-neutro-fondo); color: var(--sigebi-neutro-texto); border: 1px solid var(--sigebi-neutro-borde); }
+/* Insignias semánticas (reemplazan text-bg-* de Bootstrap): mismos colores de estado en todo MIA. */
+.badge-exito { background: var(--sigebi-exito-fondo); color: var(--sigebi-exito-texto); border: 1px solid var(--sigebi-exito-borde); }
+.badge-advertencia { background: var(--sigebi-advertencia-fondo); color: var(--sigebi-advertencia-texto); border: 1px solid var(--sigebi-advertencia-borde); }
+.badge-peligro { background: var(--sigebi-peligro-fondo); color: var(--sigebi-peligro-texto); border: 1px solid var(--sigebi-peligro-borde); }
+.badge-info { background: var(--sigebi-info-fondo); color: var(--sigebi-info-texto); border: 1px solid var(--sigebi-info-borde); }
+/* Avatares y logos (formas circulares solo para personas: convención reconocible). */
+.avatar-32 { width: 32px; height: 32px; object-fit: cover; border-radius: 50%; }
+.avatar-vacio { display: inline-flex; align-items: center; justify-content: center; background: var(--sigebi-surface-2); color: var(--sigebi-text-muted); }
+.logo-56 { height: 56px; width: auto; }
+.auth-logo-72 { height: 72px; width: auto; }
+
+/* Panel: indicadores que requieren atención, puntos de la leyenda y accesos rápidos. */
+.indicador {
+  display: flex; align-items: center; gap: var(--sigebi-espacio-3); height: 100%; padding: var(--sigebi-espacio-3) var(--sigebi-espacio-4);
+  border: 1px solid var(--sigebi-border); border-left-width: 4px; border-radius: var(--sigebi-radio);
+  background: var(--sigebi-surface); color: var(--sigebi-text); text-decoration: none;
+}
+.indicador:hover, .indicador:focus-visible { border-color: var(--sigebi-primary); color: var(--sigebi-text); }
+.indicador .bi { font-size: var(--sigebi-icono-lg); }
+.indicador-advertencia { border-left-color: var(--sigebi-advertencia-borde); }
+.indicador-advertencia .bi { color: var(--sigebi-advertencia-texto); }
+.indicador-info { border-left-color: var(--sigebi-info-borde); }
+.indicador-info .bi { color: var(--sigebi-info-texto); }
+.indicador-neutro { border-left-color: var(--sigebi-neutro-borde); }
+.indicador-neutro .bi { color: var(--sigebi-neutro-texto); }
+.punto-activo { background: var(--sigebi-estado-activo); }
+.punto-en_reparacion { background: var(--sigebi-estado-reparacion); }
+.punto-reintegrado { background: var(--sigebi-estado-reintegrado); }
+.punto-dado_de_baja { background: var(--sigebi-estado-baja); }
+.accesos-rapidos { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: var(--sigebi-espacio-1) var(--sigebi-espacio-4); padding: 0; list-style: none; }
+.accesos-rapidos a { display: flex; align-items: center; gap: var(--sigebi-espacio-2); padding: var(--sigebi-espacio-2) 0; color: var(--sigebi-text); text-decoration: none; }
+.accesos-rapidos a:hover, .accesos-rapidos a:focus-visible { color: var(--sigebi-primary); text-decoration: underline; }
+.accesos-rapidos .bi { color: var(--sigebi-primary); font-size: var(--sigebi-icono-md); }
+/* Ficha pública del QR (sin sesión). */
+.auth-shell-ficha { align-items: flex-start; padding: 5vh 1rem; }
+.foto-ficha { max-height: 220px; object-fit: cover; border-radius: var(--sigebi-radio); }
+.foto-ficha-vacia {
+  display: flex; align-items: center; justify-content: center; height: 140px; border-radius: var(--sigebi-radio);
+  background: var(--sigebi-surface-2); color: var(--sigebi-text-muted); font-size: 2rem;
+}
