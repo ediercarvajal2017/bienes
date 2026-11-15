@@ -77,7 +77,7 @@ foreach (['/manual', '/mi-cuenta'] as $rutaPie) {
 
 <nav class="navbar navbar-sigebi navbar-expand px-3">
     <button type="button" id="btnMenu" class="navbar-toggle me-2" aria-label="Abrir menú" aria-expanded="false">
-        <i class="bi bi-list"></i>
+        <?= icono('menu') ?>
     </button>
     <a class="navbar-brand d-flex align-items-center" href="<?= Url::to('/dashboard') ?>">
         <img src="<?= Url::asset('/assets/img/logo.webp') ?>" width="400" height="400" alt="" class="navbar-logo">
@@ -99,7 +99,7 @@ foreach (['/manual', '/mi-cuenta'] as $rutaPie) {
     }
     $institucionesFiltro = Auth::esSuperusuario() ? Institucion::listadoParaSelect() : [];
     ?>
-    <form method="get" action="<?= Url::to('/buscar') ?>" class="d-none d-lg-block ms-3" style="width: 220px;">
+    <form method="get" action="<?= Url::to('/buscar') ?>" class="d-none d-lg-block ms-3 buscador-navbar">
         <label for="buscadorGlobal" class="visually-hidden">Buscar bienes, espacios o usuarios</label>
         <input type="search" data-buscar-form id="buscadorGlobal" name="q" class="form-control form-control-sm"
                placeholder="Buscar en todo MIA...">
@@ -117,14 +117,14 @@ foreach (['/manual', '/mi-cuenta'] as $rutaPie) {
     <div class="ms-auto d-flex align-items-center gap-2 gap-sm-3">
         <button type="button" class="theme-toggle boton-notas" data-abrir-notas aria-controls="panelNotas" aria-expanded="false"
                 title="Mis notas" aria-label="Mis notas<?= $totalNotas > 0 ? " ({$totalNotas})" : '' ?>">
-            <i class="bi bi-sticky" aria-hidden="true"></i>
+            <?= icono('nota') ?>
             <span class="boton-notas-cuenta" data-cuenta-notas aria-hidden="true"<?= $totalNotas > 0 ? '' : ' hidden' ?>><?= $totalNotas ?></span>
         </button>
         <a href="<?= Url::to('/buscar') ?>" class="theme-toggle d-none d-sm-inline-flex d-lg-none" aria-label="Buscar" title="Buscar">
-            <i class="bi bi-search"></i>
+            <?= icono('buscar') ?>
         </a>
         <a href="<?= Url::to('/mi-cuenta') ?>" class="theme-toggle d-md-none" aria-label="Mi cuenta" title="Mi cuenta">
-            <i class="bi bi-person-circle"></i>
+            <?= icono('cuenta') ?>
         </a>
         <a href="<?= Url::to('/mi-cuenta') ?>" class="usuario-navbar usuario-navbar-enlace d-none d-md-flex align-items-center gap-2" title="Mi cuenta: contraseña y verificación en dos pasos">
             <span class="usuario-navbar-avatar" aria-hidden="true"><?= htmlspecialchars($inicialesUsuario, ENT_QUOTES) ?></span>
@@ -134,7 +134,7 @@ foreach (['/manual', '/mi-cuenta'] as $rutaPie) {
                     <span class="usuario-navbar-rol"><?= htmlspecialchars(Auth::rol() ?? '', ENT_QUOTES) ?></span>
                     <?php if (!Auth::esSuperusuario() && Auth::institucionNombre() !== null && count($familiaSedes) <= 1): ?>
                         <span class="usuario-navbar-institucion" title="<?= htmlspecialchars(Auth::institucionNombre(), ENT_QUOTES) ?>">
-                            <i class="bi bi-building"></i><?= htmlspecialchars(Auth::institucionNombre(), ENT_QUOTES) ?>
+                            <?= icono('institucion') ?><?= htmlspecialchars(Auth::institucionNombre(), ENT_QUOTES) ?>
                         </span>
                     <?php endif; ?>
                 </div>
@@ -171,12 +171,12 @@ foreach (['/manual', '/mi-cuenta'] as $rutaPie) {
             </form>
         <?php endif; ?>
         <button type="button" id="btnTema" class="theme-toggle d-none d-sm-inline-flex" data-tema-toggle aria-label="Cambiar tema" title="Cambiar tema">
-            <i class="bi bi-moon-stars"></i>
+            <?= icono('tema') ?>
         </button>
         <form method="post" action="<?= Url::to('/logout') ?>">
             <?= \App\Core\Csrf::field() ?>
-            <button type="submit" class="btn btn-sm btn-light boton-salir" aria-label="Salir" title="Salir">
-                <i class="bi bi-box-arrow-right d-sm-none" aria-hidden="true"></i><span class="d-none d-sm-inline">Salir</span>
+            <button type="submit" class="btn btn-sm boton-salir" aria-label="Salir" title="Salir">
+                <?= icono('salir', 'd-sm-none') ?><span class="d-none d-sm-inline">Salir</span>
             </button>
         </form>
     </div>

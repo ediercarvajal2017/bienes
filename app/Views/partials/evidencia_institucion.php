@@ -12,7 +12,7 @@ if (!Auth::esSuperusuario()) {
     return;
 }
 ?>
-<div class="mb-3" style="max-width: 320px;">
+<div class="mb-3 contenedor-sm">
     <label for="selectorInstitucion" class="form-label small">Institución</label>
     <select id="selectorInstitucion" class="form-select form-select-sm selector-buscable" data-selector-institucion="<?= Url::to($ventana) ?>">
         <option value="">-- Todas (elige una para registrar) --</option>

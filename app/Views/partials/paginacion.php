@@ -80,7 +80,7 @@ if ($totalPaginas > 1) {
                 <ul class="pagination pagination-sm mb-0 flex-wrap">
                     <li class="page-item<?= $pagina <= 1 ? ' disabled' : '' ?>">
                         <a class="page-link" href="<?= $enlacePagina(max(1, $pagina - 1)) ?>" aria-label="Página anterior"<?= $pagina <= 1 ? ' tabindex="-1" aria-disabled="true"' : '' ?>>
-                            <i class="bi bi-chevron-left" aria-hidden="true"></i><span class="d-none d-md-inline ms-1">Anterior</span>
+                            <?= icono('anterior') ?><span class="d-none d-md-inline ms-1">Anterior</span>
                         </a>
                     </li>
                     <?php $anterior = 0; ?>
@@ -99,7 +99,7 @@ if ($totalPaginas > 1) {
                     <?php endforeach; ?>
                     <li class="page-item<?= $pagina >= $totalPaginas ? ' disabled' : '' ?>">
                         <a class="page-link" href="<?= $enlacePagina(min($totalPaginas, $pagina + 1)) ?>" aria-label="Página siguiente"<?= $pagina >= $totalPaginas ? ' tabindex="-1" aria-disabled="true"' : '' ?>>
-                            <span class="d-none d-md-inline me-1">Siguiente</span><i class="bi bi-chevron-right" aria-hidden="true"></i>
+                            <span class="d-none d-md-inline me-1">Siguiente</span><?= icono('siguiente') ?>
                         </a>
                     </li>
                 </ul>

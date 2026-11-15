@@ -40,29 +40,29 @@ $idCampoFoto = !empty($idCampo)
     <?php if (!empty($fotoActualUrl)): ?>
         <img src="<?= htmlspecialchars($fotoActualUrl, ENT_QUOTES) ?>"
              alt="<?= htmlspecialchars($etiqueta ?? 'Foto actual', ENT_QUOTES) ?>"
-             class="mb-2 d-block" style="height:72px;border-radius:4px;object-fit:cover;">
+             class="mb-2 d-block miniatura-foto">
     <?php endif; ?>
 
     <div class="d-flex gap-2 flex-wrap align-items-center">
         <input type="file" id="<?= $idCampoFoto ?>" name="<?= htmlspecialchars($nombreCampo, ENT_QUOTES) ?>"
                accept="<?= htmlspecialchars($accept, ENT_QUOTES) ?>" <?= $soloImagen ? 'capture="environment"' : '' ?>
-               class="form-control form-control-sm campo-foto-input" style="max-width: 220px;"
+               class="form-control form-control-sm campo-foto-input"
                <?= $requerido ? 'required' : '' ?>>
         <button type="button" class="btn btn-sm btn-outline-secondary text-nowrap campo-foto-btn-tomar">
-            <i class="bi bi-camera me-1"></i>Tomar foto
+            <?= icono('foto', 'me-1') ?>Tomar foto
         </button>
     </div>
 
-    <div class="campo-foto-camara mt-2 d-none" style="max-width: 320px;">
+    <div class="campo-foto-camara mt-2 d-none">
         <video class="w-100 rounded border bg-dark campo-foto-video" autoplay playsinline muted></video>
         <div class="d-flex gap-2 mt-2 flex-wrap">
             <button type="button" class="btn btn-sm btn-primary campo-foto-btn-capturar">Capturar</button>
             <button type="button" class="btn btn-sm btn-outline-secondary d-none campo-foto-btn-cambiar">
-                <i class="bi bi-arrow-repeat me-1"></i>Cambiar cámara
+                <?= icono('cambiar', 'me-1') ?>Cambiar cámara
             </button>
             <button type="button" class="btn btn-sm btn-outline-secondary campo-foto-btn-cancelar">Cancelar</button>
         </div>
     </div>
     <canvas class="d-none campo-foto-canvas"></canvas>
-    <img class="mt-2 d-none campo-foto-preview" style="height:72px;border-radius:4px;object-fit:cover;" alt="Foto capturada">
+    <img class="mt-2 d-none campo-foto-preview miniatura-foto" alt="Foto capturada">
 </div>

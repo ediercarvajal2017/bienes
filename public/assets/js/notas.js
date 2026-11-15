@@ -135,7 +135,7 @@
         var pregunta = document.createElement('span');
         pregunta.textContent = '¿Borrar esta nota?';
         var si = boton('btn btn-sm btn-danger', 'Borrar');
-        var no = boton('btn btn-sm btn-light', 'Cancelar');
+        var no = boton('btn btn-sm btn-outline-secondary', 'Cancelar');
         confirmar.append(pregunta, si, no);
 
         tarjeta.append(campo, pie, confirmar);

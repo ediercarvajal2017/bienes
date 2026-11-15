@@ -1203,3 +1203,37 @@ html { scroll-padding-top: calc(var(--alto-navbar) + 0.75rem); }
 .muestra-color { display: flex; align-items: center; gap: var(--sigebi-espacio-3); }
 .muestra-color-recuadro { flex: 0 0 auto; width: 40px; height: 40px; border: 1px solid var(--sigebi-border); border-radius: var(--sigebi-radio-sm); }
 .tabla-datos:focus-visible { outline: 2px solid var(--sigebi-primary); outline-offset: 2px; }
+
+/* Barra superior: buscador y botón Salir (antes btn-light, fuera de la jerarquía). */
+.buscador-navbar { width: 220px; }
+.boton-salir {
+  --bs-btn-bg: #fff; --bs-btn-border-color: #fff; --bs-btn-color: var(--sigebi-gris-800);
+  --bs-btn-hover-bg: var(--sigebi-gris-100); --bs-btn-hover-border-color: var(--sigebi-gris-100); --bs-btn-hover-color: var(--sigebi-gris-900);
+  --bs-btn-active-bg: var(--sigebi-gris-200); --bs-btn-active-border-color: var(--sigebi-gris-200); --bs-btn-active-color: var(--sigebi-gris-900);
+}
+[data-bs-theme="dark"] .boton-salir {
+  --bs-btn-bg: var(--sigebi-surface-2); --bs-btn-border-color: var(--sigebi-border); --bs-btn-color: var(--sigebi-text);
+  --bs-btn-hover-bg: var(--sigebi-border); --bs-btn-hover-border-color: var(--sigebi-border); --bs-btn-hover-color: #fff;
+}
+
+/* Fotos: miniatura del formulario (72 px), sin foto en los listados (36 px) y campo de foto. */
+.miniatura-foto { height: 72px; width: auto; object-fit: cover; border-radius: var(--sigebi-radio-sm); }
+.miniatura-vacia {
+  display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px;
+  border-radius: var(--sigebi-radio-sm); background: var(--sigebi-surface-2); color: var(--sigebi-text-muted);
+}
+.campo-foto-input { max-width: 220px; }
+.campo-foto-camara { max-width: 320px; }
+
+/* Utilidades de las vistas migradas (reemplazan style="…"). */
+.min-ancho-0 { min-width: 0; }
+.qr-miniatura { width: 64px; height: 64px; }
+.columna-casilla { width: 32px; }
+.cuenta-pestana {
+  margin-left: var(--sigebi-espacio-1); background: var(--sigebi-neutro-fondo); color: var(--sigebi-neutro-texto);
+  border: 1px solid var(--sigebi-neutro-borde); border-radius: var(--sigebi-radio-sm);
+}
+.filtros-n2 { --filtros: 2; --filtros-medio: 2; }
+.filtros-n3 { --filtros: 3; --filtros-medio: 3; }
+.filtros-n4 { --filtros: 4; --filtros-medio: 3; }
+.filtros-n5 { --filtros: 5; --filtros-medio: 3; }

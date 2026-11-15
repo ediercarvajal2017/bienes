@@ -14,12 +14,12 @@ use App\Models\Nota;
        data-url="<?= Url::to('/notas') ?>" data-csrf="<?= htmlspecialchars(Csrf::token(), ENT_QUOTES) ?>"
        data-max-caracteres="<?= Nota::MAX_CARACTERES ?>" data-max-notas="<?= Nota::MAX_POR_USUARIO ?>">
     <div class="panel-notas-encabezado">
-        <h2 id="tituloNotas" class="h6 mb-0"><i class="bi bi-sticky me-2" aria-hidden="true"></i>Mis notas</h2>
+        <h2 id="tituloNotas" class="h6 mb-0"><?= icono('nota', 'me-2') ?>Mis notas</h2>
         <button type="button" class="btn-close" data-cerrar-notas aria-label="Cerrar las notas"></button>
     </div>
     <div class="panel-notas-acciones">
         <button type="button" class="btn btn-sm btn-primary" data-nueva-nota>
-            <i class="bi bi-plus-lg me-1" aria-hidden="true"></i>Nueva nota
+            <?= icono('crear', 'me-1') ?>Nueva nota
         </button>
         <span class="small text-muted">Solo tú las ves. Se guardan solas.</span>
     </div>

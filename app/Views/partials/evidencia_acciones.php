@@ -10,17 +10,11 @@ use App\Helpers\EnlaceArchivo;
 
 ?>
 <div class="d-inline-flex flex-wrap justify-content-end gap-1">
-    <a href="<?= EnlaceArchivo::url((string) $archivoPath) ?>" class="btn btn-sm btn-outline-secondary" target="_blank">
-        <i class="bi bi-download me-1" aria-hidden="true"></i>Descargar
-    </a>
-    <a href="<?= htmlspecialchars($urlEditar, ENT_QUOTES) ?>" class="btn btn-sm btn-outline-primary">
-        <i class="bi bi-pencil me-1" aria-hidden="true"></i>Editar
-    </a>
-    <form method="post" action="<?= htmlspecialchars($urlEliminar, ENT_QUOTES) ?>" class="d-inline"
-          data-confirmar="¿Eliminar este registro? Irá a la papelera; un superusuario puede restaurarlo si fue un error.">
+    <?= ui('boton', ['texto' => 'Descargar', 'icono' => 'descargar', 'tamano' => 'sm', 'url' => EnlaceArchivo::url((string) $archivoPath), 'atributos' => ['target' => '_blank']]) ?>
+    <?= ui('boton', ['texto' => 'Editar', 'icono' => 'editar', 'tamano' => 'sm', 'url' => $urlEditar]) ?>
+    <form method="post" action="<?= htmlspecialchars($urlEliminar, ENT_QUOTES) ?>" class="d-inline">
         <?= Csrf::field() ?>
-        <button type="submit" class="btn btn-sm btn-outline-danger">
-            <i class="bi bi-trash me-1" aria-hidden="true"></i>Eliminar
-        </button>
+        <?= ui('boton', ['texto' => 'Eliminar', 'tipo' => 'peligro', 'icono' => 'eliminar', 'tamano' => 'sm', 'tipoBoton' => 'submit',
+            'confirmar' => 'El registro irá a la papelera. Un superusuario puede restaurarlo si fue un error.']) ?>
     </form>
 </div>

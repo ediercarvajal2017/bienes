@@ -73,7 +73,7 @@ return [
     'anterior' => ['icono' => 'chevron-left', 'uso' => 'Anterior'],
     'siguiente' => ['icono' => 'chevron-right', 'uso' => 'Siguiente'],
     'desplegar' => ['icono' => 'chevron-down', 'uso' => 'Desplegar una sección'],
-    'tema' => ['icono' => 'moon-stars', 'uso' => 'Cambiar entre tema claro y oscuro'],
+    'tema' => ['icono' => 'moon-stars', 'uso' => 'Cambiar entre tema claro y oscuro (en el oscuro, tema.js muestra el sol)'],
     'entrar' => ['icono' => 'box-arrow-in-right', 'uso' => 'Iniciar sesión'],
     'salir' => ['icono' => 'box-arrow-right', 'uso' => 'Cerrar sesión'],
 ];
