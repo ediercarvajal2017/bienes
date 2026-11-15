@@ -13,20 +13,13 @@ $numeros = static function (array $ids): string {
     return $partes === [] ? (string) $ultimo : implode(', ', $partes) . ' y ' . $ultimo;
 };
 ?>
-<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-    <div>
-        <h1 class="h4 mb-0"><?= $separar ? 'Separar el lote #' . (int) $loteIds[0] . ' por categoría' : 'Unificar lotes' ?></h1>
-        <p class="text-muted small mb-0">
-            Revisa el resultado antes de confirmar. Los bienes quedan en <strong>un lote nuevo por categoría</strong>,
-            cada uno con su comprobante FO-ADMI-009 en Excel.
-        </p>
-    </div>
+<?php ob_start(); ?>
     <a href="<?= Url::to('/reintegros/lotes') ?>" class="btn btn-sm btn-outline-secondary">Volver</a>
-</div>
+<?= ui('encabezado_pagina', ['titulo' => (string) ($separar ? 'Separar el lote #' . (int) $loteIds[0] . ' por categoría' : 'Unificar lotes'), 'icono' => 'reintegro', 'subtitulo' => 'Revisa el resultado antes de confirmar. Los bienes quedan en un lote nuevo por categoría, cada uno con su comprobante FO-ADMI-009 en Excel.', 'acciones' => (string) ob_get_clean()]) ?>
 
-<?php if (!empty($error)): ?><div class="alert alert-danger py-2 small" style="max-width: 760px;"><?= $e($error) ?></div><?php endif; ?>
+<?php if (!empty($error)): ?><div class="alert alert-danger py-2 small contenedor-md"><?= $e($error) ?></div><?php endif; ?>
 
-<div class="row g-3" style="max-width: 760px;">
+<div class="row g-3 contenedor-md">
     <div class="col-md-5">
         <h2 class="h6">Lote<?= $separar ? '' : 's' ?> seleccionado<?= $separar ? '' : 's' ?></h2>
         <ul class="list-group small">
@@ -64,7 +57,7 @@ $numeros = static function (array $ids): string {
     </div>
 </div>
 
-<form method="post" action="<?= Url::to('/reintegros/lotes/unificar') ?>" class="card mt-3" style="max-width: 760px;"
+<form method="post" action="<?= Url::to('/reintegros/lotes/unificar') ?>" class="card mt-3 contenedor-md"
       data-confirmar="¿Confirmar? Se crearán <?= count($grupos) ?> lote(s) nuevo(s) y <?= $separar ? 'el lote seleccionado quedará' : 'los ' . count($loteIds) . ' lotes seleccionados quedarán' ?> como Unificado.">
     <?= Csrf::field() ?>
     <?php foreach ($loteIds as $id): ?>
@@ -87,7 +80,7 @@ $numeros = static function (array $ids): string {
         </div>
         <div class="d-flex gap-2 mt-3">
             <button type="submit" class="btn btn-primary" id="botonConfirmarUnificar">
-                <i class="bi bi-diagram-3 me-1"></i><?= $separar ? 'Confirmar separación' : 'Confirmar unificación' ?>
+                <?= icono('agrupar', 'me-1') ?><?= $separar ? 'Confirmar separación' : 'Confirmar unificación' ?>
             </button>
             <a href="<?= Url::to('/reintegros/lotes') ?>" class="btn btn-outline-secondary">Cancelar</a>
         </div>

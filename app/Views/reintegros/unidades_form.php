@@ -13,17 +13,11 @@ $cantidadesPrevias = (array) ($viejo['cantidad'] ?? []);
 $generarLote = ($viejo['generar_lote'] ?? '1') === '1';
 $volverLista = Url::to('/reintegros/unidades') . (Auth::esSuperusuario() ? '?institucion=' . (int) $institucionId : '');
 ?>
-<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-    <div>
-        <h1 class="h4 mb-0">Reintegrar por cantidad · Placa <span class="mono"><?= $e($placa) ?></span></h1>
-        <p class="text-muted small mb-0">
-            <?= $e($lote['descripcion']) ?><?= !empty($lote['categoria_nombre']) ? ' · ' . $e($lote['categoria_nombre']) : '' ?>
-        </p>
-    </div>
+<?php ob_start(); ?>
     <a href="<?= $e($volverLista) ?>" class="btn btn-sm btn-outline-secondary">Volver</a>
-</div>
+<?= ui('encabezado_pagina', ['titulo' => 'Reintegrar por cantidad · Placa ' . (string) ($placa), 'icono' => 'reintegro', 'subtitulo' => (string) ($lote['descripcion']) . (string) (!empty($lote['categoria_nombre']) ? ' · ' . $lote['categoria_nombre'] : ''), 'acciones' => (string) ob_get_clean()]) ?>
 
-<?php if (!empty($error)): ?><div class="alert alert-danger py-2 small" style="max-width: 760px;"><?= $e($error) ?></div><?php endif; ?>
+<?php if (!empty($error)): ?><div class="alert alert-danger py-2 small contenedor-md"><?= $e($error) ?></div><?php endif; ?>
 
 <div class="d-flex flex-wrap gap-2 mb-3" aria-label="Resumen del código">
     <span class="badge text-bg-light border fs-6 fw-normal">En cartera: <strong><?= (int) $lote['en_cartera'] ?></strong> de <?= (int) $lote['total'] ?></span>
@@ -34,7 +28,7 @@ $volverLista = Url::to('/reintegros/unidades') . (Auth::esSuperusuario() ? '?ins
 </div>
 
 <?php if (!empty($resumen['bienResumen'])): ?>
-    <div class="alert alert-info small py-2" style="max-width: 760px;">
+    <div class="alert alert-info small py-2 contenedor-md">
         Este código también está en la cartera como el bien <strong class="mono"><?= $e($resumen['bienResumen']['codigo_identificacion']) ?></strong>
         "<?= $e($resumen['bienResumen']['descripcion']) ?>". Al reintegrar, MIA le resta las unidades: su descripción y su valor
         quedan con lo que queda en cartera.
@@ -42,11 +36,11 @@ $volverLista = Url::to('/reintegros/unidades') . (Auth::esSuperusuario() ? '?ins
 <?php endif; ?>
 
 <?php if ($resumen['motivo'] !== null): ?>
-    <div class="alert alert-warning small" style="max-width: 760px;">No se puede reintegrar: <?= $e($resumen['motivo']) ?>.</div>
+    <div class="alert alert-warning small contenedor-md">No se puede reintegrar: <?= $e($resumen['motivo']) ?>.</div>
 <?php elseif ($resumen['ubicaciones'] === []): ?>
     <p class="text-muted">Este código ya no tiene unidades en cartera.</p>
 <?php else: ?>
-    <form method="post" action="<?= $e(Url::to('/reintegros/unidades/' . rawurlencode($placa))) ?>" id="formUnidades" style="max-width: 760px;">
+    <form class="contenedor-md" method="post" action="<?= $e(Url::to('/reintegros/unidades/' . rawurlencode($placa))) ?>" id="formUnidades">
         <?= Csrf::field() ?>
         <?php if (Auth::esSuperusuario()): ?><input type="hidden" name="institucion_id" value="<?= (int) $institucionId ?>"><?php endif; ?>
 
@@ -56,7 +50,7 @@ $volverLista = Url::to('/reintegros/unidades') . (Auth::esSuperusuario() ? '?ins
                 <tr>
                     <th>Ubicación</th>
                     <th class="text-end">Disponibles</th>
-                    <th style="width: 9rem;">Reintegrar</th>
+                    <th class="celda-cantidad">Reintegrar</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -120,7 +114,7 @@ $volverLista = Url::to('/reintegros/unidades') . (Auth::esSuperusuario() ? '?ins
 
         <div class="accion-fija-movil">
             <button type="submit" class="btn btn-primary" id="botonReintegrarUnidades" disabled>
-                <i class="bi bi-box-arrow-in-left me-1"></i>Reintegrar <span id="totalUnidades">0</span> unidad(es)
+                <?= icono('reintegro', 'me-1') ?>Reintegrar <span id="totalUnidades">0</span> unidad(es)
             </button>
         </div>
     </form>
@@ -145,8 +139,12 @@ $volverLista = Url::to('/reintegros/unidades') . (Auth::esSuperusuario() ? '?ins
         campos.forEach(function (c) { c.addEventListener('input', sumar); });
         document.getElementById('formUnidades').addEventListener('submit', function (evento) {
             const suma = sumar();
-            if (suma === 0 || !confirm('¿Reintegrar ' + suma + ' unidad(es) de la placa <?= $e($placa) ?>?')) {
+            if (suma === 0) {
                 evento.preventDefault();
+                return;
+            }
+            if (!window.miaConfirmarEnvio(evento, { mensaje: '¿Reintegrar ' + suma + ' unidad(es) de la placa ' + <?= json_encode($placa) ?> + '?', boton: 'Reintegrar' })) {
+                return;
             }
         });
         sumar();

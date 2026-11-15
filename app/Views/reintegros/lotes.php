@@ -7,11 +7,6 @@ use App\Core\View;
 use App\Helpers\FechaMovimiento;
 use App\Models\LoteReintegro;
 
-$insignias = [
-    'pendiente' => 'badge-lote badge-lote-pendiente',
-    'reintegrado' => 'badge-lote badge-lote-reintegrado',
-    'unificado' => 'badge-lote badge-lote-unificado',
-];
 $pestanas = [
     'pendiente' => 'Pendientes',
     'reintegrado' => 'Reintegrados',
@@ -30,20 +25,17 @@ $hayPendientesEnPagina = (bool) array_filter($lotes, static fn (array $l): bool 
 $hayFiltros = $filtros['categoria'] !== null || $filtros['desde'] !== null || $filtros['hasta'] !== null;
 $e = static fn (?string $texto): string => htmlspecialchars((string) $texto, ENT_QUOTES);
 ?>
-<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-    <div>
-        <h1 class="h4 mb-0">Lotes de reintegro</h1>
-        <p class="text-muted small mb-0">Cada lote agrupa reintegros de una categoría para entregarlos a la Alcaldía con el comprobante FO-ADMI-009 (Excel). Puedes unificar varios lotes pendientes; cuando los entregues, márcalos como reintegrados.</p>
-    </div>
+<?php ob_start(); ?>
     <div class="d-flex gap-2">
         <a href="<?= Url::to('/reintegros') ?>" class="btn btn-sm btn-outline-secondary">Ir a reintegrar</a>
         <a href="<?= Url::to('/reintegros/lotes/generar') ?>" class="btn btn-sm btn-primary position-relative">
-            <i class="bi bi-file-earmark-plus me-1"></i>Generar lote
+            <?= icono('crear', 'me-1') ?>Generar lote
             <?php if ($pendientesDeLote > 0): ?>
-                <span class="badge rounded-pill text-bg-warning ms-1"><?= $pendientesDeLote ?></span>
+                <span class="badge cuenta-pestana cuenta-pendiente"><?= $pendientesDeLote ?></span>
             <?php endif; ?>
         </a>
-    </div>
+    
+<?= ui('encabezado_pagina', ['titulo' => 'Lotes de reintegro', 'icono' => 'reintegro', 'subtitulo' => 'Cada lote agrupa reintegros de una categoría para entregarlos a la Alcaldía con el comprobante FO-ADMI-009 (Excel). Puedes unificar varios lotes pendientes; cuando los entregues, márcalos como reintegrados.', 'acciones' => (string) ob_get_clean()]) ?>
 </div>
 
 <?php if (!empty($mensaje)): ?><div class="alert alert-success py-2 small"><?= $e($mensaje) ?></div><?php endif; ?>
@@ -63,7 +55,7 @@ $e = static fn (?string $texto): string => htmlspecialchars((string) $texto, ENT
             <a class="nav-link<?= $pestana === $valor ? ' active' : '' ?>" <?= $pestana === $valor ? 'aria-current="page"' : '' ?>
                href="<?= $e($url(['estado' => $valor])) ?>">
                 <?= $texto ?>
-                <span class="badge rounded-pill <?= $valor === 'pendiente' && $conteos[$valor] > 0 ? 'text-bg-warning' : 'text-bg-light border' ?> ms-1"><?= (int) $conteos[$valor] ?></span>
+                <span class="badge cuenta-pestana<?= $valor === 'pendiente' && $conteos[$valor] > 0 ? ' cuenta-pendiente' : '' ?>"><?= (int) $conteos[$valor] ?></span>
             </a>
         </li>
     <?php endforeach; ?>
@@ -90,7 +82,7 @@ $e = static fn (?string $texto): string => htmlspecialchars((string) $texto, ENT
         <input id="filtroHasta" type="date" name="hasta" class="form-control form-control-sm" value="<?= $e($filtros['hasta']) ?>">
     </div>
     <div class="col-12 col-sm-auto d-flex gap-2">
-        <button type="submit" class="btn btn-sm btn-outline-primary"><i class="bi bi-funnel me-1"></i>Filtrar</button>
+        <button type="submit" class="btn btn-sm btn-outline-secondary"><?= icono('filtrar', 'me-1') ?>Filtrar</button>
         <?php if ($hayFiltros): ?>
             <a href="<?= $e(Url::to('/reintegros/lotes') . '?estado=' . $pestana) ?>" class="btn btn-sm btn-link">Quitar filtros</a>
         <?php endif; ?>
@@ -121,7 +113,7 @@ $e = static fn (?string $texto): string => htmlspecialchars((string) $texto, ENT
             <table class="table table-sm table-hover align-middle bg-white tabla-cards">
                 <thead>
                 <tr>
-                    <th style="width: 32px;">
+                    <th class="columna-casilla">
                         <?php if ($hayPendientesEnPagina): ?>
                             <input type="checkbox" id="seleccionarTodos" class="form-check-input" aria-label="Seleccionar todos los lotes pendientes">
                         <?php endif; ?>
@@ -173,7 +165,7 @@ $e = static fn (?string $texto): string => htmlspecialchars((string) $texto, ENT
                         </td>
                         <td class="text-end" data-label="Bienes"><?= (int) $l['total_bienes'] ?></td>
                         <td data-label="Estado">
-                            <span class="badge <?= $insignias[$l['estado']] ?? 'text-bg-secondary' ?>"><?= $e(LoteReintegro::ESTADOS[$l['estado']] ?? $l['estado']) ?></span>
+                            <?= ui('insignia_estado', ['tipo' => 'lote', 'estado' => (string) $l['estado']]) ?>
                             <div class="small text-muted">
                                 <?php if ($l['estado'] === 'pendiente'): ?>
                                     <?= $e(FechaMovimiento::antiguedad((string) $l['fecha'])) ?>
@@ -188,8 +180,8 @@ $e = static fn (?string $texto): string => htmlspecialchars((string) $texto, ENT
                         <td class="text-end text-nowrap">
                             <a href="<?= Url::to('/reintegros/lotes/' . $l['id']) ?>" class="btn btn-sm btn-outline-secondary">Ver</a>
                             <?php if ($l['estado'] !== 'unificado'): ?>
-                                <a href="<?= Url::to('/reintegros/lotes/' . $l['id'] . '/formato.xlsx') ?>" class="btn btn-sm btn-primary" title="Descargar comprobante FO-ADMI-009 (Excel)">
-                                    <i class="bi bi-file-earmark-excel me-1"></i>Excel
+                                <a href="<?= Url::to('/reintegros/lotes/' . $l['id'] . '/formato.xlsx') ?>" class="btn btn-sm btn-outline-secondary" title="Descargar comprobante FO-ADMI-009 (Excel)">
+                                    <?= icono('exportar_excel', 'me-1') ?>Excel
                                 </a>
                             <?php endif; ?>
                         </td>
@@ -206,18 +198,18 @@ $e = static fn (?string $texto): string => htmlspecialchars((string) $texto, ENT
         <?php if ($hayPendientesEnPagina): ?>
             <div class="accion-fija-movil">
                 <div class="d-flex flex-wrap align-items-center gap-2 mt-2">
-                    <button type="button" class="btn btn-success" id="botonMostrarMarcar" disabled aria-expanded="false" aria-controls="panelMarcar">
-                        <i class="bi bi-check2-circle me-1"></i>Marcar como reintegrados (<span class="contador-lotes">0</span>)
+                    <button type="button" class="btn btn-outline-secondary" id="botonMostrarMarcar" disabled aria-expanded="false" aria-controls="panelMarcar">
+                        <?= icono('guardar', 'me-1') ?>Marcar como reintegrados (<span class="contador-lotes">0</span>)
                     </button>
-                    <button type="button" class="btn btn-outline-primary" id="botonUnificar" disabled
+                    <button type="button" class="btn btn-outline-secondary" id="botonUnificar" disabled
                             data-url="<?= Url::to('/reintegros/lotes/unificar') ?>"
                             title="Juntar los lotes elegidos y dejarlos separados en un lote por categoría">
-                        <i class="bi bi-diagram-3 me-1"></i>Unificar por categoría (<span class="contador-lotes">0</span>)
+                        <?= icono('agrupar', 'me-1') ?>Unificar por categoría (<span class="contador-lotes">0</span>)
                     </button>
                 </div>
             </div>
 
-            <div class="card mt-2" id="panelMarcar" hidden style="max-width: 680px;">
+            <div class="card mt-2 contenedor-md" id="panelMarcar" hidden>
                 <div class="card-body py-3">
                     <h2 class="h6 mb-1">Confirmar la entrega a la Alcaldía</h2>
                     <p class="small text-muted mb-3">Los lotes marcados salen de "Pendientes" y quedan bloqueados: no se unifican ni se mezclan con reintegros nuevos. El Excel se sigue pudiendo descargar.</p>
@@ -233,7 +225,7 @@ $e = static fn (?string $texto): string => htmlspecialchars((string) $texto, ENT
                         </div>
                     </div>
                     <div class="d-flex gap-2 mt-3">
-                        <button type="submit" class="btn btn-sm btn-success" id="botonConfirmarMarcar">
+                        <button type="submit" class="btn btn-sm btn-primary" id="botonConfirmarMarcar">
                             Confirmar (<span class="contador-lotes">0</span>)
                         </button>
                         <button type="button" class="btn btn-sm btn-outline-secondary" id="botonCancelarMarcar">Cancelar</button>
@@ -303,8 +295,8 @@ $e = static fn (?string $texto): string => htmlspecialchars((string) $texto, ENT
                     evento.preventDefault();
                     return;
                 }
-                if (!confirm('¿Marcar ' + n + ' lote(s) como reintegrados (ya entregados a la Alcaldía)?')) {
-                    evento.preventDefault();
+                if (!window.miaConfirmarEnvio(evento, { mensaje: '¿Marcar ' + n + ' lote(s) como reintegrados (ya entregados a la Alcaldía)?', boton: 'Marcar como reintegrados' })) {
+                    return;
                 }
             });
 

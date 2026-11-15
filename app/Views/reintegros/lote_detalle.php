@@ -7,32 +7,21 @@ use App\Models\LoteReintegro;
 
 $e = static fn (?string $texto): string => htmlspecialchars((string) $texto, ENT_QUOTES);
 $estado = (string) $lote['estado'];
-$insignias = [
-    'pendiente' => 'badge-lote badge-lote-pendiente',
-    'reintegrado' => 'badge-lote badge-lote-reintegrado',
-    'unificado' => 'badge-lote badge-lote-unificado',
-];
 ?>
-<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-    <h1 class="h4 mb-0">
-        Lote de reintegro #<?= (int) $lote['id'] ?>
-        <span class="badge <?= $insignias[$estado] ?? 'text-bg-secondary' ?> align-middle fs-6"><?= $e(LoteReintegro::ESTADOS[$estado] ?? $estado) ?></span>
-    </h1>
-    <div class="d-flex gap-2">
-        <a href="<?= Url::to('/reintegros/lotes') ?>" class="btn btn-sm btn-outline-secondary">Volver</a>
-        <?php if ($estado !== 'unificado'): ?>
-            <a href="<?= Url::to('/reintegros/lotes/' . $lote['id'] . '/formato.xlsx') ?>" class="btn btn-sm btn-primary">
-                <i class="bi bi-file-earmark-excel me-1"></i>Descargar comprobante (FO-ADMI-009)
-            </a>
-        <?php endif; ?>
-    </div>
-</div>
+<?php ob_start(); ?>
+<?= ui('boton', ['texto' => 'Volver', 'icono' => 'volver', 'tamano' => 'sm', 'url' => Url::to('/reintegros/lotes')]) ?>
+<?php if ($estado !== 'unificado'): ?>
+    <?= ui('boton', ['texto' => 'Descargar comprobante (FO-ADMI-009)', 'icono' => 'exportar_excel', 'tamano' => 'sm',
+        'url' => Url::to('/reintegros/lotes/' . $lote['id'] . '/formato.xlsx')]) ?>
+<?php endif; ?>
+<?= ui('encabezado_pagina', ['titulo' => 'Lote de reintegro #' . (int) $lote['id'], 'icono' => 'reintegro',
+    'insignia' => ui('insignia_estado', ['tipo' => 'lote', 'estado' => $estado]), 'acciones' => (string) ob_get_clean()]) ?>
 
-<?php if (!empty($mensaje)): ?><div class="alert alert-success py-2 small" style="max-width: 680px;"><?= $e($mensaje) ?></div><?php endif; ?>
-<?php if (!empty($error)): ?><div class="alert alert-danger py-2 small" style="max-width: 680px;"><?= $e($error) ?></div><?php endif; ?>
+<?php if (!empty($mensaje)): ?><div class="alert alert-success py-2 small contenedor-md"><?= $e($mensaje) ?></div><?php endif; ?>
+<?php if (!empty($error)): ?><div class="alert alert-danger py-2 small contenedor-md"><?= $e($error) ?></div><?php endif; ?>
 
 <?php if ($estado === 'pendiente'): ?>
-    <div class="estado-lote estado-lote-pendiente" style="max-width: 680px;">
+    <div class="estado-lote estado-lote-pendiente contenedor-md">
         <strong>Pendiente de entrega</strong> (lote generado <?= $e(FechaMovimiento::antiguedad((string) $lote['fecha'])) ?>).
         Cuando lo entregues a la Alcaldía con su comprobante, márcalo como reintegrado.
         <form method="post" action="<?= Url::to('/reintegros/lotes/marcar-reintegrados') ?>" class="row g-2 align-items-end mt-1"
@@ -50,20 +39,20 @@ $insignias = [
                 <input id="campoNota" type="text" name="nota" maxlength="500" class="form-control form-control-sm">
             </div>
             <div class="col-sm-3">
-                <button type="submit" class="btn btn-sm btn-success w-100"><i class="bi bi-check2-circle me-1"></i>Marcar como reintegrado</button>
+                <button type="submit" class="btn btn-sm btn-primary w-100"><?= icono('guardar', 'me-1') ?>Marcar como reintegrado</button>
             </div>
         </form>
         <?php if ($separable): ?>
             <div class="mt-2 pt-2 border-top">
                 Este lote mezcla varias categorías.
-                <a href="<?= Url::to('/reintegros/lotes/unificar') . '?' . http_build_query(['lotes' => [(int) $lote['id']]]) ?>" class="btn btn-sm btn-outline-primary ms-1">
-                    <i class="bi bi-diagram-3 me-1"></i>Separar por categoría
+                <a href="<?= Url::to('/reintegros/lotes/unificar') . '?' . http_build_query(['lotes' => [(int) $lote['id']]]) ?>" class="btn btn-sm btn-outline-secondary ms-1">
+                    <?= icono('agrupar', 'me-1') ?>Separar por categoría
                 </a>
             </div>
         <?php endif; ?>
     </div>
 <?php elseif ($estado === 'reintegrado'): ?>
-    <div class="estado-lote estado-lote-reintegrado" style="max-width: 680px;">
+    <div class="estado-lote estado-lote-reintegrado contenedor-md">
         <strong>Reintegrado:</strong> entregado a la Alcaldía el <span class="mono"><?= $e($lote['reintegrado_fecha']) ?></span>
         <?php if (!empty($lote['reintegrado_por_nombre'])): ?>· registrado por <?= $e($lote['reintegrado_por_nombre']) ?><?php endif; ?>.
         <?php if (!empty($lote['reintegrado_nota'])): ?><div class="mt-1"><span class="text-muted">Nota:</span> <?= $e($lote['reintegrado_nota']) ?></div><?php endif; ?>
@@ -85,7 +74,7 @@ $insignias = [
         <?php endif; ?>
     </div>
 <?php elseif ($estado === 'unificado'): ?>
-    <div class="estado-lote estado-lote-unificado" style="max-width: 680px;">
+    <div class="estado-lote estado-lote-unificado contenedor-md">
         <strong>Unificado</strong><?php if (!empty($lote['unificado_en'])): ?> el <span class="mono"><?= $e(substr((string) $lote['unificado_en'], 0, 10)) ?></span><?php endif; ?><?php if (!empty($lote['unificado_por_nombre'])): ?> por <?= $e($lote['unificado_por_nombre']) ?><?php endif; ?>:
         sus bienes pasaron a lotes nuevos, uno por categoría:
         <?php foreach ($destinos as $i => $destino): ?><?= $i > 0 ? ', ' : ' ' ?><a href="<?= Url::to('/reintegros/lotes/' . (int) $destino['id']) ?>" class="fw-semibold">#<?= (int) $destino['id'] ?></a> <?= $e($destino['categorias'] ?? '') ?> (<?= $e(LoteReintegro::ESTADOS[$destino['estado']] ?? $destino['estado']) ?>)<?php endforeach; ?>.
@@ -93,14 +82,14 @@ $insignias = [
 <?php endif; ?>
 
 <?php if (!empty($origenes)): ?>
-    <p class="small text-muted" style="max-width: 680px;">
-        <i class="bi bi-diagram-3 me-1"></i>Formado a partir de
+    <p class="small text-muted contenedor-md">
+        <?= icono('agrupar', 'me-1') ?>Formado a partir de
         <?= count($origenes) === 1 ? 'el lote' : 'los lotes' ?>
         <?php foreach ($origenes as $i => $origen): ?><?= $i > 0 ? ($i === count($origenes) - 1 ? ' y ' : ', ') : '' ?><a href="<?= Url::to('/reintegros/lotes/' . (int) $origen['id']) ?>">#<?= (int) $origen['id'] ?></a><?php endforeach; ?>.
     </p>
 <?php endif; ?>
 
-<div class="card mb-3" style="max-width: 680px;">
+<div class="card mb-3 contenedor-md">
     <div class="card-body py-3 small">
         <div class="row g-2">
             <div class="col-6"><span class="text-muted">Institución:</span> <?= $e($lote['institucion_nombre']) ?></div>
@@ -118,7 +107,7 @@ $insignias = [
     <p class="text-muted"><?= $estado === 'unificado' ? 'Sus bienes están ahora en los lotes nuevos (enlaces arriba).' : 'Este lote no tiene bienes.' ?></p>
 <?php else: ?>
     <?php $renglones = \App\Services\ReporteService::renglonesPorPlaca($bienes); ?>
-    <div class="table-responsive" style="max-width: 760px;">
+    <div class="table-responsive contenedor-md">
         <table class="table table-sm bg-white tabla-cards">
             <thead>
             <tr>
@@ -139,7 +128,7 @@ $insignias = [
                         <?= $e($r['placa']) ?>
                         <?php if ($r['cantidad'] > 1 || $r['unidades'] !== [$r['placa']]): ?>
                             <?php // Consecutivos de las unidades, sin repetir la placa: "-176, -177". ?>
-                            <div class="small text-muted text-wrap" style="max-width: 14rem;">
+                            <div class="small text-muted text-wrap texto-acotado">
                                 <?= $e(implode(', ', array_map(static fn (string $u): string => str_starts_with($u, $r['placa']) ? substr($u, strlen($r['placa'])) : $u, $r['unidades']))) ?>
                             </div>
                         <?php endif; ?>

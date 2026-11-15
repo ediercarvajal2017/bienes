@@ -7,22 +7,18 @@ use App\Core\View;
 
 $viejo ??= [];
 ?>
-<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-    <div>
-        <h1 class="h4 mb-0">Reintegrar bienes</h1>
-        <p class="text-muted small mb-0">Selecciona uno o varios bienes asignados y regístralos como reintegrados.
-            ¿Un código con varias unidades (alta masiva)? <a href="<?= Url::to('/reintegros/unidades') ?>">Reintegrar por cantidad</a>.</p>
-    </div>
+<?php ob_start(); ?>
     <a href="<?= Url::to('/asignaciones') ?>" class="btn btn-sm btn-outline-secondary">
-        <i class="bi bi-person-check me-1"></i>Ir a Asignar
+        <?= icono('asignacion', 'me-1') ?>Ir a Asignar
     </a>
-</div>
+<?= ui('encabezado_pagina', ['titulo' => 'Reintegrar bienes', 'icono' => 'reintegro', 'acciones' => (string) ob_get_clean()]) ?>
+<p class="text-muted small">Selecciona uno o varios bienes asignados y regístralos como reintegrados. ¿Un código con varias unidades (alta masiva)? <a href="<?= Url::to('/reintegros/unidades') ?>">Reintegrar por cantidad</a>.</p>
 
-<?php if (!empty($mensaje)): ?><div class="alert alert-success py-2 small"><?= htmlspecialchars($mensaje, ENT_QUOTES) ?></div><?php endif; ?>
-<?php if (!empty($error)): ?><div class="alert alert-danger py-2 small"><?= htmlspecialchars($error, ENT_QUOTES) ?></div><?php endif; ?>
+<?php if (!empty($mensaje)): ?><?= ui('alerta', ['tipo' => 'exito', 'mensaje' => (string) $mensaje, 'clases' => 'py-2 small']) ?><?php endif; ?>
+<?php if (!empty($error)): ?><?= ui('alerta', ['tipo' => 'peligro', 'mensaje' => (string) $error, 'clases' => 'py-2 small']) ?><?php endif; ?>
 
 <?php if (Auth::esSuperusuario()): ?>
-    <div class="mb-3" style="max-width: 320px;">
+    <div class="mb-3 contenedor-sm">
         <label for="selectorInstitucion" class="form-label small">Institución</label>
         <select id="selectorInstitucion" class="form-select form-select-sm selector-buscable">
             <option value="">-- Selecciona una institución --</option>
@@ -50,7 +46,7 @@ $viejo ??= [];
         <?= Csrf::field() ?>
         <input type="hidden" name="institucion_id" value="<?= $institucionId ?>">
 
-        <div class="card mb-3" style="max-width: 760px;">
+        <div class="card mb-3 contenedor-md">
             <div class="card-body py-3">
                 <h2 class="h6 mb-3">Datos del reintegro</h2>
 
@@ -86,18 +82,17 @@ $viejo ??= [];
 
         <h2 class="h6 mb-2 d-flex align-items-center gap-1 flex-wrap">
             <?= $soloSeleccionados ? 'Bienes seleccionados' : 'Bienes asignados' ?> (<?= $total ?>)
-            <i class="bi bi-question-circle text-muted small" style="cursor: help;"
-               title="La selección se mantiene al buscar o cambiar de página — puedes ir marcando bienes en varias páginas antes de reintegrar."></i>
+            <?= \App\Helpers\AyudaCampo::boton('seleccion_paginas') ?>
             <button type="button" id="botonVaciarSeleccion" class="btn btn-link btn-sm p-0 align-baseline ms-2">Vaciar selección</button>
         </h2>
         <div class="mb-2 d-flex flex-wrap gap-3 align-items-center">
-            <div style="max-width: 420px; flex: 1 1 260px;">
+            <div class="buscador-flexible">
                 <input type="search" id="buscador" data-buscar="q" class="form-control form-control-sm"
                        placeholder="Buscar por código, descripción, responsable, ubicación o valor..."
                        value="<?= htmlspecialchars($q, ENT_QUOTES) ?>">
             </div>
             <?php if (!empty($categorias)): ?>
-                <div style="max-width: 260px;">
+                <div class="contenedor-sm">
                     <select id="filtroCategoria" class="form-select form-select-sm selector-buscable" aria-label="Filtrar por categoría">
                         <option value="">Todas las categorías</option>
                         <?php foreach ($categorias as $c): ?>
@@ -120,10 +115,10 @@ $viejo ??= [];
 
         <div class="mb-3 d-flex flex-wrap gap-2 align-items-start">
             <div>
-                <button type="button" id="botonEscanear" class="btn btn-sm btn-outline-primary">
-                    <i class="bi bi-qr-code-scan me-1"></i>Escanear QR para agregar bienes
+                <button type="button" id="botonEscanear" class="btn btn-sm btn-outline-secondary">
+                    <?= icono('escanear', 'me-1') ?>Escanear QR para agregar bienes
                 </button>
-                <div id="panelEscaner" class="d-none mt-2" style="max-width: 360px;">
+                <div id="panelEscaner" class="d-none mt-2 contenedor-sm">
                     <div id="lectorQrReintegro" class="rounded border overflow-hidden bg-dark"></div>
                     <div class="d-flex gap-2 mt-2 flex-wrap">
                         <button type="button" id="botonDetenerEscaneo" class="btn btn-sm btn-outline-secondary">Detener escaneo</button>
@@ -132,7 +127,7 @@ $viejo ??= [];
                 </div>
             </div>
             <button type="submit" class="btn btn-primary btn-sm boton-reintegrar" disabled>
-                <i class="bi bi-box-arrow-in-left me-1"></i>Reintegro (<span class="contador-seleccionados">0</span>)
+                <?= icono('reintegro', 'me-1') ?>Reintegro (<span class="contador-seleccionados">0</span>)
             </button>
         </div>
 
@@ -146,7 +141,7 @@ $viejo ??= [];
             <table class="table table-sm table-hover align-middle bg-white tabla-cards">
                 <thead>
                 <tr>
-                    <th style="width: 32px;"><input type="checkbox" id="seleccionarTodos" class="form-check-input" aria-label="Seleccionar todos"></th>
+                    <th class="columna-casilla"><input type="checkbox" id="seleccionarTodos" class="form-check-input" aria-label="Seleccionar todos"></th>
                     <th></th>
                     <th>Código</th>
                     <th>Descripción</th>
@@ -156,7 +151,7 @@ $viejo ??= [];
                 </thead>
                 <tbody>
                 <?php foreach ($bienes as $b): ?>
-                    <tr class="fila-bien" style="cursor:pointer;">
+                    <tr class="fila-bien fila-seleccionable">
                         <td data-label="Seleccionar"><input type="checkbox" name="bienes[]" value="<?= $b['id'] ?>" class="form-check-input casilla-bien" aria-label="Seleccionar <?= htmlspecialchars((string) $b['codigo_identificacion'], ENT_QUOTES) ?>"></td>
                         <td data-label="Foto">
                             <?php if (!empty($b['foto_path'])): ?>
@@ -166,8 +161,8 @@ $viejo ??= [];
                                      class="miniatura-36 miniatura-ampliable"
                                      title="Ver foto en grande" loading="lazy">
                             <?php else: ?>
-                                <span class="d-inline-flex align-items-center justify-content-center bg-light text-muted" style="width:36px;height:36px;border-radius:4px;">
-                                    <i class="bi bi-box-seam"></i>
+                                <span class="miniatura-vacia">
+                                    <?= icono('bien') ?>
                                 </span>
                             <?php endif; ?>
                         </td>
@@ -194,7 +189,7 @@ $viejo ??= [];
         ]); ?>
 
         <button type="submit" class="btn btn-primary mt-2 boton-reintegrar" disabled>
-            <i class="bi bi-box-arrow-in-left me-1"></i>Reintegro (<span class="contador-seleccionados">0</span>)
+            <?= icono('reintegro', 'me-1') ?>Reintegro (<span class="contador-seleccionados">0</span>)
         </button>
     </form>
 
@@ -316,7 +311,7 @@ $viejo ??= [];
                     const ids = Object.keys(seleccion);
                     if (ids.length === 0) {
                         verSoloSeleccionados.checked = false;
-                        alert('No tienes ningún bien seleccionado todavía.');
+                        window.miaConfirmar({ titulo: 'Sin selección', mensaje: 'No tienes ningún bien seleccionado todavía.', boton: 'Entendido', soloAceptar: true });
                         return;
                     }
                     url.searchParams.set('seleccionados', ids.join(','));
@@ -335,8 +330,7 @@ $viejo ??= [];
                 e.preventDefault();
                 return;
             }
-            if (!confirm('¿Reintegrar ' + total + ' bien(es)?')) {
-                e.preventDefault();
+            if (!window.miaConfirmarEnvio(e, { mensaje: '¿Reintegrar ' + total + ' bien(es)? Saldrán de su espacio y quedarán listos para el lote de reintegro.', boton: 'Reintegrar' })) {
                 return;
             }
 
