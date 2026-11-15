@@ -638,7 +638,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 <?php foreach ($historialMovimientos as $m): ?>
                     <tr>
                         <td class="mono" data-label="Fecha"><?= htmlspecialchars($m['fecha'], ENT_QUOTES) ?></td>
-                        <td data-label="Tipo"><span class="badge text-bg-light border text-capitalize"><?= htmlspecialchars($m['tipo'], ENT_QUOTES) ?></span></td>
+                        <td data-label="Tipo"><span class="badge badge-neutro text-capitalize"><?= htmlspecialchars($m['tipo'], ENT_QUOTES) ?></span></td>
                         <td data-label="Responsable"><?= htmlspecialchars($m['nombres'] . ' ' . $m['apellidos'], ENT_QUOTES) ?></td>
                         <td class="text-muted" data-label="Destino"><?= htmlspecialchars(!empty($m['persona_destino_nombre'])
                             ? 'A cargo de ' . $m['persona_destino_nombre'] . (!empty($m['espacio_destino_nombre']) ? ' (guardado en ' . $m['espacio_destino_nombre'] . ')' : '')

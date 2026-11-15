@@ -44,7 +44,7 @@ $numeros = static function (array $ids): string {
             <div class="card mb-2">
                 <div class="card-body py-2 px-3 d-flex justify-content-between align-items-center gap-2">
                     <div>
-                        <span class="badge text-bg-light border fs-6"><?= $e($grupo['categoria']) ?></span>
+                        <span class="badge badge-neutro fs-6"><?= $e($grupo['categoria']) ?></span>
                         <div class="small text-muted mt-1">Viene de <?= $e($numeros($grupo['origenes'])) ?></div>
                     </div>
                     <div class="text-end">

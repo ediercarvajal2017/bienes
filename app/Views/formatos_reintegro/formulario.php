@@ -14,20 +14,17 @@ $editando = $registro !== null;
 $ventana = '/formatos-reintegro';
 $v = static fn (string $campo): string => htmlspecialchars((string) ($valores[$campo] ?? ''), ENT_QUOTES);
 ?>
-<div class="mb-3">
-    <h1 class="h4 mb-0">Formatos de reintegro</h1>
-    <p class="text-muted small mb-0">Registra la evidencia de cada formato de reintegro firmado por la Alcaldía.</p>
-</div>
+<?= ui('encabezado_pagina', ['titulo' => 'Formatos de reintegro', 'icono' => 'formato_reintegro', 'subtitulo' => 'Registra la evidencia de cada formato de reintegro firmado por la Alcaldía.']) ?>
 
-<?php if (!empty($mensaje)): ?><div class="alert alert-success py-2 small"><?= htmlspecialchars($mensaje, ENT_QUOTES) ?></div><?php endif; ?>
-<?php if (!empty($error)): ?><div class="alert alert-danger py-2 small"><?= htmlspecialchars($error, ENT_QUOTES) ?></div><?php endif; ?>
+<?php if (!empty($mensaje)): ?><?= ui('alerta', ['tipo' => 'exito', 'mensaje' => (string) $mensaje, 'clases' => 'py-2 small']) ?><?php endif; ?>
+<?php if (!empty($error)): ?><?= ui('alerta', ['tipo' => 'peligro', 'mensaje' => (string) $error, 'clases' => 'py-2 small']) ?><?php endif; ?>
 
 <?php View::render('partials/evidencia_institucion', ['instituciones' => $instituciones, 'institucionId' => $institucionId, 'ventana' => $ventana]); ?>
 
 <?php if ($institucionId === 0): ?>
     <p class="text-muted">Elige una institución para registrar.</p>
 <?php else: ?>
-    <section class="card mb-4" id="formularioEvidencia" style="max-width: 680px;" aria-labelledby="tituloFormularioEvidencia">
+    <section class="card mb-4 contenedor-md" id="formularioEvidencia" aria-labelledby="tituloFormularioEvidencia">
         <div class="card-body">
             <h2 class="h6 mb-2" id="tituloFormularioEvidencia"><?= $editando ? 'Editar registro' : 'Registrar formato de reintegro' ?></h2>
             <p class="text-muted small mb-2">Los campos marcados con <span class="text-danger">*</span> son obligatorios.</p>
@@ -49,7 +46,7 @@ $v = static fn (string $campo): string => htmlspecialchars((string) ($valores[$c
                     <div class="col-md-6">
                         <label class="form-label small d-block">Archivo actual</label>
                         <a href="<?= \App\Helpers\EnlaceArchivo::url($registro['archivo_path']) ?>" class="btn btn-sm btn-outline-secondary" target="_blank">
-                            <i class="bi bi-download me-1" aria-hidden="true"></i>Descargar
+                            <?= icono('descargar', 'me-1') ?>Descargar
                         </a>
                     </div>
                     <div class="col-12">
@@ -65,10 +62,10 @@ $v = static fn (string $campo): string => htmlspecialchars((string) ($valores[$c
 
                 <div class="col-12 d-flex flex-wrap gap-2">
                     <?php if ($editando): ?>
-                        <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-1" aria-hidden="true"></i>Guardar cambios</button>
+                        <button type="submit" class="btn btn-primary"><?= icono('guardar', 'me-1') ?>Guardar cambios</button>
                         <a href="<?= Url::to(Evidencia::ruta($ventana, $institucionId)) ?>" class="btn btn-outline-secondary">Cancelar</a>
                     <?php else: ?>
-                        <button type="submit" class="btn btn-primary"><i class="bi bi-archive me-1" aria-hidden="true"></i>Guardar registro</button>
+                        <button type="submit" class="btn btn-primary"><?= icono('guardar', 'me-1') ?>Guardar registro</button>
                     <?php endif; ?>
                 </div>
             </form>

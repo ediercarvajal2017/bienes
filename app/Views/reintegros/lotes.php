@@ -155,7 +155,7 @@ $e = static fn (?string $texto): string => htmlspecialchars((string) $texto, ENT
                                 <span class="text-muted">—</span>
                             <?php else: ?>
                                 <?php foreach ($categoriasLote as $categoria): ?>
-                                    <span class="badge text-bg-light border"><?= $e($categoria) ?></span>
+                                    <span class="badge badge-neutro"><?= $e($categoria) ?></span>
                                 <?php endforeach; ?>
                                 <?php if (count($categoriasLote) > 1): ?><span class="text-muted small">(mixto)</span><?php endif; ?>
                             <?php endif; ?>

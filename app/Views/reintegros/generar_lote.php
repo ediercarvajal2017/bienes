@@ -80,7 +80,7 @@ $movimientosSeleccionados = $viejo['movimientos'] ?? [];
                         <td data-label="Descripción"><?= htmlspecialchars($p['descripcion'], ENT_QUOTES) ?></td>
                         <td data-label="Categoría">
                             <?php if (!empty($p['categoria_nombre'])): ?>
-                                <span class="badge text-bg-light border"><?= htmlspecialchars($p['categoria_nombre'], ENT_QUOTES) ?></span>
+                                <span class="badge badge-neutro"><?= htmlspecialchars($p['categoria_nombre'], ENT_QUOTES) ?></span>
                             <?php else: ?>
                                 <span class="text-muted">Sin categoría</span>
                             <?php endif; ?>

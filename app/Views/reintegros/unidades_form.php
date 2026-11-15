@@ -20,10 +20,10 @@ $volverLista = Url::to('/reintegros/unidades') . (Auth::esSuperusuario() ? '?ins
 <?php if (!empty($error)): ?><div class="alert alert-danger py-2 small contenedor-md"><?= $e($error) ?></div><?php endif; ?>
 
 <div class="d-flex flex-wrap gap-2 mb-3" aria-label="Resumen del código">
-    <span class="badge text-bg-light border fs-6 fw-normal">En cartera: <strong><?= (int) $lote['en_cartera'] ?></strong> de <?= (int) $lote['total'] ?></span>
-    <span class="badge text-bg-light border fs-6 fw-normal">Reintegradas: <?= (int) $lote['reintegradas'] ?></span>
+    <span class="badge badge-neutro fs-6 fw-normal">En cartera: <strong><?= (int) $lote['en_cartera'] ?></strong> de <?= (int) $lote['total'] ?></span>
+    <span class="badge badge-neutro fs-6 fw-normal">Reintegradas: <?= (int) $lote['reintegradas'] ?></span>
     <?php if ((int) $lote['dadas_de_baja'] > 0): ?>
-        <span class="badge text-bg-light border fs-6 fw-normal">Dadas de baja: <?= (int) $lote['dadas_de_baja'] ?></span>
+        <span class="badge badge-neutro fs-6 fw-normal">Dadas de baja: <?= (int) $lote['dadas_de_baja'] ?></span>
     <?php endif; ?>
 </div>
 
