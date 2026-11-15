@@ -5,7 +5,7 @@ use App\Core\Url;
 
 ?>
 <div class="contenedor-2fa">
-    <h1 class="h4 mb-1"><i class="bi bi-shield-lock me-1" aria-hidden="true"></i>Configurar la verificación en dos pasos</h1>
+    <?= ui('encabezado_pagina', ['titulo' => 'Configurar la verificación en dos pasos', 'icono' => 'seguridad']) ?>
     <p class="text-muted small mb-3">
         Además de tu contraseña, MIA te pedirá un código de 6 dígitos que genera tu teléfono.
         Así, aunque alguien conozca tu contraseña, no podrá entrar sin tu teléfono. Es opcional: puedes
@@ -13,13 +13,13 @@ use App\Core\Url;
     </p>
 
     <?php if (!empty($error)): ?>
-        <div class="alert alert-danger py-2 small" role="alert"><?= htmlspecialchars($error, ENT_QUOTES) ?></div>
+        <?= ui('alerta', ['tipo' => 'peligro', 'mensaje' => (string) $error, 'clases' => 'py-2 small']) ?>
     <?php endif; ?>
 
     <ol class="list-unstyled pasos-2fa">
         <li class="card mb-3">
             <div class="card-body">
-                <h2 class="h6"><span class="badge text-bg-primary me-2">1</span>Instala una aplicación autenticadora</h2>
+                <h2 class="h6"><span class="badge badge-info me-2">1</span>Instala una aplicación autenticadora</h2>
                 <p class="small mb-0">
                     En tu teléfono, instala <strong>Google Authenticator</strong> o <strong>Microsoft Authenticator</strong>
                     (gratis en Play Store y App Store). También sirven Authy o el gestor de contraseñas del teléfono.
@@ -29,7 +29,7 @@ use App\Core\Url;
 
         <li class="card mb-3">
             <div class="card-body">
-                <h2 class="h6"><span class="badge text-bg-primary me-2">2</span>Escanea este código</h2>
+                <h2 class="h6"><span class="badge badge-info me-2">2</span>Escanea este código</h2>
                 <p class="small">En la aplicación, toca <strong>«+»</strong> o <strong>«Agregar cuenta»</strong> y escanea el código:</p>
                 <div class="text-center mb-2">
                     <img src="<?= htmlspecialchars($qr, ENT_QUOTES) ?>" alt="Código QR para la aplicación autenticadora" class="qr-2fa" width="240" height="240">
@@ -44,7 +44,7 @@ use App\Core\Url;
 
         <li class="card mb-3">
             <div class="card-body">
-                <h2 class="h6"><span class="badge text-bg-primary me-2">3</span>Escribe el código que muestra la aplicación</h2>
+                <h2 class="h6"><span class="badge badge-info me-2">3</span>Escribe el código que muestra la aplicación</h2>
                 <form method="post" action="<?= Url::to('/2fa/activar') ?>" class="row g-2 align-items-end">
                     <?= Csrf::field() ?>
                     <div class="col-sm-7">

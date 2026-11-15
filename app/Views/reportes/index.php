@@ -6,14 +6,14 @@ use App\Models\Institucion;
 
 $instituciones = Auth::esSuperusuario() ? Institucion::listadoParaSelect() : [];
 ?>
-<h1 class="h4 mb-3">Reportes</h1>
+<?= ui('encabezado_pagina', ['titulo' => 'Reportes', 'icono' => 'reporte']) ?>
 
 <?php if (!empty($error)): ?>
-    <div class="alert alert-danger py-2 small" role="alert" style="max-width: 780px;"><?= htmlspecialchars($error, ENT_QUOTES) ?></div>
+    <?= ui('alerta', ['tipo' => 'peligro', 'mensaje' => (string) $error, 'clases' => 'py-2 small contenedor-md']) ?>
 <?php endif; ?>
 
 <?php if (Auth::esSuperusuario()): ?>
-    <div class="mb-3" style="max-width: 320px;">
+    <div class="mb-3 contenedor-sm">
         <label for="selectorInstitucion" class="form-label small">Institución a exportar</label>
         <select id="selectorInstitucion" class="form-select form-select-sm selector-buscable">
             <option value="">Todas las instituciones</option>
@@ -24,7 +24,7 @@ $instituciones = Auth::esSuperusuario() ? Institucion::listadoParaSelect() : [];
     </div>
 <?php endif; ?>
 
-<div class="row g-3" style="max-width: 780px;">
+<div class="row g-3 contenedor-md">
     <div class="col-md-6">
         <div class="card h-100">
             <div class="card-body">
@@ -32,7 +32,7 @@ $instituciones = Auth::esSuperusuario() ? Institucion::listadoParaSelect() : [];
                 <p class="small text-muted mb-3">Código, descripción, ubicación, responsable, valor y fecha de ingreso de todos los bienes.</p>
                 <div class="d-flex gap-2">
                     <a class="btn btn-sm btn-primary enlace-reporte" data-base="<?= Url::to('/reportes/cartera.xlsx') ?>" data-descarga="Generando…" href="<?= Url::to('/reportes/cartera.xlsx') ?>">
-                        <i class="bi bi-file-earmark-excel me-1"></i>.xlsx
+                        <?= icono('exportar_excel', 'me-1') ?>.xlsx
                     </a>
                     <a class="btn btn-sm btn-outline-secondary enlace-reporte" data-base="<?= Url::to('/reportes/cartera.csv') ?>" data-descarga="Generando…" href="<?= Url::to('/reportes/cartera.csv') ?>">.csv</a>
                 </div>
@@ -43,11 +43,11 @@ $instituciones = Auth::esSuperusuario() ? Institucion::listadoParaSelect() : [];
     <div class="col-md-6">
         <div class="card h-100 border-warning-subtle">
             <div class="card-body">
-                <span class="badge text-bg-warning mb-2">AÚN NO SE HAN DEVUELTO</span>
+                <span class="badge badge-advertencia mb-2">AÚN NO SE HAN DEVUELTO</span>
                 <h2 class="h6">Bienes asignados pendientes de devolver</h2>
                 <p class="small text-muted mb-3">Bienes que alguien tiene actualmente en su poder y todavía <strong>no</strong> han sido reintegrados. Antes se llamaba "Planilla de reintegros pendientes".</p>
                 <a class="btn btn-sm btn-primary enlace-reporte" data-base="<?= Url::to('/reportes/reintegros.xlsx') ?>" data-descarga="Generando…" href="<?= Url::to('/reportes/reintegros.xlsx') ?>">
-                    <i class="bi bi-file-earmark-excel me-1"></i>.xlsx
+                    <?= icono('exportar_excel', 'me-1') ?>.xlsx
                 </a>
             </div>
         </div>
@@ -56,11 +56,11 @@ $instituciones = Auth::esSuperusuario() ? Institucion::listadoParaSelect() : [];
     <div class="col-md-6">
         <div class="card h-100 border-success-subtle">
             <div class="card-body">
-                <span class="badge text-bg-success mb-2">YA REINTEGRADOS</span>
+                <span class="badge badge-exito mb-2">YA REINTEGRADOS</span>
                 <h2 class="h6">Historial de bienes reintegrados</h2>
                 <p class="small text-muted mb-3">Bienes que <strong>ya fueron devueltos</strong>, con la fecha exacta del reintegro, el destino y quién lo registró.</p>
                 <a class="btn btn-sm btn-primary enlace-reporte" data-base="<?= Url::to('/reportes/reintegros-historial.xlsx') ?>" data-descarga="Generando…" href="<?= Url::to('/reportes/reintegros-historial.xlsx') ?>">
-                    <i class="bi bi-file-earmark-excel me-1"></i>.xlsx
+                    <?= icono('exportar_excel', 'me-1') ?>.xlsx
                 </a>
             </div>
         </div>
@@ -81,7 +81,7 @@ $instituciones = Auth::esSuperusuario() ? Institucion::listadoParaSelect() : [];
                             <?php endforeach; ?>
                         </select>
                     </div>
-                    <button type="submit" class="btn btn-sm btn-primary"><i class="bi bi-file-earmark-excel me-1" aria-hidden="true"></i>.xlsx</button>
+                    <button type="submit" class="btn btn-sm btn-primary"><?= icono('exportar_excel', 'me-1') ?>.xlsx</button>
                 </form>
             </div>
         </section>
@@ -91,8 +91,8 @@ $instituciones = Auth::esSuperusuario() ? Institucion::listadoParaSelect() : [];
         <div class="col-12">
             <section class="card border-primary-subtle" aria-labelledby="tituloActividad">
                 <div class="card-body">
-                    <span class="badge text-bg-primary mb-2">CONTROL</span>
-                    <h2 class="h6" id="tituloActividad"><i class="bi bi-person-lines-fill me-1" aria-hidden="true"></i>Actividad de los funcionarios</h2>
+                    <span class="badge badge-info mb-2">CONTROL</span>
+                    <h2 class="h6" id="tituloActividad"><?= icono('usuarios', 'me-1') ?>Actividad de los funcionarios</h2>
                     <p class="small text-muted mb-3">
                         Qué se registró, qué se cambió y qué se movió, quién lo hizo y a qué hora<?= Auth::esSuperusuario() ? ' (en la institución elegida arriba, o en todas)' : '' ?>.
                         Cada reporte se descarga en Excel.
@@ -128,8 +128,8 @@ $instituciones = Auth::esSuperusuario() ? Institucion::listadoParaSelect() : [];
                         </div>
                         <div class="col-12 d-flex flex-wrap gap-2 mt-2">
                             <?php foreach (\App\Services\ReportesControl::TIPOS_ACTIVIDAD as $clave => $texto): ?>
-                                <button type="submit" name="tipo" value="<?= $clave ?>" class="btn btn-sm <?= $clave === 'todo' ? 'btn-primary' : 'btn-outline-primary' ?>">
-                                    <i class="bi bi-file-earmark-excel me-1" aria-hidden="true"></i><?= htmlspecialchars($clave === 'todo' ? 'Todo en un solo Excel' : $texto, ENT_QUOTES) ?>
+                                <button type="submit" name="tipo" value="<?= $clave ?>" class="btn btn-sm <?= $clave === 'todo' ? 'btn-primary' : 'btn-outline-secondary' ?>">
+                                    <?= icono('exportar_excel', 'me-1') ?><?= htmlspecialchars($clave === 'todo' ? 'Todo en un solo Excel' : $texto, ENT_QUOTES) ?>
                                 </button>
                             <?php endforeach; ?>
                         </div>
@@ -141,7 +141,7 @@ $instituciones = Auth::esSuperusuario() ? Institucion::listadoParaSelect() : [];
         <div class="col-12">
             <section class="card" aria-labelledby="tituloControlInventario">
                 <div class="card-body">
-                    <h2 class="h6" id="tituloControlInventario"><i class="bi bi-clipboard-data me-1" aria-hidden="true"></i>Control del inventario</h2>
+                    <h2 class="h6" id="tituloControlInventario"><?= icono('reporte', 'me-1') ?>Control del inventario</h2>
                     <p class="small text-muted mb-3">Para revisar qué falta completar, dónde está el valor del inventario y quién no está usando MIA<?= Auth::esSuperusuario() ? ' (institución elegida arriba, o todas)' : '' ?>.</p>
                     <form method="get" action="<?= Url::to('/reportes/control.xlsx') ?>" id="formControl" class="row g-3" data-sin-cargando>
                         <?php if (Auth::esSuperusuario()): ?>
@@ -159,8 +159,8 @@ $instituciones = Auth::esSuperusuario() ? Institucion::listadoParaSelect() : [];
                                 <div class="fw-semibold small"><?= htmlspecialchars($texto, ENT_QUOTES) ?></div>
                                 <p class="small text-muted mb-2 flex-grow-1"><?= htmlspecialchars($descripcionesControl[$clave], ENT_QUOTES) ?></p>
                                 <div>
-                                    <button type="submit" name="tipo" value="<?= $clave ?>" class="btn btn-sm btn-outline-primary">
-                                        <i class="bi bi-file-earmark-excel me-1" aria-hidden="true"></i>.xlsx
+                                    <button type="submit" name="tipo" value="<?= $clave ?>" class="btn btn-sm btn-outline-secondary">
+                                        <?= icono('exportar_excel', 'me-1') ?>.xlsx
                                     </button>
                                 </div>
                             </div>
@@ -174,7 +174,7 @@ $instituciones = Auth::esSuperusuario() ? Institucion::listadoParaSelect() : [];
         <div class="col-12">
             <section class="card" aria-labelledby="tituloExportacion">
                 <div class="card-body">
-                    <h2 class="h6" id="tituloExportacion"><i class="bi bi-box-arrow-down me-1" aria-hidden="true"></i>Descargar toda la información</h2>
+                    <h2 class="h6" id="tituloExportacion"><?= icono('descargar', 'me-1') ?>Descargar toda la información</h2>
                     <p class="small text-muted mb-2">
                         Un archivo .zip con todo lo registrado en MIA<?= Auth::esSuperusuario() ? ' para la institución elegida' : '' ?> y sus sedes:
                         bienes, asignaciones, movimientos, bajas, reintegros, espacios, usuarios, verificaciones, documentos y
@@ -185,14 +185,14 @@ $instituciones = Auth::esSuperusuario() ? Institucion::listadoParaSelect() : [];
                         La opción con fotos y documentos puede tardar varios minutos y pesar bastante.
                     </p>
                     <?php if (Auth::esSuperusuario()): ?>
-                        <p class="small mb-2 aviso-elegir-institucion"><i class="bi bi-info-circle me-1" aria-hidden="true"></i>Primero elige arriba la institución a exportar.</p>
+                        <p class="small mb-2 aviso-elegir-institucion"><?= icono('info', 'me-1') ?>Primero elige arriba la institución a exportar.</p>
                     <?php endif; ?>
                     <div class="d-flex flex-wrap gap-2">
                         <a class="btn btn-sm btn-primary enlace-reporte enlace-exportacion<?= Auth::esSuperusuario() ? ' disabled" aria-disabled="true' : '' ?>" data-base="<?= $baseExportacion ?>" data-descarga="Preparando…" href="<?= $baseExportacion ?>">
-                            <i class="bi bi-file-earmark-zip me-1" aria-hidden="true"></i>Solo los datos
+                            <?= icono('descargar', 'me-1') ?>Solo los datos
                         </a>
-                        <a class="btn btn-sm btn-outline-primary enlace-reporte enlace-exportacion<?= Auth::esSuperusuario() ? ' disabled" aria-disabled="true' : '' ?>" data-base="<?= $baseExportacion ?>?archivos=1" data-descarga="Preparando… puede tardar" href="<?= $baseExportacion ?>?archivos=1">
-                            <i class="bi bi-images me-1" aria-hidden="true"></i>Datos con fotos y documentos
+                        <a class="btn btn-sm btn-outline-secondary enlace-reporte enlace-exportacion<?= Auth::esSuperusuario() ? ' disabled" aria-disabled="true' : '' ?>" data-base="<?= $baseExportacion ?>?archivos=1" data-descarga="Preparando… puede tardar" href="<?= $baseExportacion ?>?archivos=1">
+                            <?= icono('descargar', 'me-1') ?>Datos con fotos y documentos
                         </a>
                     </div>
                 </div>

@@ -63,10 +63,10 @@ final class DashboardController
             $pendientes = Baja::contarPendientes($institucionId);
             if ($pendientes > 0) {
                 $indicadores[] = [
-                    'icono' => 'exclamation-triangle',
+                    'icono' => 'baja',
                     'texto' => $pendientes === 1 ? '1 baja pendiente de aprobar' : "{$pendientes} bajas pendientes de aprobar",
                     'ruta' => '/bajas',
-                    'color' => 'warning',
+                    'tono' => 'advertencia',
                 ];
             }
         }
@@ -75,10 +75,10 @@ final class DashboardController
             $solicitudes = SolicitudReintegro::contar($institucionId, null, 'pendiente');
             if ($solicitudes > 0) {
                 $indicadores[] = [
-                    'icono' => 'box-arrow-in-left',
+                    'icono' => 'solicitud',
                     'texto' => $solicitudes === 1 ? '1 solicitud de reintegro por revisar' : "{$solicitudes} solicitudes de reintegro por revisar",
                     'ruta' => '/reintegros/solicitudes?estado=pendiente',
-                    'color' => 'primary',
+                    'tono' => 'info',
                 ];
             }
         }
@@ -87,10 +87,10 @@ final class DashboardController
             $sinAsignar = Bien::contarSinAsignar($institucionId);
             if ($sinAsignar > 0) {
                 $indicadores[] = [
-                    'icono' => 'box-seam',
+                    'icono' => 'bien',
                     'texto' => $sinAsignar === 1 ? '1 bien sin asignar' : "{$sinAsignar} bienes sin asignar",
                     'ruta' => '/asignaciones',
-                    'color' => 'secondary',
+                    'tono' => 'neutro',
                 ];
             }
         }
@@ -99,10 +99,10 @@ final class DashboardController
             $hallazgos = Hallazgo::contarPendientesInstitucion($institucionId);
             if ($hallazgos > 0) {
                 $indicadores[] = [
-                    'icono' => 'flag',
+                    'icono' => 'hallazgo',
                     'texto' => $hallazgos === 1 ? '1 hallazgo pendiente por resolver' : "{$hallazgos} hallazgos pendientes por resolver",
                     'ruta' => '/verificaciones',
-                    'color' => 'info',
+                    'tono' => 'info',
                 ];
             }
         }

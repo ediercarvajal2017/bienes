@@ -11,10 +11,9 @@ $titulosPorRol = [
 $tieneGuiaPropia = isset($titulosPorRol[$rol]);
 $tituloRol = $tieneGuiaPropia ? $titulosPorRol[$rol] : 'Docente';
 ?>
-<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-    <h1 class="h4 mb-0"><i class="bi bi-question-circle me-1"></i>Guía rápida: rol <?= htmlspecialchars($tituloRol, ENT_QUOTES) ?></h1>
+<?php ob_start(); ?>
     <a href="<?= Url::to('/dashboard') ?>" class="btn btn-sm btn-outline-secondary">Volver</a>
-</div>
+<?= ui('encabezado_pagina', ['titulo' => (string) (icono('ayuda', 'me-1')) . 'Guía rápida: rol ' . (string) ($tituloRol), 'icono' => 'ayuda', 'acciones' => (string) ob_get_clean()]) ?>
 
 <?php if (!$tieneGuiaPropia): ?>
     <div class="alert alert-info py-2 small contenedor-manual">

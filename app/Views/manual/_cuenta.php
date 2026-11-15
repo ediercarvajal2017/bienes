@@ -3,7 +3,7 @@
     <div class="mt-2 small">
         <p class="mb-2">
             Entra a <strong>Mi cuenta</strong> tocando tu nombre en la barra superior (en el celular, el ícono
-            <i class="bi bi-person-circle" aria-hidden="true"></i>).
+            <?= icono('cuenta') ?>).
         </p>
         <ol class="mb-2 ps-3">
             <li><strong>Cambiar tu contraseña:</strong> escribe la actual y la nueva dos veces. Debe tener al menos 10
@@ -33,7 +33,7 @@
     <summary class="fw-semibold">Notas rápidas: tus recordatorios</summary>
     <div class="mt-2 small">
         <p class="mb-2">
-            Como las notas adhesivas de Windows: toca el ícono <i class="bi bi-sticky" aria-hidden="true"></i> de la
+            Como las notas adhesivas de Windows: toca el ícono <?= icono('nota') ?> de la
             barra superior (el número a su lado es cuántas notas tienes) para abrir <strong>Mis notas</strong>.
         </p>
         <ol class="mb-2 ps-3">

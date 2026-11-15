@@ -6,29 +6,25 @@ use App\Models\DispositivoConfiable;
 
 $fecha = static fn (?string $valor): string => $valor ? date('d/m/Y', strtotime($valor) ?: time()) : '—';
 ?>
-<h1 class="h4 mb-1">Mi cuenta</h1>
-<p class="text-muted small mb-3">
-    <?= htmlspecialchars(trim($usuario['nombres'] . ' ' . $usuario['apellidos']), ENT_QUOTES) ?> ·
-    <?= htmlspecialchars($usuario['email'], ENT_QUOTES) ?> ·
-    <span class="text-capitalize"><?= htmlspecialchars($usuario['rol_nombre'], ENT_QUOTES) ?></span>
-</p>
+<?= ui('encabezado_pagina', ['titulo' => 'Mi cuenta', 'icono' => 'cuenta',
+    'subtitulo' => trim($usuario['nombres'] . ' ' . $usuario['apellidos']) . ' · ' . $usuario['email'] . ' · ' . ucfirst((string) $usuario['rol_nombre'])]) ?>
 
 <?php if (!empty($mensaje)): ?>
-    <div class="alert alert-success py-2 small contenedor-cuenta"><?= htmlspecialchars($mensaje, ENT_QUOTES) ?></div>
+    <?= ui('alerta', ['tipo' => 'exito', 'mensaje' => (string) $mensaje, 'clases' => 'py-2 small contenedor-cuenta']) ?>
 <?php endif; ?>
 <?php if (!empty($error)): ?>
-    <div class="alert alert-danger py-2 small contenedor-cuenta" role="alert"><?= htmlspecialchars($error, ENT_QUOTES) ?></div>
+    <?= ui('alerta', ['tipo' => 'peligro', 'mensaje' => (string) $error, 'clases' => 'py-2 small contenedor-cuenta']) ?>
 <?php endif; ?>
 
 <div class="contenedor-cuenta">
     <section class="card mb-3" aria-labelledby="tituloDosPasos">
         <div class="card-body">
             <div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
-                <h2 class="h6 mb-2" id="tituloDosPasos"><i class="bi bi-shield-lock me-1" aria-hidden="true"></i>Verificación en dos pasos</h2>
+                <h2 class="h6 mb-2" id="tituloDosPasos"><?= icono('seguridad', 'me-1') ?>Verificación en dos pasos</h2>
                 <?php if ($dosFactoresActiva): ?>
-                    <span class="badge text-bg-success"><i class="bi bi-check-circle me-1" aria-hidden="true"></i>Activa</span>
+                    <span class="badge badge-exito"><?= icono('exito', 'me-1') ?>Activa</span>
                 <?php else: ?>
-                    <span class="badge text-bg-secondary">Inactiva</span>
+                    <span class="badge badge-neutro">Inactiva</span>
                 <?php endif; ?>
             </div>
 
@@ -50,7 +46,7 @@ $fecha = static fn (?string $valor): string => $valor ? date('d/m/Y', strtotime(
                             <input type="password" name="password_actual" id="passwordCodigos" class="form-control form-control-sm" required autocomplete="current-password">
                         </div>
                         <div class="col-sm-5">
-                            <button type="submit" class="btn btn-sm btn-outline-primary w-100">Generar (anula los anteriores)</button>
+                            <button type="submit" class="btn btn-sm btn-outline-secondary w-100">Generar (anula los anteriores)</button>
                         </div>
                     </form>
                 </details>
@@ -89,7 +85,7 @@ $fecha = static fn (?string $valor): string => $valor ? date('d/m/Y', strtotime(
     <?php if ($dosFactoresActiva): ?>
         <section class="card mb-3" aria-labelledby="tituloDispositivos">
             <div class="card-body">
-                <h2 class="h6" id="tituloDispositivos"><i class="bi bi-laptop me-1" aria-hidden="true"></i>Dispositivos de confianza</h2>
+                <h2 class="h6" id="tituloDispositivos"><?= icono('seguridad', 'me-1') ?>Dispositivos de confianza</h2>
                 <p class="small text-muted">En estos navegadores no se pide el código durante 30 días. Quita los que no reconozcas.</p>
                 <?php if ($dispositivos === []): ?>
                     <p class="small text-muted mb-0">Ninguno.</p>
@@ -119,7 +115,7 @@ $fecha = static fn (?string $valor): string => $valor ? date('d/m/Y', strtotime(
 
     <section class="card mb-3" id="contrasena" aria-labelledby="tituloContrasena">
         <div class="card-body">
-            <h2 class="h6" id="tituloContrasena"><i class="bi bi-key me-1" aria-hidden="true"></i>Cambiar contraseña</h2>
+            <h2 class="h6" id="tituloContrasena"><?= icono('seguridad', 'me-1') ?>Cambiar contraseña</h2>
             <form method="post" action="<?= Url::to('/mi-cuenta/contrasena') ?>" class="row g-2">
                 <?= Csrf::field() ?>
                 <input type="text" name="username" value="<?= htmlspecialchars($usuario['email'], ENT_QUOTES) ?>" autocomplete="username" class="d-none" aria-hidden="true" tabindex="-1">
@@ -145,7 +141,7 @@ $fecha = static fn (?string $valor): string => $valor ? date('d/m/Y', strtotime(
 
     <section class="card mb-3" aria-labelledby="tituloPrivacidad">
         <div class="card-body">
-            <h2 class="h6 mb-2" id="tituloPrivacidad"><i class="bi bi-file-earmark-lock me-1" aria-hidden="true"></i>Tus datos y privacidad</h2>
+            <h2 class="h6 mb-2" id="tituloPrivacidad"><?= icono('seguridad', 'me-1') ?>Tus datos y privacidad</h2>
             <p class="small text-muted mb-2">
                 <?php if (!empty($usuario['politica_aceptada_en'])): ?>
                     <?php $aceptadaEn = strtotime((string) $usuario['politica_aceptada_en']) ?: time(); ?>
