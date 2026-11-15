@@ -22,6 +22,13 @@ final class EstandarVisualTest extends TestCase
             . "Usa clases y tokens, icono('clave') y las piezas de partials/ui.");
     }
 
+    /** Todas las vistas se migraron: la lista de pendientes queda vacía y no vuelve a crecer. */
+    public function testNoQuedanVistasPendientes(): void
+    {
+        self::assertSame([], RevisionVisual::pendientes(),
+            'Ninguna vista puede volver a la lista de pendientes: corrige la vista en lugar de agregarla.');
+    }
+
     public function testLaListaDePendientesEstaAlDia(): void
     {
         self::assertSame([], RevisionVisual::comparar()['bajo'],

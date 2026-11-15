@@ -175,7 +175,9 @@ Es el único lugar donde el ancho va en línea: es un dato, no un estilo de dise
 - **Verificador:** `php database/herramientas/verificar_ui.php` (también corre en PHPUnit) falla si una vista suma `style="`, `bi bi-` escrito a mano o un botón fuera de la jerarquía.
   - La lista de pendientes (`tests/Unit/datos/ui_pendientes.php`) sirvió para migrar módulo por módulo y hoy está **vacía**: todas las vistas cumplen y cualquier desviación nueva hace fallar las pruebas.
 - **Accesibilidad:** `tests/accesibilidad.spec.js` (axe, sin violaciones graves) y `tests/responsive.spec.js` (sin desbordes; zonas táctiles de 44 px).
-- **Capturas de referencia:** `CAPTURAS_UI=<carpeta> npx playwright test tests/capturas_ui.spec.js`. Las del antes y el después están en `docs/capturas/`.
+- **Capturas de referencia:** `CAPTURAS_UI=<carpeta> npx playwright test tests/capturas_ui.spec.js` toma el panel, el listado de bienes, el formulario y la ficha del bien y el inicio de sesión, a 375 y 1440 px, en tema claro y oscuro.
+  - `docs/capturas/antes/`: estado antes de la estandarización (v1.2.22).
+  - `docs/capturas/despues/`: estado al cerrarla (v1.2.26).
 - **Caché de la PWA:** al cambiar los estilos, sube la versión `CACHE` de `public/sw.js`.
 
 **Excepciones documentadas:**
