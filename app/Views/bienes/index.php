@@ -32,77 +32,48 @@ $mostrarAccionesMasivas = true;
 
 $algunFiltroActivo = $busqueda !== '' || $categoriaId !== null || $estado !== null || $espacioId !== null || $responsableId !== null || $tipo !== null;
 ?>
-<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-    <h1 class="h4 mb-0">Bienes</h1>
-    <div class="d-flex gap-2">
-        <?php if ($mostrarAccionesMasivas): ?>
-            <div class="dropdown">
-                <button type="button" class="btn btn-outline-secondary btn-sm dropdown-toggle"
-                        id="botonAccionesMasivas" aria-haspopup="true" aria-expanded="false">
-                    <i class="bi bi-stack me-1"></i>Acciones masivas
-                </button>
-                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="botonAccionesMasivas">
-                    <li><a class="dropdown-item" href="<?= Url::to('/bienes/buscar-por-foto') ?>">
-                        <i class="bi bi-camera me-1"></i>Buscar por foto
-                    </a></li>
-                    <?php if ($puedeAsignar): ?>
-                        <li><a class="dropdown-item" href="<?= Url::to('/asignaciones') ?>">
-                            <i class="bi bi-person-check me-1"></i>Asignar bienes
-                        </a></li>
-                        <li><a class="dropdown-item" href="<?= Url::to('/reintegros') ?>">
-                            <i class="bi bi-box-arrow-in-left me-1"></i>Reintegrar bienes
-                        </a></li>
-                        <li><a class="dropdown-item" href="<?= Url::to('/reintegros/unidades') ?>">
-                            <i class="bi bi-123 me-1"></i>Reintegrar por cantidad
-                        </a></li>
-                    <?php endif; ?>
-                    <?php if ($puedeQr): ?>
-                        <li><a class="dropdown-item" href="<?= Url::to('/bienes/qr-masivo') ?>">
-                            <i class="bi bi-qr-code me-1"></i>Generar QR masivo
-                        </a></li>
-                    <?php endif; ?>
-                    <?php if ($puedeCrear): ?>
-                        <li><a class="dropdown-item" href="<?= Url::to('/bienes/alta-masiva') ?>">
-                            <i class="bi bi-boxes me-1"></i>Alta masiva idéntica
-                        </a></li>
-                    <?php endif; ?>
-                    <?php if ($puedeCargaMasiva): ?>
-                        <li><a class="dropdown-item" href="<?= Url::to('/cargas-masivas') ?>">
-                            <i class="bi bi-upload me-1"></i>Carga masiva de bienes
-                        </a></li>
-                    <?php endif; ?>
-                </ul>
-            </div>
-        <?php endif; ?>
-        <?php if ($puedeCrear): ?>
-            <a href="<?= Url::to('/bienes/crear') ?>" class="btn btn-primary btn-sm">
-                <i class="bi bi-plus-lg me-1"></i>Registrar bien
-            </a>
-        <?php endif; ?>
+<?php ob_start(); ?>
+<?php if ($mostrarAccionesMasivas): ?>
+    <div class="dropdown">
+        <?= ui('boton', ['texto' => 'Acciones masivas', 'tamano' => 'sm', 'clases' => 'dropdown-toggle',
+            'atributos' => ['id' => 'botonAccionesMasivas', 'aria-haspopup' => 'true', 'aria-expanded' => 'false']]) ?>
+        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="botonAccionesMasivas">
+            <li><a class="dropdown-item" href="<?= Url::to('/bienes/buscar-por-foto') ?>"><?= icono('foto', 'me-2') ?>Buscar por foto</a></li>
+            <?php if ($puedeAsignar): ?>
+                <li><a class="dropdown-item" href="<?= Url::to('/asignaciones') ?>"><?= icono('asignacion', 'me-2') ?>Asignar bienes</a></li>
+                <li><a class="dropdown-item" href="<?= Url::to('/reintegros') ?>"><?= icono('reintegro', 'me-2') ?>Reintegrar bienes</a></li>
+                <li><a class="dropdown-item" href="<?= Url::to('/reintegros/unidades') ?>"><?= icono('reintegro', 'me-2') ?>Reintegrar por cantidad</a></li>
+            <?php endif; ?>
+            <?php if ($puedeQr): ?>
+                <li><a class="dropdown-item" href="<?= Url::to('/bienes/qr-masivo') ?>"><?= icono('qr', 'me-2') ?>Generar QR masivo</a></li>
+            <?php endif; ?>
+            <?php if ($puedeCrear): ?>
+                <li><a class="dropdown-item" href="<?= Url::to('/bienes/alta-masiva') ?>"><?= icono('crear', 'me-2') ?>Alta masiva idéntica</a></li>
+            <?php endif; ?>
+            <?php if ($puedeCargaMasiva): ?>
+                <li><a class="dropdown-item" href="<?= Url::to('/cargas-masivas') ?>"><?= icono('subir', 'me-2') ?>Carga masiva de bienes</a></li>
+            <?php endif; ?>
+        </ul>
     </div>
-</div>
+<?php endif; ?>
+<?php if ($puedeCrear): ?>
+    <?= ui('boton', ['texto' => 'Registrar bien', 'tipo' => 'primario', 'icono' => 'crear', 'tamano' => 'sm', 'url' => Url::to('/bienes/crear')]) ?>
+<?php endif; ?>
+<?= ui('encabezado_pagina', ['titulo' => 'Bienes', 'icono' => 'bien', 'acciones' => (string) ob_get_clean()]) ?>
 
 <?php if ($bodegaReintegroTotal > 0 || $bodegaBajaTotal > 0): ?>
     <div class="mb-3 d-flex flex-wrap gap-2">
         <?php if ($bodegaReintegroTotal > 0): ?>
-            <a href="<?= Url::to('/bienes') ?>?estado=reintegrado" class="btn btn-sm btn-outline-secondary">
-                <i class="bi bi-box-seam me-1"></i>Bodega Reintegro (<?= $bodegaReintegroTotal ?>)
-            </a>
+            <?= ui('boton', ['texto' => "Bodega Reintegro ({$bodegaReintegroTotal})", 'icono' => 'reintegro', 'tamano' => 'sm', 'url' => Url::to('/bienes') . '?estado=reintegrado']) ?>
         <?php endif; ?>
         <?php if ($bodegaBajaTotal > 0): ?>
-            <a href="<?= Url::to('/bienes') ?>?estado=dado_de_baja" class="btn btn-sm btn-outline-secondary">
-                <i class="bi bi-trash3 me-1"></i>Bodega de Baja (<?= $bodegaBajaTotal ?>)
-            </a>
+            <?= ui('boton', ['texto' => "Bodega de Baja ({$bodegaBajaTotal})", 'icono' => 'baja', 'tamano' => 'sm', 'url' => Url::to('/bienes') . '?estado=dado_de_baja']) ?>
         <?php endif; ?>
     </div>
 <?php endif; ?>
 
-<?php if (!empty($mensaje)): ?>
-    <div class="alert alert-success py-2 small"><?= htmlspecialchars($mensaje, ENT_QUOTES) ?></div>
-<?php endif; ?>
-<?php if (!empty($error)): ?>
-    <div class="alert alert-danger py-2 small" role="alert"><?= htmlspecialchars($error, ENT_QUOTES) ?></div>
-<?php endif; ?>
+<?php if (!empty($mensaje)): ?><?= ui('alerta', ['tipo' => 'exito', 'mensaje' => $mensaje, 'clases' => 'py-2 small']) ?><?php endif; ?>
+<?php if (!empty($error)): ?><?= ui('alerta', ['tipo' => 'peligro', 'mensaje' => $error, 'clases' => 'py-2 small']) ?><?php endif; ?>
 
 <?php if (!empty($soloPropios)): ?>
     <p class="text-muted small">Mostrando solo los bienes de los espacios donde eres responsable.</p>
@@ -121,30 +92,29 @@ $algunFiltroActivo = $busqueda !== '' || $categoriaId !== null || $estado !== nu
         <div class="panel-filtros-acciones">
             <button type="button" class="btn btn-sm btn-outline-secondary d-md-none" data-alternar="filtrosBienes"
                     aria-controls="filtrosBienes" aria-expanded="<?= $filtrosActivos > 0 ? 'true' : 'false' ?>">
-                <i class="bi bi-funnel me-1" aria-hidden="true"></i>Filtros<?= $filtrosActivos > 0 ? " ({$filtrosActivos} activo" . ($filtrosActivos === 1 ? '' : 's') . ')' : '' ?>
+                <?= icono('filtrar', 'me-1') ?>Filtros<?= $filtrosActivos > 0 ? " ({$filtrosActivos} activo" . ($filtrosActivos === 1 ? '' : 's') . ')' : '' ?>
             </button>
             <?php if ($algunFiltroActivo): ?>
                 <a href="<?= Url::to('/bienes') ?>" class="btn btn-sm btn-outline-secondary" id="quitarFiltrosBienes">
-                    <i class="bi bi-x-circle me-1" aria-hidden="true"></i>Quitar filtros
+                    <?= icono('cancelar', 'me-1') ?>Quitar filtros
                 </a>
             <?php endif; ?>
             <?php if ($urlDescarga !== null): ?>
                 <a href="<?= htmlspecialchars($urlDescarga, ENT_QUOTES) ?>" class="btn btn-sm btn-outline-secondary" id="descargarCarteraFiltrada" data-sin-cargando
                    title="Descarga la cartera en Excel con los filtros y la búsqueda que tengas puestos">
-                    <i class="bi bi-file-earmark-excel me-1" aria-hidden="true"></i>Descargar en Excel
+                    <?= icono('exportar_excel', 'me-1') ?>Descargar en Excel
                 </a>
             <?php endif; ?>
             <?php if ($urlActa !== null): ?>
                 <a href="<?= htmlspecialchars($urlActa, ENT_QUOTES) ?>" class="btn btn-sm btn-outline-secondary" id="descargarActaACargo"
                    title="Acta con los bienes individuales y grupales de este responsable, para imprimir y firmar">
-                    <i class="bi bi-file-earmark-text me-1" aria-hidden="true"></i>Acta de bienes a cargo
+                    <?= icono('descargar', 'me-1') ?>Acta de bienes a cargo
                 </a>
             <?php endif; ?>
         </div>
     </div>
     <?php $numFiltros = 2 + (int) !empty($espacios) + (int) !empty($responsables) + (int) !empty($tipos); ?>
-    <div id="filtrosBienes" class="filtros-plegables filtros-rejilla<?= $filtrosActivos > 0 ? ' abierto' : '' ?>"
-         style="--filtros: <?= $numFiltros ?>; --filtros-medio: <?= min($numFiltros, 3) ?>;">
+    <div id="filtrosBienes" class="filtros-plegables filtros-rejilla filtros-n<?= $numFiltros ?><?= $filtrosActivos > 0 ? ' abierto' : '' ?>">
     <div class="filtro-item">
         <label for="filtroCategoria" class="form-label small mb-1">Categoría</label>
         <select id="filtroCategoria" class="form-select form-select-sm selector-buscable">
@@ -211,26 +181,14 @@ $algunFiltroActivo = $busqueda !== '' || $categoriaId !== null || $estado !== nu
     'urlBase' => $urlBasePaginacion,
 ]); ?>
 
-<div class="table-responsive">
-    <table class="table table-sm table-hover align-middle bg-white tabla-cards">
-        <thead>
-        <tr>
-            <th></th>
-            <th>Descripción</th>
-            <th>Código</th>
-            <th>Categoría</th>
-            <th>Responsable / ubicación</th>
-            <th>Valor</th>
-            <th>Estado</th>
-            <th>QR</th>
-            <th></th>
-        </tr>
-        </thead>
-        <tbody>
+<?= ui('tabla', ['leyenda' => 'Bienes', 'columnas' => [
+    ['texto' => 'Foto', 'oculta' => true], ['texto' => 'Descripción'], ['texto' => 'Código'], ['texto' => 'Categoría'],
+    ['texto' => 'Responsable / ubicación'], ['texto' => 'Valor', 'alineacion' => 'derecha'], ['texto' => 'Estado'], ['texto' => 'QR'],
+    ['texto' => 'Acciones', 'alineacion' => 'derecha', 'oculta' => true],
+]]) ?>
         <?php if (empty($lotes) && empty($bienes)): ?>
             <?php View::render('partials/tabla_vacia', [
                 'colspan' => 9,
-                'icono' => 'box-seam',
                 'mensaje' => $algunFiltroActivo
                     ? 'Ningún bien coincide con los filtros aplicados.'
                     : 'Todavía no hay bienes registrados.',
@@ -241,9 +199,7 @@ $algunFiltroActivo = $busqueda !== '' || $categoriaId !== null || $estado !== nu
         <?php foreach ($lotes as $l): ?>
             <tr>
                 <td>
-                    <span class="d-inline-flex align-items-center justify-content-center bg-light text-muted" style="width:36px;height:36px;border-radius:4px;" title="Lote de bienes idénticos">
-                        <i class="bi bi-boxes"></i>
-                    </span>
+                    <span class="miniatura-vacia" title="Código con varias unidades"><?= icono('bien') ?></span>
                 </td>
                 <td data-label="Descripción">
                     <?= htmlspecialchars($l['descripcion'], ENT_QUOTES) ?>
@@ -253,7 +209,7 @@ $algunFiltroActivo = $busqueda !== '' || $categoriaId !== null || $estado !== nu
                 <td class="text-muted mono" data-label="Código"><?= htmlspecialchars($l['lote'], ENT_QUOTES) ?></td>
                 <td class="text-muted" data-label="Categoría"><?= htmlspecialchars($l['categoria_nombre'] ?? '—', ENT_QUOTES) ?></td>
                 <td class="small text-muted" data-label="Responsable / ubicación">—</td>
-                <td class="mono" data-label="Valor" title="Valor de las unidades en cartera">$<?= number_format((float) $l['valor_en_cartera'], 0, ',', '.') ?></td>
+                <td class="celda-numero" data-label="Valor" title="Valor de las unidades en cartera">$<?= number_format((float) $l['valor_en_cartera'], 0, ',', '.') ?></td>
                 <td class="small" data-label="Estado">
                     <?= (int) $l['activos'] ?> activas
                     <?php if ((int) $l['reintegrados'] > 0): ?> · <?= (int) $l['reintegrados'] ?> reintegradas<?php endif; ?>
@@ -261,15 +217,12 @@ $algunFiltroActivo = $busqueda !== '' || $categoriaId !== null || $estado !== nu
                     <?php if ((int) $l['dados_de_baja'] > 0): ?> · <?= (int) $l['dados_de_baja'] ?> dadas de baja<?php endif; ?>
                 </td>
                 <td class="text-muted small" data-label="QR">—</td>
-                <td class="text-end">
-                    <a href="<?= Url::to('/bienes') ?>?q=<?= urlencode($l['lote']) ?>" class="btn btn-sm btn-outline-secondary">
-                        <i class="bi bi-eye me-1"></i>Ver detalles
-                    </a>
+                <td class="celda-acciones">
+                    <?= ui('boton', ['texto' => 'Ver detalles', 'icono' => 'ver', 'tamano' => 'sm', 'url' => Url::to('/bienes') . '?q=' . urlencode((string) $l['lote'])]) ?>
                     <?php if ($puedeAsignar && (int) $l['en_cartera'] > 0): ?>
-                        <a href="<?= Url::to('/reintegros/unidades/' . rawurlencode((string) $l['lote'])) . $sufijoInstitucion ?>" class="btn btn-sm btn-outline-primary"
-                           title="Reintegrar solo algunas unidades de este código">
-                            <i class="bi bi-box-arrow-in-left me-1"></i>Reintegrar por cantidad
-                        </a>
+                        <?= ui('boton', ['texto' => 'Reintegrar por cantidad', 'icono' => 'reintegro', 'tamano' => 'sm',
+                            'url' => Url::to('/reintegros/unidades/' . rawurlencode((string) $l['lote'])) . $sufijoInstitucion,
+                            'atributos' => ['title' => 'Reintegrar solo algunas unidades de este código']]) ?>
                     <?php endif; ?>
                 </td>
             </tr>
@@ -285,9 +238,7 @@ $algunFiltroActivo = $busqueda !== '' || $categoriaId !== null || $estado !== nu
                              class="miniatura-36 miniatura-ampliable"
                              title="Ver foto en grande" loading="lazy">
                     <?php else: ?>
-                        <span class="d-inline-flex align-items-center justify-content-center bg-light text-muted" style="width:36px;height:36px;border-radius:4px;">
-                            <i class="bi bi-box-seam"></i>
-                        </span>
+                        <span class="miniatura-vacia"><?= icono('bien') ?></span>
                     <?php endif; ?>
                 </td>
                 <td data-label="Descripción">
@@ -299,27 +250,18 @@ $algunFiltroActivo = $busqueda !== '' || $categoriaId !== null || $estado !== nu
                 <td class="small" data-label="Responsable / ubicación">
                     <?php View::render('partials/responsabilidad', ['fila' => $b]); ?>
                 </td>
-                <td class="mono" data-label="Valor">$<?= number_format((float) $b['valor'], 0, ',', '.') ?></td>
-                <td data-label="Estado"><span class="badge badge-estado-<?= htmlspecialchars($b['estado'], ENT_QUOTES) ?>"><?= $etiquetasEstado[$b['estado']] ?? $b['estado'] ?></span></td>
+                <td class="celda-numero" data-label="Valor">$<?= number_format((float) $b['valor'], 0, ',', '.') ?></td>
+                <td data-label="Estado"><?= ui('insignia_estado', ['tipo' => 'bien', 'estado' => (string) $b['estado']]) ?></td>
                 <td data-label="QR">
-                    <?php if (!empty($b['qr_confirmado_en'])): ?>
-                        <span class="badge text-bg-success" title="Confirmada">Confirmada</span>
-                    <?php elseif (!empty($b['qr_impreso_en'])): ?>
-                        <span class="badge text-bg-warning" title="Impresa, sin confirmar">Sin confirmar</span>
-                    <?php else: ?>
-                        <span class="badge text-bg-secondary" title="QR sin imprimir todavía">Sin imprimir</span>
-                    <?php endif; ?>
+                    <?= ui('insignia_estado', ['tipo' => 'qr', 'estado' => !empty($b['qr_confirmado_en']) ? 'confirmada' : (!empty($b['qr_impreso_en']) ? 'sin_confirmar' : 'sin_imprimir')]) ?>
                 </td>
-                <td class="text-end">
-                    <a href="<?= Url::to('/bienes/' . $b['id'] . '/editar') ?>" class="btn btn-sm btn-outline-secondary">
-                        <?= Auth::esSuperusuario() || Auth::tienePermiso('bienes.editar') ? 'Editar' : 'Ver' ?>
-                    </a>
+                <td class="celda-acciones">
+                    <?php $puedeEditarBien = Auth::esSuperusuario() || Auth::tienePermiso('bienes.editar'); ?>
+                    <?= ui('boton', ['texto' => $puedeEditarBien ? 'Editar' : 'Ver', 'icono' => $puedeEditarBien ? 'editar' : 'ver', 'tamano' => 'sm', 'url' => Url::to('/bienes/' . $b['id'] . '/editar')]) ?>
                 </td>
             </tr>
         <?php endforeach; ?>
-        </tbody>
-    </table>
-</div>
+<?= ui('tabla_fin') ?>
 
 <?php View::render('partials/paginacion', [
     'pagina' => $pagina, 'porPagina' => $porPagina, 'total' => $total, 'totalPaginas' => $totalPaginas,

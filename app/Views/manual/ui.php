@@ -132,7 +132,7 @@ $filasEjemplo = [
                 <td data-label="Estado"><?= ui('insignia_estado', ['tipo' => 'bien', 'estado' => $fila['estado']]) ?></td>
                 <td class="celda-numero" data-label="Cant."><?= number_format($fila['cantidad'], 0, ',', '.') ?></td>
                 <td class="celda-numero" data-label="Valor"><?= $pesos($fila['valor']) ?></td>
-                <td class="celda-acciones" data-label="Acciones">
+                <td class="celda-acciones">
                     <?= ui('boton', ['texto' => 'Ver el bien ' . $fila['placa'], 'icono' => 'ver', 'tamano' => 'sm', 'soloIcono' => true]) ?>
                     <?= ui('boton', ['texto' => 'Editar el bien ' . $fila['placa'], 'icono' => 'editar', 'tamano' => 'sm', 'soloIcono' => true]) ?>
                 </td>

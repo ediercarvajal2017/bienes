@@ -93,7 +93,7 @@ Las migas de pan no van aquí: las arma el layout a partir del menú (una sola f
     <tr>
         <td data-label="Placa">…</td>
         <td class="celda-numero" data-label="Valor">…</td>
-        <td class="celda-acciones" data-label="Acciones">…</td>
+        <td class="celda-acciones">…</td>
     </tr>
 <?= ui('tabla_fin') ?>
 ```

@@ -23,16 +23,13 @@ $listar = static function (array $items, int $limite = 40): string {
     return $html;
 };
 ?>
-<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-    <h1 class="h4 mb-0">Carga masiva de fotos</h1>
-    <a href="<?= Url::to('/cargas-masivas') ?>" class="btn btn-sm btn-outline-secondary">Volver</a>
-</div>
+<?= ui('encabezado_pagina', ['titulo' => 'Carga masiva de fotos', 'icono' => 'subir',
+    'acciones' => ui('boton', ['texto' => 'Volver', 'icono' => 'volver', 'tamano' => 'sm', 'url' => Url::to('/cargas-masivas')]),
+]) ?>
 
-<?php if (!empty($error)): ?>
-    <div class="alert alert-danger py-2 small" style="max-width:640px;"><?= htmlspecialchars($error, ENT_QUOTES) ?></div>
-<?php endif; ?>
+<?php if (!empty($error)): ?><?= ui('alerta', ['tipo' => 'peligro', 'mensaje' => (string) $error, 'clases' => 'py-2 small contenedor-md']) ?><?php endif; ?>
 
-<div class="card mb-4" style="max-width: 640px;">
+<div class="card mb-4 contenedor-md">
     <div class="card-body">
         <p class="small text-muted mb-2">
             Sube un archivo <strong>.zip</strong> con las fotos de los bienes, cada una nombrada
@@ -53,39 +50,23 @@ $listar = static function (array $items, int $limite = 40): string {
 </div>
 
 <?php if ($resultado !== null): ?>
-    <div class="row g-3 mb-4" style="max-width: 760px;">
-        <div class="col-6 col-md-3">
-            <div class="card h-100">
-                <div class="card-body text-center py-3">
-                    <div class="fs-4 fw-semibold text-success"><?= count($resultado['emparejadas']) ?></div>
-                    <div class="small text-muted">Fotos asociadas</div>
-                </div>
-            </div>
-        </div>
-        <div class="col-6 col-md-3">
-            <div class="card h-100">
-                <div class="card-body text-center py-3">
-                    <div class="fs-4 fw-semibold text-muted"><?= count($resultado['ya_tenian_foto']) ?></div>
-                    <div class="small text-muted">Ya tenían foto</div>
-                </div>
-            </div>
-        </div>
-        <div class="col-6 col-md-3">
-            <div class="card h-100">
-                <div class="card-body text-center py-3">
-                    <div class="fs-4 fw-semibold text-warning"><?= count($resultado['sin_bien']) ?></div>
-                    <div class="small text-muted">Sin bien correspondiente</div>
-                </div>
-            </div>
-        </div>
-        <div class="col-6 col-md-3">
-            <div class="card h-100">
-                <div class="card-body text-center py-3">
-                    <div class="fs-4 fw-semibold text-danger"><?= count($resultado['formato_invalido']) ?></div>
-                    <div class="small text-muted">Formato no válido</div>
-                </div>
-            </div>
-        </div>
+    <div class="contenedor-sm mb-4">
+        <h2 class="titulo-seccion">Resultado de la carga</h2>
+        <?= ui('tabla', ['leyenda' => 'Resultado de la carga de fotos', 'encabezadoFijo' => false, 'columnas' => [
+            ['texto' => 'Resultado'], ['texto' => 'Fotos', 'alineacion' => 'derecha'],
+        ]]) ?>
+            <?php foreach ([
+                'Fotos asociadas' => $resultado['emparejadas'],
+                'Ya tenían foto (no se reemplazó)' => $resultado['ya_tenian_foto'],
+                'Sin bien correspondiente' => $resultado['sin_bien'],
+                'Formato no válido' => $resultado['formato_invalido'],
+            ] as $resultadoTexto => $lista): ?>
+                <tr>
+                    <td data-label="Resultado"><?= htmlspecialchars($resultadoTexto, ENT_QUOTES) ?></td>
+                    <td class="celda-numero" data-label="Fotos"><?= number_format(count($lista), 0, ',', '.') ?></td>
+                </tr>
+            <?php endforeach; ?>
+        <?= ui('tabla_fin') ?>
     </div>
 
     <div class="mb-3">

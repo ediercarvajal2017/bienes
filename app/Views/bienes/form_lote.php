@@ -9,15 +9,12 @@ $viejo ??= [];
 $v = static fn (string $campo, mixed $porDefecto = '') => $viejo[$campo] ?? $porDefecto;
 $e = static fn (mixed $texto): string => htmlspecialchars((string) $texto, ENT_QUOTES);
 ?>
-<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-1" style="max-width: 720px;">
-    <h1 class="h4 mb-0">Alta masiva de bienes idénticos</h1>
-    <a href="<?= Url::to('/bienes') ?>" class="btn btn-sm btn-outline-secondary">Volver</a>
+<div class="contenedor-md">
+    <?= ui('encabezado_pagina', ['titulo' => 'Alta masiva de bienes idénticos', 'icono' => 'bien',
+        'subtitulo' => 'Registra muchas unidades iguales con un solo código (ej. 250 sillas): cada una queda como un bien con su propio código y QR.',
+        'acciones' => ui('boton', ['texto' => 'Volver', 'icono' => 'volver', 'tamano' => 'sm', 'url' => Url::to('/bienes')])]) ?>
+    <?php if (!empty($error)): ?><?= ui('alerta', ['tipo' => 'peligro', 'mensaje' => (string) $error, 'clases' => 'py-2 small']) ?><?php endif; ?>
 </div>
-<p class="text-muted small mb-3" style="max-width: 720px;">Registra muchas unidades iguales con un solo código (ej. 250 sillas): cada una queda como un bien con su propio código y QR.</p>
-
-<?php if (!empty($error)): ?>
-    <div class="alert alert-danger py-2 small" style="max-width: 720px;"><?= $e($error) ?></div>
-<?php endif; ?>
 
 <form method="post" action="<?= Url::to('/bienes/alta-masiva') ?>" class="formulario-secciones">
     <?= Csrf::field() ?>
@@ -91,8 +88,9 @@ $e = static fn (mixed $texto): string => htmlspecialchars((string) $texto, ENT_Q
         </div>
     </div>
 
-    <div class="accion-fija-movil">
-        <button type="submit" class="btn btn-primary">Crear bienes del lote</button>
+    <div class="accion-fija-movil acciones-formulario">
+        <?= ui('boton', ['texto' => 'Cancelar', 'url' => Url::to('/bienes')]) ?>
+        <?= ui('boton', ['texto' => 'Crear bienes del lote', 'tipo' => 'primario', 'tipoBoton' => 'submit']) ?>
     </div>
 </form>
 

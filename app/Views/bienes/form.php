@@ -35,18 +35,18 @@ $errorDe = static fn (string $campo): string => $errorCampo === $campo && !empty
     ? '<div class="invalid-feedback d-block">' . htmlspecialchars((string) $error, ENT_QUOTES) . '</div>' : '';
 $etiquetasEstado = ['activo' => 'Activo', 'reintegrado' => 'Reintegrado', 'en_reparacion' => 'En reparación', 'dado_de_baja' => 'Dado de baja'];
 ?>
-<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3" style="max-width: 720px;">
-    <h1 class="h4 mb-0"><?= $esEdicion ? 'Editar bien' : 'Registrar bien' ?></h1>
-    <a href="<?= $e($urlVolver) ?>" class="btn btn-sm btn-outline-secondary">Volver</a>
+<div class="contenedor-md">
+    <?= ui('encabezado_pagina', ['titulo' => $esEdicion ? 'Editar bien' : 'Registrar bien', 'icono' => 'bien',
+        'acciones' => ui('boton', ['texto' => 'Volver', 'icono' => 'volver', 'tamano' => 'sm', 'url' => $urlVolver])]) ?>
 </div>
 
 <?php if ($esEdicion): ?>
-    <div class="card mb-3" style="max-width: 720px;">
+    <div class="card mb-3 contenedor-md">
         <div class="card-body d-flex align-items-center gap-3 py-3">
             <a href="<?= Url::to('/qr/' . $bien['qr_token']) ?>" target="_blank" title="Ver la ficha pública del código QR" aria-label="Ver ficha pública" class="flex-shrink-0">
-                <img src="<?= Url::to('/qr/' . $bien['qr_token'] . '/imagen') ?>" alt="Código QR del bien" style="width:64px;height:64px;">
+                <img src="<?= Url::to('/qr/' . $bien['qr_token'] . '/imagen') ?>" alt="Código QR del bien" class="qr-miniatura">
             </a>
-            <div class="flex-grow-1" style="min-width: 0;">
+            <div class="flex-grow-1 min-ancho-0">
                 <div class="d-flex flex-wrap align-items-center gap-2">
                     <span class="mono fw-semibold"><?= $e($bien['codigo_identificacion']) ?></span>
                     <span class="badge badge-estado-<?= $e($bien['estado']) ?>"><?= $etiquetasEstado[$bien['estado']] ?? $e($bien['estado']) ?></span>
@@ -74,28 +74,24 @@ $etiquetasEstado = ['activo' => 'Activo', 'reintegrado' => 'Reintegrado', 'en_re
                     <?php endif; ?>
                 </div>
             </div>
-            <a href="<?= Url::to('/qr/' . $bien['qr_token'] . '/imagen') ?>" download="qr-<?= $e($bien['codigo_identificacion']) ?>.png"
-               class="btn btn-sm btn-outline-secondary flex-shrink-0" title="Descargar el código QR para imprimir" aria-label="Descargar el código QR">
-                <i class="bi bi-download" aria-hidden="true"></i>
-            </a>
+            <?= ui('boton', ['texto' => 'Descargar el código QR', 'icono' => 'descargar', 'tamano' => 'sm', 'soloIcono' => true, 'clases' => 'flex-shrink-0',
+                'url' => Url::to('/qr/' . $bien['qr_token'] . '/imagen'), 'atributos' => ['download' => 'qr-' . $bien['codigo_identificacion'] . '.png']]) ?>
         </div>
     </div>
 <?php endif; ?>
 
 <?php if (!empty($mensaje)): ?>
-    <div class="alert alert-success py-2 small" style="max-width: 720px;"><?= $e($mensaje) ?></div>
+    <?= ui('alerta', ['tipo' => 'exito', 'mensaje' => (string) $mensaje, 'clases' => 'py-2 small contenedor-md']) ?>
 <?php endif; ?>
 <?php if (!empty($verificacionId)): ?>
-    <div class="alert alert-info py-2 small" style="max-width: 720px;">
-        Corrigiendo la ubicación a partir de una discrepancia de la verificación física: elija el nuevo espacio y guarde.
-    </div>
+    <?= ui('alerta', ['tipo' => 'info', 'mensaje' => 'Corrigiendo la ubicación a partir de una discrepancia de la verificación física: elija el nuevo espacio y guarde.', 'cerrable' => false, 'clases' => 'py-2 small contenedor-md']) ?>
 <?php endif; ?>
 <?php if (!empty($error) && $errorCampo === null): ?>
-    <div class="alert alert-danger py-2 small" style="max-width: 720px;"><?= $e($error) ?></div>
+    <?= ui('alerta', ['tipo' => 'peligro', 'mensaje' => (string) $error, 'clases' => 'py-2 small contenedor-md']) ?>
 <?php endif; ?>
 
 <?php if (!$esEdicion && $hallazgo !== null): ?>
-    <div class="alert alert-info py-2 small" style="max-width: 720px;">
+    <div class="alert alert-info py-2 small contenedor-md" data-sin-cerrar>
         Formalizando un hallazgo reportado en <strong><?= $e($hallazgo['espacio_nombre']) ?></strong>
         por <?= $e($hallazgo['nombres'] . ' ' . $hallazgo['apellidos']) ?>.
         Al guardar, el bien quedará asignado automáticamente a ese espacio.
@@ -103,7 +99,7 @@ $etiquetasEstado = ['activo' => 'Activo', 'reintegrado' => 'Reintegrado', 'en_re
 <?php endif; ?>
 
 <?php if ($bienDadoDeBaja): ?>
-    <div class="alert alert-secondary py-2 small" style="max-width: 720px;">
+    <div class="alert alert-secondary py-2 small contenedor-md" data-sin-cerrar>
         Este bien está <strong>dado de baja</strong>: sus datos se conservan tal como estaban y ya no se pueden modificar.
     </div>
 <?php endif; ?>
@@ -350,7 +346,7 @@ $etiquetasEstado = ['activo' => 'Activo', 'reintegrado' => 'Reintegrado', 'en_re
                         <span class="form-label small d-block">Fotografía</span>
                         <img src="<?= \App\Helpers\EnlaceArchivo::url($bien['foto_path']) ?>"
                              alt="Foto de <?= $e($bien['descripcion']) ?>"
-                             class="mb-2 d-block" style="height:72px;border-radius:4px;">
+                             class="mb-2 d-block miniatura-foto">
                     <?php else: ?>
                         <span class="form-label small d-block">Fotografía</span>
                         <span class="nota-campo">Sin foto.</span>
@@ -393,11 +389,11 @@ $etiquetasEstado = ['activo' => 'Activo', 'reintegrado' => 'Reintegrado', 'en_re
     </div>
 
     <?php if ($puedeEditar): ?>
-        <div class="accion-fija-movil d-flex flex-wrap gap-2">
-            <button type="submit" id="botonGuardarBien" class="btn btn-primary"><?= $esEdicion ? 'Guardar cambios' : 'Registrar bien' ?></button>
+        <div class="accion-fija-movil acciones-formulario">
             <?php if ($esEdicion): ?>
-                <a href="<?= $e($urlVolver) ?>" class="btn btn-outline-secondary">Cancelar</a>
+                <?= ui('boton', ['texto' => 'Cancelar', 'url' => $urlVolver]) ?>
             <?php endif; ?>
+            <button type="submit" id="botonGuardarBien" class="btn btn-primary"><?= $esEdicion ? 'Guardar cambios' : 'Registrar bien' ?></button>
         </div>
     <?php endif; ?>
 </form>
@@ -602,30 +598,26 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
 
                 const codigoActual = codigoInput.value.trim();
-                const aceptar = confirm(
-                    'Vas a cambiar la categoría a "Sin cartera".\n\n' +
-                    'El código actual (' + (codigoActual || 'sin código') + ') se perderá y se asignará ' +
-                    'uno nuevo automáticamente: ' + datos.codigo + '.\n\n' +
-                    '¿Deseas continuar?'
-                );
-
-                if (aceptar) {
-                    codigoInput.value = datos.codigo;
-                    categoriaAnterior = categoriaId;
-                } else if (tom) {
-                    tom.setValue(categoriaAnterior, true);
-                } else {
-                    categoriaSelect.value = categoriaAnterior;
-                }
-
-                // El confirm() nativo bloquea el hilo de JS mientras está abierto; al
-                // cerrarse, Tom Select puede quedar con el buscador visible/enfocado
-                // (clase "input-active") en vez de mostrar la opción elegida como
-                // pastilla, aunque el menú de opciones ya esté cerrado.
+                // Tom Select se cierra antes de abrir el modal, para que no quede con el
+                // buscador enfocado detrás.
                 if (tom) {
                     tom.close();
                     tom.blur();
                 }
+                window.miaConfirmar({
+                    titulo: 'Cambiar a "Sin cartera"',
+                    mensaje: 'El código actual (' + (codigoActual || 'sin código') + ') se reemplazará por uno nuevo: ' + datos.codigo + '.',
+                    boton: 'Cambiar el código'
+                }).then(function (aceptar) {
+                    if (aceptar) {
+                        codigoInput.value = datos.codigo;
+                        categoriaAnterior = categoriaId;
+                    } else if (tom) {
+                        tom.setValue(categoriaAnterior, true);
+                    } else {
+                        categoriaSelect.value = categoriaAnterior;
+                    }
+                });
             });
     });
 });
@@ -634,7 +626,7 @@ document.addEventListener('DOMContentLoaded', function () {
 <?php endif; ?>
 
 <?php if ($esEdicion && !empty($historialMovimientos)): ?>
-    <details class="mt-4" style="max-width: 720px;">
+    <details class="mt-4 contenedor-md">
         <summary class="small fw-semibold text-muted">Ver historial de movimientos (<?= count($historialMovimientos) ?>)</summary>
         <div class="mt-2">
         <div class="table-responsive">

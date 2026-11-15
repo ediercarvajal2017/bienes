@@ -6,7 +6,8 @@
  *  - solicitud (de reintegro): pendiente, aprobada, rechazada, cancelada;
  *  - baja: pendiente, aprobada, rechazada;
  *  - lote (de reintegro): pendiente, reintegrado, unificado;
- *  - responsabilidad: grupal, individual.
+ *  - responsabilidad: grupal, individual;
+ *  - qr (etiqueta del bien): confirmada, sin_confirmar (impresa, sin confirmar que se pegó), sin_imprimir.
  * Las solicitudes, bajas y lotes usan fondo suave con borde, para no confundirlos con el
  * estado del bien.
  *
@@ -36,6 +37,11 @@ $mapa = [
         'pendiente' => ['Pendiente', 'badge-lote badge-lote-pendiente'],
         'reintegrado' => ['Reintegrado', 'badge-lote badge-lote-reintegrado'],
         'unificado' => ['Unificado', 'badge-lote badge-lote-unificado'],
+    ],
+    'qr' => [
+        'confirmada' => ['Confirmada', 'badge-solicitud badge-solicitud-aprobada'],
+        'sin_confirmar' => ['Sin confirmar', 'badge-solicitud badge-solicitud-pendiente'],
+        'sin_imprimir' => ['Sin imprimir', 'badge-solicitud badge-solicitud-rechazada'],
     ],
     'responsabilidad' => [
         'grupal' => ['Grupal', 'etiqueta-responsabilidad etiqueta-grupal'],
