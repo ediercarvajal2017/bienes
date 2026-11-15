@@ -6,6 +6,8 @@
  *   - data-confirmar-boton: texto del botón que confirma (por defecto "Confirmar");
  *   - data-confirmar-tipo="peligro": botón rojo y el foco empieza en Cancelar;
  *   - data-confirmar-titulo: título (por defecto "Confirmar acción").
+ * También muestra avisos de un solo botón (miaConfirmar({ soloAceptar: true })) y pide un texto
+ * obligatorio, como el motivo de un rechazo (miaPedirTexto()).
  * Es un <dialog> nativo: atrapa el foco, se cierra con Escape y no necesita Bootstrap JS.
  */
 ?>
@@ -13,6 +15,11 @@
     <form method="dialog">
         <h2 id="modalConfirmarTitulo" class="titulo-seccion">Confirmar acción</h2>
         <p id="modalConfirmarMensaje" class="modal-confirmar-mensaje"></p>
+        <div class="modal-confirmar-campo mb-3" hidden>
+            <label for="modalConfirmarTexto" class="form-label small requerido" id="modalConfirmarEtiqueta"></label>
+            <textarea id="modalConfirmarTexto" class="form-control" rows="3" aria-describedby="modalConfirmarTextoError"></textarea>
+            <div id="modalConfirmarTextoError" class="invalid-feedback">Escribe el motivo para continuar.</div>
+        </div>
         <div class="modal-confirmar-acciones">
             <button type="submit" value="cancelar" class="btn btn-outline-secondary" data-confirmar-cancelar>Cancelar</button>
             <button type="submit" value="aceptar" class="btn btn-primary" data-confirmar-aceptar>Confirmar</button>

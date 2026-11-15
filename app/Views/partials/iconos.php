@@ -28,6 +28,7 @@ return [
     'imprimir' => ['icono' => 'printer', 'uso' => 'Imprimir'],
     'enviar' => ['icono' => 'send', 'uso' => 'Enviar por correo'],
     'cambiar' => ['icono' => 'arrow-repeat', 'uso' => 'Cambiar o recargar (cámara, código)'],
+    'agrupar' => ['icono' => 'diagram-3', 'uso' => 'Unificar o separar lotes de reintegro por categoría'],
     'ayuda' => ['icono' => 'question-circle', 'activo' => 'question-circle-fill', 'uso' => 'Ayuda de un campo o guía rápida'],
 
     // ── Conceptos del dominio (también son los módulos del menú) ──
@@ -67,6 +68,7 @@ return [
     'error' => ['icono' => 'x-circle', 'uso' => 'Error'],
     'info' => ['icono' => 'info-circle', 'uso' => 'Información'],
     'pendiente' => ['icono' => 'hourglass-split', 'uso' => 'Pendiente o en proceso'],
+    'sin_hacer' => ['icono' => 'circle', 'uso' => 'Paso sin completar (primeros pasos del panel)'],
 
     // ── Navegación ──
     'menu' => ['icono' => 'list', 'uso' => 'Abrir el menú'],

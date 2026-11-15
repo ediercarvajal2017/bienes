@@ -89,6 +89,10 @@ final class AyudaCampo
                 . "**Reportar baja** queda pendiente de aprobación: el bien no se da de baja hasta que alguien autorizado lo apruebe.\n\n"
                 . '**Reactivar** úsalo solo si el bien de verdad volvió a la institución (por ejemplo, la Alcaldía lo devolvió) o si el reintegro fue un error.',
         ],
+        'seleccion_paginas' => [
+            'titulo' => 'Selección en varias páginas',
+            'texto' => 'La selección se mantiene al buscar o al cambiar de página: puedes ir marcando bienes en varias páginas antes de confirmar. "Vaciar selección" la borra toda.',
+        ],
         'lote_codigo' => [
             'titulo' => 'Código de lote',
             'texto' => 'El código que comparten todas las unidades (ej. la placa de la Alcaldía). Solo letras, números y guiones. Cada unidad queda como CÓDIGO-001, CÓDIGO-002…',

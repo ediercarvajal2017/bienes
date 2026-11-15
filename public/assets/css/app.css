@@ -1237,3 +1237,9 @@ html { scroll-padding-top: calc(var(--alto-navbar) + 0.75rem); }
 .filtros-n3 { --filtros: 3; --filtros-medio: 3; }
 .filtros-n4 { --filtros: 4; --filtros-medio: 3; }
 .filtros-n5 { --filtros: 5; --filtros-medio: 3; }
+.buscador-flexible { max-width: 420px; flex: 1 1 260px; }
+.fila-seleccionable { cursor: pointer; }
+summary { cursor: pointer; }
+.celda-cantidad { width: 9rem; }
+.texto-acotado { max-width: 14rem; }
+.cuenta-pendiente { background: var(--sigebi-advertencia-fondo); color: var(--sigebi-advertencia-texto); border-color: var(--sigebi-advertencia-borde); }

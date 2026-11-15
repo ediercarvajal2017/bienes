@@ -8,6 +8,7 @@
  *  - $titulo (string)
  *  - $icono (?string): clave del diccionario; la del módulo (bien, espacio, reintegro…).
  *  - $subtitulo (?string): una línea de contexto, texto plano.
+ *  - $insignia (string): HTML de ui('insignia_estado', …) junto al título (estado del registro).
  *  - $acciones (string): HTML de los botones (ui('boton', …)): primero los secundarios,
  *    al final el primario.
  *
@@ -16,11 +17,12 @@
 
 $icono ??= null;
 $subtitulo ??= null;
+$insignia ??= '';
 $acciones ??= '';
 ?>
 <div class="encabezado-pagina">
     <div class="encabezado-pagina-texto">
-        <h1 class="titulo-pagina"><?= $icono !== null ? icono($icono, 'titulo-pagina-icono') : '' ?><?= htmlspecialchars($titulo, ENT_QUOTES) ?></h1>
+        <h1 class="titulo-pagina"><?= $icono !== null ? icono($icono, 'titulo-pagina-icono') : '' ?><?= htmlspecialchars($titulo, ENT_QUOTES) ?><?= $insignia !== '' ? ' ' . $insignia : '' ?></h1>
         <?php if ($subtitulo !== null && $subtitulo !== ''): ?>
             <p class="encabezado-pagina-subtitulo"><?= htmlspecialchars($subtitulo, ENT_QUOTES) ?></p>
         <?php endif; ?>

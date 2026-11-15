@@ -172,7 +172,7 @@
                 preview.classList.add('d-none');
                 await listarCamaras();
             } catch (e) {
-                alert('No se pudo acceder a la cámara: ' + e.message);
+                window.miaConfirmar({ titulo: 'Cámara', mensaje: 'No se pudo acceder a la cámara: ' + e.message + '. Revisa el permiso de la cámara en el navegador o elige una foto guardada.', boton: 'Entendido', soloAceptar: true });
             }
         });
 
@@ -182,7 +182,7 @@
             try {
                 await abrirCamara(camaras[indiceCamara].deviceId);
             } catch (e) {
-                alert('No se pudo cambiar de cámara: ' + e.message);
+                window.miaConfirmar({ titulo: 'Cámara', mensaje: 'No se pudo cambiar de cámara: ' + e.message, boton: 'Entendido', soloAceptar: true });
             }
         });
 
