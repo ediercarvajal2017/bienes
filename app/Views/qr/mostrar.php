@@ -3,13 +3,6 @@
 use App\Core\Auth;
 use App\Core\Url;
 
-$etiquetasEstado = [
-    'activo' => 'Activo',
-    'reintegrado' => 'Reintegrado',
-    'en_reparacion' => 'En reparación',
-    'dado_de_baja' => 'Dado de baja',
-];
-
 $qrConfirmado = !empty($bien['qr_confirmado_en']);
 $qrImpreso = !empty($bien['qr_impreso_en']);
 ?>
@@ -29,55 +22,49 @@ $qrImpreso = !empty($bien['qr_impreso_en']);
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <title><?= htmlspecialchars($bien['descripcion'], ENT_QUOTES) ?> · MIA</title>
     <link rel="icon" type="image/png" sizes="32x32" href="<?= Url::asset('/assets/img/favicon-32.png') ?>">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" integrity="sha384-tViUnnbYAV00FLIhhi3v/dWt3Jxw4gZQcNoSCxCIFNJVCx7/D55/wXsrNIRANwdD" crossorigin="anonymous" rel="stylesheet">
-    <link href="<?= Url::asset('/assets/css/app.css') ?>" rel="stylesheet">
+    <?php \App\Core\View::render('partials/ui/hojas_estilo') ?>
 </head>
 <body>
 
-<div class="auth-shell" style="align-items: flex-start; padding: 5vh 1rem;">
-    <div class="auth-card position-relative" style="max-width: 420px;">
+<div class="auth-shell auth-shell-ficha">
+    <div class="auth-card position-relative contenedor-sm">
         <button type="button" id="btnTema" class="theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
-            <i class="bi bi-moon-stars"></i>
+            <?= icono('tema') ?>
         </button>
-        <div class="text-center mb-3"><img src="<?= Url::asset('/assets/img/logo.webp') ?>" width="400" height="400" alt="MIA" style="height: 72px; width: auto;"></div>
+        <div class="text-center mb-3"><img src="<?= Url::asset('/assets/img/logo.webp') ?>" width="400" height="400" alt="MIA" class="auth-logo-72"></div>
 
         <?php if (!empty($mensaje)): ?>
-            <div class="alert alert-success py-2 small"><?= htmlspecialchars($mensaje, ENT_QUOTES) ?></div>
+            <?= ui('alerta', ['tipo' => 'exito', 'mensaje' => (string) $mensaje, 'clases' => 'py-2 small']) ?>
         <?php endif; ?>
         <?php if (!empty($error)): ?>
-            <div class="alert alert-danger py-2 small"><?= htmlspecialchars($error, ENT_QUOTES) ?></div>
+            <?= ui('alerta', ['tipo' => 'peligro', 'mensaje' => (string) $error, 'clases' => 'py-2 small']) ?>
         <?php endif; ?>
 
         <?php if (!empty($bien['foto_path'])): ?>
             <img src="<?= \App\Helpers\EnlaceArchivo::url($bien['foto_path']) ?>"
                  alt="Foto de <?= htmlspecialchars($bien['descripcion'], ENT_QUOTES) ?>"
-                 class="d-block w-100 mb-3" style="border-radius:8px; max-height:220px; object-fit:cover;">
+                 class="d-block w-100 mb-3 foto-ficha">
         <?php else: ?>
-            <div class="d-flex align-items-center justify-content-center bg-light text-muted mb-3" style="height:140px;border-radius:8px;">
-                <i class="bi bi-image" style="font-size:2rem;"></i>
-            </div>
+            <div class="foto-ficha-vacia mb-3"><?= icono('foto') ?><span class="visually-hidden">Sin foto</span></div>
         <?php endif; ?>
 
         <h1 class="h5 mb-1"><?= htmlspecialchars($bien['descripcion'], ENT_QUOTES) ?></h1>
         <div class="mono text-muted mb-2"><?= htmlspecialchars($bien['codigo_identificacion'], ENT_QUOTES) ?></div>
 
-        <span class="badge badge-estado-<?= htmlspecialchars($bien['estado'], ENT_QUOTES) ?> mb-3">
-            <?= $etiquetasEstado[$bien['estado']] ?? $bien['estado'] ?>
-        </span>
+        <?= ui('insignia_estado', ['tipo' => 'bien', 'estado' => (string) $bien['estado'], 'clases' => 'mb-3']) ?>
 
         <?php if ($puedeGestionar): ?>
             <?php if ($qrConfirmado): ?>
-                <span class="badge text-bg-success mb-3">
-                    <i class="bi bi-patch-check-fill me-1"></i>Etiqueta confirmada
+                <span class="badge badge-exito mb-3">
+                    <?= icono('exito', 'me-1') ?>Etiqueta confirmada
                 </span>
             <?php elseif ($qrImpreso): ?>
-                <span class="badge text-bg-warning mb-3">
-                    <i class="bi bi-exclamation-triangle me-1"></i>Etiqueta impresa, sin confirmar
+                <span class="badge badge-advertencia mb-3">
+                    <?= icono('advertencia', 'me-1') ?>Etiqueta impresa, sin confirmar
                 </span>
             <?php else: ?>
-                <span class="badge text-bg-secondary mb-3">
-                    <i class="bi bi-printer me-1"></i>QR sin imprimir todavía
+                <span class="badge badge-neutro mb-3">
+                    <?= icono('imprimir', 'me-1') ?>QR sin imprimir todavía
                 </span>
             <?php endif; ?>
         <?php endif; ?>
@@ -111,27 +98,27 @@ $qrImpreso = !empty($bien['qr_impreso_en']);
         <?php if ($puedeGestionar): ?>
             <div class="d-grid gap-2">
                 <a href="<?= Url::to('/bienes/' . $bien['id'] . '/editar') ?>" class="btn btn-primary btn-sm">
-                    <i class="bi bi-gear me-1"></i>Gestionar este bien
+                    <?= icono('editar', 'me-1') ?>Gestionar este bien
                 </a>
                 <?php if ($puedeReportarBaja): ?>
                     <a href="<?= Url::to('/qr/' . $token . '/baja') ?>" class="btn btn-outline-danger btn-sm">
-                        <i class="bi bi-exclamation-triangle me-1"></i>Reportar baja
+                        <?= icono('baja', 'me-1') ?>Reportar baja
                     </a>
                 <?php endif; ?>
                 <?php if (!empty($puedeSolicitarReintegro)): ?>
-                    <a href="<?= Url::to('/qr/' . $token . '/solicitar-reintegro') ?>" class="btn btn-outline-primary btn-sm">
-                        <i class="bi bi-box-arrow-in-left me-1" aria-hidden="true"></i>Solicitar reintegro
+                    <a href="<?= Url::to('/qr/' . $token . '/solicitar-reintegro') ?>" class="btn btn-outline-secondary btn-sm">
+                        <?= icono('reintegro', 'me-1') ?>Solicitar reintegro
                     </a>
                 <?php elseif (!empty($solicitudReintegroPendiente)): ?>
                     <div class="small text-muted text-center">
-                        <i class="bi bi-hourglass-split me-1" aria-hidden="true"></i>Tiene una solicitud de reintegro pendiente.
+                        <?= icono('pendiente', 'me-1') ?>Tiene una solicitud de reintegro pendiente.
                     </div>
                 <?php endif; ?>
             </div>
 
             <?php if (!$qrImpreso): ?>
                 <p class="text-muted small mt-2 mb-0">
-                    <i class="bi bi-printer me-1"></i>
+                    <?= icono('imprimir', 'me-1') ?>
                     Todavía no se ha generado la etiqueta de este bien. Ve a
                     <a href="<?= Url::to('/bienes/qr-masivo') ?>">Generar QR masivo</a> para imprimirla —
                     una vez impresa, podrás confirmarla aquí.
@@ -139,8 +126,8 @@ $qrImpreso = !empty($bien['qr_impreso_en']);
             <?php elseif (!$qrConfirmado): ?>
                 <form method="post" action="<?= Url::to('/qr/' . $token . '/confirmar-etiqueta') ?>" class="mt-2">
                     <?= \App\Core\Csrf::field() ?>
-                    <button type="submit" class="btn btn-outline-primary btn-sm w-100">
-                        <i class="bi bi-patch-check me-1"></i>Confirmar: esta etiqueta corresponde a este bien
+                    <button type="submit" class="btn btn-outline-secondary btn-sm w-100">
+                        <?= icono('guardar', 'me-1') ?>Confirmar: esta etiqueta corresponde a este bien
                     </button>
                 </form>
                 <p class="text-muted small mt-1 mb-0">
@@ -149,7 +136,7 @@ $qrImpreso = !empty($bien['qr_impreso_en']);
                 </p>
             <?php else: ?>
                 <p class="text-muted small mt-2 mb-0">
-                    <i class="bi bi-patch-check-fill text-success me-1"></i>
+                    <?= icono('exito', 'text-success me-1') ?>
                     Confirmada por <?= htmlspecialchars(trim((string) ($bien['qr_confirmado_por_nombre'] ?? '')) ?: '—', ENT_QUOTES) ?>
                     el <?= htmlspecialchars((string) $bien['qr_confirmado_en'], ENT_QUOTES) ?>
                 </p>
@@ -157,16 +144,16 @@ $qrImpreso = !empty($bien['qr_impreso_en']);
 
             <?php if (!empty($puedeVerificar)): ?>
                 <hr>
-                <div class="small fw-semibold mb-2"><i class="bi bi-clipboard2-check me-1"></i>Verificación física en curso</div>
+                <div class="small fw-semibold mb-2"><?= icono('verificacion', 'me-1') ?>Verificación física en curso</div>
 
                 <?php if (!empty($verificacionActual)): ?>
                     <?php if ($verificacionActual['resultado'] === 'ok'): ?>
                         <div class="alert alert-success py-2 small mb-2">
-                            <i class="bi bi-check2-circle me-1"></i>Ya verificado por <?= htmlspecialchars($verificacionActual['nombres'] . ' ' . $verificacionActual['apellidos'], ENT_QUOTES) ?>.
+                            <?= icono('exito', 'me-1') ?>Ya verificado por <?= htmlspecialchars($verificacionActual['nombres'] . ' ' . $verificacionActual['apellidos'], ENT_QUOTES) ?>.
                         </div>
                     <?php else: ?>
                         <div class="alert alert-warning py-2 small mb-2">
-                            <i class="bi bi-exclamation-triangle me-1"></i>Discrepancia reportada por <?= htmlspecialchars($verificacionActual['nombres'] . ' ' . $verificacionActual['apellidos'], ENT_QUOTES) ?>: <?= htmlspecialchars($verificacionActual['observaciones'] ?? '', ENT_QUOTES) ?>
+                            <?= icono('advertencia', 'me-1') ?>Discrepancia reportada por <?= htmlspecialchars($verificacionActual['nombres'] . ' ' . $verificacionActual['apellidos'], ENT_QUOTES) ?>: <?= htmlspecialchars($verificacionActual['observaciones'] ?? '', ENT_QUOTES) ?>
                         </div>
                     <?php endif; ?>
                     <p class="text-muted small mb-2">Si vuelves a verificar, se reemplaza el registro anterior.</p>
@@ -179,15 +166,15 @@ $qrImpreso = !empty($bien['qr_impreso_en']);
                         <label for="fotoVerificar" class="form-label small text-muted mb-1">Este bien no tiene foto — puedes tomarle una (opcional)</label>
                         <input type="file" name="foto" id="fotoVerificar" accept="image/*" capture="environment" class="form-control form-control-sm mb-2">
                     <?php endif; ?>
-                    <button type="submit" class="btn btn-outline-success btn-sm w-100 mb-2">
-                        <i class="bi bi-check2-circle me-1"></i>Confirmar: el bien está aquí
+                    <button type="submit" class="btn btn-outline-secondary btn-sm w-100 mb-2">
+                        <?= icono('guardar', 'me-1') ?>Confirmar: el bien está aquí
                     </button>
                 </form>
 
-                <button type="button" id="btnMostrarDiscrepancia" class="btn btn-outline-warning btn-sm w-100">
-                    <i class="bi bi-exclamation-triangle me-1"></i>Reportar discrepancia
+                <button type="button" id="btnMostrarDiscrepancia" class="btn btn-outline-secondary btn-sm w-100">
+                    <?= icono('advertencia', 'me-1') ?>Reportar discrepancia
                 </button>
-                <form method="post" action="<?= Url::to('/qr/' . $token . '/verificar') ?>" id="formDiscrepancia" style="display:none;" class="mt-2">
+                <form method="post" action="<?= Url::to('/qr/' . $token . '/verificar') ?>" id="formDiscrepancia" class="mt-2" hidden>
                     <?= \App\Core\Csrf::field() ?>
                     <input type="hidden" name="resultado" value="discrepancia">
                     <label for="motivoDiscrepancia" class="form-label small text-muted mb-1">¿Qué pasa con este bien?</label>
@@ -201,12 +188,12 @@ $qrImpreso = !empty($bien['qr_impreso_en']);
                     </select>
                     <textarea name="observaciones" id="observacionesDiscrepancia" class="form-control form-control-sm mb-2" rows="2"
                               placeholder="Detalle adicional (opcional)"></textarea>
-                    <button type="submit" class="btn btn-warning btn-sm w-100">Enviar discrepancia</button>
+                    <button type="submit" class="btn btn-primary btn-sm w-100">Enviar discrepancia</button>
                 </form>
                 <script>
                 document.getElementById('btnMostrarDiscrepancia').addEventListener('click', function () {
-                    this.style.display = 'none';
-                    document.getElementById('formDiscrepancia').style.display = 'block';
+                    this.hidden = true;
+                    document.getElementById('formDiscrepancia').hidden = false;
                 });
 
                 // Si el motivo es "Otro", el detalle deja de ser opcional — sin un motivo
@@ -223,13 +210,13 @@ $qrImpreso = !empty($bien['qr_impreso_en']);
             <p class="small text-muted mb-0">Este bien pertenece a otra institución; no puedes gestionarlo desde tu cuenta.</p>
         <?php else: ?>
             <a href="<?= Url::to('/login') ?>" class="btn btn-primary btn-sm w-100">
-                <i class="bi bi-box-arrow-in-right me-1"></i>Iniciar sesión para gestionar
+                <?= icono('entrar', 'me-1') ?>Iniciar sesión para gestionar
             </a>
         <?php endif; ?>
 
         <?php if (Auth::check()): ?>
             <a href="<?= Url::to('/escanear') ?>" class="btn btn-link btn-sm w-100 mt-2">
-                <i class="bi bi-qr-code-scan me-1"></i>Volver a escanear
+                <?= icono('escanear', 'me-1') ?>Volver a escanear
             </a>
         <?php endif; ?>
     </div>

@@ -8,19 +8,15 @@ use App\Core\View;
 $viejo ??= [];
 $bienesSeleccionados = $viejo['bienes'] ?? [];
 ?>
-<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-    <div>
-        <h1 class="h4 mb-0">Asignar bienes</h1>
-        <p class="text-muted small mb-0">Selecciona uno o varios bienes y asígnalos (o reasígnalos) a un espacio o a una persona.</p>
-    </div>
+<?php ob_start(); ?>
     <a href="<?= Url::to('/bienes') ?>" class="btn btn-sm btn-outline-secondary">Volver</a>
-</div>
+<?= ui('encabezado_pagina', ['titulo' => 'Asignar bienes', 'icono' => 'asignacion', 'subtitulo' => 'Selecciona uno o varios bienes y asígnalos (o reasígnalos) a un espacio o a una persona.', 'acciones' => (string) ob_get_clean()]) ?>
 
-<?php if (!empty($mensaje)): ?><div class="alert alert-success py-2 small"><?= htmlspecialchars($mensaje, ENT_QUOTES) ?></div><?php endif; ?>
-<?php if (!empty($error)): ?><div class="alert alert-danger py-2 small"><?= htmlspecialchars($error, ENT_QUOTES) ?></div><?php endif; ?>
+<?php if (!empty($mensaje)): ?><?= ui('alerta', ['tipo' => 'exito', 'mensaje' => (string) $mensaje, 'clases' => 'py-2 small']) ?><?php endif; ?>
+<?php if (!empty($error)): ?><?= ui('alerta', ['tipo' => 'peligro', 'mensaje' => (string) $error, 'clases' => 'py-2 small']) ?><?php endif; ?>
 
 <?php if (Auth::esSuperusuario()): ?>
-    <div class="mb-3" style="max-width: 320px;">
+    <div class="mb-3 contenedor-sm">
         <label for="selectorInstitucion" class="form-label small">Institución</label>
         <select id="selectorInstitucion" class="form-select form-select-sm selector-buscable">
             <option value="">-- Selecciona una institución --</option>
@@ -51,7 +47,7 @@ $bienesSeleccionados = $viejo['bienes'] ?? [];
         <?= Csrf::field() ?>
         <input type="hidden" name="institucion_id" value="<?= $institucionId ?>">
 
-        <div class="card mb-3" style="max-width: 760px;">
+        <div class="card mb-3 contenedor-md">
             <div class="card-body py-3">
                 <h2 class="h6 mb-3">Datos de la asignación</h2>
 
@@ -126,20 +122,20 @@ $bienesSeleccionados = $viejo['bienes'] ?? [];
                 </select>
             </div>
             <?php if ($hayFiltros && $total > count($bienes)): ?>
-                <a class="btn btn-sm btn-outline-primary" id="seleccionarFiltrados"
+                <a class="btn btn-sm btn-outline-secondary" id="seleccionarFiltrados"
                    href="<?= htmlspecialchars($urlBasePaginacion . '&porPagina=0&seleccionar=todos', ENT_QUOTES) ?>">
                     Seleccionar los <?= (int) $total ?> filtrados
                 </a>
             <?php endif; ?>
         </div>
         <div class="d-flex flex-wrap justify-content-between align-items-end gap-2 mb-2">
-            <div style="max-width: 420px; flex: 1 1 260px;">
+            <div class="buscador-flexible">
                 <input type="search" id="buscador" data-buscar="q" class="form-control form-control-sm"
                        placeholder="Buscar por código, descripción, responsable, ubicación, estado o valor..."
                        value="<?= htmlspecialchars($q, ENT_QUOTES) ?>">
             </div>
             <button type="submit" class="btn btn-primary btn-sm boton-asignar" disabled>
-                <i class="bi bi-person-check me-1"></i>Asignar <span class="badge bg-white text-primary contador-seleccionados">0</span>
+                <?= icono('asignacion', 'me-1') ?>Asignar <span class="badge bg-white text-primary contador-seleccionados">0</span>
             </button>
         </div>
 
@@ -153,7 +149,7 @@ $bienesSeleccionados = $viejo['bienes'] ?? [];
             <table class="table table-sm table-hover align-middle bg-white tabla-cards">
                 <thead>
                 <tr>
-                    <th style="width: 32px;"><input type="checkbox" id="seleccionarTodos" class="form-check-input" aria-label="Seleccionar todos"></th>
+                    <th class="columna-casilla"><input type="checkbox" id="seleccionarTodos" class="form-check-input" aria-label="Seleccionar todos"></th>
                     <th>Código</th>
                     <th>Descripción</th>
                     <th>Responsable / ubicación</th>
@@ -169,7 +165,7 @@ $bienesSeleccionados = $viejo['bienes'] ?? [];
                         <td data-label="Descripción"><?= htmlspecialchars($b['descripcion'], ENT_QUOTES) ?></td>
                         <?php if (!$b['asignado']): ?>
                             <td class="text-muted small" data-label="Responsable / ubicación">— Sin asignar —</td>
-                            <td data-label="Estado"><span class="badge text-bg-light border">Sin asignar</span></td>
+                            <td data-label="Estado"><span class="badge badge-neutro">Sin asignar</span></td>
                         <?php else: ?>
                             <td class="small" data-label="Responsable / ubicación">
                                 <?php \App\Core\View::render('partials/responsabilidad', ['fila' => $b]); ?>
@@ -190,7 +186,7 @@ $bienesSeleccionados = $viejo['bienes'] ?? [];
 
         <div class="accion-fija-movil">
             <button type="submit" class="btn btn-primary mt-2 boton-asignar" disabled>
-                <i class="bi bi-person-check me-1"></i>Asignar <span class="badge bg-white text-primary contador-seleccionados">0</span>
+                <?= icono('asignacion', 'me-1') ?>Asignar <span class="badge bg-white text-primary contador-seleccionados">0</span>
             </button>
         </div>
     </form>
@@ -240,8 +236,8 @@ $bienesSeleccionados = $viejo['bienes'] ?? [];
                 e.preventDefault();
                 return;
             }
-            if (!confirm('¿Asignar ' + seleccionadas + ' bien(es)?')) {
-                e.preventDefault();
+            if (!window.miaConfirmarEnvio(e, { mensaje: '¿Asignar ' + seleccionadas + ' bien(es)?', boton: 'Asignar' })) {
+                return;
             }
         });
 

@@ -4,21 +4,20 @@ use App\Core\Csrf;
 use App\Core\Url;
 
 ?>
-<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-    <h1 class="h4 mb-0">Nueva jornada de verificación</h1>
+<?php ob_start(); ?>
     <a href="<?= Url::to('/verificaciones') ?>" class="btn btn-sm btn-outline-secondary">Volver</a>
-</div>
+<?= ui('encabezado_pagina', ['titulo' => 'Nueva jornada de verificación', 'icono' => 'verificacion', 'acciones' => (string) ob_get_clean()]) ?>
 
-<?php if (!empty($error)): ?><div class="alert alert-danger py-2 small" style="max-width:520px;"><?= htmlspecialchars($error, ENT_QUOTES) ?></div><?php endif; ?>
+<?php if (!empty($error)): ?><?= ui('alerta', ['tipo' => 'peligro', 'mensaje' => (string) $error, 'clases' => 'py-2 small contenedor-md']) ?><?php endif; ?>
 
-<p class="text-muted small" style="max-width:560px;">
+<p class="text-muted small contenedor-md">
     Al iniciar la jornada, cualquier persona con acceso a un bien podrá escanear su QR y confirmar si existe físicamente
     o reportar una discrepancia. Un docente solo puede verificar los bienes de los espacios donde es responsable.
 </p>
 
-<p class="text-muted small mb-2" style="max-width: 640px;">Los campos marcados con <span class="text-danger">*</span> son obligatorios.</p>
+<p class="text-muted small mb-2 contenedor-md">Los campos marcados con <span class="text-danger">*</span> son obligatorios.</p>
 
-<form method="post" action="<?= Url::to('/verificaciones') ?>" class="card" style="max-width: 640px;">
+<form method="post" action="<?= Url::to('/verificaciones') ?>" class="card contenedor-md">
     <div class="card-body">
         <?= Csrf::field() ?>
         <div class="mb-3">
@@ -30,7 +29,7 @@ use App\Core\Url;
             <input id="campo-fecha-inicio" type="date" name="fecha_inicio" class="form-control" value="<?= date('Y-m-d') ?>" required>
         </div>
         <button type="submit" class="btn btn-primary btn-sm">
-            <i class="bi bi-clipboard2-check me-1"></i>Iniciar jornada
+            <?= icono('verificacion', 'me-1') ?>Iniciar jornada
         </button>
     </div>
 </form>

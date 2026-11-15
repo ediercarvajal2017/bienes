@@ -39,40 +39,40 @@ $urlBaseDiscrepancia = $urlBaseSeccion(['paginaDiscrepancia', 'porPaginaDiscrepa
 // prioridad que exista. Hallazgos solo aparece si hay alguno; las otras 3 siempre.
 $tabPorDefecto = !empty($hallazgos) ? 'hallazgos' : 'discrepancia';
 ?>
-<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-1">
-    <h1 class="h4 mb-0"><?= htmlspecialchars($jornada['nombre'], ENT_QUOTES) ?></h1>
-    <div class="d-flex gap-2">
-        <a href="<?= Url::to('/verificaciones/' . $jornada['id'] . '/exportar.xlsx') ?>" class="btn btn-sm btn-outline-primary">
-            <i class="bi bi-file-earmark-excel me-1"></i>Exportar a Excel
-        </a>
-        <a href="<?= Url::to('/verificaciones') ?>" class="btn btn-sm btn-outline-secondary">Volver</a>
-    </div>
-</div>
-<p class="text-muted small mb-3">
-    <?= (int) $universo ?> bienes en total · Iniciada el <?= htmlspecialchars($jornada['fecha_inicio'], ENT_QUOTES) ?>
-    <?php if ($jornada['estado'] === 'cerrada'): ?>
-        · Cerrada el <?= htmlspecialchars(substr($jornada['fecha_cierre'], 0, 16), ENT_QUOTES) ?>
-    <?php endif; ?>
-</p>
+<?= ui('encabezado_pagina', [
+    'titulo' => (string) $jornada['nombre'],
+    'icono' => 'verificacion',
+    'subtitulo' => number_format((int) $universo, 0, ',', '.') . ' bienes en total · Iniciada el ' . $jornada['fecha_inicio']
+        . ($jornada['estado'] === 'cerrada' ? ' · Cerrada el ' . substr((string) $jornada['fecha_cierre'], 0, 16) : ''),
+    'acciones' => ui('boton', ['texto' => 'Volver', 'icono' => 'volver', 'tamano' => 'sm', 'url' => Url::to('/verificaciones')])
+        . ui('boton', ['texto' => 'Exportar a Excel', 'icono' => 'exportar_excel', 'tamano' => 'sm', 'url' => Url::to('/verificaciones/' . $jornada['id'] . '/exportar.xlsx')]),
+]) ?>
 
-<?php if (!empty($mensaje)): ?><div class="alert alert-success py-2 small"><?= htmlspecialchars($mensaje, ENT_QUOTES) ?></div><?php endif; ?>
-<?php if (!empty($error)): ?><div class="alert alert-danger py-2 small"><?= htmlspecialchars($error, ENT_QUOTES) ?></div><?php endif; ?>
+<?php if (!empty($mensaje)): ?><?= ui('alerta', ['tipo' => 'exito', 'mensaje' => (string) $mensaje, 'clases' => 'py-2 small']) ?><?php endif; ?>
+<?php if (!empty($error)): ?><?= ui('alerta', ['tipo' => 'peligro', 'mensaje' => (string) $error, 'clases' => 'py-2 small']) ?><?php endif; ?>
 
 <?php if ($jornada['estado'] === 'en_progreso'): ?>
-    <form method="post" action="<?= Url::to('/verificaciones/' . $jornada['id'] . '/cerrar') ?>" class="card mb-4" style="max-width: 480px;"
-          onsubmit="<?php if (count($hallazgos) > 0): ?>if (!confirm('Hay <?= count($hallazgos) ?> hallazgo(s) sin registrar ni descartar. ¿Cerrar la jornada de todos modos?')) { return false; } this.confirmar_hallazgos.value = '1'; <?php endif; ?>return confirm('¿Cerrar la jornada de verificación? Quedan <?= (int) $totalPendientes ?> bien(es) pendiente(s) por verificar.');">
+    <?php
+    // Una sola confirmación: si hay hallazgos sin resolver, el mismo mensaje lo dice y
+    // aceptarlo confirma también cerrar con ellos (confirmar_hallazgos).
+    $mensajeCierre = (count($hallazgos) > 0
+        ? 'Hay ' . count($hallazgos) . ' hallazgo(s) sin registrar ni descartar. '
+        : '') . 'Quedan ' . (int) $totalPendientes . ' bien(es) pendiente(s) por verificar. ¿Cerrar la jornada de verificación?';
+    ?>
+    <form method="post" action="<?= Url::to('/verificaciones/' . $jornada['id'] . '/cerrar') ?>" class="card mb-4 contenedor-sm"
+          data-confirmar="<?= htmlspecialchars($mensajeCierre, ENT_QUOTES) ?>" data-confirmar-boton="Cerrar jornada" data-confirmar-tipo="peligro">
         <div class="card-body">
             <?= Csrf::field() ?>
-            <input type="hidden" name="confirmar_hallazgos" value="0">
+            <input type="hidden" name="confirmar_hallazgos" value="<?= count($hallazgos) > 0 ? '1' : '0' ?>">
             <label for="campo-observaciones" class="form-label small">Observaciones de cierre (opcional)</label>
             <textarea id="campo-observaciones" name="observaciones" class="form-control form-control-sm mb-2" rows="2"></textarea>
             <button type="submit" class="btn btn-outline-danger btn-sm">
-                <i class="bi bi-lock me-1"></i>Cerrar jornada
+                <?= icono('guardar', 'me-1') ?>Cerrar jornada
             </button>
         </div>
     </form>
 <?php elseif (!empty($jornada['observaciones_cierre'])): ?>
-    <div class="alert alert-secondary py-2 small" style="max-width:560px;">
+    <div class="alert alert-secondary py-2 small contenedor-md">
         <strong>Observaciones de cierre:</strong> <?= htmlspecialchars($jornada['observaciones_cierre'], ENT_QUOTES) ?>
     </div>
 <?php endif; ?>
@@ -81,23 +81,23 @@ $tabPorDefecto = !empty($hallazgos) ? 'hallazgos' : 'discrepancia';
     <?php if (!empty($hallazgos)): ?>
         <li class="nav-item">
             <a class="nav-link<?= $tabPorDefecto === 'hallazgos' ? ' active' : '' ?>" href="#seccion-hallazgos" data-tab-link="hallazgos">
-                <i class="bi bi-flag me-1"></i>Hallazgos <span class="badge rounded-pill text-bg-primary ms-1"><?= count($hallazgos) ?></span>
+                <?= icono('hallazgo', 'me-1') ?>Hallazgos <span class="badge badge-info ms-1"><?= count($hallazgos) ?></span>
             </a>
         </li>
     <?php endif; ?>
     <li class="nav-item">
         <a class="nav-link<?= $tabPorDefecto === 'discrepancia' ? ' active' : '' ?>" href="#seccion-discrepancia" data-tab-link="discrepancia">
-            <i class="bi bi-exclamation-triangle me-1"></i>Discrepancias <span class="badge rounded-pill text-bg-warning ms-1"><?= (int) $verificadosDiscrepancia ?></span>
+            <?= icono('advertencia', 'me-1') ?>Discrepancias <span class="badge badge-advertencia ms-1"><?= (int) $verificadosDiscrepancia ?></span>
         </a>
     </li>
     <li class="nav-item">
         <a class="nav-link" href="#seccion-pendientes" data-tab-link="pendientes">
-            <i class="bi bi-hourglass-split me-1"></i>Pendientes <span class="badge rounded-pill text-bg-secondary ms-1"><?= (int) $totalPendientes ?></span>
+            <?= icono('pendiente', 'me-1') ?>Pendientes <span class="badge badge-neutro ms-1"><?= (int) $totalPendientes ?></span>
         </a>
     </li>
     <li class="nav-item">
         <a class="nav-link" href="#seccion-ok" data-tab-link="ok">
-            <i class="bi bi-check2-circle me-1"></i>Verificados <span class="badge rounded-pill text-bg-success ms-1"><?= (int) $verificadosOk ?></span>
+            <?= icono('exito', 'me-1') ?>Verificados <span class="badge badge-exito ms-1"><?= (int) $verificadosOk ?></span>
         </a>
     </li>
 </ul>
@@ -130,7 +130,7 @@ $tabPorDefecto = !empty($hallazgos) ? 'hallazgos' : 'discrepancia';
                     <td class="mono small text-muted" data-label="Fecha"><?= htmlspecialchars(substr($h['created_at'], 0, 16), ENT_QUOTES) ?></td>
                     <td data-label="Acciones">
                         <div class="d-flex flex-column gap-1">
-                            <a href="<?= Url::to('/bienes/crear') ?>?hallazgo_id=<?= (int) $h['id'] ?>" class="btn btn-sm btn-outline-primary">Registrar como bien</a>
+                            <a href="<?= Url::to('/bienes/crear') ?>?hallazgo_id=<?= (int) $h['id'] ?>" class="btn btn-sm btn-outline-secondary">Registrar como bien</a>
                             <form method="post" action="<?= Url::to('/hallazgos/' . $h['id'] . '/descartar') ?>"
                                   data-confirmar="¿Descartar este hallazgo? No se creará ningún bien.">
                                 <?= Csrf::field() ?>
@@ -164,7 +164,7 @@ $tabPorDefecto = !empty($hallazgos) ? 'hallazgos' : 'discrepancia';
 
     <?php if ($verificadosDiscrepancia > 0): ?>
         <div class="mb-2 d-flex flex-wrap gap-3 align-items-end">
-            <div style="max-width: 420px; flex: 1 1 260px;">
+            <div class="buscador-flexible">
                 <label for="buscadorDiscrepancia" class="form-label small mb-1">Buscar</label>
                 <input type="search" id="buscadorDiscrepancia" data-buscar="qDiscrepancia" data-buscar-pagina="paginaDiscrepancia" data-buscar-ancla="seccion-discrepancia" class="form-control form-control-sm"
                        placeholder="Buscar por código, descripción o ubicación..."
@@ -210,9 +210,9 @@ $tabPorDefecto = !empty($hallazgos) ? 'hallazgos' : 'discrepancia';
                         <td class="mono small text-muted" data-label="Fecha"><?= htmlspecialchars(substr($d['updated_at'], 0, 16), ENT_QUOTES) ?></td>
                         <td data-label="Estado">
                             <?php if (!empty($d['revisada'])): ?>
-                                <span class="badge text-bg-secondary d-block mb-1">Revisada</span>
+                                <span class="badge badge-neutro d-block mb-1">Revisada</span>
                                 <?php if (!empty($d['revisor_nombres'])): ?>
-                                    <div class="text-muted" style="font-size: 0.75rem;">
+                                    <div class="text-muted texto-minimo">
                                         por <?= htmlspecialchars($d['revisor_nombres'] . ' ' . $d['revisor_apellidos'], ENT_QUOTES) ?>
                                         <?php if (!empty($d['revisada_en'])): ?>
                                             · <?= htmlspecialchars(substr($d['revisada_en'], 0, 16), ENT_QUOTES) ?>
@@ -220,14 +220,14 @@ $tabPorDefecto = !empty($hallazgos) ? 'hallazgos' : 'discrepancia';
                                     </div>
                                 <?php endif; ?>
                             <?php else: ?>
-                                <span class="badge text-bg-warning">Pendiente</span>
+                                <span class="badge badge-advertencia">Pendiente</span>
                             <?php endif; ?>
                         </td>
                         <td data-label="Acciones">
                             <?php $panelUbicacion = !empty($d['espacio_nombre']) ? 'panelTrasladar' : 'panelAsignar'; ?>
                             <div class="d-flex flex-column gap-1">
                                 <a href="<?= Url::to('/bienes/' . $d['bien_id'] . '/editar') ?>?verificacion_id=<?= (int) $d['id'] ?>#<?= $panelUbicacion ?>"
-                                   class="btn btn-sm btn-outline-primary">Corregir ubicación</a>
+                                   class="btn btn-sm btn-outline-secondary">Corregir ubicación</a>
                                 <a href="<?= Url::to('/qr/' . $d['qr_token'] . '/baja') ?>?verificacion_id=<?= (int) $d['id'] ?>"
                                    class="btn btn-sm btn-outline-danger">Dar de baja</a>
                                 <?php if (empty($d['revisada'])): ?>
@@ -257,7 +257,7 @@ $tabPorDefecto = !empty($hallazgos) ? 'hallazgos' : 'discrepancia';
 
 <div data-tab-panel="pendientes" id="seccion-pendientes" class="d-none">
     <p class="text-muted small mb-2">Bienes que todavía no han sido escaneados ni verificados en esta jornada.</p>
-    <div class="mb-2" style="max-width: 420px;">
+    <div class="mb-2 contenedor-sm">
         <input type="search" id="buscadorPendientes" data-buscar="q" data-buscar-pagina="pagina" data-buscar-ancla="seccion-pendientes" class="form-control form-control-sm"
                placeholder="Buscar por código, descripción o ubicación..."
                value="<?= htmlspecialchars($busquedaPendientes, ENT_QUOTES) ?>">
@@ -290,7 +290,7 @@ $tabPorDefecto = !empty($hallazgos) ? 'hallazgos' : 'discrepancia';
 <div data-tab-panel="ok" id="seccion-ok" class="d-none">
     <p class="text-muted small mb-2">Bienes confirmados — coinciden exactamente con lo que el sistema tiene registrado.</p>
     <?php if ($verificadosOk > 0): ?>
-        <div class="mb-2" style="max-width: 420px;">
+        <div class="mb-2 contenedor-sm">
             <input type="search" id="buscadorOk" data-buscar="qOk" data-buscar-pagina="paginaOk" data-buscar-ancla="seccion-ok" class="form-control form-control-sm"
                    placeholder="Buscar por código, descripción o ubicación..."
                    value="<?= htmlspecialchars($busquedaOk, ENT_QUOTES) ?>">

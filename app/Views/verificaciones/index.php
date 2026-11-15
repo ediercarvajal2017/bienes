@@ -5,26 +5,22 @@ use App\Core\Url;
 use App\Core\View;
 
 ?>
-<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-    <div>
-        <h1 class="h4 mb-0">Verificación física de bienes</h1>
-        <p class="text-muted small mb-0">Compara el inventario del sistema contra la existencia física de cada bien.</p>
-    </div>
+<?php ob_start(); ?>
     <?php if (Auth::esSuperusuario() || Auth::tienePermiso('verificaciones.gestionar')): ?>
         <?php if (empty($jornadaActiva)): ?>
             <a href="<?= Url::to('/verificaciones/crear') ?>" class="btn btn-primary btn-sm">
-                <i class="bi bi-plus-lg me-1"></i>Nueva jornada
+                <?= icono('crear', 'me-1') ?>Nueva jornada
             </a>
         <?php else: ?>
-            <a href="<?= Url::to('/verificaciones/' . $jornadaActiva['id']) ?>" class="btn btn-outline-primary btn-sm">
-                <i class="bi bi-clipboard2-check me-1"></i>Ir a la jornada en progreso
+            <a href="<?= Url::to('/verificaciones/' . $jornadaActiva['id']) ?>" class="btn btn-outline-secondary btn-sm">
+                <?= icono('verificacion', 'me-1') ?>Ir a la jornada en progreso
             </a>
         <?php endif; ?>
     <?php endif; ?>
-</div>
+<?= ui('encabezado_pagina', ['titulo' => 'Verificación física de bienes', 'icono' => 'verificacion', 'subtitulo' => 'Compara el inventario del sistema contra la existencia física de cada bien.', 'acciones' => (string) ob_get_clean()]) ?>
 
-<?php if (!empty($mensaje)): ?><div class="alert alert-success py-2 small"><?= htmlspecialchars($mensaje, ENT_QUOTES) ?></div><?php endif; ?>
-<?php if (!empty($error)): ?><div class="alert alert-danger py-2 small"><?= htmlspecialchars($error, ENT_QUOTES) ?></div><?php endif; ?>
+<?php if (!empty($mensaje)): ?><?= ui('alerta', ['tipo' => 'exito', 'mensaje' => (string) $mensaje, 'clases' => 'py-2 small']) ?><?php endif; ?>
+<?php if (!empty($error)): ?><?= ui('alerta', ['tipo' => 'peligro', 'mensaje' => (string) $error, 'clases' => 'py-2 small']) ?><?php endif; ?>
 
 <?php if (empty($jornadas)): ?>
     <p class="text-muted">Todavía no se ha iniciado ninguna jornada de verificación.</p>
@@ -48,9 +44,9 @@ use App\Core\View;
                     <td class="text-muted small" data-label="Creada por"><?= htmlspecialchars($j['creador_nombres'] . ' ' . $j['creador_apellidos'], ENT_QUOTES) ?></td>
                     <td data-label="Estado">
                         <?php if ($j['estado'] === 'en_progreso'): ?>
-                            <span class="badge badge-estado-en_reparacion"><i class="bi bi-hourglass-split me-1"></i>En progreso</span>
+                            <span class="badge badge-estado-en_reparacion"><?= icono('pendiente', 'me-1') ?>En progreso</span>
                         <?php else: ?>
-                            <span class="badge text-bg-light border"><i class="bi bi-check2-circle me-1"></i>Cerrada</span>
+                            <span class="badge badge-neutro"><?= icono('exito', 'me-1') ?>Cerrada</span>
                         <?php endif; ?>
                     </td>
                     <td><a href="<?= Url::to('/verificaciones/' . $j['id']) ?>" class="btn btn-sm btn-outline-secondary">Ver</a></td>
