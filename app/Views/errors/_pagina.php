@@ -32,8 +32,8 @@ $textoEnlace ??= 'Volver al panel';
     <?php \App\Core\View::render('partials/ui/hojas_estilo') ?>
 </head>
 <body class="d-flex align-items-center justify-content-center min-vh-100 p-3">
-    <main class="card shadow-sm text-center p-4" style="max-width: 440px; width: 100%;">
-        <img src="<?= Url::asset('/assets/img/logo.webp') ?>" width="400" height="400" alt="MIA" class="mx-auto mb-3" style="height: 56px; width: auto;">
+    <main class="card text-center p-4 contenedor-sm w-100">
+        <img src="<?= Url::asset('/assets/img/logo.webp') ?>" width="400" height="400" alt="MIA" class="mx-auto mb-3 logo-56">
         <p class="display-6 fw-semibold mb-1"><?= htmlspecialchars((string) $codigo, ENT_QUOTES) ?></p>
         <h1 class="h5 mb-2"><?= htmlspecialchars($titulo, ENT_QUOTES) ?></h1>
         <p class="text-body-secondary mb-3"><?= htmlspecialchars($mensaje, ENT_QUOTES) ?></p>
@@ -45,7 +45,7 @@ $textoEnlace ??= 'Volver al panel';
         <?php endif; ?>
         <?php if ($enlace !== ''): ?>
             <a href="<?= Url::to($enlace) ?>" class="btn btn-primary w-100">
-                <i class="bi bi-arrow-left" aria-hidden="true"></i> <?= htmlspecialchars($textoEnlace, ENT_QUOTES) ?>
+                <?= icono('volver') ?> <?= htmlspecialchars($textoEnlace, ENT_QUOTES) ?>
             </a>
         <?php endif; ?>
     </main>

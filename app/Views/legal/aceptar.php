@@ -29,7 +29,7 @@ $primerNombre = explode(' ', trim($nombre))[0] ?? '';
 <div class="auth-shell auth-shell-legal">
     <main class="auth-card auth-card-ancha position-relative">
         <button type="button" id="btnTema" class="theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
-            <i class="bi bi-moon-stars"></i>
+            <?= icono('tema') ?>
         </button>
         <div class="d-flex align-items-center gap-3 mb-2">
             <img src="<?= Url::asset('/assets/img/logo.webp') ?>" width="400" height="400" alt="MIA" class="auth-logo-mini">

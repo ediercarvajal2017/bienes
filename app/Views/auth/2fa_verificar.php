@@ -22,12 +22,12 @@
 <div class="auth-shell">
     <div class="auth-card position-relative">
         <button type="button" id="btnTema" class="theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
-            <i class="bi bi-moon-stars"></i>
+            <?= icono('tema') ?>
         </button>
         <div class="text-center mb-2">
             <img src="<?= Url::asset('/assets/img/logo.webp') ?>" width="400" height="400" alt="MIA" class="auth-logo">
         </div>
-        <h1 class="h5 text-center mb-1"><i class="bi bi-shield-lock me-1" aria-hidden="true"></i>Verificación en dos pasos</h1>
+        <h1 class="h5 text-center mb-1"><?= icono('seguridad', 'me-1') ?>Verificación en dos pasos</h1>
         <p class="text-muted small text-center mb-3">
             <?= $appDisponible
                 ? 'Abre tu aplicación autenticadora y escribe el código de 6 dígitos de MIA.'

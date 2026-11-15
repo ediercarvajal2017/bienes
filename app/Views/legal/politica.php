@@ -22,7 +22,7 @@
 <div class="auth-shell auth-shell-legal">
     <main class="auth-card auth-card-ancha position-relative">
         <button type="button" id="btnTema" class="theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
-            <i class="bi bi-moon-stars"></i>
+            <?= icono('tema') ?>
         </button>
         <div class="d-flex align-items-center gap-3 mb-3">
             <img src="<?= Url::asset('/assets/img/logo.webp') ?>" width="400" height="400" alt="MIA" class="auth-logo-mini">
@@ -33,9 +33,9 @@
 
         <div class="border-top pt-3 mt-3">
             <?php if ($conSesion): ?>
-                <a href="<?= Url::to('/dashboard') ?>" class="btn btn-outline-primary btn-sm"><i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Volver a MIA</a>
+                <a href="<?= Url::to('/dashboard') ?>" class="btn btn-outline-secondary btn-sm"><?= icono('volver', 'me-1') ?>Volver a MIA</a>
             <?php else: ?>
-                <a href="<?= Url::to('/login') ?>" class="btn btn-outline-primary btn-sm"><i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Ir a iniciar sesión</a>
+                <a href="<?= Url::to('/login') ?>" class="btn btn-outline-secondary btn-sm"><?= icono('volver', 'me-1') ?>Ir a iniciar sesión</a>
             <?php endif; ?>
         </div>
     </main>

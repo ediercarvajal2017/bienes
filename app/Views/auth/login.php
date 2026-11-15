@@ -22,7 +22,7 @@
 <div class="auth-shell">
     <div class="auth-card position-relative">
         <button type="button" id="btnTema" class="theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
-            <i class="bi bi-moon-stars"></i>
+            <?= icono('tema') ?>
         </button>
         <div class="text-center mb-2">
             <img src="<?= Url::asset('/assets/img/logo.webp') ?>" width="400" height="400" alt="MIA" class="auth-logo">
@@ -30,7 +30,7 @@
         <div class="brand-sub text-center">Manejo de Inventario de Activos</div>
 
         <?php if (!empty($error)): ?>
-            <div class="alert alert-danger py-2 small"><?= htmlspecialchars($error, ENT_QUOTES) ?></div>
+            <?= ui('alerta', ['tipo' => 'peligro', 'mensaje' => (string) $error, 'clases' => 'py-2 small']) ?>
         <?php endif; ?>
 
         <form method="post" action="<?= Url::to('/login') ?>">

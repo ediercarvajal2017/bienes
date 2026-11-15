@@ -22,7 +22,7 @@
 <div class="auth-shell">
     <div class="auth-card position-relative">
         <button type="button" id="btnTema" class="theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
-            <i class="bi bi-moon-stars"></i>
+            <?= icono('tema') ?>
         </button>
         <div class="text-center mb-2">
             <img src="<?= Url::asset('/assets/img/logo.webp') ?>" width="400" height="400" alt="MIA" class="auth-logo">
@@ -35,7 +35,7 @@
             </div>
         <?php endif; ?>
         <?php if (!empty($error)): ?>
-            <div class="alert alert-danger py-2 small"><?= htmlspecialchars($error, ENT_QUOTES) ?></div>
+            <?= ui('alerta', ['tipo' => 'peligro', 'mensaje' => (string) $error, 'clases' => 'py-2 small']) ?>
         <?php endif; ?>
 
         <p class="small text-muted">Indica tu número de documento y tu institución; te mostramos una versión parcialmente oculta del correo con el que inicias sesión.</p>
