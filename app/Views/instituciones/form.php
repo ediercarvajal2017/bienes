@@ -12,13 +12,12 @@ $puedeEditarEstructura = Auth::esSuperusuario();
 $viejo ??= [];
 $v = static fn (string $campo, mixed $porDefecto = '') => $viejo[$campo] ?? $institucion[$campo] ?? $porDefecto;
 ?>
-<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-    <h1 class="h4 mb-0"><?= $esEdicion ? 'Editar institución' : 'Nueva institución' ?></h1>
+<?php ob_start(); ?>
     <a href="<?= Url::to('/instituciones') ?>" class="btn btn-sm btn-outline-secondary">Volver</a>
-</div>
+<?= ui('encabezado_pagina', ['titulo' => (string) ($esEdicion ? 'Editar institución' : 'Nueva institución'), 'icono' => 'institucion', 'acciones' => (string) ob_get_clean()]) ?>
 
 <?php if (!empty($error)): ?>
-    <div class="alert alert-danger py-2 small"><?= htmlspecialchars($error, ENT_QUOTES) ?></div>
+    <?= ui('alerta', ['tipo' => 'peligro', 'mensaje' => (string) $error, 'clases' => 'py-2 small']) ?>
 <?php endif; ?>
 
 <?php if ($puedeEditar): ?>
@@ -27,7 +26,7 @@ $v = static fn (string $campo, mixed $porDefecto = '') => $viejo[$campo] ?? $ins
 
 <form method="post"
       action="<?= $esEdicion ? Url::to('/instituciones/' . $institucion['id']) : Url::to('/instituciones') ?>"
-      enctype="multipart/form-data" class="row g-3" style="max-width: 640px;">
+      enctype="multipart/form-data" class="row g-3 contenedor-md">
     <?= Csrf::field() ?>
 
     <div class="col-md-6">
@@ -58,7 +57,7 @@ $v = static fn (string $campo, mixed $porDefecto = '') => $viejo[$campo] ?? $ins
                value="<?= htmlspecialchars($v('nombre'), ENT_QUOTES) ?>">
     </div>
 
-    <div class="col-12" id="campoPadre" style="<?= $v('tipo_sede') === 'seccion' ? '' : 'display:none;' ?>">
+    <div class="col-12" id="campoPadre"<?= $v('tipo_sede') === 'seccion' ? '' : ' hidden' ?>>
         <label class="form-label small" for="institucionPadre">Institución principal</label>
         <select name="institucion_padre_id" id="institucionPadre" class="form-select selector-buscable" <?= $puedeEditarEstructura ? '' : 'disabled' ?>>
             <option value="">-- Selecciona --</option>
@@ -86,7 +85,7 @@ $v = static fn (string $campo, mixed $porDefecto = '') => $viejo[$campo] ?? $ins
     <div class="col-12">
         <label for="campo-logo" class="form-label small d-block">Logo institucional (JPG o PNG)</label>
         <?php if (!empty($institucion['logo_path'])): ?>
-            <img src="<?= \App\Helpers\EnlaceArchivo::url($institucion['logo_path']) ?>" alt="Logo actual" class="mb-2 d-block" style="height:56px;">
+            <img src="<?= \App\Helpers\EnlaceArchivo::url($institucion['logo_path']) ?>" alt="Logo actual" class="mb-2 d-block logo-56">
         <?php endif; ?>
         <?php if ($puedeEditar): ?>
             <input id="campo-logo" type="file" name="logo" accept="image/jpeg,image/png" class="form-control">
@@ -102,6 +101,6 @@ $v = static fn (string $campo, mixed $porDefecto = '') => $viejo[$campo] ?? $ins
 
 <script>
 document.getElementById('tipoSede')?.addEventListener('change', function () {
-    document.getElementById('campoPadre').style.display = this.value === 'seccion' ? '' : 'none';
+    document.getElementById('campoPadre').hidden = this.value !== 'seccion';
 });
 </script>

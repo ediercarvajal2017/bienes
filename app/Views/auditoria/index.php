@@ -45,32 +45,32 @@ $etiquetasAccion = [
     'exportar_todo' => 'Descargar toda la información',
 ];
 $coloresAccion = [
-    'crear' => 'text-bg-primary',
-    'editar' => 'text-bg-info',
-    'activar' => 'text-bg-success',
-    'desactivar' => 'text-bg-warning',
-    'eliminar' => 'text-bg-danger',
-    'restaurar' => 'text-bg-success',
-    'purgar' => 'text-bg-dark',
-    'archivar' => 'text-bg-secondary',
-    'confirmar_qr' => 'text-bg-success',
-    'asignar' => 'text-bg-primary',
-    'trasladar' => 'text-bg-info',
-    'trasladar_sede' => 'text-bg-info',
-    'reintegrar' => 'text-bg-warning',
-    'reactivar' => 'text-bg-success',
-    'marcar_reintegrado' => 'text-bg-success',
-    'reabrir' => 'text-bg-warning',
-    'unificar' => 'text-bg-info',
-    'reportar' => 'text-bg-warning',
-    'solicitar' => 'text-bg-warning',
-    'aprobar' => 'text-bg-success',
-    'rechazar' => 'text-bg-danger',
-    'aplicar' => 'text-bg-primary',
-    'iniciar' => 'text-bg-primary',
-    'cerrar' => 'text-bg-secondary',
-    '2fa_restablecer' => 'text-bg-warning',
-    'correccion_datos' => 'text-bg-dark',
+    'crear' => 'badge-info',
+    'editar' => 'badge-info',
+    'activar' => 'badge-exito',
+    'desactivar' => 'badge-advertencia',
+    'eliminar' => 'badge-peligro',
+    'restaurar' => 'badge-exito',
+    'purgar' => 'badge-neutro',
+    'archivar' => 'badge-neutro',
+    'confirmar_qr' => 'badge-exito',
+    'asignar' => 'badge-info',
+    'trasladar' => 'badge-info',
+    'trasladar_sede' => 'badge-info',
+    'reintegrar' => 'badge-advertencia',
+    'reactivar' => 'badge-exito',
+    'marcar_reintegrado' => 'badge-exito',
+    'reabrir' => 'badge-advertencia',
+    'unificar' => 'badge-info',
+    'reportar' => 'badge-advertencia',
+    'solicitar' => 'badge-advertencia',
+    'aprobar' => 'badge-exito',
+    'rechazar' => 'badge-peligro',
+    'aplicar' => 'badge-info',
+    'iniciar' => 'badge-info',
+    'cerrar' => 'badge-neutro',
+    '2fa_restablecer' => 'badge-advertencia',
+    'correccion_datos' => 'badge-neutro',
 ];
 $etiquetasEntidad = [
     'usuario' => 'Usuario',
@@ -92,18 +92,13 @@ $etiquetasEntidad = [
     'hallazgo' => 'Hallazgo',
 ];
 ?>
-<div class="mb-3">
-    <h1 class="h4 mb-0"><i class="bi bi-journal-text me-1"></i>Auditoría</h1>
-    <p class="text-muted small mb-0">
-        Quién hizo qué y cuándo, en cualquier institución: altas y cambios, asignaciones, traslados,
-        reintegros, bajas, verificaciones e inicios de sesión. Incluye lo que ya se purgó de la papelera.
-    </p>
-</div>
+<?= ui('encabezado_pagina', ['titulo' => 'Auditoría', 'icono' => 'auditoria',
+    'subtitulo' => 'Quién hizo qué y cuándo, en cualquier institución: altas y cambios, asignaciones, traslados, reintegros, bajas, verificaciones e inicios de sesión. Incluye lo que ya se purgó de la papelera.']) ?>
 
 <form method="get" action="<?= Url::to('/auditoria') ?>" class="mb-3 d-flex flex-wrap gap-3 align-items-end">
     <div>
         <label for="campo-institucion-id" class="form-label small mb-1">Institución</label>
-        <select id="campo-institucion-id" name="institucion_id" class="form-select form-select-sm selector-buscable" style="min-width: 200px;">
+        <select id="campo-institucion-id" name="institucion_id" class="form-select form-select-sm selector-buscable selector-filtro">
             <option value="">Todas</option>
             <?php foreach ($instituciones as $i): ?>
                 <option value="<?= $i['id'] ?>" <?= (string) ($filtros['institucion_id'] ?? '') === (string) $i['id'] ? 'selected' : '' ?>>
@@ -182,7 +177,7 @@ $etiquetasEntidad = [
                     </td>
                     <td class="text-muted" data-label="Institución"><?= htmlspecialchars($r['institucion_nombre'] ?? '—', ENT_QUOTES) ?></td>
                     <td data-label="Acción">
-                        <span class="badge <?= $coloresAccion[$r['accion']] ?? 'text-bg-secondary' ?>">
+                        <span class="badge <?= $coloresAccion[$r['accion']] ?? 'badge-neutro' ?>">
                             <?= htmlspecialchars($etiquetasAccion[$r['accion']] ?? $r['accion'], ENT_QUOTES) ?>
                         </span>
                     </td>
@@ -190,9 +185,9 @@ $etiquetasEntidad = [
                     <td class="text-end">
                         <?php if (!empty($resumen)): ?>
                             <details>
-                                <summary class="small text-muted" style="cursor:pointer;">Ver detalle</summary>
+                                <summary class="small text-muted">Ver detalle</summary>
                                 <div class="table-responsive">
-                                    <table class="table table-sm mb-0 mt-1" style="min-width: 260px;">
+                                    <table class="table table-sm mb-0 mt-1 tabla-detalle">
                                         <?php foreach ($resumen as $fila): ?>
                                             <tr>
                                                 <td class="small text-muted text-nowrap"><?= htmlspecialchars($fila['etiqueta'], ENT_QUOTES) ?></td>

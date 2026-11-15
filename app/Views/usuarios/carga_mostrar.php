@@ -7,17 +7,16 @@ $etiquetas = ['nuevo' => 'Nuevo', 'modificado' => 'Modificado', 'sin_cambios' =>
 $clases = [
     'nuevo' => 'badge-estado-activo',
     'modificado' => 'badge-estado-en_reparacion',
-    'sin_cambios' => 'text-bg-light border',
+    'sin_cambios' => 'badge-neutro',
     'invalido' => 'badge-estado-dado_de_baja',
 ];
 ?>
-<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-    <h1 class="h4 mb-0">Resultado de la carga</h1>
+<?php ob_start(); ?>
     <a href="<?= Url::to('/usuarios/carga-masiva') ?>" class="btn btn-sm btn-outline-secondary">Volver</a>
-</div>
+<?= ui('encabezado_pagina', ['titulo' => 'Resultado de la carga', 'icono' => 'usuarios', 'acciones' => (string) ob_get_clean()]) ?>
 
 <?php if (!empty($mensaje)): ?>
-    <div class="alert alert-success py-2 small"><?= htmlspecialchars($mensaje, ENT_QUOTES) ?></div>
+    <?= ui('alerta', ['tipo' => 'exito', 'mensaje' => (string) $mensaje, 'clases' => 'py-2 small']) ?>
 <?php endif; ?>
 
 <p class="text-muted small">
@@ -34,7 +33,7 @@ $clases = [
         <button type="submit" class="btn btn-primary btn-sm">Confirmar importación</button>
     </form>
 <?php else: ?>
-    <div class="alert alert-secondary py-2 small" style="max-width:480px;">Esta carga ya fue aplicada.</div>
+    <div class="alert alert-secondary py-2 small contenedor-sm">Esta carga ya fue aplicada.</div>
 <?php endif; ?>
 
 <div class="table-responsive">

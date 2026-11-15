@@ -5,15 +5,12 @@ use App\Core\Url;
 use App\Core\View;
 
 ?>
-<div class="mb-3">
-    <h1 class="h4 mb-0">Cargos</h1>
-    <p class="text-muted small mb-0">Catálogo global de cargos disponible al registrar usuarios en cualquier institución.</p>
-</div>
+<?= ui('encabezado_pagina', ['titulo' => 'Cargos', 'icono' => 'cargo', 'subtitulo' => 'Catálogo global de cargos disponible al registrar usuarios en cualquier institución.']) ?>
 
-<?php if (!empty($mensaje)): ?><div class="alert alert-success py-2 small"><?= htmlspecialchars($mensaje, ENT_QUOTES) ?></div><?php endif; ?>
-<?php if (!empty($error)): ?><div class="alert alert-danger py-2 small"><?= htmlspecialchars($error, ENT_QUOTES) ?></div><?php endif; ?>
+<?php if (!empty($mensaje)): ?><?= ui('alerta', ['tipo' => 'exito', 'mensaje' => (string) $mensaje, 'clases' => 'py-2 small']) ?><?php endif; ?>
+<?php if (!empty($error)): ?><?= ui('alerta', ['tipo' => 'peligro', 'mensaje' => (string) $error, 'clases' => 'py-2 small']) ?><?php endif; ?>
 
-<form method="post" action="<?= Url::to('/cargos') ?>" class="mb-4" style="max-width: 560px;">
+<form method="post" action="<?= Url::to('/cargos') ?>" class="mb-4 contenedor-md">
     <?= Csrf::field() ?>
     <label class="form-label small requerido" for="nombreCargo">Nombre del cargo</label>
     <div class="d-flex gap-2">
@@ -22,15 +19,12 @@ use App\Core\View;
     </div>
 </form>
 
-<div class="table-responsive" style="max-width: 640px;">
+<div class="table-responsive contenedor-md">
     <table class="table table-sm bg-white align-middle tabla-cards">
         <thead>
         <tr>
             <th>Nombre</th>
-            <th>Estado
-                <i class="bi bi-question-circle text-muted small ms-1" style="cursor: help;"
-                   title="Desactivar un cargo lo oculta al registrar usuarios nuevos, pero conserva los usuarios que ya lo tienen."></i>
-            </th>
+            <th><span class="d-inline-flex align-items-center gap-1">Estado <?= \App\Helpers\AyudaCampo::boton('estado_cargo') ?></span></th>
             <th></th>
         </tr>
         </thead>
@@ -46,7 +40,7 @@ use App\Core\View;
                         <?= Csrf::field() ?>
                         <input type="text" name="nombre" class="form-control form-control-sm"
                                value="<?= htmlspecialchars($c['nombre'], ENT_QUOTES) ?>" required>
-                        <button type="submit" class="btn btn-sm btn-outline-primary text-nowrap">Guardar</button>
+                        <button type="submit" class="btn btn-sm btn-outline-secondary text-nowrap">Guardar</button>
                     </form>
                 </td>
                 <td data-label="Estado">

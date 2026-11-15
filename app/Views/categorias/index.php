@@ -6,16 +6,13 @@ use App\Core\Url;
 use App\Models\Categoria;
 
 ?>
-<div class="mb-3">
-    <h1 class="h4 mb-0">Categorías de bienes</h1>
-    <p class="text-muted small mb-0">Catálogo usado al registrar bienes (sillas, mesas, tableros, proyectores...) — propio de cada institución.</p>
-</div>
+<?= ui('encabezado_pagina', ['titulo' => 'Categorías de bienes', 'icono' => 'categoria', 'subtitulo' => 'Catálogo usado al registrar bienes (sillas, mesas, tableros, proyectores...) — propio de cada institución.']) ?>
 
-<?php if (!empty($mensaje)): ?><div class="alert alert-success py-2 small"><?= htmlspecialchars($mensaje, ENT_QUOTES) ?></div><?php endif; ?>
-<?php if (!empty($error)): ?><div class="alert alert-danger py-2 small"><?= htmlspecialchars($error, ENT_QUOTES) ?></div><?php endif; ?>
+<?php if (!empty($mensaje)): ?><?= ui('alerta', ['tipo' => 'exito', 'mensaje' => (string) $mensaje, 'clases' => 'py-2 small']) ?><?php endif; ?>
+<?php if (!empty($error)): ?><?= ui('alerta', ['tipo' => 'peligro', 'mensaje' => (string) $error, 'clases' => 'py-2 small']) ?><?php endif; ?>
 
 <?php if (Auth::esSuperusuario()): ?>
-    <div class="mb-3" style="max-width: 320px;">
+    <div class="mb-3 contenedor-sm">
         <label for="selectorInstitucion" class="form-label small">Institución</label>
         <select id="selectorInstitucion" class="form-select form-select-sm selector-buscable">
             <option value="">-- Selecciona una institución --</option>
@@ -37,7 +34,7 @@ use App\Models\Categoria;
     <p class="text-muted">Selecciona una institución para continuar.</p>
 <?php else: ?>
 
-    <form method="post" action="<?= Url::to('/categorias') ?>" class="mb-4" style="max-width: 560px;">
+    <form method="post" action="<?= Url::to('/categorias') ?>" class="mb-4 contenedor-md">
         <?= Csrf::field() ?>
         <?php if (Auth::esSuperusuario()): ?>
             <input type="hidden" name="institucion_id" value="<?= $institucionId ?>">
@@ -49,15 +46,12 @@ use App\Models\Categoria;
         </div>
     </form>
 
-    <div class="table-responsive" style="max-width: 640px;">
+    <div class="table-responsive contenedor-md">
         <table class="table table-sm bg-white align-middle tabla-cards">
             <thead>
             <tr>
                 <th>Nombre</th>
-                <th>Estado
-                    <i class="bi bi-question-circle text-muted small ms-1" style="cursor: help;"
-                       title="Desactivar una categoría la oculta al registrar bienes nuevos, pero conserva los bienes que ya la usan."></i>
-                </th>
+                <th><span class="d-inline-flex align-items-center gap-1">Estado <?= \App\Helpers\AyudaCampo::boton('estado_categoria') ?></span></th>
                 <th></th>
             </tr>
             </thead>
@@ -71,8 +65,8 @@ use App\Models\Categoria;
                     <td data-label="Nombre">
                         <?php if ($protegida): ?>
                             <span class="fw-semibold"><?= htmlspecialchars($c['nombre'], ENT_QUOTES) ?></span>
-                            <span class="badge text-bg-secondary ms-1" title="Esta categoría la usa el sistema para el código automático de bienes nuevos — no se puede renombrar ni eliminar.">
-                                <i class="bi bi-lock-fill"></i> Protegida
+                            <span class="badge badge-neutro ms-1" title="Esta categoría la usa el sistema para el código automático de bienes nuevos — no se puede renombrar ni eliminar.">
+                                <?= icono('seguridad') ?> Protegida
                             </span>
                         <?php else: ?>
                             <form method="post" action="<?= Url::to('/categorias/' . $c['id']) ?>" class="d-flex gap-2">
@@ -80,7 +74,7 @@ use App\Models\Categoria;
                                 <input type="text" name="nombre" class="form-control form-control-sm"
                                        aria-label="Nombre de la categoría <?= htmlspecialchars($c['nombre'], ENT_QUOTES) ?>"
                                        value="<?= htmlspecialchars($c['nombre'], ENT_QUOTES) ?>" required>
-                                <button type="submit" class="btn btn-sm btn-outline-primary text-nowrap">Guardar</button>
+                                <button type="submit" class="btn btn-sm btn-outline-secondary text-nowrap">Guardar</button>
                             </form>
                         <?php endif; ?>
                     </td>

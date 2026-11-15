@@ -5,15 +5,14 @@ use App\Core\Url;
 use App\Core\View;
 
 ?>
-<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-    <h1 class="h4 mb-0">Carga masiva de usuarios</h1>
+<?php ob_start(); ?>
     <a href="<?= Url::to('/usuarios') ?>" class="btn btn-sm btn-outline-secondary">Volver</a>
-</div>
+<?= ui('encabezado_pagina', ['titulo' => 'Carga masiva de usuarios', 'icono' => 'usuarios', 'acciones' => (string) ob_get_clean()]) ?>
 
-<?php if (!empty($mensaje)): ?><div class="alert alert-success py-2 small" style="max-width:640px;"><?= htmlspecialchars($mensaje, ENT_QUOTES) ?></div><?php endif; ?>
-<?php if (!empty($error)): ?><div class="alert alert-danger py-2 small" style="max-width:640px;"><?= htmlspecialchars($error, ENT_QUOTES) ?></div><?php endif; ?>
+<?php if (!empty($mensaje)): ?><?= ui('alerta', ['tipo' => 'exito', 'mensaje' => (string) $mensaje, 'clases' => 'py-2 small contenedor-md']) ?><?php endif; ?>
+<?php if (!empty($error)): ?><?= ui('alerta', ['tipo' => 'peligro', 'mensaje' => (string) $error, 'clases' => 'py-2 small contenedor-md']) ?><?php endif; ?>
 
-<div class="card mb-4" style="max-width: 640px;">
+<div class="card mb-4 contenedor-md">
     <div class="card-body">
         <p class="small text-muted">
             Sube un archivo <strong>.xlsx</strong> con las columnas: Documento, Nombres, Apellidos, Cargo, Correo, Rol
@@ -39,7 +38,7 @@ use App\Core\View;
         'urlBase' => Url::to('/usuarios/carga-masiva'),
     ]); ?>
 
-    <div class="table-responsive" style="max-width: 800px;">
+    <div class="table-responsive contenedor-md">
         <table class="table table-sm bg-white tabla-cards">
             <thead>
             <tr><th>Fecha</th><th>Subido por</th><th>Filas</th><th>Nuevos</th><th>Modificados</th><th>Sin cambios</th><th>Estado</th><th></th></tr>

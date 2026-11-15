@@ -5,19 +5,18 @@ use App\Core\Url;
 use App\Core\View;
 
 ?>
-<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-    <h1 class="h4 mb-0">Instituciones</h1>
+<?php ob_start(); ?>
     <a href="<?= Url::to('/instituciones/crear') ?>" class="btn btn-primary btn-sm">
-        <i class="bi bi-plus-lg me-1"></i>Nueva institución
+        <?= icono('crear', 'me-1') ?>Nueva institución
     </a>
-</div>
+<?= ui('encabezado_pagina', ['titulo' => 'Instituciones', 'icono' => 'institucion', 'acciones' => (string) ob_get_clean()]) ?>
 
 <?php if (!empty($mensaje)): ?>
-    <div class="alert alert-success py-2 small"><?= htmlspecialchars($mensaje, ENT_QUOTES) ?></div>
+    <?= ui('alerta', ['tipo' => 'exito', 'mensaje' => (string) $mensaje, 'clases' => 'py-2 small']) ?>
 <?php endif; ?>
 
 <?php if (!empty($error)): ?>
-    <div class="alert alert-danger py-2 small"><?= htmlspecialchars($error, ENT_QUOTES) ?></div>
+    <?= ui('alerta', ['tipo' => 'peligro', 'mensaje' => (string) $error, 'clases' => 'py-2 small']) ?>
 <?php endif; ?>
 
 <div class="table-responsive">
@@ -46,7 +45,7 @@ use App\Core\View;
                     <?php endif; ?>
                 </td>
                 <td class="text-muted mono" data-label="Código DANE"><?= htmlspecialchars($inst['codigo_dane'], ENT_QUOTES) ?></td>
-                <td data-label="Tipo"><span class="badge text-bg-light border"><?= $inst['tipo_sede'] === 'principal' ? 'Principal' : 'Sección' ?></span></td>
+                <td data-label="Tipo"><span class="badge badge-neutro"><?= $inst['tipo_sede'] === 'principal' ? 'Principal' : 'Sección' ?></span></td>
                 <td class="text-muted" data-label="Correo"><?= htmlspecialchars($inst['email_institucional'] ?? '—', ENT_QUOTES) ?></td>
                 <td data-label="Estado">
                     <?php if ((int) $inst['activo'] === 1): ?>

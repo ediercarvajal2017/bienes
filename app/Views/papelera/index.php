@@ -14,25 +14,20 @@ $etiquetasTipo = [
     'cartera_envio' => 'Cartera',
 ];
 ?>
-<div class="mb-3">
-    <h1 class="h4 mb-0"><i class="bi bi-trash3 me-1"></i>Papelera de reciclaje</h1>
-    <p class="text-muted small mb-0">
-        Todo lo eliminado en cualquier institución, de cualquier tipo. Se conserva aquí hasta que lo restaures o
-        hasta que la limpieza automática lo borre después del periodo de retención.
-    </p>
-</div>
+<?= ui('encabezado_pagina', ['titulo' => 'Papelera de reciclaje', 'icono' => 'papelera',
+    'subtitulo' => 'Todo lo eliminado en cualquier institución, de cualquier tipo. Se conserva aquí hasta que lo restaures o hasta que la limpieza automática lo borre después del periodo de retención.']) ?>
 
-<?php if (!empty($mensaje)): ?><div class="alert alert-success py-2 small"><?= htmlspecialchars($mensaje, ENT_QUOTES) ?></div><?php endif; ?>
-<?php if (!empty($error)): ?><div class="alert alert-danger py-2 small"><?= htmlspecialchars($error, ENT_QUOTES) ?></div><?php endif; ?>
+<?php if (!empty($mensaje)): ?><?= ui('alerta', ['tipo' => 'exito', 'mensaje' => (string) $mensaje, 'clases' => 'py-2 small']) ?><?php endif; ?>
+<?php if (!empty($error)): ?><?= ui('alerta', ['tipo' => 'peligro', 'mensaje' => (string) $error, 'clases' => 'py-2 small']) ?><?php endif; ?>
 
 <?php if (empty($elementos)): ?>
     <p class="text-muted">La papelera está vacía.</p>
 <?php else: ?>
-    <div class="mb-3" style="max-width: 420px;">
+    <div class="mb-3 contenedor-sm">
         <input type="search" id="buscadorPapelera" data-buscar-local class="form-control form-control-sm"
                placeholder="Buscar por tipo, elemento, institución o quién lo eliminó...">
     </div>
-    <p id="papeleraSinResultados" class="text-muted" style="display:none;">Ningún elemento coincide con la búsqueda.</p>
+    <p id="papeleraSinResultados" class="text-muted" hidden>Ningún elemento coincide con la búsqueda.</p>
     <div class="table-responsive" id="envoltorioTablaPapelera">
         <table class="table table-sm bg-white align-middle tabla-cards" id="tablaPapelera">
             <thead>
@@ -48,7 +43,7 @@ $etiquetasTipo = [
             <tbody>
             <?php foreach ($elementos as $el): ?>
                 <tr>
-                    <td data-label="Tipo"><span class="badge text-bg-secondary"><?= htmlspecialchars($etiquetasTipo[$el['tipo']] ?? $el['tipo'], ENT_QUOTES) ?></span></td>
+                    <td data-label="Tipo"><span class="badge badge-neutro"><?= htmlspecialchars($etiquetasTipo[$el['tipo']] ?? $el['tipo'], ENT_QUOTES) ?></span></td>
                     <td data-label="Elemento"><?= htmlspecialchars($el['titulo'], ENT_QUOTES) ?></td>
                     <td class="text-muted" data-label="Institución"><?= htmlspecialchars($el['institucion_nombre'] ?? '—', ENT_QUOTES) ?></td>
                     <td class="text-muted" data-label="Eliminado por"><?= htmlspecialchars($el['eliminado_por_nombre'] ?? '—', ENT_QUOTES) ?></td>
@@ -58,7 +53,7 @@ $etiquetasTipo = [
                               data-confirmar="¿Restaurar este elemento? Volverá a estar disponible en el sistema.">
                             <?= Csrf::field() ?>
                             <button type="submit" class="btn btn-sm btn-primary">
-                                <i class="bi bi-arrow-counterclockwise me-1"></i>Restaurar
+                                <?= icono('restaurar', 'me-1') ?>Restaurar
                             </button>
                         </form>
                     </td>
@@ -83,7 +78,7 @@ $etiquetasTipo = [
                 fila.style.display = coincide ? '' : 'none';
                 if (coincide) { visibles++; }
             });
-            sinResultados.style.display = visibles === 0 ? '' : 'none';
+            sinResultados.hidden = visibles !== 0;
             envoltorio.style.display = visibles === 0 ? 'none' : '';
         });
     })();

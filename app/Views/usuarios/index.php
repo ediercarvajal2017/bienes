@@ -6,28 +6,28 @@ use App\Core\Url;
 use App\Core\View;
 
 ?>
-<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-    <h1 class="h4 mb-0">Usuarios</h1>
+<?php ob_start(); ?>
     <?php if (Auth::esSuperusuario() || Auth::tienePermiso('usuarios.crear')): ?>
         <div class="d-flex gap-2">
             <a href="<?= Url::to('/usuarios/carga-masiva') ?>" class="btn btn-outline-secondary btn-sm">
-                <i class="bi bi-file-earmark-excel me-1"></i>Carga masiva
+                <?= icono('subir', 'me-1') ?>Carga masiva
             </a>
             <a href="<?= Url::to('/usuarios/crear') ?>" class="btn btn-primary btn-sm">
-                <i class="bi bi-plus-lg me-1"></i>Nuevo usuario
+                <?= icono('crear', 'me-1') ?>Nuevo usuario
             </a>
-        </div>
+        
+<?= ui('encabezado_pagina', ['titulo' => 'Usuarios', 'icono' => 'usuarios', 'acciones' => (string) ob_get_clean()]) ?>
     <?php endif; ?>
 </div>
 
 <?php if (!empty($mensaje)): ?>
-    <div class="alert alert-success py-2 small"><?= htmlspecialchars($mensaje, ENT_QUOTES) ?></div>
+    <?= ui('alerta', ['tipo' => 'exito', 'mensaje' => (string) $mensaje, 'clases' => 'py-2 small']) ?>
 <?php endif; ?>
 <?php if (!empty($error)): ?>
-    <div class="alert alert-danger py-2 small" role="alert"><?= htmlspecialchars($error, ENT_QUOTES) ?></div>
+    <?= ui('alerta', ['tipo' => 'peligro', 'mensaje' => (string) $error, 'clases' => 'py-2 small']) ?>
 <?php endif; ?>
 
-<div class="mb-3" style="max-width: 420px;">
+<div class="mb-3 contenedor-sm">
     <input type="search" id="buscador" data-buscar="q" class="form-control form-control-sm"
            placeholder="Buscar por nombre, documento, correo o cargo..."
            value="<?= htmlspecialchars($busqueda, ENT_QUOTES) ?>">
@@ -64,10 +64,10 @@ use App\Core\View;
                     <?php if (!empty($u['foto_path'])): ?>
                         <img src="<?= \App\Helpers\EnlaceArchivo::url($u['foto_path'], 96) ?>" loading="lazy"
                              alt="Foto de <?= htmlspecialchars($u['nombres'] . ' ' . $u['apellidos'], ENT_QUOTES) ?>"
-                             class="rounded-circle" style="width:32px;height:32px;object-fit:cover;" loading="lazy">
+                             class="avatar-32" loading="lazy">
                     <?php else: ?>
-                        <span class="rounded-circle bg-light d-inline-flex align-items-center justify-content-center text-muted" style="width:32px;height:32px;">
-                            <i class="bi bi-person"></i>
+                        <span class="avatar-32 avatar-vacio">
+                            <?= icono('usuario') ?>
                         </span>
                     <?php endif; ?>
                 </td>
@@ -77,7 +77,7 @@ use App\Core\View;
                 </td>
                 <td class="text-muted mono" data-label="Documento"><?= htmlspecialchars($u['documento'], ENT_QUOTES) ?></td>
                 <td data-label="Cargo"><?= htmlspecialchars($u['cargo_nombre'], ENT_QUOTES) ?></td>
-                <td data-label="Rol"><span class="badge text-bg-light border text-capitalize"><?= htmlspecialchars($u['rol_nombre'], ENT_QUOTES) ?></span></td>
+                <td data-label="Rol"><span class="badge badge-neutro text-capitalize"><?= htmlspecialchars($u['rol_nombre'], ENT_QUOTES) ?></span></td>
                 <?php if (Auth::esSuperusuario()): ?><td class="text-muted small" data-label="Institución"><?= htmlspecialchars($u['institucion_nombre'], ENT_QUOTES) ?></td><?php endif; ?>
                 <td data-label="Estado">
                     <?php if ((int) $u['activo'] === 1): ?>
@@ -86,7 +86,7 @@ use App\Core\View;
                         <span class="badge badge-inactivo">Inactivo</span>
                     <?php endif; ?>
                     <?php if (!empty($u['totp_activado_en'])): ?>
-                        <span class="badge text-bg-light border" title="Tiene activa la verificación en dos pasos"><i class="bi bi-shield-check me-1" aria-hidden="true"></i>2 pasos</span>
+                        <span class="badge badge-neutro" title="Tiene activa la verificación en dos pasos"><?= icono('seguridad', 'me-1') ?>2 pasos</span>
                     <?php endif; ?>
                 </td>
                 <td class="text-end text-nowrap">
