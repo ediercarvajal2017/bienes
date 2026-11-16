@@ -3,22 +3,25 @@
 declare(strict_types=1);
 
 /**
- * Corrección del "ítem de más" del reintegro por cantidad (v1.2.31). El renglón de la cartera
- * de una placa con unidades (bien sin lote con el código de sus unidades, p. ej. 13019802
- * "8 SILLA…" con 13019802-001…-008) se quedaba Activo cuando ya no quedaba ninguna unidad en
- * cartera, y se contaba como un bien más (8 sillas salían 9).
+ * Pone al día el "renglón de la cartera" de cada placa con unidades (App\Services\RenglonDePlaca):
+ * el bien suelto con el código de la placa (p. ej. 13019802 "8 SILLA…") cuyas unidades del alta
+ * masiva son 13019802-001…-008. Antes de v1.2.32 solo el reintegro por cantidad lo actualizaba;
+ * reintegrar una unidad desde su ficha o por selección, reactivarla o pasarla a "Sin cartera" lo
+ * dejaba con la cantidad, el valor o el estado viejos (y un renglón Activo sin sillas sumaba un
+ * ítem de más).
  *
  *   php database/correcciones/renglon_placa_en_cero.php            (SIMULACIÓN: solo muestra)
  *   php database/correcciones/renglon_placa_en_cero.php --aplicar  (después del respaldo)
  *
- * Con --aplicar, cada renglón Activo (o En reparación) cuyas unidades ya se reintegraron todas
- * pasa a Reintegrado, con la cantidad en 0 y valor $0, y se cierra su asignación: lo mismo que
- * hace ahora el reintegro por cantidad al llegar a 0. No crea movimientos ni toca lotes. Queda
- * en la auditoría con la acción "correccion_datos".
+ * Con --aplicar usa la misma regla que MIA aplica ahora en cada operación: cantidad y valor de
+ * las unidades en cartera; Reintegrado si ya no queda ninguna y alguna se reintegró (cierra su
+ * asignación); Activo de nuevo si quedan unidades y MIA lo había sacado. No crea movimientos ni
+ * toca lotes. Queda en la auditoría (acción "editar", con el motivo).
  *
- * Solo informa (no cambia): los renglones cuyas unidades salieron solo por baja (revisar a
- * mano), los lotes de reintegro donde el renglón quedó junto a sus unidades (el comprobante ya
- * no lo suma) y los renglones Activos cuya cantidad no coincide con las unidades en cartera.
+ * Solo informa (no cambia): los renglones sin ninguna unidad en cartera que no se reintegró
+ * ninguna (todas pasaron a "Sin cartera": revisar a mano), los que el usuario reintegró aparte
+ * con su propio movimiento, y los lotes de reintegro donde el renglón quedó junto a sus unidades
+ * (el comprobante ya no lo suma).
  */
 
 if (PHP_SAPI !== 'cli') {
@@ -30,45 +33,46 @@ require __DIR__ . '/../../vendor/autoload.php';
 
 use App\Core\Database;
 use App\Core\Env;
-use App\Models\Asignacion;
-use App\Models\Auditoria;
-use App\Models\Bien;
-use App\Services\ReintegroUnidadesService;
+use App\Services\RenglonDePlaca;
 
 Env::cargar();
 $aplicar = array_key_exists('aplicar', getopt('', ['aplicar']) ?: []);
 $pdo = Database::connection();
+$pesos = static fn (float $v): string => '$' . number_format($v, 0, ',', '.');
 
-// Renglones de la cartera (bien sin lote con unidades de su código) que siguen en circulación.
+// Todos los renglones de la cartera: bien sin lote con unidades de su código.
 $renglones = $pdo->query(
-    "SELECT r.id, r.institucion_id, i.nombre AS institucion, r.codigo_identificacion AS placa, r.descripcion, r.valor, r.estado,
-            COUNT(u.id) AS unidades,
-            SUM(u.estado IN ('activo', 'en_reparacion')) AS en_cartera,
-            SUM(u.estado = 'reintegrado') AS reintegradas,
-            SUM(u.estado = 'dado_de_baja') AS de_baja
+    "SELECT r.id, r.institucion_id, i.nombre AS institucion, r.codigo_identificacion AS placa
        FROM bienes r
        JOIN instituciones i ON i.id = r.institucion_id
-       JOIN bienes u ON u.institucion_id = r.institucion_id AND u.lote = r.codigo_identificacion
-      WHERE r.lote IS NULL AND r.estado IN ('activo', 'en_reparacion')
-      GROUP BY r.id
+      WHERE r.lote IS NULL
+        AND EXISTS (SELECT 1 FROM bienes u WHERE u.institucion_id = r.institucion_id AND u.lote = r.codigo_identificacion)
       ORDER BY i.nombre, r.codigo_identificacion"
 )->fetchAll();
 
 $aCorregir = [];
-echo "== Renglones de la cartera que siguen en circulación: " . count($renglones) . "\n";
+$revisar = [];
 foreach ($renglones as $r) {
-    $enCartera = (int) $r['en_cartera'];
-    $linea = "  #{$r['id']} {$r['institucion']} · placa {$r['placa']} \"{$r['descripcion']}\" ({$r['estado']}): "
-        . "{$enCartera} en cartera de {$r['unidades']} unidades ({$r['reintegradas']} reintegradas, {$r['de_baja']} de baja)";
-    if ($enCartera === 0 && (int) $r['reintegradas'] > 0) {
+    $c = RenglonDePlaca::calcular((int) $r['institucion_id'], (string) $r['placa']);
+    if ($c === null) {
+        continue;
+    }
+    $b = $c['bien'];
+    $donde = "#{$r['id']} {$r['institucion']} · placa {$r['placa']}";
+    if ($c['cambia']) {
         $aCorregir[] = $r;
-        echo $linea . "  → pasa a Reintegrado\n";
-    } elseif ($enCartera === 0) {
-        echo $linea . "  → solo bajas: revisar a mano (no se cambia)\n";
-    } elseif (preg_match('/^(\d{1,5})\s/u', trim((string) $r['descripcion']), $m) === 1 && (int) $m[1] !== $enCartera) {
-        echo $linea . "  → la descripción dice {$m[1]} (informativo, no se cambia)\n";
+        echo "  {$donde}\n      hoy:     \"{$b['descripcion']}\" · " . $pesos((float) $b['valor']) . " · {$b['estado']}\n"
+            . "      debería: \"{$c['descripcion']}\" · " . $pesos($c['valor']) . " · {$c['estado']}\n";
+    }
+    if ($c['quedan'] === 0 && $c['reintegradas'] === 0 && in_array($b['estado'], ['activo', 'en_reparacion'], true)) {
+        $revisar[] = "  {$donde}: no queda ninguna unidad en cartera y ninguna se reintegró (pasaron a \"Sin cartera\")";
+    } elseif ($c['quedan'] > 0 && $b['estado'] === 'reintegrado' && $c['reintegroPropio']) {
+        $revisar[] = "  {$donde}: quedan {$c['quedan']} en cartera pero el renglón se reintegró aparte (tiene su propio reintegro)";
     }
 }
+echo "== Renglones de la cartera: " . count($renglones) . "; a poner al día: " . count($aCorregir) . "\n";
+
+echo "\n== Para revisar a mano (no se cambian): " . count($revisar) . "\n" . implode("\n", $revisar) . ($revisar !== [] ? "\n" : '');
 
 // Lotes de reintegro donde el renglón quedó junto a sus unidades (informativo).
 $lotes = $pdo->query(
@@ -82,25 +86,24 @@ $lotes = $pdo->query(
                      WHERE mu.lote_reintegro_id = m.lote_reintegro_id AND u.institucion_id = r.institucion_id AND u.lote = r.codigo_identificacion)
       ORDER BY m.lote_reintegro_id"
 )->fetchAll();
-echo "\n== Lotes de reintegro con el renglón junto a sus unidades (el comprobante ya no lo suma): " . count($lotes) . "\n";
+echo "\n== Lotes con el renglón junto a sus unidades (el comprobante ya no lo suma; no se cambian): " . count($lotes) . "\n";
 foreach ($lotes as $l) {
     echo "  Lote #{$l['lote']} ({$l['estado']}) · {$l['institucion']} · placa {$l['placa']}\n";
 }
 
-echo "\nA corregir: " . count($aCorregir) . ($aplicar ? "\n" : "  (SIMULACIÓN; use --aplicar después del respaldo)\n");
+echo "\nA poner al día: " . count($aCorregir) . ($aplicar ? "\n" : "  (SIMULACIÓN; use --aplicar después del respaldo)\n");
 if (!$aplicar || $aCorregir === []) {
     exit(0);
 }
 
-Database::transaccion(static function () use ($aCorregir): void {
+$hechos = Database::transaccion(static function () use ($aCorregir): int {
+    $hechos = 0;
     foreach ($aCorregir as $r) {
-        $descripcion = ReintegroUnidadesService::descripcionConCantidad((string) $r['descripcion'], 0);
-        Bien::actualizarResumenDeCodigo((int) $r['id'], $descripcion, 0.0, 'reintegrado');
-        Asignacion::cerrarActivasDe((int) $r['id']);
-        Auditoria::registrar(null, (int) $r['institucion_id'], 'correccion_datos', 'bien', (int) $r['id'],
-            ['descripcion' => $r['descripcion'], 'valor' => $r['valor'], 'estado' => $r['estado']],
-            ['descripcion' => $descripcion, 'valor' => 0, 'estado' => 'reintegrado',
-                'motivo' => "Corrección: todas las unidades de la placa {$r['placa']} ya se reintegraron; el renglón de la cartera sale de ella"]);
+        if (RenglonDePlaca::sincronizar((int) $r['institucion_id'], (string) $r['placa'], 'Corrección del renglón de la placa') !== null) {
+            $hechos++;
+        }
     }
+
+    return $hechos;
 });
-echo "Listo.\n";
+echo "Listo: {$hechos} renglón(es) al día.\n";

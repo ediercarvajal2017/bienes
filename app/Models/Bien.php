@@ -1221,9 +1221,9 @@ final class Bien
                     SUM(CASE WHEN b.estado = "en_reparacion" THEN 1 ELSE 0 END) AS en_reparacion,
                     SUM(CASE WHEN b.estado = "dado_de_baja" THEN 1 ELSE 0 END) AS dados_de_baja,
                     SUM(b.valor) AS valor_total,
-                    -- Lo que queda del código en la institución (no reintegrado ni dado de baja).
-                    SUM(CASE WHEN b.estado IN ("activo", "en_reparacion") THEN 1 ELSE 0 END) AS en_cartera,
-                    SUM(CASE WHEN b.estado IN ("activo", "en_reparacion") THEN b.valor ELSE 0 END) AS valor_en_cartera
+                    -- Lo que queda del código en la cartera (ver sqlUnidadEnCartera).
+                    SUM(CASE WHEN ' . self::sqlUnidadEnCartera() . ' THEN 1 ELSE 0 END) AS en_cartera,
+                    SUM(CASE WHEN ' . self::sqlUnidadEnCartera() . ' THEN b.valor ELSE 0 END) AS valor_en_cartera
              FROM bienes b
              LEFT JOIN categorias_bienes c ON c.id = b.categoria_id
              WHERE ' . implode(' AND ', $condiciones) . '
@@ -1271,13 +1271,16 @@ final class Bien
      */
     public static function carteraPorPlaca(?int $institucionId): array
     {
+        // Las unidades de una placa cuentan con la regla de la cartera (sin "Sin cartera"); un
+        // bien suelto, por su estado, como siempre.
+        $enCartera = '(CASE WHEN b.lote IS NOT NULL THEN ' . self::sqlUnidadEnCartera() . ' ELSE b.estado IN ("activo", "en_reparacion") END)';
         $sql = 'SELECT MIN(i.nombre) AS institucion_nombre, COALESCE(b.lote, b.codigo_identificacion) AS placa,
                        MIN(b.descripcion) AS descripcion, MIN(b.marca) AS marca, MIN(c.nombre) AS categoria_nombre,
-                       SUM(CASE WHEN b.estado IN ("activo", "en_reparacion") THEN 1 ELSE 0 END) AS en_cartera,
+                       SUM(CASE WHEN ' . $enCartera . ' THEN 1 ELSE 0 END) AS en_cartera,
                        SUM(CASE WHEN b.estado = "reintegrado" THEN 1 ELSE 0 END) AS reintegradas,
                        SUM(CASE WHEN b.estado = "dado_de_baja" THEN 1 ELSE 0 END) AS dadas_de_baja,
                        MIN(b.valor) AS valor_unitario,
-                       SUM(CASE WHEN b.estado IN ("activo", "en_reparacion") THEN b.valor ELSE 0 END) AS valor_en_cartera
+                       SUM(CASE WHEN ' . $enCartera . ' THEN b.valor ELSE 0 END) AS valor_en_cartera
                 FROM bienes b
                 JOIN instituciones i ON i.id = b.institucion_id
                 LEFT JOIN categorias_bienes c ON c.id = b.categoria_id
@@ -1307,10 +1310,10 @@ final class Bien
             'SELECT b.lote, MIN(b.descripcion) AS descripcion, MIN(b.marca) AS marca,
                     MIN(b.categoria_id) AS categoria_id, MIN(c.nombre) AS categoria_nombre,
                     COUNT(*) AS total,
-                    SUM(CASE WHEN b.estado IN ("activo", "en_reparacion") THEN 1 ELSE 0 END) AS en_cartera,
+                    SUM(CASE WHEN ' . self::sqlUnidadEnCartera() . ' THEN 1 ELSE 0 END) AS en_cartera,
                     SUM(CASE WHEN b.estado = "reintegrado" THEN 1 ELSE 0 END) AS reintegradas,
                     SUM(CASE WHEN b.estado = "dado_de_baja" THEN 1 ELSE 0 END) AS dadas_de_baja,
-                    SUM(CASE WHEN b.estado IN ("activo", "en_reparacion") THEN b.valor ELSE 0 END) AS valor_en_cartera
+                    SUM(CASE WHEN ' . self::sqlUnidadEnCartera() . ' THEN b.valor ELSE 0 END) AS valor_en_cartera
              FROM bienes b
              LEFT JOIN categorias_bienes c ON c.id = b.categoria_id
              WHERE b.institucion_id = ? AND b.lote = ?
@@ -1337,7 +1340,7 @@ final class Bien
              FROM bienes b
              LEFT JOIN asignaciones a ON a.bien_id = b.id AND a.activa = 1
              LEFT JOIN espacios e ON e.id = a.espacio_id
-             WHERE b.institucion_id = ? AND b.lote = ? AND b.estado IN ("activo", "en_reparacion")
+             WHERE b.institucion_id = ? AND b.lote = ? AND ' . self::sqlUnidadEnCartera() . '
              GROUP BY a.espacio_id, a.usuario_responsable_id
              ORDER BY sin_asignar, espacio_nombre, responsables_nombres'
         );
@@ -1364,7 +1367,7 @@ final class Bien
             'SELECT b.id
              FROM bienes b
              LEFT JOIN asignaciones a ON a.bien_id = b.id AND a.activa = 1
-             WHERE b.institucion_id = ? AND b.lote = ? AND b.estado IN ("activo", "en_reparacion") AND ' . $ubicacion . '
+             WHERE b.institucion_id = ? AND b.lote = ? AND ' . self::sqlUnidadEnCartera() . ' AND ' . $ubicacion . '
              ORDER BY b.codigo_identificacion DESC, b.id DESC
              LIMIT ' . max(0, $cantidad) . '
              FOR UPDATE'
@@ -1392,6 +1395,20 @@ final class Bien
         return " AND b.estado IN ('activo', 'en_reparacion') AND b.categoria_id IS NOT NULL"
             . ' AND b.categoria_id NOT IN (SELECT id FROM categorias_bienes WHERE nombre = ?)'
             . ' AND NOT ' . self::sqlEsRenglonDePlaca();
+    }
+
+    /**
+     * Condición SQL: la unidad (alias b) sigue en la cartera de la Alcaldía: activa o en
+     * reparación y fuera de la categoría "Sin cartera" (la que no se reintegra, solo admite
+     * baja). Es lo que cuenta el renglón de la placa (App\Services\RenglonDePlaca) y lo único
+     * que el reintegro por cantidad puede tomar.
+     */
+    private static function sqlUnidadEnCartera(): string
+    {
+        $sinCartera = Database::connection()->quote(Categoria::NOMBRE_CATEGORIA_PROTEGIDA);
+
+        return '(b.estado IN ("activo", "en_reparacion")'
+            . " AND (b.categoria_id IS NULL OR b.categoria_id NOT IN (SELECT id FROM categorias_bienes WHERE nombre = {$sinCartera})))";
     }
 
     /**

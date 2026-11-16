@@ -57,7 +57,8 @@ $conInstitucion = static fn (string $ruta): string => Url::to($ruta)
                 </thead>
                 <tbody>
                 <?php foreach ($codigos as $c): ?>
-                    <?php $enCartera = (int) $c['activos'] + (int) $c['en_reparacion']; ?>
+                    <?php // Activas o en reparación y fuera de "Sin cartera" (Bien::listarLotes). ?>
+                    <?php $enCartera = (int) $c['en_cartera']; ?>
                     <tr>
                         <td class="mono fw-semibold" data-label="Placa"><?= $e($c['lote']) ?></td>
                         <td data-label="Descripción"><?= $e($c['descripcion']) ?></td>

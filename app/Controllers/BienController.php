@@ -26,6 +26,7 @@ use App\Models\Movimiento;
 use App\Models\Usuario;
 use App\Models\Verificacion;
 use App\Services\CicloVidaBien;
+use App\Services\RenglonDePlaca;
 
 final class BienController
 {
@@ -586,6 +587,9 @@ final class BienController
             $mensajeAccion = Database::transaccion(function () use ($id, $datos, $accion, $request, $fotoBaja, $asignacionActiva): string {
                 Bien::update($id, $datos);
                 $actualizado = (array) Bien::find($id);
+                // Si es una unidad de una placa y cambió su categoría (p. ej. a "Sin cartera") o su
+                // valor, el renglón de la cartera lo refleja (si no cambió nada, no se toca).
+                RenglonDePlaca::sincronizarDe([$actualizado], 'Cambio en la ficha de la unidad ' . $actualizado['codigo_identificacion']);
                 $fecha = (string) ($request->input('accion_fecha') ?: date('Y-m-d'));
                 $observaciones = trim((string) $request->input('accion_observaciones')) ?: null;
                 $verificacionId = Verificacion::idValidoParaBien($id, (string) $request->input('verificacion_id'));

@@ -201,6 +201,7 @@ final class CargaMasivaService
     public static function aplicar(array $filas, int $institucionId, int $usuarioId): int
     {
         $omitidas = 0;
+        $modificados = [];
 
         foreach ($filas as $fila) {
             try {
@@ -252,6 +253,7 @@ final class CargaMasivaService
                         'tiene_factura' => $actual['tiene_factura'],
                         'estado' => $actual['estado'],
                     ]);
+                    $modificados[] = $actual;
 
                     // Solo se reubican bienes en circulación (un reintegrado no vuelve a un
                     // espacio por una carga masiva: requiere "Reactivar"). Lo que la fila no
@@ -278,6 +280,9 @@ final class CargaMasivaService
                 $omitidas++;
             }
         }
+
+        // Las unidades de una placa con otra categoría o valor: su renglón de la cartera, una vez.
+        RenglonDePlaca::sincronizarDe($modificados, 'Carga masiva');
 
         return $omitidas;
     }

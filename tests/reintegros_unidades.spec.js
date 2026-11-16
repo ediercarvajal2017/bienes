@@ -6,6 +6,7 @@ import path from 'node:path';
 import { PHP_BIN } from '../playwright.config.js';
 import { datos, comoRol, bd } from './helpers/datos.js';
 import { confirmar } from './helpers/confirmacion.js';
+import { seleccionarTomSelect } from './helpers/tomSelect.js';
 
 // Solo en modo local: crea los bienes directamente en la base de pruebas.
 test.beforeEach(() => test.skip(datos().remoto === true, 'Necesita la base de pruebas local'));
@@ -243,6 +244,80 @@ test('el renglón de la cartera no suma una unidad de más ni se reintegra apart
     await pagina.goto(`reintegros/lotes?estado=pendiente&desde=${hoy}&hasta=${hoy}`);
     const filaLote = pagina.locator('tbody tr', { has: pagina.locator(`a[href$="/reintegros/lotes/${loteId}"]`) });
     await expect(filaLote.locator('td[data-label="Bienes"]')).toHaveText('10');
+    await rector.contexto.close();
+});
+
+/**
+ * El renglón de la cartera se pone al día por todos los caminos (no solo por cantidad): ficha,
+ * cambio a "Sin cartera" y reactivación. Su valor es proporcional al suyo ($1.000.000 ÷ 10).
+ */
+test('el renglón de la placa se actualiza al reintegrar desde la ficha, pasar a "Sin cartera" y reactivar', async ({ browser }) => {
+    const d = datos();
+    const placa = crearCodigoConUnidades();
+    const id = (sufijo) => bd(`SELECT id FROM bienes WHERE lote = '${placa}' AND codigo_identificacion = '${placa}-${sufijo}'`);
+    const [u009, u010] = [id('009'), id('010')];
+    const renglonId = bd(`SELECT id FROM bienes WHERE codigo_identificacion = '${placa}' AND lote IS NULL`);
+    const auditoriasDelRenglon = () => bd(`SELECT COUNT(*) FROM auditoria WHERE accion = 'editar' AND entidad = 'bien' AND entidad_id = ${renglonId}`);
+    const rector = await sesionDe(browser, 'rector');
+    const { pagina } = rector;
+
+    // 1) Reintegrar la -010 desde su ficha: el renglón baja a 9.
+    await pagina.goto(`bienes/${u010}/editar`);
+    await pagina.selectOption('#accionBien', 'reintegrar');
+    await pagina.locator('#accionDestino').fill('Bodega de reintegro');
+    await confirmar(pagina, () => pagina.getByRole('button', { name: 'Guardar y reintegrar' }).click());
+    await expect(pagina.locator('.alert-success')).toBeVisible();
+    expect(resumenDe(placa)).toBe('9 SILLAS DE PRUEBA|900000.00|activo');
+    expect(auditoriasDelRenglon(), 'una sola entrada por operación').toBe('1');
+
+    // 2) Pasar la -009 a "Sin cartera" (MIA le da un código nuevo): el renglón baja a 8.
+    await pagina.goto(`bienes/${u009}/editar`);
+    await confirmar(pagina, () => seleccionarTomSelect(pagina, 'categoriaBien', 'Sin cartera'));
+    await pagina.locator('#botonGuardarBien').click();
+    await expect(pagina.locator('.alert-success')).toContainText('Bien actualizado');
+    expect(resumenDe(placa)).toBe('8 SILLAS DE PRUEBA|800000.00|activo');
+    await pagina.goto(`reintegros/unidades?q=${placa}`);
+    await expect(pagina.locator('tr', { hasText: placa }).locator('td[data-label="En cartera"]')).toHaveText('8 de 10');
+
+    // 3) Reintegrar por cantidad las 8 que quedan: no toma la de "Sin cartera" y no falla.
+    await pagina.goto(`reintegros/unidades/${placa}`);
+    await expect(pagina.locator('tr', { has: pagina.locator('input[name="cantidad[sin]"]') }).locator('td[data-label="Disponibles"]')).toHaveText('5');
+    await pagina.locator(`input[name="cantidad[e${d.espacios.aulaA}-u0]"]`).fill('3');
+    await pagina.locator('input[name="cantidad[sin]"]').fill('5');
+    await confirmar(pagina, () => pagina.locator('#botonReintegrarUnidades').click());
+    await expect(pagina.locator('.alert-success')).toContainText('pasó a Reintegrado');
+    expect(resumenDe(placa)).toBe('0 SILLAS DE PRUEBA|0.00|reintegrado');
+    expect(bd(`SELECT estado FROM bienes WHERE id = ${u009}`), 'la de "Sin cartera" no se reintegró').toBe('activo');
+
+    // 4) Reactivar la -010 (se reintegró por error): el renglón vuelve a 1, con el valor de una.
+    await pagina.goto(`bienes/${u010}/editar`);
+    await pagina.selectOption('#accionBien', 'reactivar');
+    await pagina.locator('#accionMotivo').fill('Se reintegró por error');
+    await pagina.getByRole('button', { name: 'Guardar y reactivar' }).click();
+    await expect(pagina.locator('.alert-success')).toBeVisible();
+    expect(resumenDe(placa)).toBe('1 SILLAS DE PRUEBA|100000.00|activo');
+    expect(auditoriasDelRenglon(), 'ficha, categoría, por cantidad y reactivación').toBe('4');
+    await rector.contexto.close();
+});
+
+/** Guardar una silla sin cambiar su cantidad en cartera no reescribe el renglón (ni su valor). */
+test('el renglón no se toca si no cambia la cantidad ni el estado', async ({ browser }) => {
+    const placa = crearCodigoConUnidades();
+    // Un renglón cuyo valor no coincide con la suma de sus unidades (como en los datos reales).
+    bd(`UPDATE bienes SET valor = 157059 WHERE codigo_identificacion = '${placa}' AND lote IS NULL`);
+    const unidad = bd(`SELECT id FROM bienes WHERE codigo_identificacion = '${placa}-001'`);
+    const rector = await sesionDe(browser, 'rector');
+    await rector.pagina.goto(`bienes/${unidad}/editar`);
+    await rector.pagina.locator('#botonGuardarBien').click();
+    await expect(rector.pagina.locator('.alert-success')).toContainText('Bien actualizado');
+    expect(resumenDe(placa)).toBe('10 SILLAS DE PRUEBA|157059.00|activo');
+
+    // Al reintegrar una, el valor baja en proporción al suyo: $157.059 ÷ 10 × 9.
+    await rector.pagina.goto(`reintegros/unidades/${placa}`);
+    await rector.pagina.locator('input[name="cantidad[sin]"]').fill('1');
+    await confirmar(rector.pagina, () => rector.pagina.locator('#botonReintegrarUnidades').click());
+    await expect(rector.pagina.locator('.alert-success')).toBeVisible();
+    expect(resumenDe(placa)).toBe('9 SILLAS DE PRUEBA|141353.10|activo');
     await rector.contexto.close();
 });
 

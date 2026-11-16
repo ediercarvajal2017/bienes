@@ -286,6 +286,7 @@ final class CicloVidaBien
             Bien::cambiarEstado($id, 'activo');
             Auditoria::registrar(Auth::id(), (int) $bien['institucion_id'], 'reactivar', 'bien', $id,
                 ['estado' => 'reintegrado'], ['estado' => 'activo', 'motivo' => $motivo, 'fecha' => $fecha]);
+            RenglonDePlaca::sincronizarDe([$bien], 'Reactivación de la unidad ' . $bien['codigo_identificacion']);
         });
 
         return 'Bien reactivado. Ahora puedes asignarlo a un espacio o a una persona.';

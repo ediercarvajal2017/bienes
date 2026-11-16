@@ -23,6 +23,7 @@ use App\Models\LoteReintegro;
 use App\Models\Movimiento;
 use App\Models\Usuario;
 use App\Services\ReintegroService;
+use App\Services\RenglonDePlaca;
 use App\Services\ReporteService;
 
 final class ReintegroController
@@ -180,6 +181,7 @@ final class ReintegroController
             // Cada bien pasa por las mismas reglas que el reintegro desde la ficha
             // (ReintegroService), todo en una única transacción.
             return Database::transaccion(static function () use ($bienIds, $fecha, $destino, $observaciones, $resultado): array {
+                $reintegrados = [];
                 foreach ($bienIds as $bienId) {
                     $bien = Bien::find($bienId);
                     if (!$bien || (!Auth::esSuperusuario() && (int) $bien['institucion_id'] !== Auth::institucionId())) {
@@ -193,9 +195,13 @@ final class ReintegroController
                         continue;
                     }
 
-                    ReintegroService::reintegrar($bien, $asignacion, $fecha, $destino, $observaciones, ['masivo' => true]);
+                    ReintegroService::reintegrar($bien, $asignacion, $fecha, $destino, $observaciones, ['masivo' => true], false);
+                    $reintegrados[] = $bien;
                     $resultado['reintegrados']++;
                 }
+
+                // El renglón de la cartera de cada placa tocada, una sola vez (no por unidad).
+                RenglonDePlaca::sincronizarDe($reintegrados, 'Reintegro de bienes seleccionados');
 
                 return $resultado;
             });

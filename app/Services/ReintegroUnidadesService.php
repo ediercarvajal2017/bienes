@@ -4,11 +4,9 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Core\Auth;
 use App\Core\Database;
 use App\Helpers\FechaMovimiento;
 use App\Models\Asignacion;
-use App\Models\Auditoria;
 use App\Models\Bien;
 
 /**
@@ -63,7 +61,7 @@ final class ReintegroUnidadesService
      * en lotes de reintegro (uno por categoría) con su comprobante.
      *
      * @param array<mixed> $cantidadesPorUbicacion clave de ubicación => cantidad
-     * @return array{reintegradas: int, lotes: list<array{id: int, categoria: string, bienes: int}>, resumen: ?array{antes: string, despues: string, reintegrado: bool}}
+     * @return array{reintegradas: int, lotes: list<array{id: int, categoria: string, bienes: int}>, resumen: ?array{antes: string, despues: string, reintegrado: bool, reactivado: bool}}
      */
     public static function reintegrar(
         int $institucionId,
@@ -115,11 +113,12 @@ final class ReintegroUnidadesService
                         throw new \DomainException('Una de las unidades ya no existe. No se aplicó ningún cambio.');
                     }
                     $movimientos[] = ReintegroService::reintegrar($bien, Asignacion::activaDe($bienId), $fecha, $destino, $observacionMovimiento,
-                        ['placa' => $lote, 'por_cantidad' => true]);
+                        ['placa' => $lote, 'por_cantidad' => true], false);
                 }
             }
 
-            $resumen = self::actualizarBienResumen($institucionId, $lote);
+            // El renglón de la cartera de la placa, una sola vez al final (no por cada unidad).
+            $resumen = RenglonDePlaca::sincronizar($institucionId, $lote, "Reintegro por cantidad de la placa {$lote}");
 
             $lotes = $generarLote
                 ? LoteReintegroService::generarPorCategoria($institucionId, $movimientos,
@@ -128,61 +127,6 @@ final class ReintegroUnidadesService
 
             return ['reintegradas' => count($movimientos), 'lotes' => $lotes, 'resumen' => $resumen];
         });
-    }
-
-    /**
-     * Si el código tiene su bien "resumen" (Bien::resumenDeCodigo), le pone la cantidad y el
-     * valor que quedan en cartera: "178 SILLAS UNIVERSITARIAS" pasa a "175 SILLAS UNIVERSITARIAS"
-     * y su valor, al de las 175 unidades. Queda en la auditoría.
-     *
-     * Cuando ya no queda ninguna unidad en cartera, el renglón también sale de ella: pasa a
-     * 'reintegrado' y se cierra su asignación. No se le crea un movimiento de reintegro propio
-     * (entraría en un lote y el comprobante contaría una silla de más).
-     *
-     * @return array{antes: string, despues: string, reintegrado: bool}|null
-     */
-    private static function actualizarBienResumen(int $institucionId, string $lote): ?array
-    {
-        $bien = Bien::resumenDeCodigo($institucionId, $lote, true);
-        $estado = Bien::resumenDeLote($institucionId, $lote);
-        if ($bien === null || $estado === null) {
-            return null;
-        }
-
-        $quedan = (int) $estado['en_cartera'];
-        $valor = round((float) $estado['valor_en_cartera'], 2);
-        $descripcion = self::descripcionConCantidad((string) $bien['descripcion'], $quedan);
-        $saleDeCartera = $quedan === 0 && in_array($bien['estado'], Bien::ESTADOS_REINTEGRABLES, true);
-        $estadoNuevo = $saleDeCartera ? 'reintegrado' : (string) $bien['estado'];
-
-        Bien::actualizarResumenDeCodigo((int) $bien['id'], $descripcion, $valor, $estadoNuevo);
-        if ($saleDeCartera) {
-            Asignacion::cerrarActivasDe((int) $bien['id']);
-        }
-        Auditoria::registrar(Auth::id(), $institucionId, 'editar', 'bien', (int) $bien['id'],
-            ['descripcion' => $bien['descripcion'], 'valor' => $bien['valor'], 'estado' => $bien['estado']],
-            ['descripcion' => $descripcion, 'valor' => $valor, 'estado' => $estadoNuevo,
-                'motivo' => $saleDeCartera
-                    ? "Reintegro por cantidad de la placa {$lote}: se reintegraron todas las unidades"
-                    : "Reintegro por cantidad de la placa {$lote}: quedan {$quedan} en cartera"]);
-
-        return ['antes' => (string) $bien['descripcion'], 'despues' => $descripcion, 'reintegrado' => $saleDeCartera];
-    }
-
-    /**
-     * La descripción del bien resumen con la cantidad nueva al comienzo: "178 SILLAS
-     * UNIVERSITARIAS" con 175 → "175 SILLAS UNIVERSITARIAS". Si no empezaba por un número,
-     * se le antepone.
-     */
-    public static function descripcionConCantidad(string $descripcion, int $cantidad): string
-    {
-        $descripcion = trim($descripcion);
-        // Hasta 5 cifras: es una cantidad ("178 SILLAS"), no un código ("200033042 SILLAS").
-        if (preg_match('/^\d{1,5}\s+/u', $descripcion) === 1) {
-            return (string) preg_replace('/^\d{1,5}/u', (string) $cantidad, $descripcion, 1);
-        }
-
-        return $cantidad . ' ' . $descripcion;
     }
 
     /**

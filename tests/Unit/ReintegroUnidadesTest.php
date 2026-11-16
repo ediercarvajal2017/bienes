@@ -6,6 +6,7 @@ namespace Tests\Unit;
 
 use App\Models\Bien;
 use App\Services\ReintegroUnidadesService;
+use App\Services\RenglonDePlaca;
 use App\Services\ReporteService;
 use PHPUnit\Framework\TestCase;
 
@@ -56,10 +57,10 @@ final class ReintegroUnidadesTest extends TestCase
 
     public function testDescripcionDelBienResumenConLaCantidadQueQueda(): void
     {
-        self::assertSame('175 SILLAS UNIVERSITARIAS', ReintegroUnidadesService::descripcionConCantidad('178 SILLAS UNIVERSITARIAS', 175));
-        self::assertSame('0 MESA DE METAL Y MADERA', ReintegroUnidadesService::descripcionConCantidad(' 6 MESA DE METAL Y MADERA ', 0));
-        self::assertSame('12 SILLAS UNIVERSITARIAS', ReintegroUnidadesService::descripcionConCantidad('SILLAS UNIVERSITARIAS', 12), 'sin número al comienzo: se antepone');
-        self::assertSame('9 200033042 SILLAS', ReintegroUnidadesService::descripcionConCantidad('200033042 SILLAS', 9), 'un código largo al comienzo no es una cantidad');
+        self::assertSame('175 SILLAS UNIVERSITARIAS', RenglonDePlaca::descripcionConCantidad('178 SILLAS UNIVERSITARIAS', 175));
+        self::assertSame('0 MESA DE METAL Y MADERA', RenglonDePlaca::descripcionConCantidad(' 6 MESA DE METAL Y MADERA ', 0));
+        self::assertSame('12 SILLAS UNIVERSITARIAS', RenglonDePlaca::descripcionConCantidad('SILLAS UNIVERSITARIAS', 12), 'sin número al comienzo: se antepone');
+        self::assertSame('9 200033042 SILLAS', RenglonDePlaca::descripcionConCantidad('200033042 SILLAS', 9), 'un código largo al comienzo no es una cantidad');
     }
 
     public function testRenglonesDelComprobanteSumanPorPlaca(): void
@@ -88,6 +89,21 @@ final class ReintegroUnidadesTest extends TestCase
         self::assertSame('PC-01', $renglones[1]['placa'], 'un bien suelto conserva su código');
         self::assertSame(1, $renglones[1]['cantidad']);
         self::assertSame([], ReporteService::renglonesPorPlaca([]));
+    }
+
+    public function testEstadoDelRenglonDeLaPlaca(): void
+    {
+        self::assertSame('activo', RenglonDePlaca::estadoQueCorresponde('activo', 7, 1, false), 'quedan sillas: sigue Activo');
+        self::assertSame('reintegrado', RenglonDePlaca::estadoQueCorresponde('activo', 0, 8, false), 'no queda ninguna y se reintegraron: Reintegrado');
+        self::assertSame('reintegrado', RenglonDePlaca::estadoQueCorresponde('en_reparacion', 0, 3, false));
+        self::assertSame('activo', RenglonDePlaca::estadoQueCorresponde('reintegrado', 1, 7, false), 'se reactivó una: vuelve a Activo');
+        self::assertSame('reintegrado', RenglonDePlaca::estadoQueCorresponde('reintegrado', 1, 7, true), 'lo reintegró el usuario aparte: no se reactiva solo');
+        self::assertSame('activo', RenglonDePlaca::estadoQueCorresponde('activo', 0, 0, false), 'todas pasaron a "Sin cartera": se revisa a mano');
+
+        self::assertSame(178, RenglonDePlaca::cantidadQueDice('178 SILLAS UNIVERSITARIAS'));
+        self::assertSame(0, RenglonDePlaca::cantidadQueDice('0 SILLAS'));
+        self::assertNull(RenglonDePlaca::cantidadQueDice('SILLAS UNIVERSITARIAS'));
+        self::assertNull(RenglonDePlaca::cantidadQueDice('200033042 SILLAS'), 'un código no es una cantidad');
     }
 
     /** El caso real: placa 13019802 "8 SILLA…" salía con CANT. 9 en el comprobante. */
