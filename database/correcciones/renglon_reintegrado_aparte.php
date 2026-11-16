@@ -18,7 +18,10 @@ declare(strict_types=1);
  *  2. se registra su reactivación (motivo: "se reintegró por error junto con sus unidades");
  *  3. vuelve a Activo y a la ubicación que tenía antes del reintegro (espacio o persona de
  *     origen del movimiento), si sigue activa;
- *  4. su cantidad y su valor quedan al día con RenglonDePlaca (valor proporcional al suyo).
+ *  4. su cantidad queda al día con RenglonDePlaca, y su valor, en proporción a su valor ORIGINAL
+ *     (el primero que registra la auditoría): la regla anterior a v1.2.32 lo calculaba con la
+ *     suma de las unidades y, si estas valían $0, lo dejaba en $0 (placa 200388980: "12 PUESTOS"
+ *     por $2.554.188 quedó en "8 PUESTOS" por $0).
  * Todo queda en la auditoría con la acción "correccion_datos".
  */
 
@@ -67,6 +70,24 @@ $stmtMovimiento = $pdo->prepare(
       WHERE m.bien_id = ? AND m.tipo IN ('reintegro', 'reactivacion')
       ORDER BY m.id DESC LIMIT 1"
 );
+// El primer valor conocido del renglón, con su cantidad ("12 PUESTOS…" por $2.554.188).
+$stmtHistorial = $pdo->prepare(
+    "SELECT datos_antes FROM auditoria WHERE entidad = 'bien' AND entidad_id = ? AND datos_antes IS NOT NULL ORDER BY id ASC"
+);
+$valorOriginal = static function (int $bienId) use ($stmtHistorial): ?array {
+    $stmtHistorial->execute([$bienId]);
+    foreach ($stmtHistorial->fetchAll(\PDO::FETCH_COLUMN) as $json) {
+        $antes = json_decode((string) $json, true);
+        if (is_array($antes) && isset($antes['descripcion'], $antes['valor'])) {
+            $cantidad = RenglonDePlaca::cantidadQueDice((string) $antes['descripcion']);
+            if ($cantidad !== null && $cantidad > 0) {
+                return ['cantidad' => $cantidad, 'valor' => (float) $antes['valor']];
+            }
+        }
+    }
+
+    return null;
+};
 $stmtRector = $pdo->prepare(
     "SELECT u.id, CONCAT(u.nombres, ' ', u.apellidos) AS nombre
        FROM usuarios u JOIN roles ro ON ro.id = u.rol_id
@@ -94,7 +115,7 @@ foreach ($candidatos as $r) {
     $rectores = $stmtRector->fetchAll();
     $responsable = $responsableElegido ?? (count($rectores) === 1 ? (int) $rectores[0]['id'] : null);
     if ($responsable === null) {
-        echo "  {$donde}: hay " . count($rectores) . " rectores activos; indique --responsable=ID.\n";
+        echo "  {$donde}: " . ($rectores === [] ? 'no hay un rector activo' : 'hay más de un rector activo') . "; indique --responsable=ID.\n";
         continue;
     }
 
@@ -106,12 +127,16 @@ foreach ($candidatos as $r) {
     }
 
     $descripcion = RenglonDePlaca::descripcionConCantidad((string) $b['descripcion'], $calculo['quedan']);
+    $original = $valorOriginal((int) $r['id']);
+    $valor = $original !== null ? round($original['valor'] / $original['cantidad'] * $calculo['quedan'], 2) : $calculo['valor'];
     echo "  {$donde}\n"
         . "      hoy:     \"{$b['descripcion']}\" · " . $pesos((float) $b['valor']) . " · reintegrado (reintegro del {$mov['fecha']}"
         . ($mov['lote_reintegro_id'] !== null ? ", en el lote #{$mov['lote_reintegro_id']}" : ', sin lote') . ")\n"
-        . "      quedará: \"{$descripcion}\" · " . $pesos($calculo['valor']) . " · activo · " . ($volverA ?? 'sin asignar (su ubicación anterior ya no está activa)') . "\n"
+        . "      quedará: \"{$descripcion}\" · " . $pesos($valor) . " · activo · " . ($volverA ?? 'sin asignar (su ubicación anterior ya no está activa)') . "\n"
+        . ($original !== null && abs($valor - (float) $b['valor']) >= 1
+            ? "      valor en proporción al original: {$original['cantidad']} por " . $pesos($original['valor']) . "\n" : '')
         . ($mov['lote_reintegro_id'] !== null ? "      su reintegro sale del lote #{$mov['lote_reintegro_id']} (pendiente)\n" : '');
-    $plan[] = ['renglon' => $r, 'mov' => $mov, 'responsable' => $responsable];
+    $plan[] = ['renglon' => $r, 'mov' => $mov, 'responsable' => $responsable, 'valor' => $valor];
 }
 
 echo "\nA corregir: " . count($plan) . ($aplicar ? "\n" : "  (SIMULACIÓN; use --aplicar después del respaldo)\n");
@@ -121,7 +146,7 @@ if (!$aplicar || $plan === []) {
 
 $hoy = FechaMovimiento::hoy();
 Database::transaccion(static function (\PDO $pdo) use ($plan, $hoy): void {
-    foreach ($plan as ['renglon' => $r, 'mov' => $mov, 'responsable' => $responsable]) {
+    foreach ($plan as ['renglon' => $r, 'mov' => $mov, 'responsable' => $responsable, 'valor' => $valor]) {
         $bienId = (int) $r['id'];
         $institucionId = (int) $r['institucion_id'];
         $antes = Bien::find($bienId);
@@ -167,8 +192,12 @@ Database::transaccion(static function (\PDO $pdo) use ($plan, $hoy): void {
             ]);
         }
 
-        // 4) Cantidad y valor al día (valor proporcional al del renglón).
+        // 4) Cantidad al día, y valor en proporción al original.
         RenglonDePlaca::sincronizar($institucionId, (string) $r['placa'], 'Corrección del renglón reintegrado por error');
+        $alDia = (array) Bien::find($bienId);
+        if (abs($valor - (float) $alDia['valor']) >= 0.005) {
+            Bien::actualizarResumenDeCodigo($bienId, (string) $alDia['descripcion'], $valor, (string) $alDia['estado']);
+        }
 
         $despues = Bien::find($bienId);
         Auditoria::registrar($responsable, $institucionId, 'correccion_datos', 'bien', $bienId,
