@@ -80,48 +80,39 @@ $alcanceDescarga = array_filter([
     <?= ui('boton', ['texto' => 'Acciones', 'tamano' => 'sm', 'clases' => 'dropdown-toggle',
         'atributos' => ['id' => 'botonAccionesMasivas', 'aria-haspopup' => 'true', 'aria-expanded' => 'false']]) ?>
     <ul class="dropdown-menu" aria-labelledby="botonAccionesMasivas">
-        <?php if ($puedeCrear || $puedeCargaMasiva): ?>
-            <li><span class="dropdown-header">Registrar</span></li>
-            <?php if ($puedeCrear): ?>
-                <li><a class="dropdown-item" href="<?= Url::to('/bienes/alta-masiva') ?>">Alta masiva idéntica</a></li>
-            <?php endif; ?>
-            <?php if ($puedeCargaMasiva): ?>
-                <li><a class="dropdown-item" href="<?= Url::to('/cargas-masivas') ?>">Carga masiva de bienes</a></li>
-            <?php endif; ?>
+        <?php if ($puedeCrear): ?>
+            <li><a class="dropdown-item" href="<?= Url::to('/bienes/alta-masiva') ?>">Alta masiva idéntica</a></li>
+        <?php endif; ?>
+        <?php if ($puedeCargaMasiva): ?>
+            <li><a class="dropdown-item" href="<?= Url::to('/cargas-masivas') ?>">Carga masiva de bienes</a></li>
         <?php endif; ?>
         <?php if ($puedeAsignar): ?>
-            <li><span class="dropdown-header">Movimientos</span></li>
             <li><a class="dropdown-item" href="<?= Url::to('/asignaciones') ?>">Asignar bienes</a></li>
             <li><a class="dropdown-item" href="<?= Url::to('/reintegros') ?>">Reintegrar bienes</a></li>
             <li><a class="dropdown-item" href="<?= Url::to('/reintegros/unidades') ?>">Reintegrar por cantidad</a></li>
         <?php endif; ?>
         <?php if ($puedeQr): ?>
-            <li><span class="dropdown-header">QR</span></li>
             <li><a class="dropdown-item" href="<?= Url::to('/bienes/qr-masivo') ?>">Generar QR masivo</a></li>
         <?php endif; ?>
         <?php // Esta vista ya exige bienes.ver (ver rutas): "Buscar por foto" se muestra a todos. ?>
-        <li><span class="dropdown-header">Consultar</span></li>
         <li><a class="dropdown-item" href="<?= Url::to('/bienes/buscar-por-foto') ?>">Buscar por foto</a></li>
-        <?php if ($urlDescarga !== null || $urlActa !== null): ?>
-            <li><span class="dropdown-header">Exportar</span></li>
-            <?php if ($urlDescarga !== null): ?>
-                <li>
-                    <a class="dropdown-item" href="<?= htmlspecialchars($urlDescarga, ENT_QUOTES) ?>" id="descargarCarteraFiltrada" data-sin-cargando>
-                        Descargar cartera en Excel
-                        <?php if ($alcanceDescarga !== []): ?>
-                            <span class="dropdown-item-detalle">Con <?= implode(' y ', $alcanceDescarga) ?> de la lista</span>
-                        <?php endif; ?>
-                    </a>
-                </li>
-            <?php endif; ?>
-            <?php if ($urlActa !== null): ?>
-                <li>
-                    <a class="dropdown-item" href="<?= htmlspecialchars($urlActa, ENT_QUOTES) ?>" id="descargarActaACargo">
-                        Acta de bienes a cargo
-                        <span class="dropdown-item-detalle"><?= htmlspecialchars($nombreResponsable ?? 'Del responsable filtrado', ENT_QUOTES) ?>, para imprimir y firmar</span>
-                    </a>
-                </li>
-            <?php endif; ?>
+        <?php if ($urlDescarga !== null): ?>
+            <li>
+                <a class="dropdown-item" href="<?= htmlspecialchars($urlDescarga, ENT_QUOTES) ?>" id="descargarCarteraFiltrada" data-sin-cargando>
+                    Descargar cartera en Excel
+                    <?php if ($alcanceDescarga !== []): ?>
+                        <span class="dropdown-item-detalle">Con <?= implode(' y ', $alcanceDescarga) ?> de la lista</span>
+                    <?php endif; ?>
+                </a>
+            </li>
+        <?php endif; ?>
+        <?php if ($urlActa !== null): ?>
+            <li>
+                <a class="dropdown-item" href="<?= htmlspecialchars($urlActa, ENT_QUOTES) ?>" id="descargarActaACargo">
+                    Acta de bienes a cargo
+                    <span class="dropdown-item-detalle"><?= htmlspecialchars($nombreResponsable ?? 'Del responsable filtrado', ENT_QUOTES) ?>, para imprimir y firmar</span>
+                </a>
+            </li>
         <?php endif; ?>
     </ul>
 </div>

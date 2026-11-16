@@ -154,7 +154,7 @@ Patrón del listado de Bienes:
 - **Una fila:** Buscar a lo ancho y el botón **Filtros (n)**.
 - **Panel plegado** en todos los tamaños: `class="panel-filtros filtros-plegables plegable-siempre"`. Se abre con `data-alternar`, y `data-alternar-recordar="clave"` recuerda en la pestaña si quedó abierto, para que siga así al aplicar otro filtro.
 - **Lo aplicado se ve como etiquetas.** Cada una lleva a la misma dirección sin ese filtro; al final va "Quitar filtros". Sin filtros, el componente no pinta nada.
-- **Las acciones del listado** (exportar, operaciones en lote) van en el menú **Acciones**, agrupadas con `dropdown-header` y sin íconos. Un atajo que solo pone un filtro no es un botón aparte: ese dato va en el filtro, como el número de bienes de cada estado.
+- **Las acciones del listado** (exportar, operaciones en lote) van en el menú **Acciones**, sin títulos de grupo ni íconos: así el menú queda corto. Un atajo que solo pone un filtro no es un botón aparte: ese dato va en el filtro, como el número de bienes de cada estado.
 
 ## 4. Reglas de uso
 

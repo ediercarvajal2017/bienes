@@ -36,7 +36,12 @@ test('sin filtros: ni bodegas, ni selectores, ni descarga a la vista', async ({ 
     await pagina.locator('#botonAccionesMasivas').click();
     await expect(pagina.locator('#descargarCarteraFiltrada')).toBeVisible();
     await expect(pagina.locator('#descargarCarteraFiltrada')).toHaveText('Descargar cartera en Excel');
-    await expect(pagina.locator('.menu-acciones .dropdown-header')).toHaveText(['Registrar', 'Movimientos', 'QR', 'Consultar', 'Exportar']);
+    // Sin títulos de grupo: solo las opciones.
+    await expect(pagina.locator('.menu-acciones .dropdown-header')).toHaveCount(0);
+    await expect(pagina.locator('.menu-acciones .dropdown-item')).toHaveText([
+        'Alta masiva idéntica', 'Carga masiva de bienes', 'Asignar bienes', 'Reintegrar bienes', 'Reintegrar por cantidad',
+        'Generar QR masivo', 'Buscar por foto', 'Descargar cartera en Excel',
+    ]);
     await pagina.context().close();
 });
 
