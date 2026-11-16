@@ -83,10 +83,9 @@ final class BienController
         $vistaSinFiltrar = !$soloPropios && $institucionId !== null && !$hayFiltroActivo && $pagina === 1;
         $lotes = $vistaSinFiltrar ? Bien::listarLotes($institucionId, null, $categoriaId) : [];
 
-        // "Bodega Reintegro"/"Bodega de Baja": mismo criterio que $lotes — solo se cuentan
-        // en la vista sin filtrar, y llevan al mismo filtro de Estado que ya existe.
-        $bodegaReintegroTotal = $vistaSinFiltrar ? Bien::contarListado($institucionId, null, false, null, 'reintegrado') : 0;
-        $bodegaBajaTotal = $vistaSinFiltrar ? Bien::contarListado($institucionId, null, false, null, 'dado_de_baja') : 0;
+        // El filtro Estado dice cuántos bienes hay en cada estado con los demás filtros puestos
+        // (así se encuentran los reintegrados y los dados de baja, que la vista sin filtrar oculta).
+        $conteoEstados = $soloPropios ? [] : Bien::contarPorEstado($institucionId, $terminoBusqueda, $categoriaId, $espacioId, $responsableId, $tipo);
 
         // Se recuerda la consulta del listado (búsqueda, filtros, página) para volver a
         // ella al guardar un bien o pulsar "Volver" en su ficha.
@@ -100,8 +99,7 @@ final class BienController
             'lotes' => $lotes,
             // El superusuario trabaja sobre una institución elegida: los enlaces la llevan.
             'sufijoInstitucion' => Auth::esSuperusuario() && $institucionId !== null ? '?institucion=' . $institucionId : '',
-            'bodegaReintegroTotal' => $bodegaReintegroTotal,
-            'bodegaBajaTotal' => $bodegaBajaTotal,
+            'conteoEstados' => $conteoEstados,
             'soloPropios' => $soloPropios,
             'busqueda' => $busqueda,
             'categorias' => $institucionId !== null ? Categoria::activas($institucionId) : [],

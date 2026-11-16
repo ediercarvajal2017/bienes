@@ -790,6 +790,54 @@ main.flex-fill { padding-bottom: max(1.5rem, env(safe-area-inset-bottom)) !impor
   .filtros-rejilla { grid-template-columns: 1fr; }
 }
 
+/* Listado de bienes: Buscar y el botón Filtros en una fila; el panel de filtros plegado en
+   todos los tamaños (plegable-siempre) y lo aplicado, como etiquetas (ui/filtros_activos). */
+.zona-filtros { display: grid; gap: var(--sigebi-espacio-2); }
+.barra-busqueda { display: flex; align-items: center; gap: var(--sigebi-espacio-2); }
+.barra-busqueda > input { flex: 1 1 auto; min-width: 0; }
+.barra-busqueda > .btn { flex: 0 0 auto; }
+.filtros-plegables.plegable-siempre:not(.abierto) { display: none !important; }
+
+.filtros-activos { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sigebi-espacio-2); }
+.filtro-activo {
+  display: inline-flex; align-items: center; gap: var(--sigebi-espacio-1);
+  padding: .125rem .5rem;
+  font-size: var(--sigebi-texto-pequeno); line-height: 1.5;
+  color: var(--sigebi-text); background: var(--sigebi-surface);
+  border: 1px solid var(--sigebi-border); border-radius: var(--sigebi-radio-sm);
+  text-decoration: none;
+  transition: background-color var(--sigebi-transicion), border-color var(--sigebi-transicion);
+}
+.filtro-activo:hover { color: var(--sigebi-text); background: var(--sigebi-surface-2); border-color: var(--sigebi-gris-500); }
+.filtro-activo:focus-visible { outline: 0; box-shadow: var(--sigebi-foco); }
+.filtro-activo-etiqueta { color: var(--sigebi-text-muted); }
+.filtro-activo-quitar { font-size: .75em; color: var(--sigebi-text-muted); }
+.filtros-activos-quitar { padding-left: var(--sigebi-espacio-1); padding-right: var(--sigebi-espacio-1); }
+@media (pointer: coarse) {
+  .filtro-activo { min-height: 44px; padding: .25rem .75rem; }
+}
+
+/* Menú Acciones (sin Bootstrap JS): agrupado con títulos, sin íconos. Se abre hacia la
+   derecha; si no cabe, el script de la vista lo corre para que no se salga de la pantalla. */
+.menu-acciones .dropdown-menu {
+  min-width: 15rem; max-width: min(22rem, calc(100vw - 2rem));
+  padding: var(--sigebi-espacio-1) 0;
+  border-color: var(--sigebi-border); border-radius: var(--sigebi-radio);
+  box-shadow: var(--sigebi-sombra-flotante);
+}
+.menu-acciones .dropdown-item { white-space: normal; }
+.dropdown-header {
+  padding: var(--sigebi-espacio-2) var(--sigebi-espacio-3) var(--sigebi-espacio-1);
+  font-size: var(--sigebi-texto-minimo); font-weight: var(--sigebi-peso-medio);
+  letter-spacing: .04em; text-transform: uppercase;
+  color: var(--sigebi-text-muted);
+}
+.dropdown-item-detalle { display: block; font-size: var(--sigebi-texto-minimo); color: var(--sigebi-text-muted); }
+.dropdown-item:hover .dropdown-item-detalle, .dropdown-item:focus .dropdown-item-detalle { color: inherit; }
+@media (pointer: coarse) {
+  .menu-acciones .dropdown-item { min-height: 44px; display: flex; flex-direction: column; justify-content: center; }
+}
+
 /* Selección masiva en el celular: el botón de acción ("Asignar (3)") queda fijo abajo
    mientras se recorre la lista, en lugar de quedar fuera de la vista. Se apoya ENCIMA de
    la barra inferior del menú (--alto-barra-inferior, que ya incluye el área segura del

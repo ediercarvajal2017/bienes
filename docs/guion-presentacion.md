@@ -16,7 +16,7 @@ se presenta sobre producción: allí está la información real de las instituci
 - [ ] Doble clic en **`demo.bat`** (carpeta del proyecto). Prepara los datos y abre el navegador.
 - [ ] Imprimir las **etiquetas QR** de la demostración (se imprimen una sola vez; siguen
       sirviendo aunque se reinicie la demo):
-  1. Entrar como **secretario** → *Bienes* → *Acciones masivas* → **Generar QR masivo**.
+  1. Entrar como **secretario** → *Bienes* → *Acciones* → **Generar QR masivo**.
   2. Marcar **IE-01172** (Video beam nuevo), **0000000108** (Silla plástica, Aula 9-B) e
      **IE-01045** (Microscopio, Laboratorio) → *Imprimir*.
   3. Recortar las tres etiquetas y pegarlas en tarjetas.
@@ -95,7 +95,7 @@ se presenta sobre producción: allí está la información real de las instituci
    > "Se registró con su foto, marca, valor y factura; en el celular la foto se toma con la
    > cámara al momento de registrarlo."
    *(Opcional, si hay tiempo: mostrar Registrar bien sin guardarlo.)*
-2. *Bienes* → *Acciones masivas* → **Generar QR masivo** → marcar IE-01172 → mostrar la hoja
+2. *Bienes* → *Acciones* → **Generar QR masivo** → marcar IE-01172 → mostrar la hoja
    de etiquetas (no hace falta imprimir: ya está impresa).
    > "Cada bien recibe una etiqueta QR única. Se imprimen en lote, en impresora térmica o en
    > hoja carta."

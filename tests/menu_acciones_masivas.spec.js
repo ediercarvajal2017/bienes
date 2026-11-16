@@ -2,12 +2,12 @@ import { test, expect } from '@playwright/test';
 import { comoRol } from './helpers/datos.js';
 
 /**
- * "Asignar bienes" y "Reintegrar bienes" viven en Bienes > Acciones masivas; ya no están
+ * "Asignar bienes" y "Reintegrar bienes" viven en Bienes > Acciones; ya no están
  * en el menú lateral (Operación diaria), donde se repetían.
  */
 test.use({ storageState: 'playwright/.auth/rector.json' });
 
-test('asignar y reintegrar en lote se abren desde Acciones masivas, no desde el menú lateral', async ({ page }) => {
+test('asignar y reintegrar en lote se abren desde Acciones, no desde el menú lateral', async ({ page }) => {
     await page.goto('bienes');
 
     const menuLateral = page.locator('#sidebar');
@@ -24,7 +24,7 @@ test('asignar y reintegrar en lote se abren desde Acciones masivas, no desde el 
     await expect(menuLateral.locator('a.menu-opcion[href$="/bienes"]')).toHaveAttribute('aria-current', 'page');
 });
 
-test('el docente no ve asignar ni reintegrar en Acciones masivas', async ({ browser }) => {
+test('el docente no ve asignar ni reintegrar en Acciones', async ({ browser }) => {
     const docente = await (await comoRol(browser, 'docente')).newPage();
     await docente.goto('bienes');
     await docente.locator('#botonAccionesMasivas').click();

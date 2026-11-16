@@ -94,6 +94,23 @@ final class ComponentesUiTest extends TestCase
         self::assertStringContainsString('role="status" data-sin-cerrar', $estado);
     }
 
+    public function testLosFiltrosAplicadosSeQuitanUnoAUno(): void
+    {
+        $html = ui('filtros_activos', ['filtros' => [
+            ['etiqueta' => 'Responsable', 'valor' => 'Ana "La" <Pérez>', 'urlQuitar' => '/bienes?estado=activo&tipo=grupal'],
+        ], 'urlQuitarTodos' => '/bienes', 'idQuitarTodos' => 'quitarFiltrosBienes']);
+
+        self::assertStringContainsString('role="group" aria-label="Filtros aplicados"', $html);
+        self::assertStringContainsString('href="/bienes?estado=activo&amp;tipo=grupal"', $html);
+        self::assertStringContainsString('aria-label="Quitar filtro Responsable: Ana &quot;La&quot; &lt;Pérez&gt;"', $html);
+        self::assertStringContainsString('bi-x-lg', $html);
+        self::assertMatchesRegularExpression('#<a href="/bienes" class="btn btn-link btn-sm filtros-activos-quitar" id="quitarFiltrosBienes">\s*Quitar filtros#', $html);
+
+        self::assertSame('', trim(ui('filtros_activos', ['filtros' => []])), 'sin filtros no pinta nada');
+        self::assertStringNotContainsString('filtro-activo"', ui('filtros_activos', ['filtros' => [], 'urlQuitarTodos' => '/bienes']),
+            'solo con búsqueda: queda "Quitar filtros", sin etiquetas');
+    }
+
     public function testUnComponenteConNombreRaroSeRechaza(): void
     {
         $this->expectException(\InvalidArgumentException::class);

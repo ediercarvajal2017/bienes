@@ -80,8 +80,9 @@ test('filtrar por responsable, tipo y espacio en la lista de bienes', async ({ b
     expect(await codigosEn(pagina, `${base}&tipo=grupal`, s)).toEqual(['G1', 'G2']);
     expect(await codigosEn(pagina, `${base}&tipo=sin_asignar`, s)).toEqual(['S1']);
 
-    // Con el selector de la pantalla.
+    // Con el selector de la pantalla (los filtros están plegados tras el botón Filtros).
     await pagina.goto(base);
+    await pagina.locator('#botonFiltrosBienes').click();
     await pagina.locator('#filtroTipo').selectOption('individual');
     await expect(pagina).toHaveURL(/tipo=individual/);
     expect(await pagina.locator('tbody td[data-label="Código"]').count()).toBe(2);

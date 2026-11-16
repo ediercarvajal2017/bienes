@@ -139,13 +139,36 @@
      * Botón que muestra/oculta un bloque (p. ej. los filtros en el celular):
      * <button data-alternar="idDelBloque" aria-expanded="false">. El bloque usa la clase
      * "abierto"; el CSS decide en qué tamaños se oculta.
+     *
+     * Con data-alternar-recordar="clave" se recuerda (en esta pestaña) si quedó abierto: al
+     * aplicar un filtro la página se recarga y el panel sigue como el usuario lo dejó. Sin
+     * almacenamiento disponible, simplemente empieza cerrado.
      */
+    function recordar(clave, abierto) {
+        try { window.sessionStorage.setItem('alternar.' + clave, abierto ? '1' : '0'); } catch (e) { /* sin almacenamiento */ }
+    }
+
+    function recordado(clave) {
+        try { return window.sessionStorage.getItem('alternar.' + clave) === '1'; } catch (e) { return false; }
+    }
+
+    function alternar(boton, abierto) {
+        var bloque = document.getElementById(boton.getAttribute('data-alternar'));
+        if (!bloque) { return; }
+        abierto = typeof abierto === 'boolean' ? bloque.classList.toggle('abierto', abierto) : bloque.classList.toggle('abierto');
+        boton.setAttribute('aria-expanded', abierto ? 'true' : 'false');
+        if (boton.hasAttribute('data-alternar-recordar')) {
+            recordar(boton.getAttribute('data-alternar-recordar'), abierto);
+        }
+    }
+
+    document.querySelectorAll('[data-alternar-recordar]').forEach(function (boton) {
+        if (recordado(boton.getAttribute('data-alternar-recordar'))) { alternar(boton, true); }
+    });
+
     document.addEventListener('click', function (evento) {
         var boton = evento.target.closest('[data-alternar]');
         if (!boton) { return; }
-        var bloque = document.getElementById(boton.getAttribute('data-alternar'));
-        if (!bloque) { return; }
-        var abierto = bloque.classList.toggle('abierto');
-        boton.setAttribute('aria-expanded', abierto ? 'true' : 'false');
+        alternar(boton);
     });
 })();

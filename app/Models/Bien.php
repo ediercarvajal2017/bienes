@@ -17,9 +17,8 @@ final class Bien
      * siguen viendo el listado completo como siempre.
      *
      * La misma bandera también excluye los bienes reintegrados y dados de baja de esa
-     * vista sin filtrar — se muestran agrupados aparte como "Bodega Reintegro"/"Bodega
-     * de Baja" (ver BienController::index()), y siguen apareciendo aquí si el usuario
-     * busca algo o filtra por Estado explícitamente.
+     * vista sin filtrar; siguen apareciendo aquí si el usuario busca algo o filtra por
+     * Estado (el filtro dice cuántos hay en cada estado: contarPorEstado()).
      */
     public static function listar(?int $institucionId = null, ?string $busqueda = null, int $pagina = 1, int $porPagina = 50, bool $excluirLotes = false, ?int $categoriaId = null, ?string $estado = null, ?int $espacioId = null, ?int $responsableId = null, ?string $tipo = null): array
     {
@@ -55,6 +54,34 @@ final class Bien
         $stmt->execute($params);
 
         return (int) $stmt->fetchColumn();
+    }
+
+    /**
+     * Cuántos bienes hay en cada estado con los demás filtros del listado (sin el de Estado y
+     * sin ocultar lotes): es lo que se ve al elegir ese estado en el filtro de /bienes.
+     *
+     * @return array<string, int> estado => cantidad (solo los estados con bienes)
+     */
+    public static function contarPorEstado(?int $institucionId = null, ?string $busqueda = null, ?int $categoriaId = null, ?int $espacioId = null, ?int $responsableId = null, ?string $tipo = null): array
+    {
+        [$whereSql, $params] = self::condicionesListado($institucionId, $busqueda, false, $categoriaId, null, $espacioId, $responsableId, $tipo);
+
+        $sql = 'SELECT b.estado, COUNT(*)
+                FROM bienes b
+                LEFT JOIN asignaciones a ON a.bien_id = b.id AND a.activa = 1
+                LEFT JOIN espacios e ON e.id = a.espacio_id'
+               . $whereSql
+               . ' GROUP BY b.estado';
+
+        $stmt = Database::connection()->prepare($sql);
+        $stmt->execute($params);
+
+        $conteo = [];
+        foreach ($stmt->fetchAll(\PDO::FETCH_NUM) as [$estado, $cantidad]) {
+            $conteo[(string) $estado] = (int) $cantidad;
+        }
+
+        return $conteo;
     }
 
     /**

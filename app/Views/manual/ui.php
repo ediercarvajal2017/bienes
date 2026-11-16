@@ -142,6 +142,13 @@ $filasEjemplo = [
     <?= ui('tabla_fin') ?>
     <?php View::render('partials/paginacion', ['pagina' => 2, 'porPagina' => 25, 'total' => 1340, 'totalPaginas' => 54, 'urlBase' => Url::to('/manual/ui')]); ?>
 
+    <?= ui('tarjeta', ['titulo' => 'Filtros aplicados', 'id' => 'filtros']) ?>
+        <?= ui('filtros_activos', ['filtros' => [
+            ['etiqueta' => 'Estado', 'valor' => 'Reintegrado', 'urlQuitar' => Url::to('/manual/ui#filtros')],
+            ['etiqueta' => 'Responsable', 'valor' => 'Ana Pérez', 'urlQuitar' => Url::to('/manual/ui#filtros')],
+        ], 'urlQuitarTodos' => Url::to('/manual/ui#filtros')]) ?>
+    <?= ui('tarjeta_fin') ?>
+
     <?= ui('tarjeta', ['titulo' => 'Íconos', 'id' => 'iconos']) ?>
         <p class="small text-muted">Una acción o un concepto = un ícono. En las vistas: <code>icono('clave')</code>. La versión rellena solo la usa el menú para la opción activa.</p>
         <?= ui('tabla', ['leyenda' => 'Diccionario de íconos', 'encabezadoFijo' => false, 'columnas' => [

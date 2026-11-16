@@ -14,7 +14,7 @@
                     podrá reintegrar más adelante. Junto al título de cada campo hay un ícono <strong>(?)</strong>:
                     pasa el cursor por encima (o tócalo en el celular) para ver qué escribir.</li>
                 <li><strong>Asignar</strong> un bien, desde su ficha (o varios a la vez en
-                    <strong>Bienes &gt; Acciones masivas &gt; Asignar bienes</strong>). Elige la responsabilidad:
+                    <strong>Bienes &gt; Acciones &gt; Asignar bienes</strong>). Elige la responsabilidad:
                     <ul class="mt-1">
                         <li><strong>Grupal</strong>: el bien queda en un espacio y responden todos los responsables de ese
                             espacio (por ejemplo, las sillas del Aula 101).</li>
@@ -25,14 +25,14 @@
                 <li><strong>Trasladar</strong> un bien asignado a otro espacio o a otra persona, o pasarlo de Grupal a
                     Individual (o al revés). Cada cambio queda en su historial.</li>
                 <li><strong>Reintegrar</strong> un bien desde su ficha, o varios a la vez en
-                    <strong>Bienes &gt; Acciones masivas &gt; Reintegrar bienes</strong>.</li>
+                    <strong>Bienes &gt; Acciones &gt; Reintegrar bienes</strong>.</li>
                 <li><strong>Reintegrar por cantidad</strong> un código con varias unidades (alta masiva, p. ej. la placa de
                     178 sillas): en su fila de <strong>Bienes</strong> usa "Reintegrar por cantidad" y escribe cuántas
                     unidades salen de cada ubicación (también las que están sin asignar). En el comprobante salen en un
                     solo renglón: la placa y la cantidad. Si el código también está en la cartera como un solo bien
                     (p. ej. "178 SILLAS UNIVERSITARIAS"), MIA le resta lo reintegrado: queda "175 SILLAS…" con su valor.</li>
                 <li><strong>Dar de baja</strong> un bien, o aprobar/rechazar bajas que otros reporten (ver tema 4).</li>
-                <li>Para cargar muchos bienes o fotos de una vez, usa <strong>Bienes &gt; Acciones masivas &gt; Carga
+                <li>Para cargar muchos bienes o fotos de una vez, usa <strong>Bienes &gt; Acciones &gt; Carga
                     masiva de bienes</strong>.</li>
             </ol>
         </div>
@@ -112,10 +112,12 @@
                     (pendientes o históricos) y el consolidado de jornadas de verificación, en Excel o CSV.</li>
                 <li>El Excel de la cartera completa trae además la hoja <strong>Cartera por placa</strong>: una fila por
                     código, con la cantidad que queda en cartera, las reintegradas y las dadas de baja.</li>
-                <li>En <strong>Bienes</strong> puedes filtrar por <strong>Espacio</strong>, <strong>Responsable</strong> y
-                    <strong>Responsabilidad</strong> (Grupal, Individual o Sin asignar). <strong>Descargar en Excel</strong> baja
-                    la cartera con los filtros que tengas puestos.</li>
-                <li>Con un responsable elegido en el filtro aparece <strong>Acta de bienes a cargo</strong>: un Excel con sus
+                <li>En <strong>Bienes</strong>, el botón <strong>Filtros</strong> abre los filtros por Categoría, Estado,
+                    <strong>Espacio</strong>, <strong>Responsable</strong> y <strong>Responsabilidad</strong> (Grupal, Individual o
+                    Sin asignar). Lo que filtres queda a la vista como etiquetas que quitas con un clic. El filtro Estado dice
+                    cuántos bienes hay en cada estado: así encuentras los reintegrados y los dados de baja.
+                    <strong>Acciones &gt; Descargar cartera en Excel</strong> baja la cartera con los filtros que tengas puestos.</li>
+                <li>Con un responsable elegido en el filtro aparece en <strong>Acciones</strong> el <strong>Acta de bienes a cargo</strong>: un Excel con sus
                     bienes individuales y los de sus espacios, para imprimir y firmar (por ejemplo, cuando alguien sale de
                     la institución). También está en <strong>Reportes</strong>.</li>
                 <li>En <strong>Cartera (histórico)</strong> registras cada cartera que la institución solicitó por correo

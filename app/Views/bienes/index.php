@@ -25,52 +25,110 @@ $puedeQr = Auth::rol() !== 'docente' && (Auth::esSuperusuario() || Auth::tienePe
 $puedeCrear = Auth::esSuperusuario() || Auth::tienePermiso('bienes.crear');
 $puedeCargaMasiva = Auth::esSuperusuario() || Auth::tienePermiso('cargas.masivas');
 $puedeAsignar = Auth::esSuperusuario() || Auth::tienePermiso('asignaciones.crear');
-// Esta vista ya exige el permiso bienes.ver para llegar aquí (ver rutas), así que
-// "Buscar por foto" siempre puede mostrarse -- por eso el dropdown ya no depende
-// solo de los otros permisos, que sí varían según el rol.
-$mostrarAccionesMasivas = true;
 
 $algunFiltroActivo = $busqueda !== '' || $categoriaId !== null || $estado !== null || $espacioId !== null || $responsableId !== null || $tipo !== null;
+
+// Filtros aplicados, como etiquetas: cada una lleva a la misma dirección sin ese filtro
+// (y de vuelta a la página 1). El nombre sale de las mismas listas de los selectores.
+$consultaActual = $parametrosPaginacion + (isset($_GET['porPagina']) ? ['porPagina' => $porPagina] : []);
+$sinFiltro = static function (string $clave) use ($consultaActual): string {
+    unset($consultaActual[$clave]);
+
+    return Url::to('/bienes') . ($consultaActual !== [] ? '?' . http_build_query($consultaActual) : '');
+};
+$nombreEn = static function (array $lista, ?int $id, callable $nombre): ?string {
+    foreach ($lista as $fila) {
+        if ((int) $fila['id'] === $id) {
+            return (string) $nombre($fila);
+        }
+    }
+
+    return null;
+};
+$nombreResponsable = $nombreEn($responsables, $responsableId, static fn (array $r): string => trim($r['nombres'] . ' ' . $r['apellidos']));
+$filtrosAplicados = [];
+if ($categoriaId !== null) {
+    $filtrosAplicados[] = ['etiqueta' => 'Categoría', 'clave' => 'categoria',
+        'valor' => $nombreEn($categorias, $categoriaId, static fn (array $c): string => $c['nombre']) ?? "#{$categoriaId}"];
+}
+if ($estado !== null) {
+    $filtrosAplicados[] = ['etiqueta' => 'Estado', 'clave' => 'estado', 'valor' => $etiquetasEstado[$estado] ?? $estado];
+}
+if ($espacioId !== null) {
+    $filtrosAplicados[] = ['etiqueta' => 'Espacio', 'clave' => 'espacio',
+        'valor' => $nombreEn($espacios, $espacioId, static fn (array $esp): string => $esp['codigo'] . ' - ' . $esp['nombre']) ?? "#{$espacioId}"];
+}
+if ($responsableId !== null) {
+    $filtrosAplicados[] = ['etiqueta' => 'Responsable', 'clave' => 'responsable', 'valor' => $nombreResponsable ?? "#{$responsableId}"];
+}
+if ($tipo !== null) {
+    $filtrosAplicados[] = ['etiqueta' => 'Responsabilidad', 'clave' => 'tipo', 'valor' => $tipos[$tipo] ?? $tipo];
+}
+$filtrosAplicados = array_map(static fn (array $f): array => [
+    'etiqueta' => $f['etiqueta'], 'valor' => $f['valor'], 'urlQuitar' => $sinFiltro($f['clave']),
+], $filtrosAplicados);
+$filtrosActivos = count($filtrosAplicados);
+
+// La descarga en Excel dice qué toma de la lista, si toma algo.
+$alcanceDescarga = array_filter([
+    $busqueda !== '' ? 'la búsqueda' : null,
+    $filtrosActivos === 1 ? 'el filtro' : ($filtrosActivos > 1 ? "los {$filtrosActivos} filtros" : null),
+]);
 ?>
 <?php ob_start(); ?>
-<?php if ($mostrarAccionesMasivas): ?>
-    <div class="dropdown">
-        <?= ui('boton', ['texto' => 'Acciones masivas', 'tamano' => 'sm', 'clases' => 'dropdown-toggle',
-            'atributos' => ['id' => 'botonAccionesMasivas', 'aria-haspopup' => 'true', 'aria-expanded' => 'false']]) ?>
-        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="botonAccionesMasivas">
-            <li><a class="dropdown-item" href="<?= Url::to('/bienes/buscar-por-foto') ?>"><?= icono('foto', 'me-2') ?>Buscar por foto</a></li>
-            <?php if ($puedeAsignar): ?>
-                <li><a class="dropdown-item" href="<?= Url::to('/asignaciones') ?>"><?= icono('asignacion', 'me-2') ?>Asignar bienes</a></li>
-                <li><a class="dropdown-item" href="<?= Url::to('/reintegros') ?>"><?= icono('reintegro', 'me-2') ?>Reintegrar bienes</a></li>
-                <li><a class="dropdown-item" href="<?= Url::to('/reintegros/unidades') ?>"><?= icono('reintegro', 'me-2') ?>Reintegrar por cantidad</a></li>
-            <?php endif; ?>
-            <?php if ($puedeQr): ?>
-                <li><a class="dropdown-item" href="<?= Url::to('/bienes/qr-masivo') ?>"><?= icono('qr', 'me-2') ?>Generar QR masivo</a></li>
-            <?php endif; ?>
+<div class="dropdown menu-acciones">
+    <?= ui('boton', ['texto' => 'Acciones', 'tamano' => 'sm', 'clases' => 'dropdown-toggle',
+        'atributos' => ['id' => 'botonAccionesMasivas', 'aria-haspopup' => 'true', 'aria-expanded' => 'false']]) ?>
+    <ul class="dropdown-menu" aria-labelledby="botonAccionesMasivas">
+        <?php if ($puedeCrear || $puedeCargaMasiva): ?>
+            <li><span class="dropdown-header">Registrar</span></li>
             <?php if ($puedeCrear): ?>
-                <li><a class="dropdown-item" href="<?= Url::to('/bienes/alta-masiva') ?>"><?= icono('crear', 'me-2') ?>Alta masiva idéntica</a></li>
+                <li><a class="dropdown-item" href="<?= Url::to('/bienes/alta-masiva') ?>">Alta masiva idéntica</a></li>
             <?php endif; ?>
             <?php if ($puedeCargaMasiva): ?>
-                <li><a class="dropdown-item" href="<?= Url::to('/cargas-masivas') ?>"><?= icono('subir', 'me-2') ?>Carga masiva de bienes</a></li>
+                <li><a class="dropdown-item" href="<?= Url::to('/cargas-masivas') ?>">Carga masiva de bienes</a></li>
             <?php endif; ?>
-        </ul>
-    </div>
-<?php endif; ?>
+        <?php endif; ?>
+        <?php if ($puedeAsignar): ?>
+            <li><span class="dropdown-header">Movimientos</span></li>
+            <li><a class="dropdown-item" href="<?= Url::to('/asignaciones') ?>">Asignar bienes</a></li>
+            <li><a class="dropdown-item" href="<?= Url::to('/reintegros') ?>">Reintegrar bienes</a></li>
+            <li><a class="dropdown-item" href="<?= Url::to('/reintegros/unidades') ?>">Reintegrar por cantidad</a></li>
+        <?php endif; ?>
+        <?php if ($puedeQr): ?>
+            <li><span class="dropdown-header">QR</span></li>
+            <li><a class="dropdown-item" href="<?= Url::to('/bienes/qr-masivo') ?>">Generar QR masivo</a></li>
+        <?php endif; ?>
+        <?php // Esta vista ya exige bienes.ver (ver rutas): "Buscar por foto" se muestra a todos. ?>
+        <li><span class="dropdown-header">Consultar</span></li>
+        <li><a class="dropdown-item" href="<?= Url::to('/bienes/buscar-por-foto') ?>">Buscar por foto</a></li>
+        <?php if ($urlDescarga !== null || $urlActa !== null): ?>
+            <li><span class="dropdown-header">Exportar</span></li>
+            <?php if ($urlDescarga !== null): ?>
+                <li>
+                    <a class="dropdown-item" href="<?= htmlspecialchars($urlDescarga, ENT_QUOTES) ?>" id="descargarCarteraFiltrada" data-sin-cargando>
+                        Descargar cartera en Excel
+                        <?php if ($alcanceDescarga !== []): ?>
+                            <span class="dropdown-item-detalle">Con <?= implode(' y ', $alcanceDescarga) ?> de la lista</span>
+                        <?php endif; ?>
+                    </a>
+                </li>
+            <?php endif; ?>
+            <?php if ($urlActa !== null): ?>
+                <li>
+                    <a class="dropdown-item" href="<?= htmlspecialchars($urlActa, ENT_QUOTES) ?>" id="descargarActaACargo">
+                        Acta de bienes a cargo
+                        <span class="dropdown-item-detalle"><?= htmlspecialchars($nombreResponsable ?? 'Del responsable filtrado', ENT_QUOTES) ?>, para imprimir y firmar</span>
+                    </a>
+                </li>
+            <?php endif; ?>
+        <?php endif; ?>
+    </ul>
+</div>
 <?php if ($puedeCrear): ?>
     <?= ui('boton', ['texto' => 'Registrar bien', 'tipo' => 'primario', 'icono' => 'crear', 'tamano' => 'sm', 'url' => Url::to('/bienes/crear')]) ?>
 <?php endif; ?>
 <?= ui('encabezado_pagina', ['titulo' => 'Bienes', 'icono' => 'bien', 'acciones' => (string) ob_get_clean()]) ?>
-
-<?php if ($bodegaReintegroTotal > 0 || $bodegaBajaTotal > 0): ?>
-    <div class="mb-3 d-flex flex-wrap gap-2">
-        <?php if ($bodegaReintegroTotal > 0): ?>
-            <?= ui('boton', ['texto' => "Bodega Reintegro ({$bodegaReintegroTotal})", 'icono' => 'reintegro', 'tamano' => 'sm', 'url' => Url::to('/bienes') . '?estado=reintegrado']) ?>
-        <?php endif; ?>
-        <?php if ($bodegaBajaTotal > 0): ?>
-            <?= ui('boton', ['texto' => "Bodega de Baja ({$bodegaBajaTotal})", 'icono' => 'baja', 'tamano' => 'sm', 'url' => Url::to('/bienes') . '?estado=dado_de_baja']) ?>
-        <?php endif; ?>
-    </div>
-<?php endif; ?>
 
 <?php if (!empty($mensaje)): ?><?= ui('alerta', ['tipo' => 'exito', 'mensaje' => $mensaje, 'clases' => 'py-2 small']) ?><?php endif; ?>
 <?php if (!empty($error)): ?><?= ui('alerta', ['tipo' => 'peligro', 'mensaje' => $error, 'clases' => 'py-2 small']) ?><?php endif; ?>
@@ -79,42 +137,22 @@ $algunFiltroActivo = $busqueda !== '' || $categoriaId !== null || $estado !== nu
     <p class="text-muted small">Mostrando solo los bienes de los espacios donde eres responsable.</p>
 <?php endif; ?>
 
-<?php $filtrosActivos = count(array_filter([$categoriaId, $estado, $espacioId, $responsableId, $tipo], static fn ($f) => $f !== null)); ?>
-<!-- Arriba: Buscar a lo ancho y los botones; abajo: los filtros en columnas iguales. -->
-<div class="panel-filtros mb-3">
-    <div class="panel-filtros-fila">
-        <div class="panel-filtros-busqueda">
-            <label for="buscador" class="form-label small mb-1">Buscar</label>
-            <input type="search" id="buscador" data-buscar="q" class="form-control form-control-sm"
-                   placeholder="Buscar por código, descripción, responsable, ubicación, estado o valor..."
-                   value="<?= htmlspecialchars($busqueda, ENT_QUOTES) ?>">
-        </div>
-        <div class="panel-filtros-acciones">
-            <button type="button" class="btn btn-sm btn-outline-secondary d-md-none" data-alternar="filtrosBienes"
-                    aria-controls="filtrosBienes" aria-expanded="<?= $filtrosActivos > 0 ? 'true' : 'false' ?>">
-                <?= icono('filtrar', 'me-1') ?>Filtros<?= $filtrosActivos > 0 ? " ({$filtrosActivos} activo" . ($filtrosActivos === 1 ? '' : 's') . ')' : '' ?>
-            </button>
-            <?php if ($algunFiltroActivo): ?>
-                <a href="<?= Url::to('/bienes') ?>" class="btn btn-sm btn-outline-secondary" id="quitarFiltrosBienes">
-                    <?= icono('cancelar', 'me-1') ?>Quitar filtros
-                </a>
-            <?php endif; ?>
-            <?php if ($urlDescarga !== null): ?>
-                <a href="<?= htmlspecialchars($urlDescarga, ENT_QUOTES) ?>" class="btn btn-sm btn-outline-secondary" id="descargarCarteraFiltrada" data-sin-cargando
-                   title="Descarga la cartera en Excel con los filtros y la búsqueda que tengas puestos">
-                    <?= icono('exportar_excel', 'me-1') ?>Descargar en Excel
-                </a>
-            <?php endif; ?>
-            <?php if ($urlActa !== null): ?>
-                <a href="<?= htmlspecialchars($urlActa, ENT_QUOTES) ?>" class="btn btn-sm btn-outline-secondary" id="descargarActaACargo"
-                   title="Acta con los bienes individuales y grupales de este responsable, para imprimir y firmar">
-                    <?= icono('descargar', 'me-1') ?>Acta de bienes a cargo
-                </a>
-            <?php endif; ?>
-        </div>
-    </div>
-    <?php $numFiltros = 2 + (int) !empty($espacios) + (int) !empty($responsables) + (int) !empty($tipos); ?>
-    <div id="filtrosBienes" class="filtros-plegables filtros-rejilla filtros-n<?= $numFiltros ?><?= $filtrosActivos > 0 ? ' abierto' : '' ?>">
+<!-- Una fila: Buscar y el botón Filtros. Los filtros quedan plegados; lo aplicado se ve
+     debajo como etiquetas que se quitan con un clic. -->
+<div class="zona-filtros mb-3">
+<div class="barra-busqueda">
+    <label for="buscador" class="visually-hidden">Buscar</label>
+    <input type="search" id="buscador" data-buscar="q" class="form-control form-control-sm"
+           placeholder="Buscar por código, descripción, responsable, ubicación o valor…"
+           value="<?= htmlspecialchars($busqueda, ENT_QUOTES) ?>">
+    <?= ui('boton', ['texto' => $filtrosActivos > 0 ? "Filtros ({$filtrosActivos})" : 'Filtros', 'icono' => 'filtrar', 'tamano' => 'sm',
+        'atributos' => ['id' => 'botonFiltrosBienes', 'data-alternar' => 'filtrosBienes', 'data-alternar-recordar' => 'bienes.filtros',
+            'aria-controls' => 'filtrosBienes', 'aria-expanded' => 'false']]) ?>
+</div>
+
+<?php $numFiltros = 2 + (int) !empty($espacios) + (int) !empty($responsables) + (int) !empty($tipos); ?>
+<div id="filtrosBienes" class="panel-filtros filtros-plegables plegable-siempre">
+<div class="filtros-rejilla filtros-n<?= $numFiltros ?>">
     <div class="filtro-item">
         <label for="filtroCategoria" class="form-label small mb-1">Categoría</label>
         <select id="filtroCategoria" class="form-select form-select-sm selector-buscable">
@@ -131,7 +169,8 @@ $algunFiltroActivo = $busqueda !== '' || $categoriaId !== null || $estado !== nu
         <select id="filtroEstado" class="form-select form-select-sm">
             <option value="">Todos los estados</option>
             <?php foreach ($etiquetasEstado as $valorEstado => $etiqueta): ?>
-                <option value="<?= $valorEstado ?>" <?= $estado === $valorEstado ? 'selected' : '' ?>><?= $etiqueta ?></option>
+                <?php // Cuántos hay en cada estado con los demás filtros (no aplica al docente). ?>
+                <option value="<?= $valorEstado ?>" <?= $estado === $valorEstado ? 'selected' : '' ?>><?= $etiqueta ?><?= $conteoEstados !== [] ? ' (' . number_format($conteoEstados[$valorEstado] ?? 0, 0, ',', '.') . ')' : '' ?></option>
             <?php endforeach; ?>
         </select>
     </div>
@@ -172,7 +211,11 @@ $algunFiltroActivo = $busqueda !== '' || $categoriaId !== null || $estado !== nu
             </select>
         </div>
     <?php endif; ?>
-    </div>
+</div>
+</div>
+
+<?= ui('filtros_activos', ['filtros' => $filtrosAplicados,
+    'urlQuitarTodos' => $algunFiltroActivo ? Url::to('/bienes') : null, 'idQuitarTodos' => 'quitarFiltrosBienes']) ?>
 </div>
 
 <?php View::render('partials/paginacion', [
@@ -284,6 +327,19 @@ $algunFiltroActivo = $busqueda !== '' || $categoriaId !== null || $estado !== nu
         e.stopPropagation();
         const abierto = menu.classList.toggle('show');
         boton.setAttribute('aria-expanded', abierto ? 'true' : 'false');
+        // Se abre hacia la derecha; si así se sale de la pantalla, se alinea con el borde
+        // derecho del botón, y si tampoco cabe (celular), se corre lo justo para no salirse.
+        menu.style.left = '';
+        if (abierto) {
+            const margen = 8;
+            const caja = menu.getBoundingClientRect();
+            if (caja.right > document.documentElement.clientWidth - margen) {
+                const contenedor = menu.parentElement.getBoundingClientRect();
+                let izquierda = contenedor.width - caja.width;
+                if (contenedor.left + izquierda < margen) { izquierda = margen - contenedor.left; }
+                menu.style.left = izquierda + 'px';
+            }
+        }
     });
     document.addEventListener('click', function (e) {
         if (!menu.contains(e.target) && e.target !== boton) { cerrar(); }

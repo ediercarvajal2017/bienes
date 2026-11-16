@@ -144,6 +144,18 @@ Es el único lugar donde el ancho va en línea: es un dato, no un estilo de dise
 - **Estado vacío:** `partials/tabla_vacia.php`, con una línea de texto y, si aplica, una acción.
 - **Paginación:** `partials/paginacion.php`.
 
+### Filtros de un listado
+```php
+<?= ui('filtros_activos', ['filtros' => [
+    ['etiqueta' => 'Estado', 'valor' => 'Reintegrado', 'urlQuitar' => '/bienes?categoria=3'],
+], 'urlQuitarTodos' => '/bienes', 'idQuitarTodos' => 'quitarFiltrosBienes']) ?>
+```
+Patrón del listado de Bienes:
+- **Una fila:** Buscar a lo ancho y el botón **Filtros (n)**.
+- **Panel plegado** en todos los tamaños: `class="panel-filtros filtros-plegables plegable-siempre"`. Se abre con `data-alternar`, y `data-alternar-recordar="clave"` recuerda en la pestaña si quedó abierto, para que siga así al aplicar otro filtro.
+- **Lo aplicado se ve como etiquetas.** Cada una lleva a la misma dirección sin ese filtro; al final va "Quitar filtros". Sin filtros, el componente no pinta nada.
+- **Las acciones del listado** (exportar, operaciones en lote) van en el menú **Acciones**, agrupadas con `dropdown-header` y sin íconos. Un atajo que solo pone un filtro no es un botón aparte: ese dato va en el filtro, como el número de bienes de cada estado.
+
 ## 4. Reglas de uso
 
 **Botones:**
@@ -197,4 +209,5 @@ Es el único lugar donde el ancho va en línea: es un dato, no un estilo de dise
 | Verificador con lista de pendientes que solo baja | Permite migrar módulo por módulo sin bloquear y sin retroceder | Prohibir todo desde el primer día: obligaba a migrar las 86 vistas de una vez |
 | Encabezado fijo con desplazamiento dentro de la tabla (pantallas grandes) | Las columnas se siguen leyendo en tablas largas | Encabezado fijo a la página: no funciona dentro de `.table-responsive`, que hace falta para las tablas anchas |
 | Accesos rápidos del panel como lista de enlaces | Densidad y lectura rápida; no compite con las cifras | Diecinueve tarjetas iguales con ícono grande: simetría sin contenido que la pida |
+| Filtros plegados con etiquetas de lo aplicado (listado de Bienes) | La tabla queda arriba; lo que filtra se ve sin abrir el panel | Cinco selectores siempre abiertos y botones de atajo ("Bodega Reintegro") que repetían el filtro Estado |
 | Una sola confirmación al cerrar una jornada con hallazgos | El mensaje dice las dos cosas (hallazgos y pendientes) y el usuario decide una vez | Dos diálogos seguidos: el segundo se ignora por costumbre |
