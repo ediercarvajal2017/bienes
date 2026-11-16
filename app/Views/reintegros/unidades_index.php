@@ -9,6 +9,7 @@ $conInstitucion = static fn (string $ruta): string => Url::to($ruta)
 ?>
 <?php ob_start(); ?>
     <a href="<?= Url::to('/reintegros') ?>" class="btn btn-sm btn-outline-secondary">Volver a Reintegrar</a>
+    <?= ui('menu_acciones', ['opciones' => \App\Helpers\AccionesBienes::opciones(), 'actual' => 'reintegrar_cantidad']) ?>
 <?= ui('encabezado_pagina', ['titulo' => 'Reintegrar por cantidad', 'icono' => 'reintegro', 'subtitulo' => 'Códigos con varias unidades (alta masiva), por ejemplo una placa con 178 sillas. Elige uno para reintegrar solo las unidades que necesites.', 'acciones' => (string) ob_get_clean()]) ?>
 
 <?php if (!empty($error)): ?><div class="alert alert-danger py-2 small"><?= $e($error) ?></div><?php endif; ?>

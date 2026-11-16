@@ -222,6 +222,7 @@ foreach (['/manual', '/mi-cuenta'] as $rutaPie) {
 <script src="<?= Url::asset('/assets/js/notas.js') ?>"></script>
 <script src="<?= Url::asset('/assets/js/lightbox.js') ?>"></script>
 <script src="<?= Url::asset('/assets/js/confirmar.js') ?>"></script>
+<script src="<?= Url::asset('/assets/js/desplegable.js') ?>"></script>
 <script src="<?= Url::asset('/assets/js/cargando.js') ?>"></script>
 <script src="<?= Url::asset('/assets/js/buscador-vivo.js') ?>"></script>
 <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js" integrity="sha384-cnROoUgVILyibe3J0zhzWoJ9p2WmdnK7j/BOTSWqVDbC1pVw2d+i6Q/1ESKJKCYf" crossorigin="anonymous"></script>

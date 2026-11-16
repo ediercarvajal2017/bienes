@@ -111,6 +111,24 @@ final class ComponentesUiTest extends TestCase
             'solo con búsqueda: queda "Quitar filtros", sin etiquetas');
     }
 
+    public function testElMenuDeAccionesMarcaLaPantallaActual(): void
+    {
+        $opciones = [
+            ['clave' => 'asignar', 'texto' => 'Asignar bienes', 'url' => '/asignaciones'],
+            ['clave' => 'qr_masivo', 'texto' => 'Generar QR masivo', 'url' => '/bienes/qr-masivo'],
+        ];
+        $html = ui('menu_acciones', ['opciones' => $opciones, 'actual' => 'qr_masivo']);
+
+        self::assertStringContainsString('id="botonAccionesMasivas" data-desplegable aria-haspopup="true" aria-expanded="false"', $html);
+        self::assertStringContainsString('<a class="dropdown-item" href="/asignaciones">Asignar bienes</a>', $html);
+        self::assertStringContainsString('<a class="dropdown-item" href="/bienes/qr-masivo" aria-current="page">Generar QR masivo</a>', $html);
+        self::assertStringNotContainsString('dropdown-header', $html);
+
+        self::assertSame('', trim(ui('menu_acciones', ['opciones' => [$opciones[1]], 'actual' => 'qr_masivo'])),
+            'sin otra acción a la cual pasar, no hay menú');
+        self::assertStringContainsString('<li>extra</li>', ui('menu_acciones', ['opciones' => [], 'extras' => '<li>extra</li>']));
+    }
+
     public function testUnComponenteConNombreRaroSeRechaza(): void
     {
         $this->expectException(\InvalidArgumentException::class);

@@ -12,7 +12,7 @@ $e = static fn (mixed $texto): string => htmlspecialchars((string) $texto, ENT_Q
 <div class="contenedor-md">
     <?= ui('encabezado_pagina', ['titulo' => 'Alta masiva de bienes idénticos', 'icono' => 'bien',
         'subtitulo' => 'Registra muchas unidades iguales con un solo código (ej. 250 sillas): cada una queda como un bien con su propio código y QR.',
-        'acciones' => ui('boton', ['texto' => 'Volver', 'icono' => 'volver', 'tamano' => 'sm', 'url' => Url::to('/bienes')])]) ?>
+        'acciones' => ui('boton', ['texto' => 'Volver', 'icono' => 'volver', 'tamano' => 'sm', 'url' => Url::to('/bienes')]) . ui('menu_acciones', ['opciones' => \App\Helpers\AccionesBienes::opciones(), 'actual' => 'alta_masiva'])]) ?>
     <?php if (!empty($error)): ?><?= ui('alerta', ['tipo' => 'peligro', 'mensaje' => (string) $error, 'clases' => 'py-2 small']) ?><?php endif; ?>
 </div>
 

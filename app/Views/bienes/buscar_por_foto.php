@@ -7,7 +7,7 @@ use App\Core\View;
 ?>
 <?= ui('encabezado_pagina', ['titulo' => 'Buscar por foto', 'icono' => 'foto',
     'subtitulo' => 'Toma o sube una foto del bien y el sistema busca los más parecidos por su apariencia, aunque no tengas el código a mano.',
-    'acciones' => ui('boton', ['texto' => 'Volver', 'icono' => 'volver', 'tamano' => 'sm', 'url' => Url::to('/bienes')]),
+    'acciones' => ui('boton', ['texto' => 'Volver', 'icono' => 'volver', 'tamano' => 'sm', 'url' => Url::to('/bienes')]) . ui('menu_acciones', ['opciones' => \App\Helpers\AccionesBienes::opciones(), 'actual' => 'buscar_foto']),
 ]) ?>
 
 <?php if ($sinInstitucion): ?>

@@ -9,6 +9,7 @@ use App\Core\View;
 <?= ui('encabezado_pagina', ['titulo' => 'Generar QR masivo', 'icono' => 'qr',
     'subtitulo' => 'Selecciona los bienes y genera una hoja lista para imprimir, con el código QR en negro y el código del bien debajo.',
     'acciones' => ui('boton', ['texto' => 'Volver', 'icono' => 'volver', 'tamano' => 'sm', 'url' => Url::to('/bienes')])
+        . ui('menu_acciones', ['opciones' => \App\Helpers\AccionesBienes::opciones(), 'actual' => 'qr_masivo'])
         . (!empty($totalSolicitados) ? ui('boton', ['texto' => "Bodega de impresión ({$totalSolicitados})", 'icono' => 'imprimir', 'tamano' => 'sm',
             'url' => Url::to('/bienes/qr-masivo/bodega') . ($institucionId !== null ? '?' . http_build_query(['institucion' => $institucionId]) : '')]) : ''),
 ]) ?>

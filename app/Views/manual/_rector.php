@@ -34,6 +34,8 @@
                 <li><strong>Dar de baja</strong> un bien, o aprobar/rechazar bajas que otros reporten (ver tema 6).</li>
                 <li>Para cargar muchos bienes o fotos de una vez, usa <strong>Bienes &gt; Acciones &gt; Carga
                     masiva de bienes</strong>.</li>
+                <li>Cada pantalla a la que lleva <strong>Acciones</strong> tiene el mismo botón, con la pantalla actual
+                    resaltada: pasas de una acción a otra (por ejemplo, de Alta masiva a Generar QR masivo) sin volver a Bienes.</li>
             </ol>
         </div>
     </details>

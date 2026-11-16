@@ -817,8 +817,8 @@ main.flex-fill { padding-bottom: max(1.5rem, env(safe-area-inset-bottom)) !impor
   .filtro-activo { min-height: 44px; padding: .25rem .75rem; }
 }
 
-/* Menú Acciones (sin Bootstrap JS): sin títulos de grupo ni íconos. Se abre hacia la
-   derecha; si no cabe, el script de la vista lo corre para que no se salga de la pantalla. */
+/* Menú Acciones (partials/ui/menu_acciones.php, desplegable.js): sin títulos de grupo ni
+   íconos. Se abre hacia la derecha; si no cabe, se corre para no salirse de la pantalla. */
 .menu-acciones .dropdown-menu {
   min-width: 15rem; max-width: min(22rem, calc(100vw - 2rem));
   padding: var(--sigebi-espacio-1) 0;
@@ -826,6 +826,8 @@ main.flex-fill { padding-bottom: max(1.5rem, env(safe-area-inset-bottom)) !impor
   box-shadow: var(--sigebi-sombra-flotante);
 }
 .menu-acciones .dropdown-item { white-space: normal; }
+/* La opción de la pantalla actual: se distingue sin color de acción. */
+.menu-acciones .dropdown-item[aria-current="page"] { font-weight: var(--sigebi-peso-medio); background: var(--sigebi-surface-2); }
 .dropdown-item-detalle { display: block; font-size: var(--sigebi-texto-minimo); color: var(--sigebi-text-muted); }
 .dropdown-item:hover .dropdown-item-detalle, .dropdown-item:focus .dropdown-item-detalle { color: inherit; }
 @media (pointer: coarse) {

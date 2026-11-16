@@ -8,6 +8,7 @@ $urlBasePaginacion = Url::to('/cargas-masivas') . ($busqueda !== '' ? '?' . http
 ?>
 <?php ob_start(); ?>
     <a href="<?= Url::to('/bienes') ?>" class="btn btn-sm btn-outline-secondary">Volver</a>
+    <?= ui('menu_acciones', ['opciones' => \App\Helpers\AccionesBienes::opciones(), 'actual' => 'carga_masiva']) ?>
 <?= ui('encabezado_pagina', ['titulo' => 'Carga masiva de bienes', 'icono' => 'subir', 'acciones' => (string) ob_get_clean()]) ?>
 
 <?php if (!empty($mensaje)): ?><?= ui('alerta', ['tipo' => 'exito', 'mensaje' => (string) $mensaje, 'clases' => 'py-2 small contenedor-md']) ?><?php endif; ?>

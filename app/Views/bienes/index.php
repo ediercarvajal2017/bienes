@@ -21,9 +21,7 @@ $etiquetasEstado = [
     'dado_de_baja' => 'Dado de baja',
 ];
 
-$puedeQr = Auth::rol() !== 'docente' && (Auth::esSuperusuario() || Auth::tienePermiso('bienes.ver'));
 $puedeCrear = Auth::esSuperusuario() || Auth::tienePermiso('bienes.crear');
-$puedeCargaMasiva = Auth::esSuperusuario() || Auth::tienePermiso('cargas.masivas');
 $puedeAsignar = Auth::esSuperusuario() || Auth::tienePermiso('asignaciones.crear');
 
 $algunFiltroActivo = $busqueda !== '' || $categoriaId !== null || $estado !== null || $espacioId !== null || $responsableId !== null || $tipo !== null;
@@ -75,47 +73,29 @@ $alcanceDescarga = array_filter([
     $filtrosActivos === 1 ? 'el filtro' : ($filtrosActivos > 1 ? "los {$filtrosActivos} filtros" : null),
 ]);
 ?>
+<?php // Opciones propias del listado, al final del menú Acciones: las descargas con sus filtros. ?>
 <?php ob_start(); ?>
-<div class="dropdown menu-acciones">
-    <?= ui('boton', ['texto' => 'Acciones', 'tamano' => 'sm', 'clases' => 'dropdown-toggle',
-        'atributos' => ['id' => 'botonAccionesMasivas', 'aria-haspopup' => 'true', 'aria-expanded' => 'false']]) ?>
-    <ul class="dropdown-menu" aria-labelledby="botonAccionesMasivas">
-        <?php if ($puedeCrear): ?>
-            <li><a class="dropdown-item" href="<?= Url::to('/bienes/alta-masiva') ?>">Alta masiva idéntica</a></li>
-        <?php endif; ?>
-        <?php if ($puedeCargaMasiva): ?>
-            <li><a class="dropdown-item" href="<?= Url::to('/cargas-masivas') ?>">Carga masiva de bienes</a></li>
-        <?php endif; ?>
-        <?php if ($puedeAsignar): ?>
-            <li><a class="dropdown-item" href="<?= Url::to('/asignaciones') ?>">Asignar bienes</a></li>
-            <li><a class="dropdown-item" href="<?= Url::to('/reintegros') ?>">Reintegrar bienes</a></li>
-            <li><a class="dropdown-item" href="<?= Url::to('/reintegros/unidades') ?>">Reintegrar por cantidad</a></li>
-        <?php endif; ?>
-        <?php if ($puedeQr): ?>
-            <li><a class="dropdown-item" href="<?= Url::to('/bienes/qr-masivo') ?>">Generar QR masivo</a></li>
-        <?php endif; ?>
-        <?php // Esta vista ya exige bienes.ver (ver rutas): "Buscar por foto" se muestra a todos. ?>
-        <li><a class="dropdown-item" href="<?= Url::to('/bienes/buscar-por-foto') ?>">Buscar por foto</a></li>
-        <?php if ($urlDescarga !== null): ?>
-            <li>
-                <a class="dropdown-item" href="<?= htmlspecialchars($urlDescarga, ENT_QUOTES) ?>" id="descargarCarteraFiltrada" data-sin-cargando>
-                    Descargar cartera en Excel
-                    <?php if ($alcanceDescarga !== []): ?>
-                        <span class="dropdown-item-detalle">Con <?= implode(' y ', $alcanceDescarga) ?> de la lista</span>
-                    <?php endif; ?>
-                </a>
-            </li>
-        <?php endif; ?>
-        <?php if ($urlActa !== null): ?>
-            <li>
-                <a class="dropdown-item" href="<?= htmlspecialchars($urlActa, ENT_QUOTES) ?>" id="descargarActaACargo">
-                    Acta de bienes a cargo
-                    <span class="dropdown-item-detalle"><?= htmlspecialchars($nombreResponsable ?? 'Del responsable filtrado', ENT_QUOTES) ?>, para imprimir y firmar</span>
-                </a>
-            </li>
-        <?php endif; ?>
-    </ul>
-</div>
+<?php if ($urlDescarga !== null): ?>
+    <li>
+        <a class="dropdown-item" href="<?= htmlspecialchars($urlDescarga, ENT_QUOTES) ?>" id="descargarCarteraFiltrada" data-sin-cargando>
+            Descargar cartera en Excel
+            <?php if ($alcanceDescarga !== []): ?>
+                <span class="dropdown-item-detalle">Con <?= implode(' y ', $alcanceDescarga) ?> de la lista</span>
+            <?php endif; ?>
+        </a>
+    </li>
+<?php endif; ?>
+<?php if ($urlActa !== null): ?>
+    <li>
+        <a class="dropdown-item" href="<?= htmlspecialchars($urlActa, ENT_QUOTES) ?>" id="descargarActaACargo">
+            Acta de bienes a cargo
+            <span class="dropdown-item-detalle"><?= htmlspecialchars($nombreResponsable ?? 'Del responsable filtrado', ENT_QUOTES) ?>, para imprimir y firmar</span>
+        </a>
+    </li>
+<?php endif; ?>
+<?php $descargas = (string) ob_get_clean(); ?>
+<?php ob_start(); ?>
+<?= ui('menu_acciones', ['opciones' => \App\Helpers\AccionesBienes::opciones(), 'extras' => $descargas]) ?>
 <?php if ($puedeCrear): ?>
     <?= ui('boton', ['texto' => 'Registrar bien', 'tipo' => 'primario', 'icono' => 'crear', 'tamano' => 'sm', 'url' => Url::to('/bienes/crear')]) ?>
 <?php endif; ?>
@@ -304,42 +284,6 @@ $alcanceDescarga = array_filter([
 ]); ?>
 
 <script>
-(function () {
-    const boton = document.getElementById('botonAccionesMasivas');
-    if (!boton) { return; }
-    const menu = boton.nextElementSibling;
-
-    function cerrar() {
-        menu.classList.remove('show');
-        boton.setAttribute('aria-expanded', 'false');
-    }
-
-    boton.addEventListener('click', function (e) {
-        e.stopPropagation();
-        const abierto = menu.classList.toggle('show');
-        boton.setAttribute('aria-expanded', abierto ? 'true' : 'false');
-        // Se abre hacia la derecha; si así se sale de la pantalla, se alinea con el borde
-        // derecho del botón, y si tampoco cabe (celular), se corre lo justo para no salirse.
-        menu.style.left = '';
-        if (abierto) {
-            const margen = 8;
-            const caja = menu.getBoundingClientRect();
-            if (caja.right > document.documentElement.clientWidth - margen) {
-                const contenedor = menu.parentElement.getBoundingClientRect();
-                let izquierda = contenedor.width - caja.width;
-                if (contenedor.left + izquierda < margen) { izquierda = margen - contenedor.left; }
-                menu.style.left = izquierda + 'px';
-            }
-        }
-    });
-    document.addEventListener('click', function (e) {
-        if (!menu.contains(e.target) && e.target !== boton) { cerrar(); }
-    });
-    document.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape') { cerrar(); }
-    });
-})();
-
 (function () {
 
     const filtrosSelect = [

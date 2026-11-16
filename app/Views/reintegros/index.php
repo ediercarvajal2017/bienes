@@ -8,9 +8,8 @@ use App\Core\View;
 $viejo ??= [];
 ?>
 <?php ob_start(); ?>
-    <a href="<?= Url::to('/asignaciones') ?>" class="btn btn-sm btn-outline-secondary">
-        <?= icono('asignacion', 'me-1') ?>Ir a Asignar
-    </a>
+    <?= ui('boton', ['texto' => 'Volver', 'icono' => 'volver', 'tamano' => 'sm', 'url' => Url::to('/bienes')]) ?>
+    <?= ui('menu_acciones', ['opciones' => \App\Helpers\AccionesBienes::opciones(), 'actual' => 'reintegrar']) ?>
 <?= ui('encabezado_pagina', ['titulo' => 'Reintegrar bienes', 'icono' => 'reintegro', 'acciones' => (string) ob_get_clean()]) ?>
 <p class="text-muted small">Selecciona uno o varios bienes asignados y regístralos como reintegrados. ¿Un código con varias unidades (alta masiva)? <a href="<?= Url::to('/reintegros/unidades') ?>">Reintegrar por cantidad</a>.</p>
 

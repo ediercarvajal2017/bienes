@@ -7,7 +7,7 @@
 //
 // Al cambiar CACHE, activate borra las versiones anteriores (incluida 'sigebi-v1', que
 // sí guardaba el panel autenticado).
-const CACHE = 'sigebi-v6'; // v6: listado de bienes con filtros plegados y menú Acciones
+const CACHE = 'sigebi-v7'; // v7: menú Acciones en las pantallas de Bienes (desplegable.js)
 const PRECARGA = ['./offline.html', './assets/css/tokens.css', './assets/css/app.css'];
 
 self.addEventListener('install', (event) => {

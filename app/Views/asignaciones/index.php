@@ -10,6 +10,7 @@ $bienesSeleccionados = $viejo['bienes'] ?? [];
 ?>
 <?php ob_start(); ?>
     <a href="<?= Url::to('/bienes') ?>" class="btn btn-sm btn-outline-secondary">Volver</a>
+    <?= ui('menu_acciones', ['opciones' => \App\Helpers\AccionesBienes::opciones(), 'actual' => 'asignar']) ?>
 <?= ui('encabezado_pagina', ['titulo' => 'Asignar bienes', 'icono' => 'asignacion', 'subtitulo' => 'Selecciona uno o varios bienes y asígnalos (o reasígnalos) a un espacio o a una persona.', 'acciones' => (string) ob_get_clean()]) ?>
 
 <?php if (!empty($mensaje)): ?><?= ui('alerta', ['tipo' => 'exito', 'mensaje' => (string) $mensaje, 'clases' => 'py-2 small']) ?><?php endif; ?>
