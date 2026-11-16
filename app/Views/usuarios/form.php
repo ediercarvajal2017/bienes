@@ -11,23 +11,22 @@ $errorCampo ??= null;
 $v = static fn (string $campo, mixed $porDefecto = '') => $viejo[$campo] ?? $usuario[$campo] ?? $porDefecto;
 $invalido = static fn (string $campo) => $errorCampo === $campo ? ' is-invalid' : '';
 ?>
-<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-    <h1 class="h4 mb-0"><?= $esEdicion ? 'Editar usuario' : 'Nuevo usuario' ?></h1>
+<?php ob_start(); ?>
     <a href="<?= Url::to('/usuarios') ?>" class="btn btn-sm btn-outline-secondary">Volver</a>
-</div>
+<?= ui('encabezado_pagina', ['titulo' => (string) ($esEdicion ? 'Editar usuario' : 'Nuevo usuario'), 'icono' => 'usuarios', 'acciones' => (string) ob_get_clean()]) ?>
 
 <?php if (!empty($error)): ?>
-    <div class="alert alert-danger py-2 small"><?= htmlspecialchars($error, ENT_QUOTES) ?></div>
+    <?= ui('alerta', ['tipo' => 'peligro', 'mensaje' => (string) $error, 'clases' => 'py-2 small']) ?>
 <?php endif; ?>
 <?php if (!empty($mensaje)): ?>
-    <div class="alert alert-success py-2 small"><?= htmlspecialchars($mensaje, ENT_QUOTES) ?></div>
+    <?= ui('alerta', ['tipo' => 'exito', 'mensaje' => (string) $mensaje, 'clases' => 'py-2 small']) ?>
 <?php endif; ?>
 
 <p class="text-muted small mb-2">Los campos marcados con <span class="text-danger">*</span> son obligatorios.</p>
 
 <form method="post"
       action="<?= $esEdicion ? Url::to('/usuarios/' . $usuario['id']) : Url::to('/usuarios') ?>"
-      enctype="multipart/form-data" class="row g-3" style="max-width: 640px;">
+      enctype="multipart/form-data" class="row g-3 contenedor-md">
     <?= Csrf::field() ?>
 
     <div class="col-md-6">
@@ -137,9 +136,9 @@ $invalido = static fn (string $campo) => $errorCampo === $campo ? ' is-invalid' 
 </form>
 
 <?php if ($esEdicion && (int) $usuario['id'] !== (int) Auth::id()): ?>
-    <div class="card mt-4" style="max-width: 640px;">
+    <div class="card mt-4 contenedor-md">
         <div class="card-body">
-            <h2 class="h6"><i class="bi bi-shield-lock me-1" aria-hidden="true"></i>Verificación en dos pasos</h2>
+            <h2 class="h6"><?= icono('seguridad', 'me-1') ?>Verificación en dos pasos</h2>
             <?php if (!empty($dosFactoresActiva)): ?>
                 <p class="small text-muted mb-2">
                     Activa desde <?= htmlspecialchars(substr((string) $usuario['totp_activado_en'], 0, 10), ENT_QUOTES) ?>.

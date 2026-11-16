@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { aceptarConfirmaciones } from './helpers/confirmacion.js';
 
 function filaConValor(page, valor) {
     return page.locator('tr').filter({ has: page.locator(`input[value="${valor}"]`) });
@@ -6,7 +7,7 @@ function filaConValor(page, valor) {
 
 test('crear, editar, desactivar/activar y eliminar un cargo', async ({ page }) => {
     // Activar/desactivar/eliminar piden confirmación (data-confirmar): se acepta.
-    page.on('dialog', (dialogo) => dialogo.accept());
+    await aceptarConfirmaciones(page);
     const nombre = `PW-TEST-Cargo-${Date.now()}`;
     const nombreEditado = `${nombre}-editado`;
 

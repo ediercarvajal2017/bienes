@@ -7,29 +7,28 @@ use App\Core\View;
 $viejo ??= [];
 $v = static fn (string $campo, mixed $porDefecto = '') => $viejo[$campo] ?? $porDefecto;
 ?>
-<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-    <h1 class="h4 mb-0">Reportar bien no registrado</h1>
+<?php ob_start(); ?>
     <a href="<?= Url::to('/escanear') ?>" class="btn btn-sm btn-outline-secondary">Volver</a>
-</div>
+<?= ui('encabezado_pagina', ['titulo' => 'Reportar bien no registrado', 'icono' => 'hallazgo', 'acciones' => (string) ob_get_clean()]) ?>
 
-<p class="text-muted small" style="max-width: 640px;">
+<p class="text-muted small contenedor-md">
     ¿Encontraste un bien físico en tu espacio que no tiene código ni QR? Repórtalo aquí con una
     descripción breve — quien administra la verificación lo revisará y, si corresponde, lo
     registrará formalmente en el sistema.
 </p>
 
-<p class="small mb-3" style="max-width: 640px;">
-    <a href="<?= Url::to('/bienes/buscar-por-foto') ?>"><i class="bi bi-camera me-1"></i>¿Ya existe con otra foto?
+<p class="small mb-3 contenedor-md">
+    <a href="<?= Url::to('/bienes/buscar-por-foto') ?>"><?= icono('foto', 'me-1') ?>¿Ya existe con otra foto?
     Búscalo antes de reportarlo</a>, para no duplicarlo.
 </p>
 
 <?php if (!empty($error)): ?>
-    <div class="alert alert-danger py-2 small" style="max-width: 640px;"><?= htmlspecialchars($error, ENT_QUOTES) ?></div>
+    <?= ui('alerta', ['tipo' => 'peligro', 'mensaje' => (string) $error, 'clases' => 'py-2 small contenedor-md']) ?>
 <?php endif; ?>
 
 <p class="text-muted small mb-2">Los campos marcados con <span class="text-danger">*</span> son obligatorios.</p>
 
-<form method="post" action="<?= Url::to('/hallazgos') ?>" enctype="multipart/form-data" class="row g-3" style="max-width: 640px;">
+<form method="post" action="<?= Url::to('/hallazgos') ?>" enctype="multipart/form-data" class="row g-3 contenedor-md">
     <?= Csrf::field() ?>
 
     <div class="col-12">

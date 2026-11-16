@@ -5,6 +5,7 @@ declare(strict_types=1);
 header_remove('X-Powered-By');
 
 require dirname(__DIR__) . '/vendor/autoload.php';
+require dirname(__DIR__) . '/app/Helpers/funciones_vista.php';
 
 \App\Helpers\PoliticaContenido::enviar();
 
@@ -70,13 +71,16 @@ use App\Controllers\FormatoReintegroController;
 use App\Controllers\HallazgoController;
 use App\Controllers\InstitucionController;
 use App\Controllers\ManualController;
+use App\Controllers\LoteReintegroController;
 use App\Controllers\MovimientoController;
+use App\Controllers\NotaController;
 use App\Controllers\PapeleraController;
 use App\Controllers\PasswordController;
 use App\Controllers\PoliticaController;
 use App\Controllers\QrController;
 use App\Controllers\QrMasivoController;
 use App\Controllers\ReintegroController;
+use App\Controllers\ReintegroUnidadesController;
 use App\Controllers\ReporteController;
 use App\Controllers\SedeActivaController;
 use App\Controllers\SolicitudReintegroController;
@@ -119,6 +123,12 @@ $router->post('/2fa/dispositivos/{id}/revocar', [DosFactoresController::class, '
 // Mi cuenta: seguridad de la propia cuenta (todos los roles).
 $router->get('/mi-cuenta', [CuentaController::class, 'index'], [AuthMiddleware::class]);
 $router->post('/mi-cuenta/contrasena', [CuentaController::class, 'cambiarContrasena'], [AuthMiddleware::class]);
+
+// Notas rápidas: privadas de cada usuario (todos los roles), responden en JSON.
+$router->get('/notas', [NotaController::class, 'index'], [AuthMiddleware::class]);
+$router->post('/notas', [NotaController::class, 'crear'], [AuthMiddleware::class]);
+$router->post('/notas/{id}', [NotaController::class, 'actualizar'], [AuthMiddleware::class]);
+$router->post('/notas/{id}/eliminar', [NotaController::class, 'eliminar'], [AuthMiddleware::class]);
 
 // Política de datos: la página es pública; la aceptación es obligatoria en el primer ingreso
 // (AuthMiddleware redirige a /politica/aceptar mientras esté pendiente).
@@ -351,10 +361,20 @@ $router->post('/reintegros', [ReintegroController::class, 'guardar'], [
 $router->get('/reintegros/buscar-qr', [ReintegroController::class, 'buscarPorQr'], [
     AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':asignaciones.crear',
 ]);
-$router->get('/reintegros/lotes/generar', [ReintegroController::class, 'pendientesDeLote'], [
+// Reintegro por cantidad de un código con varias unidades (alta masiva).
+$router->get('/reintegros/unidades', [ReintegroUnidadesController::class, 'index'], [
     AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':asignaciones.crear',
 ]);
-$router->post('/reintegros/lotes/generar', [ReintegroController::class, 'generarLote'], [
+$router->get('/reintegros/unidades/{lote}', [ReintegroUnidadesController::class, 'formulario'], [
+    AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':asignaciones.crear',
+]);
+$router->post('/reintegros/unidades/{lote}', [ReintegroUnidadesController::class, 'reintegrar'], [
+    AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':asignaciones.crear',
+]);
+$router->get('/reintegros/lotes/generar', [LoteReintegroController::class, 'pendientesDeLote'], [
+    AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':asignaciones.crear',
+]);
+$router->post('/reintegros/lotes/generar', [LoteReintegroController::class, 'generarLote'], [
     AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':asignaciones.crear',
 ]);
 // Solicitudes de reintegro (docente solicita; rector/secretario aprueba o rechaza).
@@ -377,13 +397,28 @@ $router->post('/reintegros/solicitudes/{id}/rechazar', [SolicitudReintegroContro
 $router->post('/reintegros/solicitudes/{id}/cancelar', [SolicitudReintegroController::class, 'cancelar'], [
     AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':reintegros.solicitar',
 ]);
-$router->get('/reintegros/lotes', [ReintegroController::class, 'lotes'], [
+$router->get('/reintegros/lotes', [LoteReintegroController::class, 'lotes'], [
     AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':asignaciones.crear',
 ]);
-$router->get('/reintegros/lotes/{id}', [ReintegroController::class, 'loteDetalle'], [
+// Estado de los lotes: marcar como reintegrados (entregados a la Alcaldía) y reabrir
+// (solo rector o superusuario: el controlador valida el rol). Antes de /lotes/{id}.
+$router->post('/reintegros/lotes/marcar-reintegrados', [LoteReintegroController::class, 'marcarReintegrados'], [
     AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':asignaciones.crear',
 ]);
-$router->get('/reintegros/lotes/{id}/formato.xlsx', [ReintegroController::class, 'loteFormato'], [
+// Unificar lotes pendientes en lotes nuevos, uno por categoría (vista previa y confirmación).
+$router->get('/reintegros/lotes/unificar', [LoteReintegroController::class, 'unificarPrevia'], [
+    AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':asignaciones.crear',
+]);
+$router->post('/reintegros/lotes/unificar', [LoteReintegroController::class, 'unificar'], [
+    AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':asignaciones.crear',
+]);
+$router->get('/reintegros/lotes/{id}', [LoteReintegroController::class, 'loteDetalle'], [
+    AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':asignaciones.crear',
+]);
+$router->get('/reintegros/lotes/{id}/formato.xlsx', [LoteReintegroController::class, 'loteFormato'], [
+    AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':asignaciones.crear',
+]);
+$router->post('/reintegros/lotes/{id}/reabrir', [LoteReintegroController::class, 'reabrir'], [
     AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':asignaciones.crear',
 ]);
 
@@ -459,12 +494,17 @@ $router->post('/hallazgos/{id}/descartar', [HallazgoController::class, 'descarta
 ]);
 
 $router->get('/manual', [ManualController::class, 'index'], [AuthMiddleware::class]);
+$router->get('/manual/ui', [ManualController::class, 'ui'], [AuthMiddleware::class, SuperusuarioMiddleware::class]);
 
 $router->get('/reportes', [ReporteController::class, 'index'], [
     AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':reportes.generar',
 ]);
 $router->get('/reportes/cartera.xlsx', [ReporteController::class, 'carteraXlsx'], [
     AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':reportes.generar',
+]);
+$router->get('/reportes/acta-a-cargo.xlsx', [ReporteController::class, 'actaACargo'], [
+    AuthMiddleware::class,
+    PermissionMiddleware::class . ':reportes.generar',
 ]);
 $router->get('/reportes/cartera.csv', [ReporteController::class, 'carteraCsv'], [
     AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':reportes.generar',
@@ -477,6 +517,14 @@ $router->get('/reportes/reintegros-historial.xlsx', [ReporteController::class, '
 ]);
 // Solo rector y superusuario (lo verifica el controlador): trae datos personales y la auditoría.
 $router->get('/reportes/exportacion-completa.zip', [ReporteController::class, 'exportacionCompleta'], [
+    AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':reportes.generar',
+]);
+// Actividad de los funcionarios (Excel): también solo rector y superusuario (lo verifica el controlador).
+$router->get('/reportes/actividad.xlsx', [ReporteController::class, 'actividad'], [
+    AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':reportes.generar',
+]);
+// Control del inventario (Excel): calidad, valor por espacio y categoría, funcionarios inactivos.
+$router->get('/reportes/control.xlsx', [ReporteController::class, 'control'], [
     AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':reportes.generar',
 ]);
 

@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { datos, bd } from './helpers/datos.js';
+import { confirmar } from './helpers/confirmacion.js';
 
 /**
  * Bodega de impresión de QR en dos pestañas: "Por imprimir" → (imprimir) → "Impresos,
@@ -45,8 +46,7 @@ test('imprimir pasa el bien a "Impresos, por pegar" y confirmar lo saca de la bo
     await expect(filaPegar).toBeVisible();
 
     await filaPegar.locator('.casilla-bien').check();
-    page.once('dialog', (d) => d.accept());
-    await page.locator('#botonConfirmarPegados').click();
+    await confirmar(page, () => page.locator('#botonConfirmarPegados').click());
     await expect(page.locator('.alert-success')).toContainText('1 sticker confirmado como pegado');
     await expect(page.locator('tr', { hasText: codigo })).toHaveCount(0);
 
@@ -80,4 +80,40 @@ test('no se confirma un bien sin imprimir ni uno de otra institución', async ({
     expect(respuesta).toBe(200);
 
     expect(bd(`SELECT COUNT(*) FROM bienes WHERE id IN (${sinImprimir.id}, ${otra.id}) AND qr_solicitado_en IS NOT NULL AND qr_confirmado_en IS NULL`)).toBe('2');
+});
+
+test('"Imprimir QR" viene desmarcada al crear, y guardar un bien sin marcarla no cambia la Bodega', async ({ page }) => {
+    await page.goto('bienes/crear');
+    await expect(page.locator('#imprimirQr')).not.toBeChecked();
+    await page.goto('bienes/alta-masiva');
+    await expect(page.locator('#imprimirQrLote')).not.toBeChecked();
+
+    // Bien ya impreso y pendiente de pegar: antes la casilla venía marcada y guardar lo
+    // devolvía a "por imprimir" (reimpresión sin querer).
+    const { id } = bienSolicitado(`PEGAR${Date.now()}`);
+    bd(`UPDATE bienes SET qr_solicitado_en = NOW() - INTERVAL 1 HOUR, qr_impreso_en = NOW() - INTERVAL 30 MINUTE WHERE id = ${id}`);
+    const solicitadoAntes = bd(`SELECT qr_solicitado_en FROM bienes WHERE id = ${id}`);
+
+    await page.goto(`bienes/${id}/editar`);
+    await expect(page.getByText('El QR ya se imprimió y está pendiente de pegar')).toBeVisible();
+    const volverAImprimir = page.getByLabel('Volver a imprimir el QR');
+    await expect(volverAImprimir).not.toBeChecked();
+    await page.locator('#botonGuardarBien').click();
+    await expect(page.locator('.alert-success')).toContainText('Bien actualizado');
+    expect(bd(`SELECT qr_solicitado_en FROM bienes WHERE id = ${id}`)).toBe(solicitadoAntes);
+
+    // Marcarla sí lo manda de nuevo a imprimir…
+    await page.goto(`bienes/${id}/editar`);
+    await page.getByLabel('Volver a imprimir el QR').check();
+    await page.locator('#botonGuardarBien').click();
+    await expect(page.locator('.alert-success')).toContainText('Bien actualizado');
+    expect(bd(`SELECT qr_impreso_en < qr_solicitado_en FROM bienes WHERE id = ${id}`)).toBe('1');
+
+    // …y "Quitar de la Bodega de QR" lo saca.
+    await page.goto(`bienes/${id}/editar`);
+    await expect(page.getByText('pendiente de imprimir')).toBeVisible();
+    await page.getByLabel('Quitar de la Bodega de QR').check();
+    await page.locator('#botonGuardarBien').click();
+    await expect(page.locator('.alert-success')).toContainText('Bien actualizado');
+    expect(bd(`SELECT qr_solicitado_en IS NULL FROM bienes WHERE id = ${id}`)).toBe('1');
 });

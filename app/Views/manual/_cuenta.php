@@ -3,7 +3,7 @@
     <div class="mt-2 small">
         <p class="mb-2">
             Entra a <strong>Mi cuenta</strong> tocando tu nombre en la barra superior (en el celular, el ícono
-            <i class="bi bi-person-circle" aria-hidden="true"></i>).
+            <?= icono('cuenta') ?>).
         </p>
         <ol class="mb-2 ps-3">
             <li><strong>Cambiar tu contraseña:</strong> escribe la actual y la nueva dos veces. Debe tener al menos 10
@@ -26,5 +26,23 @@
         <p class="mb-0 mt-2"><strong>Política de datos:</strong> la primera vez que ingresas, MIA te pide leer y aceptar
             la política de tratamiento de datos personales. En Mi cuenta ves cuándo la aceptaste, y siempre puedes
             leerla desde el enlace del pie de página.</p>
+    </div>
+</details>
+
+<details class="border rounded p-3 bg-body">
+    <summary class="fw-semibold">Notas rápidas: tus recordatorios</summary>
+    <div class="mt-2 small">
+        <p class="mb-2">
+            Como las notas adhesivas de Windows: toca el ícono <?= icono('nota') ?> de la
+            barra superior (el número a su lado es cuántas notas tienes) para abrir <strong>Mis notas</strong>.
+        </p>
+        <ol class="mb-2 ps-3">
+            <li>Pulsa <strong>Nueva nota</strong> y escribe. La nota se guarda sola mientras escribes; no hay botón de
+                guardar.</li>
+            <li>Elige su color con los círculos de abajo: amarillo, verde, rosado, azul o morado.</li>
+            <li>Para borrarla, toca el ícono de la papelera y confirma con <strong>Borrar</strong>.</li>
+        </ol>
+        <p class="mb-0 text-muted">Tus notas son <strong>privadas</strong>: solo tú las ves, ni el rector ni el
+            superusuario. Cada nota admite hasta 2.000 caracteres y puedes tener hasta 100.</p>
     </div>
 </details>

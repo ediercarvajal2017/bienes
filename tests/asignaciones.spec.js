@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { seleccionarPrimeraOpcionTomSelect } from './helpers/tomSelect.js';
+import { confirmar } from './helpers/confirmacion.js';
 
 /**
  * La pantalla de asignación masiva (/asignaciones) es distinta del panel "Asignar" de
@@ -37,8 +38,7 @@ test('asignar un bien desde la selección masiva de /asignaciones', async ({ pag
     const idEspacio = await page.locator('select[name="espacio_id"]').evaluate((el) => el.id);
     await seleccionarPrimeraOpcionTomSelect(page, idEspacio);
 
-    page.once('dialog', (dialog) => dialog.accept());
-    await page.locator('.boton-asignar').first().click();
+    await confirmar(page, () => page.locator('.boton-asignar').first().click());
 
     await expect(page.locator('.alert-success')).toBeVisible();
 

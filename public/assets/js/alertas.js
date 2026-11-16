@@ -9,7 +9,8 @@
 (function () {
     document.addEventListener('DOMContentLoaded', function () {
         document.querySelectorAll('.alert').forEach(function (alerta) {
-            if (alerta.querySelector('.btn-close')) { return; }
+            // data-sin-cerrar: un aviso de estado, no un mensaje (ui('alerta', ['cerrable' => false])).
+            if (alerta.querySelector('.btn-close') || alerta.hasAttribute('data-sin-cerrar')) { return; }
 
             alerta.classList.add('alert-dismissible', 'fade', 'show');
 

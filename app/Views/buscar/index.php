@@ -7,12 +7,9 @@ $sinResultados = $q !== ''
     && $totalBienes === 0 && $totalEspacios === 0 && $totalUsuarios === 0
     && !$sinPermisos;
 ?>
-<div class="mb-3">
-    <h1 class="h4 mb-0">Buscar</h1>
-    <p class="text-muted small mb-0">Bienes, espacios y usuarios de la institución seleccionada, en un solo lugar.</p>
-</div>
+<?= ui('encabezado_pagina', ['titulo' => 'Buscar', 'icono' => 'buscar', 'subtitulo' => 'Bienes, espacios y usuarios de la institución seleccionada, en un solo lugar.']) ?>
 
-<form method="get" action="<?= Url::to('/buscar') ?>" class="mb-4" style="max-width: 480px;">
+<form method="get" action="<?= Url::to('/buscar') ?>" class="mb-4 contenedor-sm">
     <input type="search" data-buscar-form name="q" class="form-control" autofocus
            placeholder="Buscar por código, nombre, documento..."
            value="<?= htmlspecialchars($q, ENT_QUOTES) ?>">
@@ -33,7 +30,7 @@ $sinResultados = $q !== ''
         <?php if ($puedeVerBienes && $totalBienes > 0): ?>
             <section>
                 <div class="d-flex justify-content-between align-items-baseline mb-2">
-                    <h2 class="h6 mb-0"><i class="bi bi-box-seam me-1"></i>Bienes (<?= $totalBienes ?>)</h2>
+                    <h2 class="h6 mb-0"><?= icono('bien', 'me-1') ?>Bienes (<?= $totalBienes ?>)</h2>
                     <?php if ($totalBienes > count($bienes)): ?>
                         <a class="small" href="<?= Url::to('/bienes') . '?q=' . urlencode($q) ?>">Ver todos</a>
                     <?php endif; ?>
@@ -45,7 +42,9 @@ $sinResultados = $q !== ''
                                 <?= htmlspecialchars($b['descripcion'], ENT_QUOTES) ?>
                                 <span class="text-muted small mono ms-1"><?= htmlspecialchars($b['codigo_identificacion'], ENT_QUOTES) ?></span>
                             </span>
-                            <span class="text-muted small"><?= htmlspecialchars($b['espacio_nombre'] ?? 'Sin asignar', ENT_QUOTES) ?></span>
+                            <span class="text-muted small"><?= htmlspecialchars(($b['tipo_responsabilidad'] ?? null) === 'individual'
+                                ? 'A cargo de ' . $b['responsables_nombres']
+                                : ($b['espacio_nombre'] ?? 'Sin asignar'), ENT_QUOTES) ?></span>
                         </a>
                     <?php endforeach; ?>
                 </div>
@@ -55,7 +54,7 @@ $sinResultados = $q !== ''
         <?php if ($puedeVerEspacios && $totalEspacios > 0): ?>
             <section>
                 <div class="d-flex justify-content-between align-items-baseline mb-2">
-                    <h2 class="h6 mb-0"><i class="bi bi-door-open me-1"></i>Espacios (<?= $totalEspacios ?>)</h2>
+                    <h2 class="h6 mb-0"><?= icono('espacio', 'me-1') ?>Espacios (<?= $totalEspacios ?>)</h2>
                     <?php if ($totalEspacios > count($espacios)): ?>
                         <a class="small" href="<?= Url::to('/espacios') . '?q=' . urlencode($q) ?>">Ver todos</a>
                     <?php endif; ?>
@@ -77,7 +76,7 @@ $sinResultados = $q !== ''
         <?php if ($puedeVerUsuarios && $totalUsuarios > 0): ?>
             <section>
                 <div class="d-flex justify-content-between align-items-baseline mb-2">
-                    <h2 class="h6 mb-0"><i class="bi bi-people me-1"></i>Usuarios (<?= $totalUsuarios ?>)</h2>
+                    <h2 class="h6 mb-0"><?= icono('usuarios', 'me-1') ?>Usuarios (<?= $totalUsuarios ?>)</h2>
                     <?php if ($totalUsuarios > count($usuarios)): ?>
                         <a class="small" href="<?= Url::to('/usuarios') . '?q=' . urlencode($q) ?>">Ver todos</a>
                     <?php endif; ?>

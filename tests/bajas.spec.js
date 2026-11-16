@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { seleccionarTomSelect } from './helpers/tomSelect.js';
+import { confirmar } from './helpers/confirmacion.js';
 
 /**
  * Reporta una baja desde la ficha pública /qr/{token}/baja y la aprueba desde /bajas.
@@ -49,8 +50,7 @@ test('reportar una baja y aprobarla', async ({ page }) => {
     await expect(filaBaja).toBeVisible();
     await expect(filaBaja.locator('.badge')).toHaveText('Pendiente');
 
-    page.once('dialog', (dialog) => dialog.accept());
-    await filaBaja.getByRole('button', { name: 'Aprobar' }).click();
+    await confirmar(page, () => filaBaja.getByRole('button', { name: 'Aprobar' }).click());
 
     await expect(page.locator('.alert-success')).toBeVisible();
     filaBaja = page.locator('tr', { hasText: descripcionBien });

@@ -172,7 +172,7 @@
                 preview.classList.add('d-none');
                 await listarCamaras();
             } catch (e) {
-                alert('No se pudo acceder a la cámara: ' + e.message);
+                window.miaConfirmar({ titulo: 'Cámara', mensaje: 'No se pudo acceder a la cámara: ' + e.message + '. Revisa el permiso de la cámara en el navegador o elige una foto guardada.', boton: 'Entendido', soloAceptar: true });
             }
         });
 
@@ -182,7 +182,7 @@
             try {
                 await abrirCamara(camaras[indiceCamara].deviceId);
             } catch (e) {
-                alert('No se pudo cambiar de cámara: ' + e.message);
+                window.miaConfirmar({ titulo: 'Cámara', mensaje: 'No se pudo cambiar de cámara: ' + e.message, boton: 'Entendido', soloAceptar: true });
             }
         });
 
@@ -205,6 +205,9 @@
                 const lista = new DataTransfer();
                 lista.items.add(archivo);
                 input.files = lista.files;
+                // Como si se hubiera elegido el archivo: la página que escucha "change"
+                // (p. ej. Buscar por foto) reacciona igual a una foto tomada en vivo.
+                input.dispatchEvent(new Event('change', { bubbles: true }));
 
                 preview.src = URL.createObjectURL(archivo);
                 preview.classList.remove('d-none');

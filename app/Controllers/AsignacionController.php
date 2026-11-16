@@ -13,12 +13,14 @@ use App\Core\Session;
 use App\Core\Url;
 use App\Core\View;
 use App\Helpers\FechaMovimiento;
+use App\Helpers\FiltrosBienes;
 use App\Helpers\Paginador;
 use App\Models\Asignacion;
 use App\Models\Auditoria;
 use App\Models\Bien;
 use App\Models\Espacio;
 use App\Models\Institucion;
+use App\Models\Usuario;
 use App\Services\CicloVidaBien;
 
 final class AsignacionController
@@ -38,16 +40,29 @@ final class AsignacionController
             $porPagina = self::POR_PAGINA_DEFECTO;
         }
 
-        $total = $institucionId !== null ? Bien::contarOperables($institucionId, $termino) : 0;
+        // Filtros para elegir los bienes: espacio, responsable y tipo de responsabilidad
+        // (p. ej. "todos los individuales de Ana", para pasarlos a otra persona).
+        $filtros = FiltrosBienes::desdeConsulta($_GET);
+        $espacioFiltro = $institucionId !== null ? $filtros['espacio'] : null;
+        $responsableFiltro = $institucionId !== null ? $filtros['responsable'] : null;
+        $tipoFiltro = $filtros['tipo'];
+
+        $total = $institucionId !== null ? Bien::contarOperables($institucionId, $termino, $espacioFiltro, $responsableFiltro, $tipoFiltro) : 0;
 
         View::layout('partials/layout', 'asignaciones/index', [
             'title' => 'Asignar bienes',
             'instituciones' => Auth::esSuperusuario() ? Institucion::listadoParaSelect(true) : [],
             'institucionId' => $institucionId,
             'espacios' => $institucionId !== null ? Espacio::listadoParaSelect($institucionId) : [],
+            'personas' => $institucionId !== null ? Usuario::elegiblesACargo($institucionId) : [],
 
-            'bienes' => $institucionId !== null ? Bien::operables($institucionId, $termino, $pagina, $porPagina) : [],
+            'bienes' => $institucionId !== null ? Bien::operables($institucionId, $termino, $pagina, $porPagina, $espacioFiltro, $responsableFiltro, $tipoFiltro) : [],
             'q' => $q,
+            'espacioFiltro' => $espacioFiltro,
+            'responsableFiltro' => $responsableFiltro,
+            'tipoFiltro' => $tipoFiltro,
+            'responsablesFiltro' => $institucionId !== null ? Usuario::paraFiltroResponsable($institucionId) : [],
+            'tipos' => FiltrosBienes::TIPOS,
             'pagina' => $pagina,
             'total' => $total,
             'totalPaginas' => Paginador::totalPaginas($total, $porPagina),
@@ -65,10 +80,15 @@ final class AsignacionController
         $request = new Request();
 
         $bienIds = array_unique(array_map('intval', (array) $request->input('bienes', [])));
+        // Responsabilidad: Grupal (espacio obligatorio) o Individual (persona obligatoria,
+        // espacio opcional como "guardado en").
+        $individual = $request->input('tipo_responsabilidad') === 'individual';
         $espacioIdRaw = (string) $request->input('espacio_id');
+        $personaId = $individual ? (int) $request->input('persona_id') : 0;
         $fecha = (string) $request->input('fecha_asignacion');
         $observaciones = trim((string) $request->input('observaciones')) ?: null;
-        $viejo = ['bienes' => $bienIds, 'espacio_id' => $espacioIdRaw, 'fecha_asignacion' => $fecha, 'observaciones' => $observaciones];
+        $viejo = ['bienes' => $bienIds, 'tipo_responsabilidad' => $individual ? 'individual' : 'grupal', 'espacio_id' => $espacioIdRaw,
+            'persona_id' => $personaId ?: '', 'fecha_asignacion' => $fecha, 'observaciones' => $observaciones];
 
         $this->verificarCsrf($request, $viejo);
 
@@ -82,33 +102,35 @@ final class AsignacionController
             exit;
         }
 
-        $errorFecha = FechaMovimiento::error($fecha);
-        if ($espacioIdRaw === '' || $errorFecha !== null) {
-            Session::flash('error', $espacioIdRaw === '' ? 'Selecciona un espacio.' : $errorFecha);
-            Session::flashOld($viejo);
-            header('Location: ' . Url::to($volverA));
-            exit;
-        }
-
         $espacioId = (int) $espacioIdRaw;
-
-        if (!Espacio::perteneceYActivo($espacioId, (int) $institucionId)) {
-            Session::flash('error', 'El espacio seleccionado no es válido (debe ser un espacio activo de la institución).');
+        $error = FechaMovimiento::error($fecha);
+        if ($error === null && $individual && ($personaId <= 0 || Usuario::elegibleACargo($personaId, $institucionId) === null)) {
+            $error = $personaId <= 0 ? 'Selecciona la persona responsable.'
+                : 'La persona seleccionada no puede tener bienes a cargo (debe ser un usuario activo de la institución).';
+        }
+        if ($error === null && !$individual && $espacioId <= 0) {
+            $error = 'Selecciona un espacio.';
+        }
+        if ($error === null && $espacioId > 0 && !Espacio::perteneceYActivo($espacioId, (int) $institucionId)) {
+            $error = 'El espacio seleccionado no es válido (debe ser un espacio activo de la institución).';
+        }
+        if ($error !== null) {
+            Session::flash('error', $error);
             Session::flashOld($viejo);
             header('Location: ' . Url::to($volverA));
             exit;
         }
 
-        $resultado = $this->asignarLote($bienIds, $institucionId, $espacioId, $fecha, $observaciones);
+        $resultado = $this->asignarLote($bienIds, $institucionId, $espacioId ?: null, $personaId ?: null, $fecha, $observaciones);
 
         if ($resultado === null) {
             Session::flash('error', 'Ocurrió un error al procesar la asignación masiva. No se aplicó ningún cambio.');
             Session::flashOld($viejo);
         } elseif ($resultado['asignados'] === 0) {
-            Session::flash('error', 'Ningún bien seleccionado pudo asignarse.' . $this->textoOmitidos($resultado));
+            Session::flash('error', 'Ningún bien seleccionado pudo asignarse.' . $this->textoOmitidos($resultado, $individual));
             Session::flashOld($viejo);
         } else {
-            Session::flash('ok', $resultado['asignados'] . ' bien(es) asignado(s) correctamente.' . $this->textoOmitidos($resultado));
+            Session::flash('ok', $resultado['asignados'] . ' bien(es) asignado(s) correctamente.' . $this->textoOmitidos($resultado, $individual));
         }
 
         header('Location: ' . Url::to($volverA));
@@ -116,21 +138,21 @@ final class AsignacionController
     }
 
     /**
-     * Asigna (o traslada, si ya tenía espacio) cada bien del lote con las MISMAS reglas que
-     * la ficha del bien (CicloVidaBien::asignarOTrasladar): así un bien que cambia de
-     * espacio deja su movimiento de traslado en el historial, y no se repite la asignación
-     * si ya estaba en ese espacio. Todo en una única transacción. Se omiten los bienes de
-     * otra institución, los dados de baja y los reintegrados (un reintegrado solo vuelve a
-     * circular con "Reactivar").
+     * Asigna (o traslada, si ya tenía una asignación) cada bien del lote con las MISMAS
+     * reglas que la ficha del bien (CicloVidaBien::asignarResponsabilidad): así un bien que
+     * cambia de espacio o de persona deja su movimiento de traslado en el historial, y no se
+     * repite la asignación si ya tenía esa misma responsabilidad. Todo en una única
+     * transacción. Se omiten los bienes de otra institución, los dados de baja y los
+     * reintegrados (un reintegrado solo vuelve a circular con "Reactivar").
      *
      * @return array{asignados: int, reintegrados: int, mismoEspacio: int, otros: int}|null  null si falló todo
      */
-    private function asignarLote(array $bienIds, int $institucionId, int $espacioId, string $fecha, ?string $observaciones): ?array
+    private function asignarLote(array $bienIds, int $institucionId, ?int $espacioId, ?int $personaId, string $fecha, ?string $observaciones): ?array
     {
         $resultado = ['asignados' => 0, 'reintegrados' => 0, 'mismoEspacio' => 0, 'otros' => 0];
 
         try {
-            return Database::transaccion(static function () use ($bienIds, $institucionId, $espacioId, $fecha, $observaciones, $resultado): array {
+            return Database::transaccion(static function () use ($bienIds, $institucionId, $espacioId, $personaId, $fecha, $observaciones, $resultado): array {
                 foreach ($bienIds as $bienId) {
                     $bien = Bien::find($bienId);
                     if (!$bien || $bien['estado'] === 'dado_de_baja' || (int) $bien['institucion_id'] !== $institucionId) {
@@ -142,12 +164,13 @@ final class AsignacionController
                         continue;
                     }
                     $actual = Asignacion::activaDe((int) $bienId);
-                    if ($actual && (int) $actual['espacio_id'] === $espacioId) {
+                    if ($actual && (int) ($actual['espacio_id'] ?? 0) === (int) $espacioId
+                        && (int) ($actual['usuario_responsable_id'] ?? 0) === (int) $personaId) {
                         $resultado['mismoEspacio']++;
                         continue;
                     }
 
-                    CicloVidaBien::asignarOTrasladar((array) $bien, $espacioId, $fecha, $observaciones);
+                    CicloVidaBien::asignarResponsabilidad((array) $bien, $espacioId, $personaId, $fecha, $observaciones);
                     $resultado['asignados']++;
                 }
 
@@ -160,11 +183,13 @@ final class AsignacionController
         }
     }
 
-    private function textoOmitidos(array $resultado): string
+    private function textoOmitidos(array $resultado, bool $individual): string
     {
         $texto = '';
         if ($resultado['mismoEspacio'] > 0) {
-            $texto .= " {$resultado['mismoEspacio']} bien(es) ya estaban en ese espacio.";
+            $texto .= $individual
+                ? " {$resultado['mismoEspacio']} bien(es) ya estaban a cargo de esa persona."
+                : " {$resultado['mismoEspacio']} bien(es) ya estaban en ese espacio.";
         }
         if ($resultado['reintegrados'] > 0) {
             $texto .= " Se omitieron {$resultado['reintegrados']} bien(es) reintegrado(s): para volver a asignarlos use \"Reactivar\" en la ficha del bien.";

@@ -1,0 +1,172 @@
+/*
+ * Tokens de diseño de MIA. Única fuente de colores, tipografía, espaciado, radios, sombras,
+ * tamaños de ícono y transiciones; app.css y los componentes (app/Views/partials/ui) los usan
+ * con var(--sigebi-…). Se carga después de Bootstrap y antes de app.css.
+ *
+ * Contraste (WCAG 2.1 AA, 4,5:1 para texto): cada par texto/fondo de este archivo se midió;
+ * el valor va al lado. Las variantes de modo oscuro están al final.
+ * Guía: docs/guia-estilo-ui.md.
+ */
+:root {
+  /* ── Paleta institucional ── */
+  --sigebi-primary: #1F6F54;                /* texto y enlaces: 6,1:1 sobre blanco */
+  --sigebi-primary-rgb: 31, 111, 84;
+  --sigebi-primary-relleno: #1F6F54;        /* fondo de botón con texto blanco: 6,1:1 */
+  --sigebi-primary-relleno-hover: #145C43;  /* 7,9:1 */
+  --sigebi-secondary: #145C43;
+  --sigebi-accent: #F2B134;                 /* solo como fondo, con texto --sigebi-gris-800: 7,8:1 */
+  --sigebi-success: #237A46;                /* fondo con texto blanco: 5,3:1 */
+  --sigebi-danger: #C0392B;                 /* fondo con texto blanco y texto sobre blanco: 5,4:1 */
+  --sigebi-danger-hover: #A13024;
+  --sigebi-warning: #8A5A00;                /* texto de advertencia: 5,9:1 sobre blanco */
+  --sigebi-info: #1D5F8A;                   /* 6,9:1 sobre blanco */
+
+  /* ── Neutros ── */
+  --sigebi-gris-50: #F5F7FA;
+  --sigebi-gris-100: #EEF1F4;
+  --sigebi-gris-200: #E2E6EB;
+  --sigebi-gris-300: #CBD2DA;
+  --sigebi-gris-400: #9AA4B0;
+  --sigebi-gris-500: #6B7480;
+  --sigebi-gris-600: #4B5563;
+  --sigebi-gris-700: #374151;
+  --sigebi-gris-800: #1F2937;
+  --sigebi-gris-900: #111827;
+
+  /* ── Superficies, bordes y texto ── */
+  --sigebi-bg: var(--sigebi-gris-50);
+  --sigebi-surface: #FFFFFF;
+  --sigebi-surface-2: var(--sigebi-gris-100);
+  --sigebi-border: #D9DEE4;
+  --sigebi-text: var(--sigebi-gris-800);         /* 13,7:1 sobre el fondo */
+  --sigebi-text-muted: var(--sigebi-gris-600);   /* 7,0:1 sobre el fondo */
+
+  /* ── Estados: fondo suave + texto + borde (avisos e insignias de solicitud) ── */
+  --sigebi-exito-fondo: #E3F3E9;      --sigebi-exito-texto: #1B5E37;      --sigebi-exito-borde: #7CBF96;
+  --sigebi-peligro-fondo: #FBE9E7;    --sigebi-peligro-texto: #8E2A20;    --sigebi-peligro-borde: #E5A39B;
+  --sigebi-advertencia-fondo: #FFF4D6; --sigebi-advertencia-texto: #6B4600; --sigebi-advertencia-borde: #E0B54D;
+  --sigebi-info-fondo: #E6F0F8;       --sigebi-info-texto: #1D5F8A;       --sigebi-info-borde: #9DC1DD;
+  --sigebi-neutro-fondo: #F1F2F4;     --sigebi-neutro-texto: #3F4650;     --sigebi-neutro-borde: #B3B9C1;
+
+  /* ── Tipografía: una sola familia, la del sistema (pila nativa de Bootstrap) ── */
+  --sigebi-fuente: var(--bs-font-sans-serif);
+  --sigebi-fuente-mono: ui-monospace, "Cascadia Code", "SF Mono", Consolas, monospace;
+  --sigebi-texto-h1: 1.5rem;      /* título de página */
+  --sigebi-texto-h2: 1.125rem;    /* título de sección o tarjeta */
+  --sigebi-texto-h3: 1rem;
+  --sigebi-texto-h4: .9375rem;
+  --sigebi-texto-h5: .875rem;
+  --sigebi-texto-h6: .8125rem;
+  --sigebi-texto-cuerpo: 1rem;
+  --sigebi-texto-pequeno: .875rem;
+  --sigebi-texto-minimo: .8125rem;
+  --sigebi-peso-normal: 400;
+  --sigebi-peso-medio: 500;
+  --sigebi-peso-fuerte: 600;
+
+  /* ── Espaciado (escala de 4 px) ── */
+  --sigebi-espacio-1: 4px;
+  --sigebi-espacio-2: 8px;
+  --sigebi-espacio-3: 12px;
+  --sigebi-espacio-4: 16px;
+  --sigebi-espacio-5: 24px;
+  --sigebi-espacio-6: 32px;
+  --sigebi-espacio-7: 48px;
+
+  /* ── Radios y sombras: sobrios ── */
+  --sigebi-radio-sm: 4px;
+  --sigebi-radio: 6px;
+  --sigebi-sombra: 0 1px 2px rgba(17, 24, 39, .06);
+  --sigebi-sombra-flotante: 0 4px 12px rgba(17, 24, 39, .14);  /* menús, paneles y globos que flotan */
+  --sigebi-foco: 0 0 0 .2rem rgba(var(--sigebi-primary-rgb), .25);
+
+  /* ── Íconos ── */
+  --sigebi-icono-sm: 16px;
+  --sigebi-icono-md: 20px;
+  --sigebi-icono-lg: 24px;
+
+  /* ── Movimiento: corto y solo donde informa ── */
+  --sigebi-transicion: 150ms ease-out;
+
+  /* ── Anchos de contenido (formularios y páginas de lectura) ── */
+  --sigebi-ancho-sm: 480px;
+  --sigebi-ancho-md: 760px;
+  --sigebi-ancho-lg: 1040px;
+
+  /* ── Bootstrap toma los tokens ── */
+  --bs-primary: var(--sigebi-primary);
+  --bs-primary-rgb: 31, 111, 84;
+  --bs-success: var(--sigebi-success);
+  --bs-success-rgb: 35, 122, 70;
+  --bs-danger: var(--sigebi-danger);
+  --bs-danger-rgb: 192, 57, 43;
+  --bs-link-color: var(--sigebi-primary);
+  --bs-link-color-rgb: 31, 111, 84;
+  --bs-link-hover-color: var(--sigebi-secondary);
+  --bs-link-hover-color-rgb: 20, 92, 67;
+  --bs-secondary-color: var(--sigebi-text-muted);
+  --bs-border-color: var(--sigebi-border);
+  --bs-border-radius: var(--sigebi-radio);
+  --bs-border-radius-sm: var(--sigebi-radio-sm);
+  --bs-border-radius-lg: var(--sigebi-radio);
+  --bs-border-radius-xl: var(--sigebi-radio);
+  --bs-border-radius-xxl: var(--sigebi-radio);
+  --bs-box-shadow: var(--sigebi-sombra-flotante);
+  --bs-box-shadow-sm: var(--sigebi-sombra);
+  --bs-box-shadow-lg: var(--sigebi-sombra-flotante);
+}
+
+/* ── Modo oscuro ──
+   Se redefinen las variables propias y las de Bootstrap para que toda la interfaz herede el
+   tema sin parchear elemento por elemento. El verde de TEXTO se aclara (4,8:1 sobre la
+   superficie) y el de RELLENO se oscurece (4,9:1 con texto blanco): un solo verde no cumple
+   ambos usos en fondo oscuro. */
+[data-bs-theme="dark"] {
+  color-scheme: dark;
+
+  --sigebi-primary: #2F9C72;                /* 4,8:1 sobre la superficie */
+  --sigebi-primary-rgb: 47, 156, 114;
+  --sigebi-primary-relleno: #23805D;        /* texto blanco: 4,9:1 */
+  --sigebi-primary-relleno-hover: #1D6B4E;
+  --sigebi-secondary: #23855F;
+  --sigebi-warning: #E8B04A;                /* 8,5:1 sobre la superficie */
+  --sigebi-info: #7CB8E8;                   /* 7,8:1 */
+
+  --sigebi-bg: #0F141A;
+  --sigebi-surface: #171F28;
+  --sigebi-surface-2: #1E2831;
+  --sigebi-border: #2B3742;
+  --sigebi-text: #E6EAEF;                   /* 15,3:1 sobre el fondo */
+  --sigebi-text-muted: #A9B4C0;             /* 7,9:1 sobre la superficie */
+
+  --sigebi-exito-fondo: #16301F;      --sigebi-exito-texto: #86D7A4;      --sigebi-exito-borde: #2F6B46;
+  --sigebi-peligro-fondo: #3A1A17;    --sigebi-peligro-texto: #F19A8F;    --sigebi-peligro-borde: #8E3B33;
+  --sigebi-advertencia-fondo: #3A2F12; --sigebi-advertencia-texto: #F3CF73; --sigebi-advertencia-borde: #8A6D24;
+  --sigebi-info-fondo: #132838;       --sigebi-info-texto: #7CB8E8;       --sigebi-info-borde: #2D5A7C;
+  --sigebi-neutro-fondo: #222B35;     --sigebi-neutro-texto: #C9D1DA;     --sigebi-neutro-borde: #4A5664;
+
+  --sigebi-sombra: 0 1px 2px rgba(0, 0, 0, .4);
+  --sigebi-sombra-flotante: 0 4px 12px rgba(0, 0, 0, .5);
+
+  --bs-primary-rgb: 35, 128, 93;            /* Bootstrap lo usa de fondo (text-bg-primary): el de relleno */
+  --bs-body-bg: #0F141A;
+  --bs-body-bg-rgb: 15, 20, 26;
+  --bs-body-color: #E6EAEF;
+  --bs-body-color-rgb: 230, 234, 239;
+  --bs-emphasis-color: #FFFFFF;
+  --bs-secondary-color: var(--sigebi-text-muted);
+  --bs-secondary-bg: var(--sigebi-surface-2);
+  --bs-tertiary-bg: var(--sigebi-surface);
+  --bs-tertiary-color: rgba(230, 234, 239, .5);
+  --bs-border-color: var(--sigebi-border);
+  --bs-border-color-translucent: rgba(255, 255, 255, .1);
+
+  --bs-card-bg: var(--sigebi-surface);
+  --bs-card-cap-bg: var(--sigebi-surface);
+  --bs-card-border-color: var(--sigebi-border);
+
+  --bs-link-color: #6FE3A8;                 /* 10,5:1 sobre la superficie */
+  --bs-link-color-rgb: 111, 227, 168;
+  --bs-link-hover-color: #8FF0BF;
+  --bs-link-hover-color-rgb: 143, 240, 191;
+}

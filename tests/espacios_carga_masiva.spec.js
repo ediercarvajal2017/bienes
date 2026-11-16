@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { confirmar } from './helpers/confirmacion.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const fixture = path.join(__dirname, 'fixtures', 'espacios_carga_masiva.xlsx');
@@ -19,8 +20,7 @@ test('carga masiva de espacios con filas inválidas no dice "aplicada correctame
 
     await expect(page).toHaveURL(/\/espacios\/carga-masiva\/\d+/);
 
-    page.once('dialog', (dialog) => dialog.accept());
-    await page.getByRole('button', { name: 'Confirmar importación' }).click();
+    await confirmar(page, () => page.getByRole('button', { name: 'Confirmar importación' }).click());
 
     const alerta = page.locator('.alert-danger');
     await expect(alerta).toBeVisible();

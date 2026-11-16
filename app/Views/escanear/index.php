@@ -3,20 +3,19 @@
 use App\Core\Url;
 
 ?>
-<h1 class="h4 mb-3">Escanear código QR</h1>
-<p class="text-muted small">Apunta la cámara del celular al código QR pegado sobre el bien.</p>
+<?= ui('encabezado_pagina', ['titulo' => 'Escanear código QR', 'icono' => 'escanear', 'subtitulo' => 'Apunta la cámara del celular al código QR pegado sobre el bien.']) ?>
 
-<?php if (!empty($mensaje)): ?><div class="alert alert-success py-2 small contenedor-escaner"><?= htmlspecialchars($mensaje, ENT_QUOTES) ?></div><?php endif; ?>
-<?php if (!empty($error)): ?><div class="alert alert-danger py-2 small contenedor-escaner"><?= htmlspecialchars($error, ENT_QUOTES) ?></div><?php endif; ?>
+<?php if (!empty($mensaje)): ?><?= ui('alerta', ['tipo' => 'exito', 'mensaje' => (string) $mensaje, 'clases' => 'py-2 small contenedor-escaner']) ?><?php endif; ?>
+<?php if (!empty($error)): ?><?= ui('alerta', ['tipo' => 'peligro', 'mensaje' => (string) $error, 'clases' => 'py-2 small contenedor-escaner']) ?><?php endif; ?>
 
 <div class="contenedor-escaner">
     <div id="lector-qr" class="rounded border overflow-hidden bg-dark"></div>
     <div class="d-flex gap-2 mt-2">
         <button type="button" id="btnCambiarCamara" class="btn btn-outline-secondary flex-fill d-none">
-            <i class="bi bi-arrow-repeat me-1" aria-hidden="true"></i>Cambiar cámara
+            <?= icono('cambiar', 'me-1') ?>Cambiar cámara
         </button>
         <button type="button" id="btnLinterna" class="btn btn-outline-secondary flex-fill d-none">
-            <i class="bi bi-flashlight me-1" aria-hidden="true"></i>Linterna
+            <?= icono('linterna', 'me-1') ?>Linterna
         </button>
     </div>
     <p id="mensajeEstadoCamara" class="small text-danger mt-2 mb-0" role="status" aria-live="polite"></p>
@@ -33,8 +32,8 @@ use App\Core\Url;
 <?php if (!empty($jornadaActiva)): ?>
     <div class="alert alert-secondary mt-4 py-3 contenedor-escaner">
         <div class="small mb-2">¿Encontraste un bien físico que no tiene código ni QR?</div>
-        <a href="<?= Url::to('/hallazgos/crear') ?>" class="btn btn-sm btn-outline-primary">
-            <i class="bi bi-flag me-1"></i>Reportar bien no registrado
+        <a href="<?= Url::to('/hallazgos/crear') ?>" class="btn btn-sm btn-outline-secondary">
+            <?= icono('hallazgo', 'me-1') ?>Reportar bien no registrado
         </a>
     </div>
 <?php endif; ?>
@@ -95,7 +94,7 @@ use App\Core\Url;
     // no la soporta vía web) — el botón solo se muestra cuando de verdad se puede usar.
     function actualizarLinterna() {
         linternaEncendida = false;
-        btnLinterna.classList.remove('btn-warning');
+        btnLinterna.classList.remove('btn-primary');
         btnLinterna.classList.add('btn-outline-secondary', 'd-none');
         try {
             const soportada = lector.getRunningTrackCameraCapabilities().torchFeature().isSupported();
@@ -150,7 +149,7 @@ use App\Core\Url;
         try {
             linternaEncendida = !linternaEncendida;
             await lector.getRunningTrackCameraCapabilities().torchFeature().apply(linternaEncendida);
-            btnLinterna.classList.toggle('btn-warning', linternaEncendida);
+            btnLinterna.classList.toggle('btn-primary', linternaEncendida);
             btnLinterna.classList.toggle('btn-outline-secondary', !linternaEncendida);
         } catch (e) {
             linternaEncendida = !linternaEncendida;

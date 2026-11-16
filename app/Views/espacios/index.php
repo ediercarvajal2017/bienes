@@ -8,25 +8,46 @@ use App\Core\View;
 $urlBasePaginacion = Url::to('/espacios') . ($busqueda !== '' ? '?q=' . urlencode($busqueda) : '');
 $puedeCrearEspacio = Auth::esSuperusuario() || Auth::tienePermiso('espacios.crear');
 ?>
-<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-    <h1 class="h4 mb-0">Espacios</h1>
+<?php ob_start(); ?>
     <?php if (Auth::esSuperusuario() || Auth::tienePermiso('espacios.crear')): ?>
         <div class="d-flex gap-2">
             <a href="<?= Url::to('/espacios/carga-masiva') ?>" class="btn btn-outline-secondary btn-sm">
-                <i class="bi bi-file-earmark-excel me-1"></i>Carga masiva
+                <?= icono('subir', 'me-1') ?>Carga masiva
             </a>
             <a href="<?= Url::to('/espacios/crear') ?>" class="btn btn-primary btn-sm">
-                <i class="bi bi-plus-lg me-1"></i>Nuevo espacio
+                <?= icono('crear', 'me-1') ?>Nuevo espacio
             </a>
-        </div>
+        
+<?= ui('encabezado_pagina', ['titulo' => 'Espacios', 'icono' => 'espacio', 'acciones' => (string) ob_get_clean()]) ?>
     <?php endif; ?>
 </div>
 
 <?php if (!empty($mensaje)): ?>
-    <div class="alert alert-success py-2 small"><?= htmlspecialchars($mensaje, ENT_QUOTES) ?></div>
+    <?= ui('alerta', ['tipo' => 'exito', 'mensaje' => (string) $mensaje, 'clases' => 'py-2 small']) ?>
+<?php endif; ?>
+<?php if (!empty($error)): ?>
+    <div class="alert alert-danger py-2 small contenedor-md" role="alert">
+        <?= htmlspecialchars($error, ENT_QUOTES) ?>
+        <?php if (!empty($errorDetalle['bienes'])): ?>
+            <ul class="mb-1 mt-2 ps-3">
+                <?php foreach ($errorDetalle['bienes'] as $b): ?>
+                    <li>
+                        <a href="<?= Url::to('/bienes/' . (int) $b['id'] . '/editar') ?>" class="alert-link mono"><?= htmlspecialchars((string) $b['codigo'], ENT_QUOTES) ?></a>
+                        · <?= htmlspecialchars((string) $b['descripcion'], ENT_QUOTES) ?>
+                    </li>
+                <?php endforeach; ?>
+                <?php if ((int) ($errorDetalle['mas'] ?? 0) > 0): ?>
+                    <li class="list-unstyled text-body-secondary">y <?= (int) $errorDetalle['mas'] ?> más.</li>
+                <?php endif; ?>
+            </ul>
+        <?php endif; ?>
+        <?php if (!empty($errorDetalle['consejo'])): ?>
+            <div class="mt-1"><?= htmlspecialchars((string) $errorDetalle['consejo'], ENT_QUOTES) ?></div>
+        <?php endif; ?>
+    </div>
 <?php endif; ?>
 
-<div class="mb-3" style="max-width: 420px;">
+<div class="mb-3 contenedor-sm">
     <label for="buscador" class="form-label small mb-1">Buscar</label>
     <input type="search" id="buscador" data-buscar="q" class="form-control form-control-sm"
            placeholder="Buscar por código o nombre..."

@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { confirmar } from './helpers/confirmacion.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const fixture = path.join(__dirname, 'fixtures', 'carga_masiva_bienes.xlsx');
@@ -24,8 +25,7 @@ test('carga masiva con filas inválidas no dice "aplicada correctamente"', async
     await expect(page).toHaveURL(/\/cargas-masivas\/\d+/);
     await expect(page.getByText('con error')).toBeVisible();
 
-    page.once('dialog', (dialog) => dialog.accept());
-    await page.getByRole('button', { name: 'Confirmar importación' }).click();
+    await confirmar(page, () => page.getByRole('button', { name: 'Confirmar importación' }).click());
 
     const alerta = page.locator('.alert-danger');
     await expect(alerta).toBeVisible();

@@ -165,6 +165,29 @@ Para probarlo a mano: `php database/herramientas/resumen_errores.php --fecha=AAA
 unos 7 días sin avisos de CSP reales, se cambia en `App\Helpers\PoliticaContenido`
 `Content-Security-Policy-Report-Only` por `Content-Security-Policy`.
 
+## Hora de Colombia en la base (una sola vez)
+
+La base de Hostinger está en UTC y MIA en hora de Colombia: las horas que ponía la base
+(último ingreso, "resuelta el", aceptación de la política...) quedaban 5 horas adelantadas.
+Se corrige con `DB_ZONA_HORARIA=-05:00` en el `.env` más una corrección única de lo ya guardado,
+en una ventana de mantenimiento de segundos (sin escrituras en curso, no se mezclan horas):
+
+```bash
+cd ~/domains/ediertech.com/public_html/bienes
+php database/correcciones/horas_a_colombia.php                 # simulación: revisar "coincide"
+touch public/mantenimiento.flag                                 # nadie escribe mientras tanto
+php database/respaldo.php --sin-correo --salida=$HOME/storage_sigebi/backups/pre-horas.sql.gz
+php database/correcciones/horas_a_colombia.php --aplicar       # resta 5 h y deja la marca
+echo "DB_ZONA_HORARIA=-05:00" >> .env
+rm public/mantenimiento.flag
+```
+
+El script se niega a correr dos veces (marca en `storage_sigebi/backups/`) o con la zona ya
+activa. No toca las fechas que escribe PHP (enlace de "olvidé mi contraseña", cierre de
+verificaciones) ni las TIMESTAMP (auditoría, creado/actualizado), que se leen bien solas.
+Los respaldos se escriben en UTC y lo declaran (`SET TIME_ZONE='+00:00'`), así que se
+restauran con las mismas horas en cualquier servidor.
+
 ## Historial
 
 | Fecha | Versión | Migraciones | Notas |

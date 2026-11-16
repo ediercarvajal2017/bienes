@@ -75,7 +75,9 @@ test('bienes: el checkbox "Imprimir QR" de alta masiva agrega el lote a la Bodeg
     await page.locator('input[name="lote"]').fill(lote);
     await page.locator('input[name="cantidad"]').fill('2');
     await page.locator('input[name="descripcion"]').fill('PW-TEST lote para bodega QR');
-    await expect(page.locator('#imprimirQrLote')).toBeChecked();
+    // Viene desmarcada: solo se imprime cuando el usuario lo pide.
+    await expect(page.locator('#imprimirQrLote')).not.toBeChecked();
+    await page.locator('#imprimirQrLote').check();
     await page.getByRole('button', { name: 'Crear bienes del lote' }).click();
     await expect(page).toHaveURL(/\/bienes$/);
 

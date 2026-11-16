@@ -138,7 +138,7 @@ $esEtiqueta = $formato === 'etiqueta';
         <?php endif; ?>
     </div>
     <button type="button" class="btn btn-primary" id="botonImprimir" onclick="window.print()" disabled>
-        <i class="bi bi-printer me-1"></i>Imprimir
+        <?= icono('imprimir', 'me-1') ?>Imprimir
     </button>
 </div>
 

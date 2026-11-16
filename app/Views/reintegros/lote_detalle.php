@@ -1,61 +1,150 @@
 <?php
 
+use App\Core\Csrf;
 use App\Core\Url;
+use App\Helpers\FechaMovimiento;
+use App\Models\LoteReintegro;
 
+$e = static fn (?string $texto): string => htmlspecialchars((string) $texto, ENT_QUOTES);
+$estado = (string) $lote['estado'];
 ?>
-<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-    <h1 class="h4 mb-0">Lote de reintegro #<?= (int) $lote['id'] ?></h1>
-    <div class="d-flex gap-2">
-        <a href="<?= Url::to('/reintegros/lotes') ?>" class="btn btn-sm btn-outline-secondary">Volver</a>
-        <a href="<?= Url::to('/reintegros/lotes/' . $lote['id'] . '/formato.xlsx') ?>" class="btn btn-sm btn-primary">
-            <i class="bi bi-file-earmark-excel me-1"></i>Descargar comprobante (FO-ADMI-009)
-        </a>
-    </div>
-</div>
+<?php ob_start(); ?>
+<?= ui('boton', ['texto' => 'Volver', 'icono' => 'volver', 'tamano' => 'sm', 'url' => Url::to('/reintegros/lotes')]) ?>
+<?php if ($estado !== 'unificado'): ?>
+    <?= ui('boton', ['texto' => 'Descargar comprobante (FO-ADMI-009)', 'icono' => 'exportar_excel', 'tamano' => 'sm',
+        'url' => Url::to('/reintegros/lotes/' . $lote['id'] . '/formato.xlsx')]) ?>
+<?php endif; ?>
+<?= ui('encabezado_pagina', ['titulo' => 'Lote de reintegro #' . (int) $lote['id'], 'icono' => 'reintegro',
+    'insignia' => ui('insignia_estado', ['tipo' => 'lote', 'estado' => $estado]), 'acciones' => (string) ob_get_clean()]) ?>
 
-<div class="card mb-3" style="max-width: 680px;">
+<?php if (!empty($mensaje)): ?><div class="alert alert-success py-2 small contenedor-md"><?= $e($mensaje) ?></div><?php endif; ?>
+<?php if (!empty($error)): ?><div class="alert alert-danger py-2 small contenedor-md"><?= $e($error) ?></div><?php endif; ?>
+
+<?php if ($estado === 'pendiente'): ?>
+    <div class="estado-lote estado-lote-pendiente contenedor-md">
+        <strong>Pendiente de entrega</strong> (lote generado <?= $e(FechaMovimiento::antiguedad((string) $lote['fecha'])) ?>).
+        Cuando lo entregues a la Alcaldía con su comprobante, márcalo como reintegrado.
+        <form method="post" action="<?= Url::to('/reintegros/lotes/marcar-reintegrados') ?>" class="row g-2 align-items-end mt-1"
+              data-confirmar="¿Marcar el lote #<?= (int) $lote['id'] ?> como reintegrado (ya entregado a la Alcaldía)?">
+            <?= Csrf::field() ?>
+            <input type="hidden" name="lotes[]" value="<?= (int) $lote['id'] ?>">
+            <input type="hidden" name="volver" value="/reintegros/lotes/<?= (int) $lote['id'] ?>">
+            <div class="col-sm-4">
+                <label for="campoFechaEntrega" class="form-label small mb-1">Fecha de entrega</label>
+                <input id="campoFechaEntrega" type="date" name="fecha_entrega" class="form-control form-control-sm" required
+                       value="<?= FechaMovimiento::hoy() ?>" max="<?= FechaMovimiento::hoy() ?>">
+            </div>
+            <div class="col-sm-5">
+                <label for="campoNota" class="form-label small mb-1">Nota (opcional)</label>
+                <input id="campoNota" type="text" name="nota" maxlength="500" class="form-control form-control-sm">
+            </div>
+            <div class="col-sm-3">
+                <button type="submit" class="btn btn-sm btn-primary w-100"><?= icono('guardar', 'me-1') ?>Marcar como reintegrado</button>
+            </div>
+        </form>
+        <?php if ($separable): ?>
+            <div class="mt-2 pt-2 border-top">
+                Este lote mezcla varias categorías.
+                <a href="<?= Url::to('/reintegros/lotes/unificar') . '?' . http_build_query(['lotes' => [(int) $lote['id']]]) ?>" class="btn btn-sm btn-outline-secondary ms-1">
+                    <?= icono('agrupar', 'me-1') ?>Separar por categoría
+                </a>
+            </div>
+        <?php endif; ?>
+    </div>
+<?php elseif ($estado === 'reintegrado'): ?>
+    <div class="estado-lote estado-lote-reintegrado contenedor-md">
+        <strong>Reintegrado:</strong> entregado a la Alcaldía el <span class="mono"><?= $e($lote['reintegrado_fecha']) ?></span>
+        <?php if (!empty($lote['reintegrado_por_nombre'])): ?>· registrado por <?= $e($lote['reintegrado_por_nombre']) ?><?php endif; ?>.
+        <?php if (!empty($lote['reintegrado_nota'])): ?><div class="mt-1"><span class="text-muted">Nota:</span> <?= $e($lote['reintegrado_nota']) ?></div><?php endif; ?>
+        <?php if ($puedeReabrir): ?>
+            <details class="mt-2">
+                <summary class="small">¿Se marcó por error? Reabrir el lote</summary>
+                <form method="post" action="<?= Url::to('/reintegros/lotes/' . (int) $lote['id'] . '/reabrir') ?>" class="row g-2 align-items-end mt-1"
+                      data-confirmar="¿Reabrir el lote #<?= (int) $lote['id'] ?>? Volverá a quedar pendiente.">
+                    <?= Csrf::field() ?>
+                    <div class="col-sm-9">
+                        <label for="campoMotivo" class="form-label small mb-1">Motivo</label>
+                        <input id="campoMotivo" type="text" name="motivo" maxlength="500" required class="form-control form-control-sm" placeholder="Ej. Se marcó el lote equivocado">
+                    </div>
+                    <div class="col-sm-3">
+                        <button type="submit" class="btn btn-sm btn-outline-danger w-100">Reabrir</button>
+                    </div>
+                </form>
+            </details>
+        <?php endif; ?>
+    </div>
+<?php elseif ($estado === 'unificado'): ?>
+    <div class="estado-lote estado-lote-unificado contenedor-md">
+        <strong>Unificado</strong><?php if (!empty($lote['unificado_en'])): ?> el <span class="mono"><?= $e(substr((string) $lote['unificado_en'], 0, 10)) ?></span><?php endif; ?><?php if (!empty($lote['unificado_por_nombre'])): ?> por <?= $e($lote['unificado_por_nombre']) ?><?php endif; ?>:
+        sus bienes pasaron a lotes nuevos, uno por categoría:
+        <?php foreach ($destinos as $i => $destino): ?><?= $i > 0 ? ', ' : ' ' ?><a href="<?= Url::to('/reintegros/lotes/' . (int) $destino['id']) ?>" class="fw-semibold">#<?= (int) $destino['id'] ?></a> <?= $e($destino['categorias'] ?? '') ?> (<?= $e(LoteReintegro::ESTADOS[$destino['estado']] ?? $destino['estado']) ?>)<?php endforeach; ?>.
+    </div>
+<?php endif; ?>
+
+<?php if (!empty($origenes)): ?>
+    <p class="small text-muted contenedor-md">
+        <?= icono('agrupar', 'me-1') ?>Formado a partir de
+        <?= count($origenes) === 1 ? 'el lote' : 'los lotes' ?>
+        <?php foreach ($origenes as $i => $origen): ?><?= $i > 0 ? ($i === count($origenes) - 1 ? ' y ' : ', ') : '' ?><a href="<?= Url::to('/reintegros/lotes/' . (int) $origen['id']) ?>">#<?= (int) $origen['id'] ?></a><?php endforeach; ?>.
+    </p>
+<?php endif; ?>
+
+<div class="card mb-3 contenedor-md">
     <div class="card-body py-3 small">
         <div class="row g-2">
-            <div class="col-6"><span class="text-muted">Institución:</span> <?= htmlspecialchars($lote['institucion_nombre'], ENT_QUOTES) ?></div>
-            <div class="col-6"><span class="text-muted">Fecha del lote:</span> <span class="mono"><?= htmlspecialchars($lote['fecha'], ENT_QUOTES) ?></span></div>
-            <div class="col-6"><span class="text-muted">Descripción:</span> <?= htmlspecialchars($lote['destino_texto'] ?? '—', ENT_QUOTES) ?></div>
-            <div class="col-6"><span class="text-muted">Registrado por:</span> <?= htmlspecialchars($lote['registrado_por_nombres'] . ' ' . $lote['registrado_por_apellidos'], ENT_QUOTES) ?></div>
+            <div class="col-6"><span class="text-muted">Institución:</span> <?= $e($lote['institucion_nombre']) ?></div>
+            <div class="col-6"><span class="text-muted">Fecha del lote:</span> <span class="mono"><?= $e($lote['fecha']) ?></span></div>
+            <div class="col-6"><span class="text-muted">Descripción:</span> <?= $e($lote['destino_texto'] ?? '—') ?></div>
+            <div class="col-6"><span class="text-muted">Registrado por:</span> <?= $e($lote['registrado_por_nombres'] . ' ' . $lote['registrado_por_apellidos']) ?></div>
             <?php if (!empty($lote['observaciones'])): ?>
-                <div class="col-12"><span class="text-muted">Observaciones:</span> <?= htmlspecialchars($lote['observaciones'], ENT_QUOTES) ?></div>
+                <div class="col-12"><span class="text-muted">Observaciones:</span> <?= $e($lote['observaciones']) ?></div>
             <?php endif; ?>
         </div>
     </div>
 </div>
 
-<div class="table-responsive" style="max-width: 680px;">
-    <table class="table table-sm bg-white tabla-cards">
-        <thead>
-        <tr>
-            <th>Código</th>
-            <th>Descripción</th>
-            <th>Categoría</th>
-            <th>Fecha de reintegro</th>
-            <th>Destino</th>
-            <th>Espacio de origen</th>
-            <th class="text-end">Valor</th>
-        </tr>
-        </thead>
-        <tbody>
-        <?php foreach ($bienes as $b): ?>
+<?php if (empty($bienes)): ?>
+    <p class="text-muted"><?= $estado === 'unificado' ? 'Sus bienes están ahora en los lotes nuevos (enlaces arriba).' : 'Este lote no tiene bienes.' ?></p>
+<?php else: ?>
+    <?php $renglones = \App\Services\ReporteService::renglonesPorPlaca($bienes); ?>
+    <div class="table-responsive contenedor-md">
+        <table class="table table-sm bg-white tabla-cards">
+            <thead>
             <tr>
-                <td class="mono" data-label="Código"><?= htmlspecialchars($b['codigo_identificacion'], ENT_QUOTES) ?></td>
-                <td data-label="Descripción"><?= htmlspecialchars($b['descripcion'], ENT_QUOTES) ?></td>
-                <td class="text-muted" data-label="Categoría">
-                    <?= !empty($b['categoria_nombre']) ? htmlspecialchars($b['categoria_nombre'], ENT_QUOTES) : '—' ?>
-                </td>
-                <td class="text-muted mono" data-label="Fecha de reintegro"><?= htmlspecialchars($b['fecha_reintegro'], ENT_QUOTES) ?></td>
-                <td class="text-muted" data-label="Destino"><?= !empty($b['destino_texto']) ? htmlspecialchars($b['destino_texto'], ENT_QUOTES) : '—' ?></td>
-                <td class="text-muted" data-label="Espacio de origen">
-                    <?= !empty($b['espacio_origen_nombre']) ? htmlspecialchars($b['espacio_origen_nombre'], ENT_QUOTES) : '—' ?>
-                </td>
-                <td class="text-end" data-label="Valor"><?= number_format((float) $b['valor'], 2) ?></td>
+                <th>Placa</th>
+                <th>Descripción</th>
+                <th>Categoría</th>
+                <th class="text-end">Cant.</th>
+                <th>Fecha de reintegro</th>
+                <th>Destino</th>
+                <th>Espacio de origen</th>
+                <th class="text-end">Valor</th>
             </tr>
-        <?php endforeach; ?>
-        </tbody>
-    </table>
-</div>
+            </thead>
+            <tbody>
+            <?php foreach ($renglones as $r): ?>
+                <tr>
+                    <td class="mono" data-label="Placa">
+                        <?= $e($r['placa']) ?>
+                        <?php if ($r['cantidad'] > 1 || $r['unidades'] !== [$r['placa']]): ?>
+                            <?php // Consecutivos de las unidades, sin repetir la placa: "-176, -177". ?>
+                            <div class="small text-muted text-wrap texto-acotado">
+                                <?= $e(implode(', ', array_map(static fn (string $u): string => str_starts_with($u, $r['placa']) ? substr($u, strlen($r['placa'])) : $u, $r['unidades']))) ?>
+                            </div>
+                        <?php endif; ?>
+                    </td>
+                    <td data-label="Descripción"><?= $e($r['descripcion']) ?></td>
+                    <td class="text-muted" data-label="Categoría"><?= !empty($r['categoria_nombre']) ? $e($r['categoria_nombre']) : '—' ?></td>
+                    <td class="text-end fw-semibold" data-label="Cant."><?= (int) $r['cantidad'] ?></td>
+                    <td class="text-muted mono" data-label="Fecha de reintegro">
+                        <?= $e($r['fecha_desde']) ?><?= $r['fecha_hasta'] !== $r['fecha_desde'] ? ' → ' . $e($r['fecha_hasta']) : '' ?>
+                    </td>
+                    <td class="text-muted" data-label="Destino"><?= $r['destinos'] !== [] ? $e(implode(', ', $r['destinos'])) : '—' ?></td>
+                    <td class="text-muted" data-label="Espacio de origen"><?= $r['origenes'] !== [] ? $e(implode(', ', $r['origenes'])) : '—' ?></td>
+                    <td class="text-end" data-label="Valor"><?= number_format($r['valor'], 2) ?></td>
+                </tr>
+            <?php endforeach; ?>
+            </tbody>
+        </table>
+    </div>
+<?php endif; ?>

@@ -17,16 +17,15 @@ final class Bien
      * siguen viendo el listado completo como siempre.
      *
      * La misma bandera también excluye los bienes reintegrados y dados de baja de esa
-     * vista sin filtrar — se muestran agrupados aparte como "Bodega Reintegro"/"Bodega
-     * de Baja" (ver BienController::index()), y siguen apareciendo aquí si el usuario
-     * busca algo o filtra por Estado explícitamente.
+     * vista sin filtrar; siguen apareciendo aquí si el usuario busca algo o filtra por
+     * Estado (el filtro dice cuántos hay en cada estado: contarPorEstado()).
      */
-    public static function listar(?int $institucionId = null, ?string $busqueda = null, int $pagina = 1, int $porPagina = 50, bool $excluirLotes = false, ?int $categoriaId = null, ?string $estado = null, ?int $espacioId = null): array
+    public static function listar(?int $institucionId = null, ?string $busqueda = null, int $pagina = 1, int $porPagina = 50, bool $excluirLotes = false, ?int $categoriaId = null, ?string $estado = null, ?int $espacioId = null, ?int $responsableId = null, ?string $tipo = null): array
     {
-        [$whereSql, $params] = self::condicionesListado($institucionId, $busqueda, $excluirLotes, $categoriaId, $estado, $espacioId);
+        [$whereSql, $params] = self::condicionesListado($institucionId, $busqueda, $excluirLotes, $categoriaId, $estado, $espacioId, $responsableId, $tipo);
 
         $sql = 'SELECT b.*, c.nombre AS categoria_nombre, CONCAT(e.codigo, " - ", e.nombre) AS espacio_nombre,
-                       ' . self::sqlResponsablesEspacio('e.id') . ' AS responsables_nombres
+                       ' . self::sqlResponsable() . ' AS responsables_nombres, ' . self::sqlTipoResponsabilidad() . ' AS tipo_responsabilidad
                 FROM bienes b
                 LEFT JOIN categorias_bienes c ON c.id = b.categoria_id
                 LEFT JOIN asignaciones a ON a.bien_id = b.id AND a.activa = 1
@@ -41,9 +40,9 @@ final class Bien
         return $stmt->fetchAll();
     }
 
-    public static function contarListado(?int $institucionId = null, ?string $busqueda = null, bool $excluirLotes = false, ?int $categoriaId = null, ?string $estado = null, ?int $espacioId = null): int
+    public static function contarListado(?int $institucionId = null, ?string $busqueda = null, bool $excluirLotes = false, ?int $categoriaId = null, ?string $estado = null, ?int $espacioId = null, ?int $responsableId = null, ?string $tipo = null): int
     {
-        [$whereSql, $params] = self::condicionesListado($institucionId, $busqueda, $excluirLotes, $categoriaId, $estado, $espacioId);
+        [$whereSql, $params] = self::condicionesListado($institucionId, $busqueda, $excluirLotes, $categoriaId, $estado, $espacioId, $responsableId, $tipo);
 
         $sql = 'SELECT COUNT(*)
                 FROM bienes b
@@ -58,15 +57,42 @@ final class Bien
     }
 
     /**
+     * Cuántos bienes hay en cada estado con los demás filtros del listado (sin el de Estado y
+     * sin ocultar lotes): es lo que se ve al elegir ese estado en el filtro de /bienes.
+     *
+     * @return array<string, int> estado => cantidad (solo los estados con bienes)
+     */
+    public static function contarPorEstado(?int $institucionId = null, ?string $busqueda = null, ?int $categoriaId = null, ?int $espacioId = null, ?int $responsableId = null, ?string $tipo = null): array
+    {
+        [$whereSql, $params] = self::condicionesListado($institucionId, $busqueda, false, $categoriaId, null, $espacioId, $responsableId, $tipo);
+
+        $sql = 'SELECT b.estado, COUNT(*)
+                FROM bienes b
+                LEFT JOIN asignaciones a ON a.bien_id = b.id AND a.activa = 1
+                LEFT JOIN espacios e ON e.id = a.espacio_id'
+               . $whereSql
+               . ' GROUP BY b.estado';
+
+        $stmt = Database::connection()->prepare($sql);
+        $stmt->execute($params);
+
+        $conteo = [];
+        foreach ($stmt->fetchAll(\PDO::FETCH_NUM) as [$estado, $cantidad]) {
+            $conteo[(string) $estado] = (int) $cantidad;
+        }
+
+        return $conteo;
+    }
+
+    /**
      * Busca por código, descripción, responsable/ubicación, estado (admite "en reparacion"
      * con o sin guion bajo), valor y lote — las mismas columnas visibles en /bienes. El
-     * responsable ahora es el espacio (y sus responsables), no una persona asignada
-     * directamente al bien.
+     * responsable es la persona (responsabilidad individual) o los responsables del
+     * espacio (grupal).
      */
-    private static function condicionesListado(?int $institucionId, ?string $busqueda, bool $excluirLotes = false, ?int $categoriaId = null, ?string $estado = null, ?int $espacioId = null): array
+    private static function condicionesListado(?int $institucionId, ?string $busqueda, bool $excluirLotes = false, ?int $categoriaId = null, ?string $estado = null, ?int $espacioId = null, ?int $responsableId = null, ?string $tipo = null): array
     {
-        $condiciones = [];
-        $params = [];
+        [$condiciones, $params] = self::condicionesResponsabilidad($responsableId, $tipo);
 
         if ($institucionId !== null) {
             $condiciones[] = 'b.institucion_id = ?';
@@ -99,10 +125,9 @@ final class Bien
         if ($busqueda !== null && $busqueda !== '') {
             $termino = '%' . $busqueda . '%';
             $condiciones[] = '(b.codigo_identificacion LIKE ? OR b.descripcion LIKE ? OR e.nombre LIKE ?
-                OR EXISTS (SELECT 1 FROM espacio_responsables er JOIN usuarios u ON u.id = er.usuario_id
-                           WHERE er.espacio_id = e.id AND CONCAT(u.nombres, " ", u.apellidos) LIKE ?)
+                OR ' . self::sqlBuscaResponsable() . '
                 OR REPLACE(b.estado, "_", " ") LIKE ? OR CAST(b.valor AS CHAR) LIKE ? OR b.lote LIKE ?)';
-            array_push($params, $termino, $termino, $termino, $termino, $termino, $termino, $termino);
+            array_push($params, $termino, $termino, $termino, $termino, $termino, $termino, $termino, $termino);
         }
 
         $sql = $condiciones ? ' WHERE ' . implode(' AND ', $condiciones) : '';
@@ -111,53 +136,52 @@ final class Bien
     }
 
     /**
-     * Igual que listar(), pero solo los bienes cuya asignación activa está en un espacio
-     * donde $usuarioId figura como responsable (usado para el rol docente: solo ve "sus"
-     * bienes, no todo el inventario de la institución). Un bien sin asignación activa, o
-     * asignado a un espacio donde el usuario no es responsable, queda fuera.
+     * Igual que listar(), pero solo los bienes por los que responde $usuarioId (usado para
+     * el rol docente: solo ve "sus" bienes, no todo el inventario de la institución): los
+     * grupales de los espacios donde es responsable y los individuales a su cargo (ver
+     * sqlRespondePor). Un bien sin asignación activa, o individual de otra persona aunque
+     * esté guardado en su espacio, queda fuera.
      */
     public static function listarPropios(int $usuarioId, ?int $institucionId = null, ?string $busqueda = null, int $pagina = 1, int $porPagina = 50, ?int $categoriaId = null, ?string $estado = null, ?int $espacioId = null): array
     {
-        [$whereSql, $params] = self::condicionesPropios($institucionId, $busqueda, $categoriaId, $estado, $espacioId);
+        [$whereSql, $params] = self::condicionesPropios($usuarioId, $institucionId, $busqueda, $categoriaId, $estado, $espacioId);
 
         $sql = 'SELECT b.*, c.nombre AS categoria_nombre, CONCAT(e.codigo, " - ", e.nombre) AS espacio_nombre,
-                       ' . self::sqlResponsablesEspacio('e.id') . ' AS responsables_nombres
+                       ' . self::sqlResponsable() . ' AS responsables_nombres, ' . self::sqlTipoResponsabilidad() . ' AS tipo_responsabilidad
                 FROM bienes b
                 LEFT JOIN categorias_bienes c ON c.id = b.categoria_id
                 JOIN asignaciones a ON a.bien_id = b.id AND a.activa = 1
-                JOIN espacios e ON e.id = a.espacio_id
-                JOIN espacio_responsables er ON er.espacio_id = e.id AND er.usuario_id = ?'
+                LEFT JOIN espacios e ON e.id = a.espacio_id'
                . $whereSql
                . ' ORDER BY b.created_at DESC, b.id DESC'
                . self::limitSql($pagina, $porPagina);
 
         $stmt = Database::connection()->prepare($sql);
-        $stmt->execute(array_merge([$usuarioId], $params));
+        $stmt->execute($params);
 
         return $stmt->fetchAll();
     }
 
     public static function contarPropios(int $usuarioId, ?int $institucionId = null, ?string $busqueda = null, ?int $categoriaId = null, ?string $estado = null, ?int $espacioId = null): int
     {
-        [$whereSql, $params] = self::condicionesPropios($institucionId, $busqueda, $categoriaId, $estado, $espacioId);
+        [$whereSql, $params] = self::condicionesPropios($usuarioId, $institucionId, $busqueda, $categoriaId, $estado, $espacioId);
 
         $sql = 'SELECT COUNT(*)
                 FROM bienes b
                 JOIN asignaciones a ON a.bien_id = b.id AND a.activa = 1
-                JOIN espacios e ON e.id = a.espacio_id
-                JOIN espacio_responsables er ON er.espacio_id = e.id AND er.usuario_id = ?'
+                LEFT JOIN espacios e ON e.id = a.espacio_id'
                . $whereSql;
 
         $stmt = Database::connection()->prepare($sql);
-        $stmt->execute(array_merge([$usuarioId], $params));
+        $stmt->execute($params);
 
         return (int) $stmt->fetchColumn();
     }
 
-    private static function condicionesPropios(?int $institucionId, ?string $busqueda, ?int $categoriaId = null, ?string $estado = null, ?int $espacioId = null): array
+    private static function condicionesPropios(int $usuarioId, ?int $institucionId, ?string $busqueda, ?int $categoriaId = null, ?string $estado = null, ?int $espacioId = null): array
     {
-        $condiciones = [];
-        $params = [];
+        $condiciones = [self::sqlRespondePor()];
+        $params = [$usuarioId, $usuarioId];
 
         if ($institucionId !== null) {
             $condiciones[] = 'b.institucion_id = ?';
@@ -186,9 +210,74 @@ final class Bien
             array_push($params, $termino, $termino, $termino, $termino, $termino);
         }
 
-        $sql = $condiciones ? ' WHERE ' . implode(' AND ', $condiciones) : '';
+        // Siempre hay al menos una condición: la de sqlRespondePor().
+        $sql = ' WHERE ' . implode(' AND ', $condiciones);
 
         return [$sql, $params];
+    }
+
+    /**
+     * Quién responde por el bien, según su asignación activa (alias "a"; espacio "e"):
+     * la persona si la responsabilidad es individual, o los responsables del espacio si
+     * es grupal. Mismo criterio que Asignacion::activaDe().
+     */
+    public static function sqlResponsable(): string
+    {
+        return "(CASE WHEN a.usuario_responsable_id IS NOT NULL
+                      THEN (SELECT CONCAT(ur.nombres, ' ', ur.apellidos) FROM usuarios ur WHERE ur.id = a.usuario_responsable_id)
+                      ELSE " . self::sqlResponsablesEspacio('e.id') . ' END)';
+    }
+
+    /** 'individual', 'grupal' o NULL (sin asignar), según la asignación activa (alias "a"). */
+    public static function sqlTipoResponsabilidad(): string
+    {
+        return "(CASE WHEN a.id IS NULL THEN NULL WHEN a.usuario_responsable_id IS NOT NULL THEN 'individual' ELSE 'grupal' END)";
+    }
+
+    /**
+     * Condición "responde $usuarioId por el bien" (DOS parámetros: el mismo id dos veces):
+     * lo tiene a cargo (individual), o está en un espacio donde es responsable y no está a
+     * cargo de otra persona (grupal).
+     */
+    public static function sqlRespondePor(): string
+    {
+        return '(a.usuario_responsable_id = ? OR (a.usuario_responsable_id IS NULL AND EXISTS (
+                    SELECT 1 FROM espacio_responsables err WHERE err.espacio_id = a.espacio_id AND err.usuario_id = ?)))';
+    }
+
+    /**
+     * Filtros "Responsable" (quien responde por el bien: individual a su cargo o grupal en
+     * un espacio suyo) y "Tipo" (grupal, individual o sin asignar), sobre la asignación
+     * activa (alias "a", unida con LEFT JOIN).
+     *
+     * @return array{0: list<string>, 1: list<mixed>} condiciones y parámetros
+     */
+    private static function condicionesResponsabilidad(?int $responsableId, ?string $tipo): array
+    {
+        $condiciones = [];
+        $params = [];
+        if ($responsableId !== null) {
+            $condiciones[] = self::sqlRespondePor();
+            array_push($params, $responsableId, $responsableId);
+        }
+        $porTipo = [
+            'grupal' => '(a.id IS NOT NULL AND a.usuario_responsable_id IS NULL)',
+            'individual' => 'a.usuario_responsable_id IS NOT NULL',
+            'sin_asignar' => 'a.id IS NULL',
+        ];
+        if ($tipo !== null && isset($porTipo[$tipo])) {
+            $condiciones[] = $porTipo[$tipo];
+        }
+
+        return [$condiciones, $params];
+    }
+
+    /** Búsqueda por el nombre de quien responde (DOS parámetros: el mismo término dos veces). */
+    private static function sqlBuscaResponsable(): string
+    {
+        return '(EXISTS (SELECT 1 FROM usuarios ub WHERE ub.id = a.usuario_responsable_id AND CONCAT(ub.nombres, " ", ub.apellidos) LIKE ?)
+                OR (a.usuario_responsable_id IS NULL AND EXISTS (SELECT 1 FROM espacio_responsables er JOIN usuarios u ON u.id = er.usuario_id
+                           WHERE er.espacio_id = e.id AND CONCAT(u.nombres, " ", u.apellidos) LIKE ?)))';
     }
 
     /**
@@ -253,6 +342,19 @@ final class Bien
         // Ya impreso para esta solicitud: falta pegar el sticker y confirmarlo.
         'por_pegar' => 'b.qr_impreso_en >= b.qr_solicitado_en',
     ];
+
+    /** Fase del bien en la Bodega de QR (misma regla que FASES_QR), o null si no está en ella. */
+    public static function faseQr(array $bien): ?string
+    {
+        $solicitado = (string) ($bien['qr_solicitado_en'] ?? '');
+        if ($solicitado === '') {
+            return null;
+        }
+        $impreso = (string) ($bien['qr_impreso_en'] ?? '');
+
+        // Fechas 'AAAA-MM-DD HH:MM:SS': compararlas como texto respeta el orden en el tiempo.
+        return $impreso === '' || $impreso < $solicitado ? 'por_imprimir' : 'por_pegar';
+    }
 
     /**
      * Bodega de impresión de QR: bienes que alguien marcó con la casilla "Imprimir QR" en
@@ -603,7 +705,10 @@ final class Bien
         if (!in_array($bien['estado'], self::ESTADOS_REINTEGRABLES, true)) {
             return 'el bien está "' . self::etiquetaEstado($bien['estado']) . '"';
         }
-        if (!$tieneAsignacionActiva) {
+        // Las unidades de un código con varias unidades (alta masiva: bienes.lote) suelen
+        // estar en la institución sin espacio ni responsable; se pueden reintegrar igual.
+        // A un bien suelto se le sigue exigiendo la asignación.
+        if (!$tieneAsignacionActiva && empty($bien['lote'])) {
             return 'el bien no tiene una asignación activa';
         }
         if ($bien['categoria_id'] === null) {
@@ -612,32 +717,59 @@ final class Bien
         if (($bien['categoria_nombre'] ?? null) === Categoria::NOMBRE_CATEGORIA_PROTEGIDA) {
             return 'los bienes de la categoría "' . Categoria::NOMBRE_CATEGORIA_PROTEGIDA . '" no admiten reintegro, solo baja';
         }
+        // El renglón de la cartera de una placa con unidades (resumenDeCodigo: "8 SILLAS…" con
+        // sus unidades 13019802-001…-008) no es una silla más: las unidades se reintegran por
+        // cantidad y MIA lo actualiza solo. Reintegrarlo aparte sumaba un ítem (8 salían 9).
+        if (empty($bien['lote']) && isset($bien['institucion_id'], $bien['codigo_identificacion'])
+            && self::existeLote((int) $bien['institucion_id'], (string) $bien['codigo_identificacion'])) {
+            return 'es el renglón de la cartera de la placa ' . $bien['codigo_identificacion']
+                . ' (sus unidades se reintegran en Reintegrar por cantidad y este renglón se actualiza solo)';
+        }
 
         return null;
     }
 
     /**
-     * Si el bien tiene una asignación activa, ¿$usuarioId es uno de los responsables de
-     * ese espacio? Usado para que un docente solo pueda verificar (jornada de
-     * verificación física) los bienes a su cargo, igual que el filtro de "solo mis
-     * bienes" en /bienes.
+     * ¿Responde $usuarioId por el bien? (individual a su cargo, o grupal en un espacio donde
+     * es responsable; ver sqlRespondePor). Usado para que un docente solo pueda verificar
+     * (jornada de verificación física) los bienes a su cargo, igual que el filtro de "solo
+     * mis bienes" en /bienes.
      */
     public static function esResponsableDe(int $bienId, int $usuarioId): bool
     {
         $stmt = Database::connection()->prepare(
             'SELECT 1
              FROM asignaciones a
-             JOIN espacio_responsables er ON er.espacio_id = a.espacio_id
-             WHERE a.bien_id = ? AND a.activa = 1 AND er.usuario_id = ?
+             WHERE a.bien_id = ? AND a.activa = 1 AND ' . self::sqlRespondePor() . '
              LIMIT 1'
         );
-        $stmt->execute([$bienId, $usuarioId]);
+        $stmt->execute([$bienId, $usuarioId, $usuarioId]);
 
         return (bool) $stmt->fetchColumn();
     }
 
+    /**
+     * Regla de escritura de la descripción según la categoría: en "Sin cartera", todo en
+     * minúscula; en cualquier otra categoría (Muebles, Tecnología, Otra IE...), todo en
+     * mayúscula. Un bien sin categoría no se toca. La aplican create(), crearVarios() y
+     * update(), así que rige al crear, al editar, al cambiar de categoría, en el alta
+     * masiva y en la carga masiva.
+     */
+    public static function descripcionSegunCategoria(string $descripcion, int|string|null $categoriaId): string
+    {
+        $categoria = is_numeric($categoriaId) && (int) $categoriaId > 0 ? Categoria::find((int) $categoriaId) : null;
+        if ($categoria === null) {
+            return $descripcion;
+        }
+
+        return Categoria::esProtegida($categoria)
+            ? mb_strtolower($descripcion, 'UTF-8')
+            : mb_strtoupper($descripcion, 'UTF-8');
+    }
+
     public static function create(array $datos): int
     {
+        $datos['descripcion'] = self::descripcionSegunCategoria((string) $datos['descripcion'], $datos['categoria_id'] ?? null);
         $datos['qr_token'] = self::generarUuid();
         $datos['lote'] ??= null;
 
@@ -663,6 +795,7 @@ final class Bien
         if ($codigos === []) {
             return;
         }
+        $descripcion = self::descripcionSegunCategoria($descripcion, $categoriaId);
 
         $filas = [];
         $params = [];
@@ -710,7 +843,7 @@ final class Bien
         );
         $stmt->execute([
             'codigo_identificacion' => $datos['codigo_identificacion'],
-            'descripcion' => $datos['descripcion'],
+            'descripcion' => self::descripcionSegunCategoria((string) $datos['descripcion'], $datos['categoria_id']),
             'marca' => $datos['marca'],
             'categoria_id' => $datos['categoria_id'],
             'fecha_ingreso' => $datos['fecha_ingreso'],
@@ -804,7 +937,7 @@ final class Bien
         [$whereSql, $params] = self::condicionesPendientesDeReintegro($institucionId, $busqueda);
 
         $sql = 'SELECT b.*, a.fecha_asignacion, CONCAT(e.codigo, " - ", e.nombre) AS espacio_nombre, i.nombre AS institucion_nombre,
-                       c.nombre AS categoria_nombre, ' . self::sqlResponsablesEspacio('e.id') . ' AS responsables_nombres
+                       c.nombre AS categoria_nombre, ' . self::sqlResponsable() . ' AS responsables_nombres, ' . self::sqlTipoResponsabilidad() . ' AS tipo_responsabilidad
                 FROM bienes b
                 JOIN asignaciones a ON a.bien_id = b.id AND a.activa = 1
                 LEFT JOIN espacios e ON e.id = a.espacio_id
@@ -837,10 +970,9 @@ final class Bien
         if ($busqueda !== null && $busqueda !== '') {
             $termino = '%' . $busqueda . '%';
             $condiciones[] = '(b.codigo_identificacion LIKE ? OR b.descripcion LIKE ? OR e.nombre LIKE ?
-                OR EXISTS (SELECT 1 FROM espacio_responsables er JOIN usuarios u ON u.id = er.usuario_id
-                           WHERE er.espacio_id = e.id AND CONCAT(u.nombres, " ", u.apellidos) LIKE ?)
+                OR ' . self::sqlBuscaResponsable() . '
                 OR CAST(b.valor AS CHAR) LIKE ?)';
-            array_push($params, $termino, $termino, $termino, $termino, $termino);
+            array_push($params, $termino, $termino, $termino, $termino, $termino, $termino);
         }
 
         return [' WHERE ' . implode(' AND ', $condiciones), $params];
@@ -854,9 +986,9 @@ final class Bien
      * aparezcan aquí como candidatos. (Los candidatos a Reintegrar se listan aparte, ver
      * reintegrables(), en la pantalla dedicada /reintegros.)
      */
-    public static function operables(?int $institucionId = null, ?string $busqueda = null, int $pagina = 1, int $porPagina = 50): array
+    public static function operables(?int $institucionId = null, ?string $busqueda = null, int $pagina = 1, int $porPagina = 50, ?int $espacioId = null, ?int $responsableId = null, ?string $tipo = null): array
     {
-        [$sql, $params] = self::sqlOperables($institucionId, $busqueda);
+        [$sql, $params] = self::sqlOperables($institucionId, $busqueda, $espacioId, $responsableId, $tipo);
 
         $sql .= ' ORDER BY asignado ASC, b.codigo_identificacion ASC, b.id ASC' . self::limitSql($pagina, $porPagina);
 
@@ -866,9 +998,9 @@ final class Bien
         return $stmt->fetchAll();
     }
 
-    public static function contarOperables(?int $institucionId = null, ?string $busqueda = null): int
+    public static function contarOperables(?int $institucionId = null, ?string $busqueda = null, ?int $espacioId = null, ?int $responsableId = null, ?string $tipo = null): int
     {
-        [$whereSql, $params] = self::condicionesOperables($institucionId, $busqueda);
+        [$whereSql, $params] = self::condicionesOperables($institucionId, $busqueda, $espacioId, $responsableId, $tipo);
 
         $sql = 'SELECT COUNT(*)
                 FROM bienes b
@@ -882,12 +1014,12 @@ final class Bien
         return (int) $stmt->fetchColumn();
     }
 
-    private static function sqlOperables(?int $institucionId, ?string $busqueda): array
+    private static function sqlOperables(?int $institucionId, ?string $busqueda, ?int $espacioId = null, ?int $responsableId = null, ?string $tipo = null): array
     {
-        [$whereSql, $params] = self::condicionesOperables($institucionId, $busqueda);
+        [$whereSql, $params] = self::condicionesOperables($institucionId, $busqueda, $espacioId, $responsableId, $tipo);
 
         $sql = 'SELECT b.id, b.codigo_identificacion, b.descripcion, b.valor,
-                       CONCAT(e.codigo, " - ", e.nombre) AS espacio_nombre, ' . self::sqlResponsablesEspacio('e.id') . ' AS responsables_nombres,
+                       CONCAT(e.codigo, " - ", e.nombre) AS espacio_nombre, ' . self::sqlResponsable() . ' AS responsables_nombres, ' . self::sqlTipoResponsabilidad() . ' AS tipo_responsabilidad,
                        CASE WHEN a.id IS NOT NULL THEN 1 ELSE 0 END AS asignado
                 FROM bienes b
                 LEFT JOIN asignaciones a ON a.bien_id = b.id AND a.activa = 1
@@ -902,10 +1034,15 @@ final class Bien
      * columnas visibles en /asignaciones. Excluye los bienes dados de baja y los
      * reintegrados (ver operables() arriba).
      */
-    private static function condicionesOperables(?int $institucionId, ?string $busqueda): array
+    private static function condicionesOperables(?int $institucionId, ?string $busqueda, ?int $espacioId = null, ?int $responsableId = null, ?string $tipo = null): array
     {
-        $condiciones = ['b.estado NOT IN ("dado_de_baja", "reintegrado")'];
-        $params = [];
+        [$condiciones, $params] = self::condicionesResponsabilidad($responsableId, $tipo);
+        $condiciones[] = 'b.estado NOT IN ("dado_de_baja", "reintegrado")';
+
+        if ($espacioId !== null) {
+            $condiciones[] = 'a.espacio_id = ?';
+            $params[] = $espacioId;
+        }
 
         if ($institucionId !== null) {
             $condiciones[] = 'b.institucion_id = ?';
@@ -915,10 +1052,9 @@ final class Bien
         if ($busqueda !== null && $busqueda !== '') {
             $termino = '%' . $busqueda . '%';
             $condiciones[] = '(b.codigo_identificacion LIKE ? OR b.descripcion LIKE ? OR e.nombre LIKE ?
-                OR EXISTS (SELECT 1 FROM espacio_responsables er JOIN usuarios u ON u.id = er.usuario_id
-                           WHERE er.espacio_id = e.id AND CONCAT(u.nombres, " ", u.apellidos) LIKE ?)
+                OR ' . self::sqlBuscaResponsable() . '
                 OR CAST(b.valor AS CHAR) LIKE ?)';
-            array_push($params, $termino, $termino, $termino, $termino, $termino);
+            array_push($params, $termino, $termino, $termino, $termino, $termino, $termino);
         }
 
         return [' WHERE ' . implode(' AND ', $condiciones), $params];
@@ -939,7 +1075,7 @@ final class Bien
 
         $sql = 'SELECT b.id, b.codigo_identificacion, b.descripcion, b.valor, b.foto_path,
                        c.nombre AS categoria_nombre,
-                       CONCAT(e.codigo, " - ", e.nombre) AS espacio_nombre, ' . self::sqlResponsablesEspacio('e.id') . ' AS responsables_nombres
+                       CONCAT(e.codigo, " - ", e.nombre) AS espacio_nombre, ' . self::sqlResponsable() . ' AS responsables_nombres, ' . self::sqlTipoResponsabilidad() . ' AS tipo_responsabilidad
                 FROM bienes b
                 JOIN asignaciones a ON a.bien_id = b.id AND a.activa = 1
                 LEFT JOIN espacios e ON e.id = a.espacio_id
@@ -963,7 +1099,7 @@ final class Bien
     {
         $stmt = Database::connection()->prepare(
             'SELECT b.id, b.codigo_identificacion, b.descripcion,
-                    CONCAT(e.codigo, " - ", e.nombre) AS espacio_nombre, ' . self::sqlResponsablesEspacio('e.id') . ' AS responsables_nombres
+                    CONCAT(e.codigo, " - ", e.nombre) AS espacio_nombre, ' . self::sqlResponsable() . ' AS responsables_nombres, ' . self::sqlTipoResponsabilidad() . ' AS tipo_responsabilidad
              FROM bienes b
              JOIN asignaciones a ON a.bien_id = b.id AND a.activa = 1
              LEFT JOIN espacios e ON e.id = a.espacio_id
@@ -1023,10 +1159,9 @@ final class Bien
         if ($busqueda !== null && $busqueda !== '') {
             $termino = '%' . $busqueda . '%';
             $condiciones[] = '(b.codigo_identificacion LIKE ? OR b.descripcion LIKE ? OR e.nombre LIKE ?
-                OR EXISTS (SELECT 1 FROM espacio_responsables er JOIN usuarios u ON u.id = er.usuario_id
-                           WHERE er.espacio_id = e.id AND CONCAT(u.nombres, " ", u.apellidos) LIKE ?)
+                OR ' . self::sqlBuscaResponsable() . '
                 OR CAST(b.valor AS CHAR) LIKE ?)';
-            array_push($params, $termino, $termino, $termino, $termino, $termino);
+            array_push($params, $termino, $termino, $termino, $termino, $termino, $termino);
         }
 
         return [' WHERE ' . implode(' AND ', $condiciones), $params];
@@ -1085,7 +1220,10 @@ final class Bien
                     SUM(CASE WHEN b.estado = "reintegrado" THEN 1 ELSE 0 END) AS reintegrados,
                     SUM(CASE WHEN b.estado = "en_reparacion" THEN 1 ELSE 0 END) AS en_reparacion,
                     SUM(CASE WHEN b.estado = "dado_de_baja" THEN 1 ELSE 0 END) AS dados_de_baja,
-                    SUM(b.valor) AS valor_total
+                    SUM(b.valor) AS valor_total,
+                    -- Lo que queda del código en la cartera (ver sqlUnidadEnCartera).
+                    SUM(CASE WHEN ' . self::sqlUnidadEnCartera() . ' THEN 1 ELSE 0 END) AS en_cartera,
+                    SUM(CASE WHEN ' . self::sqlUnidadEnCartera() . ' THEN b.valor ELSE 0 END) AS valor_en_cartera
              FROM bienes b
              LEFT JOIN categorias_bienes c ON c.id = b.categoria_id
              WHERE ' . implode(' AND ', $condiciones) . '
@@ -1095,6 +1233,148 @@ final class Bien
         $stmt->execute($params);
 
         return $stmt->fetchAll();
+    }
+
+    /**
+     * El bien "resumen" de un código con varias unidades: el renglón de la cartera de la
+     * Alcaldía registrado como un bien suelto con el MISMO código que el lote (p. ej. el bien
+     * 200033042 "178 SILLAS UNIVERSITARIAS"), además de sus unidades 200033042-001…-178.
+     * null si el código no tiene uno. Con $bloquear, lo lee con FOR UPDATE (en transacción).
+     */
+    public static function resumenDeCodigo(int $institucionId, string $lote, bool $bloquear = false): ?array
+    {
+        $stmt = Database::connection()->prepare(
+            'SELECT id, institucion_id, codigo_identificacion, descripcion, valor, estado
+             FROM bienes
+             WHERE institucion_id = ? AND codigo_identificacion = ? AND lote IS NULL
+             ORDER BY id LIMIT 1' . ($bloquear ? ' FOR UPDATE' : '')
+        );
+        $stmt->execute([$institucionId, $lote]);
+
+        return $stmt->fetch() ?: null;
+    }
+
+    /**
+     * Ajusta la descripción, el valor y el estado de un bien resumen (ver resumenDeCodigo):
+     * pasa a 'reintegrado' cuando ya no queda ninguna unidad de su placa en cartera.
+     */
+    public static function actualizarResumenDeCodigo(int $id, string $descripcion, float $valor, string $estado): void
+    {
+        $stmt = Database::connection()->prepare('UPDATE bienes SET descripcion = ?, valor = ?, estado = ? WHERE id = ?');
+        $stmt->execute([$descripcion, $valor, $estado, $id]);
+    }
+
+    /**
+     * La cartera por PLACA: una fila por código con varias unidades (bienes.lote) o por bien
+     * suelto, con cuántas unidades quedan en cartera (activas o en reparación), cuántas se
+     * reintegraron o se dieron de baja, y su valor. null = todas las instituciones.
+     */
+    public static function carteraPorPlaca(?int $institucionId): array
+    {
+        // Las unidades de una placa cuentan con la regla de la cartera (sin "Sin cartera"); un
+        // bien suelto, por su estado, como siempre.
+        $enCartera = '(CASE WHEN b.lote IS NOT NULL THEN ' . self::sqlUnidadEnCartera() . ' ELSE b.estado IN ("activo", "en_reparacion") END)';
+        $sql = 'SELECT MIN(i.nombre) AS institucion_nombre, COALESCE(b.lote, b.codigo_identificacion) AS placa,
+                       MIN(b.descripcion) AS descripcion, MIN(b.marca) AS marca, MIN(c.nombre) AS categoria_nombre,
+                       SUM(CASE WHEN ' . $enCartera . ' THEN 1 ELSE 0 END) AS en_cartera,
+                       SUM(CASE WHEN b.estado = "reintegrado" THEN 1 ELSE 0 END) AS reintegradas,
+                       SUM(CASE WHEN b.estado = "dado_de_baja" THEN 1 ELSE 0 END) AS dadas_de_baja,
+                       MIN(b.valor) AS valor_unitario,
+                       SUM(CASE WHEN ' . $enCartera . ' THEN b.valor ELSE 0 END) AS valor_en_cartera
+                FROM bienes b
+                JOIN instituciones i ON i.id = b.institucion_id
+                LEFT JOIN categorias_bienes c ON c.id = b.categoria_id
+                -- El bien "resumen" de un código con unidades (ver resumenDeCodigo) es el mismo
+                -- código: se cuentan sus unidades, no se suma también el resumen.
+                WHERE NOT ' . self::sqlEsRenglonDePlaca();
+        $params = [];
+        if ($institucionId !== null) {
+            $sql .= ' AND b.institucion_id = ?';
+            $params[] = $institucionId;
+        }
+
+        $stmt = Database::connection()->prepare($sql . ' GROUP BY b.institucion_id, placa ORDER BY institucion_nombre, placa');
+        $stmt->execute($params);
+
+        return $stmt->fetchAll();
+    }
+
+    /**
+     * Resumen de un código con varias unidades (bienes.lote): cuántas hay en total, cuántas
+     * quedan en cartera (activas o en reparación), reintegradas y dadas de baja. null si
+     * el código no existe en la institución.
+     */
+    public static function resumenDeLote(int $institucionId, string $lote): ?array
+    {
+        $stmt = Database::connection()->prepare(
+            'SELECT b.lote, MIN(b.descripcion) AS descripcion, MIN(b.marca) AS marca,
+                    MIN(b.categoria_id) AS categoria_id, MIN(c.nombre) AS categoria_nombre,
+                    COUNT(*) AS total,
+                    SUM(CASE WHEN ' . self::sqlUnidadEnCartera() . ' THEN 1 ELSE 0 END) AS en_cartera,
+                    SUM(CASE WHEN b.estado = "reintegrado" THEN 1 ELSE 0 END) AS reintegradas,
+                    SUM(CASE WHEN b.estado = "dado_de_baja" THEN 1 ELSE 0 END) AS dadas_de_baja,
+                    SUM(CASE WHEN ' . self::sqlUnidadEnCartera() . ' THEN b.valor ELSE 0 END) AS valor_en_cartera
+             FROM bienes b
+             LEFT JOIN categorias_bienes c ON c.id = b.categoria_id
+             WHERE b.institucion_id = ? AND b.lote = ?
+             GROUP BY b.lote'
+        );
+        $stmt->execute([$institucionId, $lote]);
+
+        return $stmt->fetch() ?: null;
+    }
+
+    /**
+     * Unidades de un código que siguen en cartera (activas o en reparación), contadas por
+     * ubicación: cada espacio/persona de su asignación activa, y las que no tienen
+     * asignación ("sin asignar", espacio y persona en null, sin_asignar = 1).
+     */
+    public static function disponiblesDeLotePorUbicacion(int $institucionId, string $lote): array
+    {
+        $stmt = Database::connection()->prepare(
+            'SELECT a.espacio_id, a.usuario_responsable_id,
+                    MAX(CASE WHEN a.id IS NULL THEN 1 ELSE 0 END) AS sin_asignar,
+                    MIN(CONCAT(e.codigo, " - ", e.nombre)) AS espacio_nombre,
+                    MIN(' . self::sqlResponsable() . ') AS responsables_nombres,
+                    COUNT(*) AS disponibles
+             FROM bienes b
+             LEFT JOIN asignaciones a ON a.bien_id = b.id AND a.activa = 1
+             LEFT JOIN espacios e ON e.id = a.espacio_id
+             WHERE b.institucion_id = ? AND b.lote = ? AND ' . self::sqlUnidadEnCartera() . '
+             GROUP BY a.espacio_id, a.usuario_responsable_id
+             ORDER BY sin_asignar, espacio_nombre, responsables_nombres'
+        );
+        $stmt->execute([$institucionId, $lote]);
+
+        return $stmt->fetchAll();
+    }
+
+    /**
+     * Ids de $cantidad unidades del código en cartera y en esa ubicación, empezando por los
+     * últimos consecutivos, BLOQUEADAS (FOR UPDATE) para reintegrarlas. Debe llamarse dentro
+     * de una transacción. Puede devolver menos de las pedidas si ya no quedan.
+     *
+     * @return list<int>
+     */
+    public static function unidadesDeLoteParaReintegrar(int $institucionId, string $lote, ?int $espacioId, ?int $usuarioId, bool $sinAsignar, int $cantidad): array
+    {
+        $ubicacion = $sinAsignar
+            ? 'a.id IS NULL'
+            : 'a.id IS NOT NULL AND a.espacio_id <=> ? AND a.usuario_responsable_id <=> ?';
+        $params = $sinAsignar ? [$institucionId, $lote] : [$institucionId, $lote, $espacioId, $usuarioId];
+
+        $stmt = Database::connection()->prepare(
+            'SELECT b.id
+             FROM bienes b
+             LEFT JOIN asignaciones a ON a.bien_id = b.id AND a.activa = 1
+             WHERE b.institucion_id = ? AND b.lote = ? AND ' . self::sqlUnidadEnCartera() . ' AND ' . $ubicacion . '
+             ORDER BY b.codigo_identificacion DESC, b.id DESC
+             LIMIT ' . max(0, $cantidad) . '
+             FOR UPDATE'
+        );
+        $stmt->execute($params);
+
+        return array_values(array_map('intval', $stmt->fetchAll(\PDO::FETCH_COLUMN)));
     }
 
     private static function generarUuid(): string
@@ -1113,6 +1393,30 @@ final class Bien
     private static function sqlReglaReintegrable(): string
     {
         return " AND b.estado IN ('activo', 'en_reparacion') AND b.categoria_id IS NOT NULL"
-            . ' AND b.categoria_id NOT IN (SELECT id FROM categorias_bienes WHERE nombre = ?)';
+            . ' AND b.categoria_id NOT IN (SELECT id FROM categorias_bienes WHERE nombre = ?)'
+            . ' AND NOT ' . self::sqlEsRenglonDePlaca();
+    }
+
+    /**
+     * Condición SQL: la unidad (alias b) sigue en la cartera de la Alcaldía: activa o en
+     * reparación y fuera de la categoría "Sin cartera" (la que no se reintegra, solo admite
+     * baja). Es lo que cuenta el renglón de la placa (App\Services\RenglonDePlaca) y lo único
+     * que el reintegro por cantidad puede tomar.
+     */
+    private static function sqlUnidadEnCartera(): string
+    {
+        $sinCartera = Database::connection()->quote(Categoria::NOMBRE_CATEGORIA_PROTEGIDA);
+
+        return '(b.estado IN ("activo", "en_reparacion")'
+            . " AND (b.categoria_id IS NULL OR b.categoria_id NOT IN (SELECT id FROM categorias_bienes WHERE nombre = {$sinCartera})))";
+    }
+
+    /**
+     * Condición SQL: el bien (alias b) es el renglón de la cartera de una placa con unidades
+     * (sin lote y con el mismo código que el lote de sus unidades; ver resumenDeCodigo).
+     */
+    private static function sqlEsRenglonDePlaca(): string
+    {
+        return '(b.lote IS NULL AND EXISTS (SELECT 1 FROM bienes u WHERE u.institucion_id = b.institucion_id AND u.lote = b.codigo_identificacion))';
     }
 }

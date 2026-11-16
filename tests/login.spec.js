@@ -51,3 +51,23 @@ test.describe('Login', () => {
         await expect(page).toHaveURL(/\/dashboard/);
     });
 });
+
+test('la base guarda la hora de Colombia (último ingreso), aunque su servidor esté en otra zona', async ({ browser }) => {
+    const { datos, bd, sinSesion } = await import('./helpers/datos.js');
+    const cuenta = datos().usuarios.secretario;
+    test.skip(!cuenta?.email, 'Necesita la base de pruebas local');
+    const contexto = await sinSesion(browser);
+    const pagina = await contexto.newPage();
+    await pagina.goto('login');
+    await pagina.locator('input[name="email"]').fill(cuenta.email);
+    await pagina.locator('input[name="password"]').fill(cuenta.clave);
+    await pagina.getByRole('button', { name: 'Ingresar' }).click();
+    await expect(pagina).toHaveURL(/\/dashboard/);
+
+    // ultimo_login lo escribe la base con NOW(): debe ser la hora actual de Colombia.
+    const guardado = bd(`SELECT ultimo_login FROM usuarios WHERE id = ${cuenta.id}`);
+    const ahoraColombia = new Date().toLocaleString('sv-SE', { timeZone: 'America/Bogota' });
+    const diferencia = Math.abs(new Date(guardado.replace(' ', 'T')) - new Date(ahoraColombia.replace(' ', 'T')));
+    expect(diferencia, `guardado ${guardado}, hora de Colombia ${ahoraColombia}`).toBeLessThan(5 * 60 * 1000);
+    await contexto.close();
+});

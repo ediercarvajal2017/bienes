@@ -9,13 +9,12 @@ $puedeEditar = Auth::esSuperusuario() || Auth::tienePermiso('espacios.editar') |
 $viejo ??= [];
 $v = static fn (string $campo, mixed $porDefecto = '') => $viejo[$campo] ?? $espacio[$campo] ?? $porDefecto;
 ?>
-<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-    <h1 class="h4 mb-0"><?= $esEdicion ? 'Editar espacio' : 'Nuevo espacio' ?></h1>
+<?php ob_start(); ?>
     <a href="<?= Url::to('/espacios') ?>" class="btn btn-sm btn-outline-secondary">Volver</a>
-</div>
+<?= ui('encabezado_pagina', ['titulo' => (string) ($esEdicion ? 'Editar espacio' : 'Nuevo espacio'), 'icono' => 'espacio', 'acciones' => (string) ob_get_clean()]) ?>
 
 <?php if (!empty($error)): ?>
-    <div class="alert alert-danger py-2 small"><?= htmlspecialchars($error, ENT_QUOTES) ?></div>
+    <?= ui('alerta', ['tipo' => 'peligro', 'mensaje' => (string) $error, 'clases' => 'py-2 small']) ?>
 <?php endif; ?>
 
 <?php if ($puedeEditar): ?>
@@ -24,7 +23,7 @@ $v = static fn (string $campo, mixed $porDefecto = '') => $viejo[$campo] ?? $esp
 
 <form method="post"
       action="<?= $esEdicion ? Url::to('/espacios/' . $espacio['id']) : Url::to('/espacios') ?>"
-      class="row g-3" style="max-width: 640px;">
+      class="row g-3 contenedor-md">
     <?= Csrf::field() ?>
 
     <?php if (!$esEdicion && Auth::esSuperusuario()): ?>

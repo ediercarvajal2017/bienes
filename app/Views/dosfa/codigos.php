@@ -8,7 +8,7 @@ $textoDescarga = "MIA - Códigos de recuperación de la verificación en dos pas
     . implode("\n", $codigos) . "\n";
 ?>
 <div class="contenedor-2fa">
-    <h1 class="h4 mb-1"><i class="bi bi-key me-1" aria-hidden="true"></i>Tus códigos de recuperación</h1>
+    <?= ui('encabezado_pagina', ['titulo' => 'Tus códigos de recuperación', 'icono' => 'seguridad']) ?>
     <div class="alert alert-warning py-2 small">
         <strong>Guárdalos ahora: no se volverán a mostrar.</strong> Si pierdes o cambias el teléfono, entra con uno
         de estos códigos (cada uno sirve una sola vez). Guárdalos fuera del teléfono: impresos, o en un gestor de contraseñas.
@@ -25,8 +25,8 @@ $textoDescarga = "MIA - Códigos de recuperación de la verificación en dos pas
     </div>
 
     <div class="d-flex flex-wrap gap-2 d-print-none">
-        <button type="button" class="btn btn-outline-primary" id="btnDescargarCodigos"><i class="bi bi-download me-1" aria-hidden="true"></i>Descargar .txt</button>
-        <button type="button" class="btn btn-outline-primary" onclick="window.print()"><i class="bi bi-printer me-1" aria-hidden="true"></i>Imprimir</button>
+        <button type="button" class="btn btn-outline-secondary" id="btnDescargarCodigos"><?= icono('descargar', 'me-1') ?>Descargar .txt</button>
+        <button type="button" class="btn btn-outline-secondary" onclick="window.print()"><?= icono('imprimir', 'me-1') ?>Imprimir</button>
         <a href="<?= Url::to('/mi-cuenta') ?>" class="btn btn-primary ms-sm-auto">Ya los guardé</a>
     </div>
 </div>

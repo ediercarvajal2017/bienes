@@ -3,14 +3,35 @@
     <div class="mt-2 small">
         <dl class="mb-0">
             <dt>Cartera (histórico)</dt>
-            <dd class="text-muted">El inventario completo de bienes de la institución, en Excel o CSV, listo para
-                enviar por correo como reporte oficial. Se llama "histórico" porque la pantalla guarda cada envío
-                que se ha hecho, no solo el más reciente.</dd>
+            <dd class="text-muted">La cartera de bienes que la institución solicita por correo y la Alcaldía le
+                envía. En esta pantalla se guarda la evidencia de cada una (quién la solicitó, quién la envió en la
+                Alcaldía y desde qué correo, la fecha y el archivo). Se llama "histórico" porque conserva todas las recibidas, no solo
+                la más reciente.</dd>
 
             <dt class="mt-2">Lotes de reintegro</dt>
             <dd class="text-muted">Agrupa varios reintegros ya registrados en un solo comprobante oficial
                 (formato FO-ADMI-009 de la Alcaldía), listo para imprimir o entregar — en vez de generar un
                 comprobante distinto por cada bien reintegrado.</dd>
+
+            <dt class="mt-2">Ayuda de los campos (?)</dt>
+            <dd class="text-muted">El ícono pequeño junto al título de un campo. Al pasar el cursor, al llegar con la
+                tecla Tab o al tocarlo en el celular, explica qué escribir en ese campo y para qué sirve. Se cierra al
+                salir, con Escape o tocando fuera.</dd>
+
+            <dt class="mt-2">Código con varias unidades</dt>
+            <dd class="text-muted">Un código (placa) de la Alcaldía que agrupa varios bienes idénticos, registrado con
+                <em>Alta masiva</em>: por ejemplo la placa 200033042 con 178 sillas. Cada unidad tiene su consecutivo
+                (200033042-001, -002…) y se puede reintegrar por cantidad.</dd>
+
+            <dt class="mt-2">Lote pendiente / Lote reintegrado</dt>
+            <dd class="text-muted">Un lote está <strong>pendiente</strong> mientras no se haya entregado a la Alcaldía.
+                Cuando se entrega, se marca como <strong>reintegrado</strong> con la fecha de entrega: queda guardado
+                como historial y ya no aparece entre los pendientes.</dd>
+
+            <dt class="mt-2">Lote unificado</dt>
+            <dd class="text-muted">Lote cuyos bienes se pasaron a lotes nuevos, uno por categoría, al unificar varios
+                lotes pendientes (o al separar uno que mezclaba categorías). Se conserva como historial, con enlace a
+                los lotes nuevos.</dd>
         </dl>
     </div>
 </details>

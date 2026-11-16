@@ -12,6 +12,7 @@ use App\Core\Request;
 use App\Core\Session;
 use App\Core\Url;
 use App\Core\View;
+use App\Helpers\FiltrosBienes;
 use App\Helpers\Paginador;
 use App\Helpers\Uploader;
 use App\Models\Asignacion;
@@ -22,8 +23,10 @@ use App\Models\Espacio;
 use App\Models\Hallazgo;
 use App\Models\Institucion;
 use App\Models\Movimiento;
+use App\Models\Usuario;
 use App\Models\Verificacion;
 use App\Services\CicloVidaBien;
+use App\Services\RenglonDePlaca;
 
 final class BienController
 {
@@ -46,28 +49,31 @@ final class BienController
         $estado = (string) ($_GET['estado'] ?? '');
         $estado = in_array($estado, self::ESTADOS, true) ? $estado : null;
         $espacioId = $institucionId !== null ? (((int) ($_GET['espacio'] ?? 0)) ?: null) : null;
+        $soloPropios = Auth::rol() === 'docente';
+        // Responsable y Tipo de responsabilidad: no aplican al docente (ya ve solo lo suyo).
+        $filtros = FiltrosBienes::desdeConsulta($_GET);
+        $responsableId = $institucionId !== null && !$soloPropios ? $filtros['responsable'] : null;
+        $tipo = !$soloPropios ? $filtros['tipo'] : null;
         $pagina = max(1, (int) ($_GET['pagina'] ?? 1));
         $porPagina = (int) ($_GET['porPagina'] ?? self::POR_PAGINA_DEFECTO);
         if (!in_array($porPagina, self::OPCIONES_POR_PAGINA, true)) {
             $porPagina = self::POR_PAGINA_DEFECTO;
         }
 
-        $soloPropios = Auth::rol() === 'docente';
-
         // Mientras no se busque ni filtre nada, los bienes que pertenecen a un lote (ej.
         // 250 sillas identicas) se excluyen del listado individual y se muestran agrupados
         // aparte (ver $lotes) — asi la cartera no queda saturada de filas casi identicas.
         // En cuanto el usuario busca o filtra algo, se ve todo, agrupado o no, para que el
         // resultado siga siendo confiable.
-        $hayFiltroActivo = $terminoBusqueda !== null || $estado !== null || $espacioId !== null;
+        $hayFiltroActivo = $terminoBusqueda !== null || $estado !== null || $espacioId !== null || $responsableId !== null || $tipo !== null;
         $excluirLotes = !$soloPropios && !$hayFiltroActivo;
 
         if ($soloPropios) {
             $total = Bien::contarPropios((int) Auth::id(), $institucionId, $terminoBusqueda, $categoriaId, $estado, $espacioId);
             $bienes = Bien::listarPropios((int) Auth::id(), $institucionId, $terminoBusqueda, $pagina, $porPagina, $categoriaId, $estado, $espacioId);
         } else {
-            $total = Bien::contarListado($institucionId, $terminoBusqueda, $excluirLotes, $categoriaId, $estado, $espacioId);
-            $bienes = Bien::listar($institucionId, $terminoBusqueda, $pagina, $porPagina, $excluirLotes, $categoriaId, $estado, $espacioId);
+            $total = Bien::contarListado($institucionId, $terminoBusqueda, $excluirLotes, $categoriaId, $estado, $espacioId, $responsableId, $tipo);
+            $bienes = Bien::listar($institucionId, $terminoBusqueda, $pagina, $porPagina, $excluirLotes, $categoriaId, $estado, $espacioId, $responsableId, $tipo);
         }
 
         // Las filas-resumen de lote se intercalan arriba de los bienes individuales en la
@@ -78,23 +84,23 @@ final class BienController
         $vistaSinFiltrar = !$soloPropios && $institucionId !== null && !$hayFiltroActivo && $pagina === 1;
         $lotes = $vistaSinFiltrar ? Bien::listarLotes($institucionId, null, $categoriaId) : [];
 
-        // "Bodega Reintegro"/"Bodega de Baja": mismo criterio que $lotes — solo se cuentan
-        // en la vista sin filtrar, y llevan al mismo filtro de Estado que ya existe.
-        $bodegaReintegroTotal = $vistaSinFiltrar ? Bien::contarListado($institucionId, null, false, null, 'reintegrado') : 0;
-        $bodegaBajaTotal = $vistaSinFiltrar ? Bien::contarListado($institucionId, null, false, null, 'dado_de_baja') : 0;
+        // El filtro Estado dice cuántos bienes hay en cada estado con los demás filtros puestos
+        // (así se encuentran los reintegrados y los dados de baja, que la vista sin filtrar oculta).
+        $conteoEstados = $soloPropios ? [] : Bien::contarPorEstado($institucionId, $terminoBusqueda, $categoriaId, $espacioId, $responsableId, $tipo);
 
         // Se recuerda la consulta del listado (búsqueda, filtros, página) para volver a
         // ella al guardar un bien o pulsar "Volver" en su ficha.
         Session::put('bienes_listado', http_build_query(array_intersect_key(
-            $_GET, array_flip(['q', 'categoria', 'estado', 'espacio', 'pagina', 'porPagina'])
+            $_GET, array_flip(['q', 'categoria', 'estado', 'espacio', 'responsable', 'tipo', 'pagina', 'porPagina'])
         )));
 
         View::layout('partials/layout', 'bienes/index', [
             'title' => 'Bienes',
             'bienes' => $bienes,
             'lotes' => $lotes,
-            'bodegaReintegroTotal' => $bodegaReintegroTotal,
-            'bodegaBajaTotal' => $bodegaBajaTotal,
+            // El superusuario trabaja sobre una institución elegida: los enlaces la llevan.
+            'sufijoInstitucion' => Auth::esSuperusuario() && $institucionId !== null ? '?institucion=' . $institucionId : '',
+            'conteoEstados' => $conteoEstados,
             'soloPropios' => $soloPropios,
             'busqueda' => $busqueda,
             'categorias' => $institucionId !== null ? Categoria::activas($institucionId) : [],
@@ -104,12 +110,27 @@ final class BienController
             'espacios' => $institucionId !== null
                 ? ($soloPropios ? Espacio::propiosDe((int) Auth::id(), $institucionId) : Espacio::listadoParaSelect($institucionId))
                 : [],
+            'responsableId' => $responsableId,
+            'responsables' => $institucionId !== null && !$soloPropios ? Usuario::paraFiltroResponsable($institucionId) : [],
+            'tipo' => $tipo,
+            'tipos' => $soloPropios ? [] : FiltrosBienes::TIPOS,
+            // Con el filtro Responsable puesto: su "Acta de bienes a cargo".
+            'urlActa' => $responsableId !== null && (Auth::esSuperusuario() || Auth::tienePermiso('reportes.generar'))
+                ? Url::to('/reportes/acta-a-cargo.xlsx') . '?usuario=' . $responsableId : null,
+            // "Descargar en Excel": la cartera con estos mismos filtros (ReporteController).
+            'urlDescarga' => Auth::esSuperusuario() || Auth::tienePermiso('reportes.generar')
+                ? Url::to('/reportes/cartera.xlsx') . '?' . http_build_query(FiltrosBienes::aConsulta([
+                    'q' => $terminoBusqueda, 'categoria' => $categoriaId, 'estado' => $estado, 'espacio' => $espacioId,
+                    'responsable' => $responsableId, 'tipo' => $tipo,
+                ]) + (Auth::esSuperusuario() && $institucionId !== null ? ['institucion' => $institucionId] : []))
+                : null,
             'pagina' => $pagina,
             'porPagina' => $porPagina,
             'opcionesPorPagina' => self::OPCIONES_POR_PAGINA,
             'total' => $total,
             'totalPaginas' => Paginador::totalPaginas($total, $porPagina),
             'mensaje' => Session::pullFlash('ok'),
+            'error' => Session::pullFlash('error'),
         ]);
     }
 
@@ -130,6 +151,8 @@ final class BienController
             'bien' => null,
             'espaciosInstitucion' => !Auth::esSuperusuario() && Auth::tienePermiso('asignaciones.crear') && $hallazgo === null
                 ? Espacio::listadoParaSelect((int) Auth::institucionId()) : [],
+            'personasInstitucion' => !Auth::esSuperusuario() && Auth::tienePermiso('asignaciones.crear') && $hallazgo === null
+                ? Usuario::elegiblesACargo((int) Auth::institucionId()) : [],
             'categorias' => Auth::esSuperusuario() ? [] : Categoria::activas((int) Auth::institucionId()),
             'instituciones' => Auth::esSuperusuario() ? Institucion::listadoParaSelect() : [],
             'error' => Session::pullFlash('error'),
@@ -203,14 +226,28 @@ final class BienController
         // ":imprimir_qr" en la consulta -- con PDO::ATTR_EMULATE_PREPARES en false eso
         // revienta con "Invalid parameter number", no se ignora en silencio.
         $imprimirQr = $datos['imprimir_qr'] === '1';
+        // Responsabilidad elegida al registrar (opcional): Grupal (espacio) o Individual
+        // (persona, con espacio opcional). Se asigna en el mismo guardado.
+        $individual = $hallazgo === null && $request->input('tipo_responsabilidad') === 'individual';
         $espacioId = $hallazgo === null ? (int) $request->input('espacio_id') : 0;
-        $datosParaReintentar = $datos + ['espacio_id' => $espacioId ?: ''];
+        $personaId = $individual ? (int) $request->input('persona_id') : 0;
+        $datosParaReintentar = $datos + [
+            'tipo_responsabilidad' => $individual ? 'individual' : 'grupal',
+            'espacio_id' => $espacioId ?: '',
+            'persona_id' => $personaId ?: '',
+        ];
         unset($datos['imprimir_qr']);
 
-        // Ubicación elegida al registrar (opcional): se asigna en el mismo guardado.
-        if ($espacioId > 0 && (Auth::esSuperusuario() || !Auth::tienePermiso('asignaciones.crear')
-                || !Espacio::perteneceYActivo($espacioId, (int) $datos['institucion_id']))) {
-            Session::flash('error', 'El espacio seleccionado no es válido (debe ser un espacio activo de la institución).');
+        $errorAsignacion = null;
+        if (($espacioId > 0 || $individual) && (Auth::esSuperusuario() || !Auth::tienePermiso('asignaciones.crear'))) {
+            $errorAsignacion = 'No tienes permiso para asignar bienes.';
+        } elseif ($individual && $personaId <= 0) {
+            $errorAsignacion = 'Elige la persona responsable, o marca la responsabilidad Grupal.';
+        } elseif ($espacioId > 0 && !Espacio::perteneceYActivo($espacioId, (int) $datos['institucion_id'])) {
+            $errorAsignacion = 'El espacio seleccionado no es válido (debe ser un espacio activo de la institución).';
+        }
+        if ($errorAsignacion !== null) {
+            Session::flash('error', $errorAsignacion);
             Session::flashOld($datosParaReintentar);
             header('Location: ' . Url::to($volverA));
             exit;
@@ -222,12 +259,14 @@ final class BienController
             // Crear el bien, auditarlo y (si viene de un hallazgo) asignarlo y cerrar el
             // hallazgo van juntos: antes podía quedar el bien creado con el hallazgo todavía
             // pendiente, o sin su asignación, si algo fallaba a mitad de camino.
-            $id = Database::transaccion(static function () use ($datos, $hallazgo, $espacioId): int {
+            $mensajeAsignacion = null;
+            $id = Database::transaccion(static function () use ($datos, $hallazgo, $espacioId, $personaId, &$mensajeAsignacion): int {
                 $id = Bien::create($datos);
                 Auditoria::registrar(Auth::id(), (int) $datos['institucion_id'], 'crear', 'bien', $id, null, $datos);
 
-                if ($espacioId > 0) {
-                    CicloVidaBien::asignarOTrasladar((array) Bien::find($id), $espacioId, date('Y-m-d'), null);
+                if ($espacioId > 0 || $personaId > 0) {
+                    $mensajeAsignacion = CicloVidaBien::asignarResponsabilidad(
+                        (array) Bien::find($id), $espacioId ?: null, $personaId ?: null, date('Y-m-d'), null);
                 }
 
                 if ($hallazgo !== null) {
@@ -270,6 +309,8 @@ final class BienController
 
         if ($hallazgo !== null) {
             Session::flash('ok', 'Bien registrado y asignado a ' . $hallazgo['espacio_nombre'] . '.');
+        } elseif ($personaId > 0 && $mensajeAsignacion !== null) {
+            Session::flash('ok', 'Bien registrado. ' . $mensajeAsignacion);
         } elseif ($espacioId > 0) {
             Session::flash('ok', 'Bien registrado y asignado a ' . (Espacio::find($espacioId)['nombre'] ?? 'el espacio elegido') . '.');
         } else {
@@ -345,7 +386,8 @@ final class BienController
         return [
             'institucion_id' => $institucionId,
             'lote' => trim((string) $request->input('lote')),
-            'descripcion' => trim((string) $request->input('descripcion')),
+            // Mayúscula o minúscula según la categoría (ver Bien::descripcionSegunCategoria).
+            'descripcion' => Bien::descripcionSegunCategoria(trim((string) $request->input('descripcion')), ((int) $request->input('categoria_id')) ?: null),
             'marca' => trim((string) $request->input('marca')) ?: null,
             'categoria_id' => ((int) $request->input('categoria_id')) ?: null,
             'fecha_ingreso' => (string) $request->input('fecha_ingreso'),
@@ -472,6 +514,7 @@ final class BienController
             'asignacionActiva' => $asignacionActiva,
             'historialMovimientos' => Movimiento::historialDe($id),
             'espaciosInstitucion' => Espacio::listadoParaSelect((int) $bien['institucion_id']),
+            'personasInstitucion' => Usuario::elegiblesACargo((int) $bien['institucion_id']),
             'familiaSedesDestino' => $familiaSedesDestino,
             'espaciosPorSedeDestino' => $espaciosPorSedeDestino,
             'verificacionId' => Verificacion::idValidoParaBien($id, (string) ($_GET['verificacion_id'] ?? '')),
@@ -544,13 +587,19 @@ final class BienController
             $mensajeAccion = Database::transaccion(function () use ($id, $datos, $accion, $request, $fotoBaja, $asignacionActiva): string {
                 Bien::update($id, $datos);
                 $actualizado = (array) Bien::find($id);
+                // Si es una unidad de una placa y cambió su categoría (p. ej. a "Sin cartera") o su
+                // valor, el renglón de la cartera lo refleja (si no cambió nada, no se toca).
+                RenglonDePlaca::sincronizarDe([$actualizado], 'Cambio en la ficha de la unidad ' . $actualizado['codigo_identificacion']);
                 $fecha = (string) ($request->input('accion_fecha') ?: date('Y-m-d'));
                 $observaciones = trim((string) $request->input('accion_observaciones')) ?: null;
                 $verificacionId = Verificacion::idValidoParaBien($id, (string) $request->input('verificacion_id'));
 
                 return match ($accion) {
-                    'asignar', 'trasladar' => CicloVidaBien::asignarOTrasladar(
-                        $actualizado, (int) $request->input('accion_espacio_id'), $fecha, $observaciones, $verificacionId),
+                    'asignar', 'trasladar' => CicloVidaBien::asignarResponsabilidad(
+                        $actualizado,
+                        (int) $request->input('accion_espacio_id') ?: null,
+                        self::personaIndividualElegida($request),
+                        $fecha, $observaciones, $verificacionId),
                     'trasladar_sede' => CicloVidaBien::trasladarSede(
                         $actualizado, (int) $request->input('accion_sede_id'), (int) $request->input('accion_espacio_sede_id'), $fecha, $observaciones),
                     'reintegrar' => CicloVidaBien::reintegrar(
@@ -577,7 +626,7 @@ final class BienController
         Auditoria::registrar(Auth::id(), (int) $datos['institucion_id'], 'editar', 'bien', $id, $bien, $datos);
 
         $this->procesarArchivos($id, $request, $datos['codigo_identificacion']);
-        $this->procesarSolicitudQr($id, $imprimirQr);
+        $this->procesarSolicitudQr($id, $imprimirQr, $request->input('quitar_qr') === '1');
 
         Session::flash('ok', trim('Bien actualizado. ' . $mensajeAccion));
 
@@ -608,11 +657,28 @@ final class BienController
         return Url::to('/bienes' . ($consulta !== [] ? '?' . http_build_query($consulta) : ''));
     }
 
+    /**
+     * Persona elegida en la acción Asignar/Traslado: null si la responsabilidad es Grupal.
+     * Individual sin persona es un error (no se convierte en Grupal sin avisar).
+     */
+    private static function personaIndividualElegida(Request $request): ?int
+    {
+        if ($request->input('accion_tipo') !== 'individual') {
+            return null;
+        }
+        $personaId = (int) $request->input('accion_persona_id');
+        if ($personaId <= 0) {
+            throw new \DomainException('Elige la persona responsable, o marca la responsabilidad Grupal.');
+        }
+
+        return $personaId;
+    }
+
     /** Campos de la acción elegida, para devolverlos al formulario si algo falla. */
     private function camposAccion(Request $request): array
     {
         $campos = [];
-        foreach (['accion', 'accion_espacio_id', 'accion_sede_id', 'accion_espacio_sede_id', 'accion_fecha',
+        foreach (['accion', 'accion_tipo', 'accion_espacio_id', 'accion_persona_id', 'accion_sede_id', 'accion_espacio_sede_id', 'accion_fecha',
                   'accion_observaciones', 'accion_destino', 'accion_motivo', 'accion_estado_reportado',
                   'accion_descripcion_baja'] as $campo) {
             $campos[$campo] = (string) $request->input($campo);
@@ -668,12 +734,18 @@ final class BienController
      * impresión de QR (/bienes/qr-masivo); desmarcada lo retira si estaba ahí. No hace
      * nada si el bien no tenía autorización de edición (formulario deshabilitado).
      */
-    private function procesarSolicitudQr(int $bienId, bool $solicitado): void
+    /**
+     * La casilla "Imprimir QR" es una orden, no un estado: marcada, manda el bien a la Bodega
+     * de QR; desmarcada, no cambia nada. Antes, desmarcada lo sacaba de la Bodega y al editar
+     * venía marcada si ya estaba en ella, así que guardar lo devolvía a "por imprimir" y se
+     * reimprimía. Para sacarlo de la Bodega está la casilla aparte "Quitar de la Bodega".
+     */
+    private function procesarSolicitudQr(int $bienId, bool $solicitado, bool $quitar = false): void
     {
-        if ($solicitado) {
-            Bien::solicitarQr($bienId, (int) Auth::id());
-        } else {
+        if ($quitar) {
             Bien::cancelarSolicitudQr($bienId);
+        } elseif ($solicitado) {
+            Bien::solicitarQr($bienId, (int) Auth::id());
         }
     }
 
@@ -689,7 +761,8 @@ final class BienController
         return [
             'institucion_id' => $institucionId,
             'codigo_identificacion' => trim((string) $request->input('codigo_identificacion')),
-            'descripcion' => trim((string) $request->input('descripcion')),
+            // Mayúscula o minúscula según la categoría (ver Bien::descripcionSegunCategoria).
+            'descripcion' => Bien::descripcionSegunCategoria(trim((string) $request->input('descripcion')), $categoriaId !== '' ? (int) $categoriaId : null),
             'marca' => trim((string) $request->input('marca')) ?: null,
             'categoria_id' => $categoriaId !== '' ? (int) $categoriaId : null,
             'fecha_ingreso' => (string) $request->input('fecha_ingreso'),

@@ -26,11 +26,10 @@ $etiquetasRol = ['superusuario' => 'Superusuario', 'rector' => 'Rector', 'secret
 
 $pintarOpcion = static function (array $o) use ($opcionActiva, $contadores): void {
     $activa = $opcionActiva !== null && $opcionActiva['ruta'] === $o['ruta'];
-    $icono = $activa && isset($o['iconoActivo']) ? $o['iconoActivo'] : $o['icono'];
     $pendientes = isset($o['contador']) ? (int) ($contadores[$o['contador']] ?? 0) : 0;
     ?>
     <a class="menu-opcion<?= $activa ? ' active' : '' ?>" href="<?= Url::to($o['ruta']) ?>" data-texto="<?= htmlspecialchars($o['texto'], ENT_QUOTES) ?>"<?= $activa ? ' aria-current="page"' : '' ?>>
-        <i class="bi bi-<?= $icono ?> menu-icono" aria-hidden="true"></i>
+        <?= icono($o['icono'], 'menu-icono', $activa) ?>
         <span class="menu-texto"><?= htmlspecialchars($o['texto'], ENT_QUOTES) ?></span>
         <?php if ($pendientes > 0): ?>
             <span class="menu-contador"><?= $pendientes ?><span class="visually-hidden"> pendiente<?= $pendientes === 1 ? '' : 's' ?></span></span>
@@ -41,7 +40,7 @@ $pintarOpcion = static function (array $o) use ($opcionActiva, $contadores): voi
 ?>
 <aside id="sidebar" class="sidebar" aria-label="Menú principal">
     <div class="menu-encabezado">
-        <span class="menu-encabezado-icono" aria-hidden="true"><i class="bi bi-building"></i></span>
+        <span class="menu-encabezado-icono" aria-hidden="true"><?= icono('institucion') ?></span>
         <div class="menu-encabezado-texto">
             <span class="menu-encabezado-nombre" title="<?= htmlspecialchars($nombreInstitucionMenu, ENT_QUOTES) ?>"><?= htmlspecialchars($nombreInstitucionMenu, ENT_QUOTES) ?></span>
             <span class="menu-encabezado-rol"><?= htmlspecialchars($etiquetasRol[Auth::rol() ?? ''] ?? (string) Auth::rol(), ENT_QUOTES) ?></span>
@@ -92,7 +91,7 @@ $pintarOpcion = static function (array $o) use ($opcionActiva, $contadores): voi
                 <details class="menu-seccion" data-seccion="<?= $seccion['clave'] ?>" open>
                     <summary class="menu-seccion-titulo<?= $esSeccionActual ? ' activa' : '' ?>">
                         <span><?= htmlspecialchars($seccion['titulo'], ENT_QUOTES) ?></span>
-                        <i class="bi bi-chevron-down menu-seccion-chevron" aria-hidden="true"></i>
+                        <?= icono('desplegar', 'menu-seccion-chevron') ?>
                     </summary>
                     <div class="menu-seccion-opciones">
                         <?php foreach ($visibles as $o) { $pintarOpcion($o); } ?>
@@ -104,11 +103,11 @@ $pintarOpcion = static function (array $o) use ($opcionActiva, $contadores): voi
 
     <div class="menu-pie">
         <?php
-        $pintarOpcion(['texto' => 'Guía rápida', 'icono' => 'question-circle', 'iconoActivo' => 'question-circle-fill', 'ruta' => '/manual']);
-        $pintarOpcion(['texto' => 'Mi cuenta', 'icono' => 'person-circle', 'ruta' => '/mi-cuenta']);
+        $pintarOpcion(['texto' => 'Guía rápida', 'icono' => 'ayuda', 'ruta' => '/manual']);
+        $pintarOpcion(['texto' => 'Mi cuenta', 'icono' => 'cuenta', 'ruta' => '/mi-cuenta']);
         ?>
         <button type="button" class="menu-opcion d-sm-none" data-tema-toggle>
-            <i class="bi bi-moon-stars menu-icono" aria-hidden="true"></i><span class="menu-texto" data-tema-texto>Cambiar tema</span>
+            <?= icono('tema', 'menu-icono') ?><span class="menu-texto" data-tema-texto>Cambiar tema</span>
         </button>
     </div>
 </aside>

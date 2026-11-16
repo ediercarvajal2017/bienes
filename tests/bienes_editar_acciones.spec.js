@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { datos, comoRol, bd } from './helpers/datos.js';
 import { seleccionarTomSelect } from './helpers/tomSelect.js';
+import { confirmar } from './helpers/confirmacion.js';
 
 /**
  * Formulario único de la ficha del bien: los datos y la acción elegida en "¿Qué desea
@@ -49,10 +50,11 @@ test('editar datos y trasladar con un solo guardado, y volver al listado como es
     // "Volver" regresa al listado con la misma búsqueda y página, resaltando el bien.
     await page.getByRole('link', { name: 'Volver' }).click();
     await expect(page).toHaveURL(new RegExp(`/bienes\\?q=${codigo}&pagina=1&editado=${bienId}`));
-    await expect(page.locator('#bienEditado')).toContainText(`PW bien editado ${sufijo}`);
+    await expect(page.locator('#bienEditado')).toContainText(`PW BIEN EDITADO ${sufijo}`);
 
     // En la base: el dato, un traslado, una sola asignación activa (la nueva) y la auditoría.
-    expect(bd(`SELECT descripcion FROM bienes WHERE id = ${bienId}`)).toBe(`PW bien editado ${sufijo}`);
+    // "Muebles": la descripción queda en mayúscula (Bien::descripcionSegunCategoria).
+    expect(bd(`SELECT descripcion FROM bienes WHERE id = ${bienId}`)).toBe(`PW BIEN EDITADO ${sufijo}`);
     expect(bd(`SELECT COUNT(*) FROM movimientos WHERE bien_id = ${bienId} AND tipo = 'traslado' AND espacio_destino_id = ${espB}`)).toBe('1');
     expect(bd(`SELECT GROUP_CONCAT(espacio_id) FROM asignaciones WHERE bien_id = ${bienId} AND activa = 1`)).toBe(String(espB));
     expect(bd(`SELECT GROUP_CONCAT(accion ORDER BY id) FROM auditoria WHERE entidad = 'bien' AND entidad_id = ${bienId}`)).toBe('trasladar,editar');
@@ -81,13 +83,12 @@ test('si la acción no se puede hacer, tampoco se guardan los datos', async ({ p
     await page.selectOption('#accionBien', 'reintegrar');
     // Se salta la validación del navegador para que el servidor reciba el destino vacío.
     await page.evaluate(() => { document.getElementById('datosBien').noValidate = true; });
-    page.once('dialog', (dialogo) => dialogo.accept());
-    await page.getByRole('button', { name: 'Guardar y reintegrar' }).click();
+    await confirmar(page, () => page.getByRole('button', { name: 'Guardar y reintegrar' }).click());
 
     await expect(page).toHaveURL(new RegExp(`/bienes/${bienId}/editar`));
     await expect(page.locator('.alert-danger')).toContainText('destino');
     // El formulario conserva lo escrito y la acción elegida; la base no cambió.
-    await expect(page.locator('input[name="descripcion"]')).toHaveValue(`PW no debe guardarse ${sufijo}`);
+    await expect(page.locator('input[name="descripcion"]')).toHaveValue(`PW NO DEBE GUARDARSE ${sufijo}`);
     await expect(page.locator('#accionBien')).toHaveValue('reintegrar');
     expect(bd(`SELECT descripcion FROM bienes WHERE id = ${bienId}`)).toBe(`PW bien acciones ${sufijo}`);
     expect(bd(`SELECT estado FROM bienes WHERE id = ${bienId}`)).toBe('activo');
@@ -118,8 +119,7 @@ test('reportar baja desde la ficha queda pendiente de aprobación', async ({ pag
     await page.selectOption('#accionBien', 'reportar_baja');
     await page.locator('#accionEstadoReportado').fill('Dañado');
     await page.locator('#accionDescripcionBaja').fill('Pata partida');
-    page.once('dialog', (dialogo) => dialogo.accept());
-    await page.getByRole('button', { name: 'Guardar y reportar baja' }).click();
+    await confirmar(page, () => page.getByRole('button', { name: 'Guardar y reportar baja' }).click());
 
     await expect(page.locator('.alert-success')).toContainText('pendiente de aprobación');
     expect(bd(`SELECT estado FROM bajas_bienes WHERE bien_id = ${bienId}`)).toBe('pendiente');

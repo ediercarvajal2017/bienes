@@ -7,17 +7,16 @@ use App\Core\View;
 $verificacionId ??= null;
 $descripcionSugerida ??= '';
 ?>
-<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-    <h1 class="h4 mb-0">Reportar baja</h1>
+<?php ob_start(); ?>
     <a href="<?= Url::to('/qr/' . $token) ?>" class="btn btn-sm btn-outline-secondary">Volver</a>
-</div>
+<?= ui('encabezado_pagina', ['titulo' => 'Reportar baja', 'icono' => 'baja', 'acciones' => (string) ob_get_clean()]) ?>
 
-<div class="card mb-3" style="max-width: 640px;">
+<div class="card mb-3 contenedor-md">
     <div class="card-body py-3 d-flex gap-3 align-items-center">
         <?php if (!empty($bien['foto_path'])): ?>
             <img src="<?= \App\Helpers\EnlaceArchivo::url($bien['foto_path']) ?>"
                  alt="Foto de <?= htmlspecialchars($bien['descripcion'], ENT_QUOTES) ?>"
-                 style="width:52px;height:52px;object-fit:cover;border-radius:6px;">
+                 class="miniatura-52">
         <?php endif; ?>
         <div>
             <div class="fw-semibold"><?= htmlspecialchars($bien['descripcion'], ENT_QUOTES) ?></div>
@@ -27,18 +26,18 @@ $descripcionSugerida ??= '';
 </div>
 
 <?php if (!empty($error)): ?>
-    <div class="alert alert-danger py-2 small" style="max-width: 640px;"><?= htmlspecialchars($error, ENT_QUOTES) ?></div>
+    <?= ui('alerta', ['tipo' => 'peligro', 'mensaje' => (string) $error, 'clases' => 'py-2 small contenedor-md']) ?>
 <?php endif; ?>
 
 <?php if ($verificacionId !== null): ?>
-    <div class="alert alert-info py-2 small" style="max-width: 640px;">
-        <i class="bi bi-info-circle me-1"></i>Este reporte viene de una discrepancia detectada en una jornada de verificación.
+    <div class="alert alert-info py-2 small contenedor-md">
+        <?= icono('info', 'me-1') ?>Este reporte viene de una discrepancia detectada en una jornada de verificación.
     </div>
 <?php endif; ?>
 
 <p class="text-muted small mb-2">Los campos marcados con <span class="text-danger">*</span> son obligatorios.</p>
 
-<form method="post" action="<?= Url::to('/qr/' . $token . '/baja') ?>" enctype="multipart/form-data" class="row g-3" style="max-width: 640px;">
+<form method="post" action="<?= Url::to('/qr/' . $token . '/baja') ?>" enctype="multipart/form-data" class="row g-3 contenedor-md">
     <?= Csrf::field() ?>
     <?php if ($verificacionId !== null): ?>
         <input type="hidden" name="verificacion_id" value="<?= (int) $verificacionId ?>">

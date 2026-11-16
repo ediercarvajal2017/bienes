@@ -191,7 +191,8 @@ $revisiones = [
         'Lotes vacíos (por una carrera entre dos peticiones o un error a mitad de camino).',
         "SELECT l.id AS lote_id, l.fecha, i.nombre AS institucion, l.created_at
          FROM lotes_reintegro l JOIN instituciones i ON i.id = l.institucion_id
-         WHERE NOT EXISTS (SELECT 1 FROM movimientos m WHERE m.lote_reintegro_id = l.id)",
+         WHERE l.estado <> 'unificado'
+           AND NOT EXISTS (SELECT 1 FROM movimientos m WHERE m.lote_reintegro_id = l.id)",
     ],
     [
         'R15', 'ALTA', 'Instituciones con más de una jornada de verificación EN PROGRESO',

@@ -32,7 +32,7 @@ test('el panel principal carga con el saludo y accesos funcionales', async ({ pa
     // Si hay algún indicador pendiente (baja, bien sin asignar, hallazgo), su tarjeta
     // debe llevar a una pantalla real, no a un enlace roto.
     await page.goto('dashboard');
-    const indicador = page.locator('a.card.border-warning, a.card.border-secondary, a.card.border-info').first();
+    const indicador = page.locator('a.indicador').first();
     if (await indicador.count() > 0) {
         const errores = [];
         page.on('pageerror', (e) => errores.push(e.message));

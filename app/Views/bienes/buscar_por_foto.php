@@ -2,32 +2,35 @@
 
 use App\Core\Csrf;
 use App\Core\Url;
+use App\Core\View;
 
 ?>
-<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-    <div>
-        <h1 class="h4 mb-0">Buscar por foto</h1>
-        <p class="text-muted small mb-0">Toma o sube una foto del bien y el sistema busca los más parecidos por su apariencia, aunque no tengas el código a mano.</p>
-    </div>
-    <a href="<?= Url::to('/bienes') ?>" class="btn btn-sm btn-outline-secondary">Volver</a>
-</div>
+<?= ui('encabezado_pagina', ['titulo' => 'Buscar por foto', 'icono' => 'foto',
+    'subtitulo' => 'Toma o sube una foto del bien y el sistema busca los más parecidos por su apariencia, aunque no tengas el código a mano.',
+    'acciones' => ui('boton', ['texto' => 'Volver', 'icono' => 'volver', 'tamano' => 'sm', 'url' => Url::to('/bienes')]) . ui('menu_acciones', ['opciones' => \App\Helpers\AccionesBienes::opciones(), 'actual' => 'buscar_foto']),
+]) ?>
 
 <?php if ($sinInstitucion): ?>
-    <div class="alert alert-warning py-2 small" style="max-width: 640px;">
-        Selecciona una institución en el filtro del encabezado para buscar por foto.
-    </div>
+    <?= ui('alerta', ['tipo' => 'advertencia', 'mensaje' => 'Selecciona una institución en el filtro del encabezado para buscar por foto.', 'cerrable' => false, 'clases' => 'py-2 small contenedor-md']) ?>
 <?php else: ?>
 
-    <div style="max-width: 420px;">
-        <label for="inputFotoBusqueda" class="form-label small">Foto a buscar</label>
-        <input type="file" id="inputFotoBusqueda" accept="image/*" class="form-control form-control-sm">
+    <div class="contenedor-sm">
+        <?php View::render('partials/campo_foto', [
+            // Mismo componente de los formularios: elegir una foto o "Tomar foto" con la cámara
+            // del equipo. Sin capture, para que en el celular se pueda elegir cámara o galería.
+            'nombreCampo' => 'foto_busqueda',
+            'etiqueta' => 'Foto a buscar',
+            'idCampo' => 'inputFotoBusqueda',
+            'accept' => 'image/*',
+            'capturaNativa' => false,
+        ]); ?>
         <p id="notaIndexado" class="small text-muted mt-2 mb-0"></p>
         <p id="estadoBusqueda" class="small mt-2 mb-0"></p>
     </div>
 
-    <div id="resultadosBusqueda" class="row g-3 mt-1" style="max-width: 900px;"></div>
+    <div id="resultadosBusqueda" class="row g-3 mt-1 contenedor-lg"></div>
 
-    <p class="text-muted small mt-3" style="max-width: 640px;">
+    <p class="text-muted small mt-3 contenedor-md">
         Los resultados son sugerencias por parecido visual, no una identificación exacta -- confirma
         siempre el código antes de dar por hecho que es el mismo bien.
     </p>

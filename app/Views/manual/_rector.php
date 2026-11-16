@@ -11,15 +11,34 @@
             <ol class="mb-0 ps-3">
                 <li><strong>Registrar un bien</strong> (Bienes &gt; Registrar bien): código, descripción, categoría,
                     marca, valor y, si aplica, foto y factura. La categoría es obligatoria — sin ella, el bien no se
-                    podrá reintegrar más adelante.</li>
-                <li><strong>Asignar</strong> un bien a un espacio y a un responsable, desde la ficha del bien (o varios a la vez en
-                    <strong>Bienes &gt; Acciones masivas &gt; Asignar bienes</strong>).</li>
-                <li><strong>Trasladar</strong> un bien asignado a otro espacio.</li>
+                    podrá reintegrar más adelante. Junto al título de cada campo hay un ícono <strong>(?)</strong>:
+                    pasa el cursor por encima (o tócalo en el celular) para ver qué escribir.</li>
+                <li><strong>Asignar</strong> un bien, desde su ficha (o varios a la vez en
+                    <strong>Bienes &gt; Acciones &gt; Asignar bienes</strong>). Elige la responsabilidad:
+                    <ul class="mt-1">
+                        <li><strong>Grupal</strong>: el bien queda en un espacio y responden todos los responsables de ese
+                            espacio (por ejemplo, las sillas del Aula 101).</li>
+                        <li><strong>Individual</strong>: el bien queda a cargo de una persona y responde solo ella (por ejemplo,
+                            el portátil de un docente). Si quieres, indica en qué espacio está guardado.</li>
+                    </ul>
+                </li>
+                <li><strong>Trasladar</strong> un bien asignado a otro espacio o a otra persona, o pasarlo de Grupal a
+                    Individual (o al revés). Cada cambio queda en su historial.</li>
                 <li><strong>Reintegrar</strong> un bien desde su ficha, o varios a la vez en
-                    <strong>Bienes &gt; Acciones masivas &gt; Reintegrar bienes</strong>.</li>
+                    <strong>Bienes &gt; Acciones &gt; Reintegrar bienes</strong>.</li>
+                <li><strong>Reintegrar por cantidad</strong> un código con varias unidades (alta masiva, p. ej. la placa de
+                    178 sillas): en su fila de <strong>Bienes</strong> usa "Reintegrar por cantidad" y escribe cuántas
+                    unidades salen de cada ubicación (también las que están sin asignar). En el comprobante salen en un
+                    solo renglón: la placa y la cantidad. Si el código también está en la cartera como un solo bien
+                    (p. ej. "178 SILLAS UNIVERSITARIAS"), MIA lo mantiene al día: al reintegrar unidades (por cantidad, desde su
+                    ficha o en Reintegrar bienes), al reactivarlas o al pasarlas a "Sin cartera", queda "175 SILLAS…" con su
+                    valor en proporción. Ese renglón no es una silla más: no se reintegra aparte, y cuando ya no queda ninguna
+                    unidad pasa solo a Reintegrado.</li>
                 <li><strong>Dar de baja</strong> un bien, o aprobar/rechazar bajas que otros reporten (ver tema 6).</li>
-                <li>Para cargar muchos bienes o fotos de una vez, usa <strong>Bienes &gt; Acciones masivas &gt; Carga
+                <li>Para cargar muchos bienes o fotos de una vez, usa <strong>Bienes &gt; Acciones &gt; Carga
                     masiva de bienes</strong>.</li>
+                <li>Cada pantalla a la que lleva <strong>Acciones</strong> tiene el mismo botón, con la pantalla actual
+                    resaltada: pasas de una acción a otra (por ejemplo, de Alta masiva a Generar QR masivo) sin volver a Bienes.</li>
             </ol>
         </div>
     </details>
@@ -100,10 +119,23 @@
         <summary class="fw-semibold">7. Lotes de reintegro y el comprobante oficial (FO-ADMI-009)</summary>
         <div class="mt-2 small">
             <ol class="mb-0 ps-3">
-                <li>Después de reintegrar bienes, entra a <strong>Lotes de reintegro</strong> y genera un lote con
-                    los movimientos pendientes de agrupar.</li>
+                <li>Después de reintegrar bienes, entra a <strong>Lotes de reintegro</strong> y genera el lote con
+                    los reintegros pendientes de agrupar. MIA crea <strong>un lote por cada categoría</strong>
+                    (Muebles, Tecnología…), cada uno con su propio comprobante.</li>
                 <li>Desde el detalle del lote, descarga el <strong>comprobante</strong>: el formato oficial que
                     exige la Alcaldía, ya organizado por categoría y listo para imprimir.</li>
+                <li>¿Tienes varios lotes pendientes de fechas distintas? Selecciónalos y usa <strong>Unificar por
+                    categoría</strong>: MIA muestra primero el resultado y, al confirmar, crea un lote nuevo por
+                    categoría (uno de Muebles, otro de Tecnología…). Los lotes de origen quedan como
+                    <strong>Unificado</strong>, con enlace a los nuevos. Un lote viejo que mezcla categorías se
+                    puede <strong>separar por categoría</strong> desde su detalle.</li>
+                <li>Cuando entregues el lote a la Alcaldía, márcalo como <strong>reintegrado</strong> (fecha de
+                    entrega y una nota opcional). Sale de la pestaña <strong>Pendientes</strong> y ya no se mezcla
+                    con los reintegros nuevos; su Excel se sigue pudiendo descargar.</li>
+                <li>Para ponerte al día con lotes viejos, marca varios a la vez: filtra con <em>Lote hasta</em>,
+                    selecciónalos en la lista y usa <strong>Marcar como reintegrados</strong>.</li>
+                <li>Si marcaste un lote por error, ábrelo y usa <strong>Reabrir el lote</strong> (con el motivo):
+                    vuelve a quedar pendiente. Solo el rector puede hacerlo.</li>
             </ol>
         </div>
     </details>
@@ -114,8 +146,27 @@
             <ol class="mb-0 ps-3">
                 <li>Entra a <strong>Reportes</strong> para descargar la cartera de bienes, los reintegros
                     (pendientes o históricos) y el consolidado de jornadas de verificación, en Excel o CSV.</li>
-                <li>En <strong>Cartera (histórico)</strong> puedes enviar ese reporte por correo, indicando el
-                    funcionario que lo remite y el destinatario.</li>
+                <li>El Excel de la cartera completa trae además la hoja <strong>Cartera por placa</strong>: una fila por
+                    código, con la cantidad que queda en cartera, las reintegradas y las dadas de baja.</li>
+                <li>En <strong>Bienes</strong>, el botón <strong>Filtros</strong> abre los filtros por Categoría, Estado,
+                    <strong>Espacio</strong>, <strong>Responsable</strong> y <strong>Responsabilidad</strong> (Grupal, Individual o
+                    Sin asignar). Lo que filtres queda a la vista como etiquetas que quitas con un clic. El filtro Estado dice
+                    cuántos bienes hay en cada estado: así encuentras los reintegrados y los dados de baja.
+                    <strong>Acciones &gt; Descargar cartera en Excel</strong> baja la cartera con los filtros que tengas puestos.</li>
+                <li>Con un responsable elegido en el filtro aparece en <strong>Acciones</strong> el <strong>Acta de bienes a cargo</strong>: un Excel con sus
+                    bienes individuales y los de sus espacios, para imprimir y firmar (por ejemplo, cuando alguien sale de
+                    la institución). También está en <strong>Reportes</strong>.</li>
+                <li>En <strong>Cartera (histórico)</strong> registras cada cartera que la institución solicitó por correo
+                    y la Alcaldía le envió: el funcionario que la solicitó (se elige de la lista) y su correo, los nombres
+                    completos del funcionario de la Alcaldía que la envió y el correo desde el que llegó, la fecha en que se recibió y el archivo. Los registros aparecen debajo del
+                    formulario, en la misma ventana, con Descargar, Editar y Eliminar.</li>
+                <li>En <strong>Actividad de los funcionarios</strong> eliges un período (hoy, ayer, 7 días, el mes o un
+                    rango) y, si quieres, un funcionario, y descargas en Excel: el resumen por funcionario, los registros
+                    nuevos, los actualizados (qué campo cambió, antes y después) y los movimientos, o todo en un solo
+                    archivo.</li>
+                <li>En <strong>Control del inventario</strong> descargas en Excel la calidad del inventario (bienes sin
+                    foto, sin categoría, sin asignar o sin QR pegado), el valor por espacio y categoría, y los
+                    funcionarios que no ingresan hace 30 días o más.</li>
                 <li>Al final de Reportes, <strong>Descargar toda la información</strong> te da un .zip con todo lo
                     registrado de tu institución y sus sedes (un Excel con una hoja por tema y, si quieres, las fotos y
                     documentos). Úsalo como copia propia; contiene datos personales, así que guárdalo en un lugar
@@ -136,6 +187,9 @@
                     firmado, con su fecha y una descripción.</li>
                 <li><strong>Facturas</strong>: sube las facturas administrativas de compras, para tenerlas
                     centralizadas.</li>
+                <li>Todo queda en la misma ventana: arriba el formulario y debajo los registros, con
+                    <strong>Descargar</strong>, <strong>Editar</strong> (el formulario se llena con sus datos) y
+                    <strong>Eliminar</strong> (va a la papelera).</li>
             </ol>
         </div>
     </details>

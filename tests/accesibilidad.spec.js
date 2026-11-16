@@ -14,7 +14,7 @@ const RUTAS = [
     'bienes', 'bienes/crear', 'bienes/alta-masiva', 'bienes/qr-masivo', 'bienes/qr-masivo/bodega',
     'bienes/carga-masiva-fotos', 'espacios', 'espacios/crear', 'espacios/carga-masiva',
     'asignaciones', 'reintegros', 'reintegros/lotes', 'reintegros/lotes/generar', 'reintegros/solicitudes',
-    'bajas', 'verificaciones', 'escanear', 'reportes', 'cartera/enviar', 'cartera/enviados',
+    'bajas', 'verificaciones', 'escanear', 'reportes', 'cartera/enviar',
     'formatos-reintegro', 'formatos-plaqueteo', 'facturas', 'usuarios', 'usuarios/crear',
     'usuarios/carga-masiva', 'categorias', 'cargas-masivas',
 ];

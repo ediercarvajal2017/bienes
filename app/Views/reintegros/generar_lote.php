@@ -7,15 +7,12 @@ use App\Core\View;
 $viejo ??= [];
 $movimientosSeleccionados = $viejo['movimientos'] ?? [];
 ?>
-<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-    <div>
-        <h1 class="h4 mb-0">Generar lote de reintegro</h1>
-        <p class="text-muted small mb-0">Reintegros ya registrados que todavía no están agrupados en ningún lote. Selecciona los que quieras consolidar y genera el formato.</p>
-    </div>
+<?php ob_start(); ?>
     <a href="<?= Url::to('/reintegros/lotes') ?>" class="btn btn-sm btn-outline-secondary">Ver lotes</a>
-</div>
+<?= ui('encabezado_pagina', ['titulo' => 'Generar lote de reintegro', 'icono' => 'reintegro', 'subtitulo' => 'Reintegros ya registrados que todavía no están agrupados en ningún lote. Selecciona los que quieras consolidar: se crea un lote por cada categoría (Muebles, Tecnología…), cada uno con su comprobante en Excel.', 'acciones' => (string) ob_get_clean()]) ?>
 
-<?php if (!empty($error)): ?><div class="alert alert-danger py-2 small"><?= htmlspecialchars($error, ENT_QUOTES) ?></div><?php endif; ?>
+<?php if (!empty($mensaje)): ?><?= ui('alerta', ['tipo' => 'exito', 'mensaje' => (string) $mensaje, 'clases' => 'py-2 small']) ?><?php endif; ?>
+<?php if (!empty($error)): ?><?= ui('alerta', ['tipo' => 'peligro', 'mensaje' => (string) $error, 'clases' => 'py-2 small']) ?><?php endif; ?>
 
 <?php if (empty($pendientes)): ?>
     <p class="text-muted">No hay reintegros sueltos pendientes de agrupar. Aparecerán aquí cada vez que reintegres un bien.</p>
@@ -23,7 +20,7 @@ $movimientosSeleccionados = $viejo['movimientos'] ?? [];
     <form method="post" action="<?= Url::to('/reintegros/lotes/generar') ?>" id="formGenerarLote">
         <?= Csrf::field() ?>
 
-        <div class="card mb-3" style="max-width: 680px;">
+        <div class="card mb-3 contenedor-md">
             <div class="card-body py-3">
                 <h2 class="h6 mb-3">Datos del lote (opcional)</h2>
                 <div class="row g-3">
@@ -50,10 +47,11 @@ $movimientosSeleccionados = $viejo['movimientos'] ?? [];
             <table class="table table-sm table-hover align-middle bg-white tabla-cards">
                 <thead>
                 <tr>
-                    <th style="width: 32px;"><input type="checkbox" id="seleccionarTodos" class="form-check-input" aria-label="Seleccionar todos"></th>
+                    <th class="columna-casilla"><input type="checkbox" id="seleccionarTodos" class="form-check-input" aria-label="Seleccionar todos"></th>
                     <th></th>
                     <th>Código</th>
                     <th>Descripción</th>
+                    <th>Categoría</th>
                     <th>Fecha de reintegro</th>
                     <th>Reintegrado por</th>
                     <th>Destino</th>
@@ -73,13 +71,20 @@ $movimientosSeleccionados = $viejo['movimientos'] ?? [];
                                      class="miniatura-36 miniatura-ampliable"
                                      title="Ver foto en grande" loading="lazy">
                             <?php else: ?>
-                                <span class="d-inline-flex align-items-center justify-content-center bg-light text-muted" style="width:36px;height:36px;border-radius:4px;">
-                                    <i class="bi bi-box-seam"></i>
+                                <span class="miniatura-vacia">
+                                    <?= icono('bien') ?>
                                 </span>
                             <?php endif; ?>
                         </td>
                         <td class="mono" data-label="Código"><?= htmlspecialchars($p['codigo_identificacion'], ENT_QUOTES) ?></td>
                         <td data-label="Descripción"><?= htmlspecialchars($p['descripcion'], ENT_QUOTES) ?></td>
+                        <td data-label="Categoría">
+                            <?php if (!empty($p['categoria_nombre'])): ?>
+                                <span class="badge badge-neutro"><?= htmlspecialchars($p['categoria_nombre'], ENT_QUOTES) ?></span>
+                            <?php else: ?>
+                                <span class="text-muted">Sin categoría</span>
+                            <?php endif; ?>
+                        </td>
                         <td class="text-muted mono" data-label="Fecha de reintegro"><?= htmlspecialchars($p['fecha_reintegro'], ENT_QUOTES) ?></td>
                         <td class="text-muted small" data-label="Reintegrado por">
                             <?= !empty($p['responsable_nombre']) ? htmlspecialchars($p['responsable_nombre'], ENT_QUOTES) : '—' ?>
@@ -106,7 +111,7 @@ $movimientosSeleccionados = $viejo['movimientos'] ?? [];
 
         <div class="accion-fija-movil">
             <button type="submit" class="btn btn-primary mt-2" id="botonGenerar" disabled>
-                <i class="bi bi-file-earmark-plus me-1"></i>Generar lote (<span id="contadorSeleccionados">0</span>)
+                <?= icono('crear', 'me-1') ?>Generar lote (<span id="contadorSeleccionados">0</span>)
             </button>
         </div>
     </form>
@@ -137,8 +142,8 @@ $movimientosSeleccionados = $viejo['movimientos'] ?? [];
                 e.preventDefault();
                 return;
             }
-            if (!confirm('¿Generar un lote con ' + seleccionados + ' reintegro(s) seleccionado(s)?')) {
-                e.preventDefault();
+            if (!window.miaConfirmarEnvio(e, { mensaje: '¿Agrupar ' + seleccionados + ' reintegro(s)? Se creará un lote por cada categoría.', boton: 'Generar lote' })) {
+                return;
             }
         });
     })();

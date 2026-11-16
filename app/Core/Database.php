@@ -30,6 +30,12 @@ final class Database
                             PDO::ATTR_EMULATE_PREPARES => false,
                         ]
                     );
+                    // Misma hora que la app: NOW(), las fechas por defecto y las columnas
+                    // TIMESTAMP (auditoría, creado/actualizado) se leen y escriben en esta zona.
+                    $zona = (string) ($config['zona_horaria'] ?? '');
+                    if (preg_match('/^[+-](0\d|1[0-4]):[0-5]\d$/', $zona)) {
+                        self::$instance->exec("SET time_zone = '{$zona}'");
+                    }
                     break;
                 } catch (\PDOException $e) {
                     if ($intento >= 4 || !self::esFallaTransitoria($e)) {

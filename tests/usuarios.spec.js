@@ -1,8 +1,9 @@
 import { test, expect } from '@playwright/test';
+import { aceptarConfirmaciones } from './helpers/confirmacion.js';
 
 test('crear, editar, desactivar y eliminar un usuario', async ({ page }) => {
     // Activar/desactivar/eliminar piden confirmación (data-confirmar): se acepta.
-    page.on('dialog', (dialogo) => dialogo.accept());
+    await aceptarConfirmaciones(page);
     const sufijo = Date.now();
     const documento = `PWTEST${sufijo}`;
     const email = `pw-test-${sufijo}@example.com`;
@@ -43,4 +44,42 @@ test('crear, editar, desactivar y eliminar un usuario', async ({ page }) => {
     await fila.getByRole('button', { name: 'Eliminar' }).click();
 
     await expect(page.locator('tr', { hasText: emailEditado })).toHaveCount(0);
+});
+
+test('editar un usuario con verificación en dos pasos deja la auditoría completa y sin secretos', async ({ page }) => {
+    const { datos, bd } = await import('./helpers/datos.js');
+    const marca = Date.now();
+    const correo = `pw-2fa-${marca}@prueba.test`;
+    // Usuario con la verificación activa: totp_secreto es binario (cifrado) y antes hacía
+    // fallar json_encode, así que la auditoría quedaba con "datos antes" vacío.
+    bd(`INSERT INTO usuarios (documento, nombres, apellidos, cargo_id, email, password_hash, institucion_id, rol_id, activo, totp_secreto, totp_activado_en)
+        SELECT 'PW2FA-${marca}', 'Ana', 'Dos Pasos', cargo_id, '${correo}', password_hash, institucion_id, rol_id, 1, UNHEX('00FF10E2C3A4FFEE99'), NOW()
+        FROM usuarios WHERE id = ${datos().usuarios.docente.id}`);
+    const id = Number(bd(`SELECT id FROM usuarios WHERE email = '${correo}'`));
+
+    await page.goto(`usuarios/${id}/editar`);
+    await page.locator('input[name="apellidos"]').fill('Dos Pasos Editada');
+    await page.getByRole('button', { name: 'Guardar cambios' }).click();
+    await expect(page).toHaveURL(/\/usuarios(\?.*)?$/);
+
+    const antes = bd(`SELECT datos_antes FROM auditoria WHERE entidad = 'usuario' AND accion = 'editar' AND entidad_id = ${id} ORDER BY id DESC LIMIT 1`);
+    const json = JSON.parse(antes);
+    expect(json.apellidos).toBe('Dos Pasos');
+    for (const campo of ['totp_secreto', 'password_hash', 'totp_ultimo_paso', 'sesion_version']) {
+        expect(json, campo).not.toHaveProperty(campo);
+    }
+
+    bd(`DELETE FROM auditoria WHERE entidad = 'usuario' AND entidad_id = ${id}; DELETE FROM usuarios WHERE id = ${id}`);
+});
+
+test('los avisos de error de Usuarios se ven en la lista (no eliminar la propia cuenta)', async ({ browser }) => {
+    const { datos, comoRol, csrf } = await import('./helpers/datos.js');
+    const contexto = await comoRol(browser, 'rector');
+    const pagina = await contexto.newPage();
+    await pagina.goto('usuarios');
+    // Sin seguir la redirección: si no, esa petición abre la lista y se "come" el aviso.
+    await pagina.request.post(`usuarios/${datos().usuarios.rector.id}/eliminar`, { form: { _csrf: await csrf(pagina) }, maxRedirects: 0 });
+    await pagina.goto('usuarios');
+    await expect(pagina.getByRole('alert')).toContainText('No puedes eliminar tu propia cuenta');
+    await contexto.close();
 });

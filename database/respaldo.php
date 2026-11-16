@@ -57,6 +57,9 @@ if (!is_dir($dirBackups)) {
 }
 
 $pdo = Database::connection();
+// Las columnas TIMESTAMP se leen en UTC y el respaldo lo declara (igual que mysqldump): así
+// se restaura con las mismas horas en cualquier servidor, tenga la zona horaria que tenga.
+$pdo->exec("SET time_zone = '+00:00'");
 $fecha = date('Y-m-d_H-i-s');
 $rutaComprimida = isset($opciones['salida']) && is_string($opciones['salida'])
     ? $opciones['salida']
@@ -84,6 +87,7 @@ $escribir = static function ($handle, string $texto): void {
 
 $escribir($handle, "-- Respaldo de '{$dbConfig['database']}' generado el " . date('Y-m-d H:i:s') . "\n");
 $escribir($handle, "SET NAMES utf8mb4;\n");
+$escribir($handle, "SET TIME_ZONE='+00:00';\n");
 $escribir($handle, "SET FOREIGN_KEY_CHECKS=0;\n\n");
 
 $tablas = $pdo->query('SHOW FULL TABLES WHERE Table_type = \'BASE TABLE\'')->fetchAll(PDO::FETCH_COLUMN);

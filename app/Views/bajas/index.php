@@ -7,17 +7,14 @@ use App\Core\View;
 use App\Models\Categoria;
 
 ?>
-<div class="mb-3">
-    <h1 class="h4 mb-0">Bajas de bienes</h1>
-    <p class="text-muted small mb-0">Reportes enviados desde la ficha de cada bien, pendientes de aprobación.</p>
-</div>
+<?= ui('encabezado_pagina', ['titulo' => 'Bajas de bienes', 'icono' => 'baja', 'subtitulo' => 'Reportes enviados desde la ficha de cada bien, pendientes de aprobación.']) ?>
 
 <?php if (!empty($mensaje)): ?>
-    <div class="alert alert-success py-2 small"><?= htmlspecialchars($mensaje, ENT_QUOTES) ?></div>
+    <?= ui('alerta', ['tipo' => 'exito', 'mensaje' => (string) $mensaje, 'clases' => 'py-2 small']) ?>
 <?php endif; ?>
 
 <?php if (!empty($error)): ?>
-    <div class="alert alert-danger py-2 small"><?= htmlspecialchars($error, ENT_QUOTES) ?></div>
+    <?= ui('alerta', ['tipo' => 'peligro', 'mensaje' => (string) $error, 'clases' => 'py-2 small']) ?>
 <?php endif; ?>
 
 <?php View::render('partials/paginacion', [
@@ -63,7 +60,7 @@ use App\Models\Categoria;
                     <div class="small text-muted mono"><?= htmlspecialchars($b['codigo_identificacion'], ENT_QUOTES) ?></div>
                     <?php if ($pendiente && !$admiteBaja): ?>
                         <div class="small text-danger mt-1">
-                            <i class="bi bi-exclamation-triangle me-1"></i>No admite baja (categoría "<?= htmlspecialchars($b['categoria_nombre'] ?? 'sin categoría', ENT_QUOTES) ?>") —
+                            <?= icono('advertencia', 'me-1') ?>No admite baja (categoría "<?= htmlspecialchars($b['categoria_nombre'] ?? 'sin categoría', ENT_QUOTES) ?>") —
                             <a href="<?= Url::to('/bienes/' . $b['bien_id'] . '/editar') ?>">recategorice a "<?= htmlspecialchars(Categoria::NOMBRE_CATEGORIA_PROTEGIDA, ENT_QUOTES) ?>"</a> o rechace el reporte.
                         </div>
                     <?php endif; ?>
@@ -96,11 +93,12 @@ use App\Models\Categoria;
                             <form method="post" action="<?= Url::to('/bajas/' . $b['id'] . '/aprobar') ?>" class="d-inline"
                                   data-confirmar="¿Aprobar esta baja? El bien pasará a estado &#x27;Dado de baja&#x27;.">
                                 <?= Csrf::field() ?>
-                                <button type="submit" class="btn btn-sm btn-outline-success">Aprobar</button>
+                                <button type="submit" class="btn btn-sm btn-outline-secondary">Aprobar</button>
                             </form>
                         <?php endif; ?>
                         <form method="post" action="<?= Url::to('/bajas/' . $b['id'] . '/rechazar') ?>" class="d-inline"
-                              onsubmit="var m = prompt('Motivo del rechazo (queda registrado en el historial):'); if (!m || !m.trim()) { return false; } this.motivo_rechazo.value = m.trim(); return true;">
+                              data-pedir-texto="Motivo del rechazo" data-pedir-texto-campo="motivo_rechazo" data-pedir-texto-tipo="peligro"
+                              data-pedir-texto-titulo="Rechazar el reporte de baja" data-pedir-texto-mensaje="El motivo queda registrado en el historial del bien." data-pedir-texto-boton="Rechazar">
                             <?= Csrf::field() ?>
                             <input type="hidden" name="motivo_rechazo" value="">
                             <button type="submit" class="btn btn-sm btn-outline-secondary">Rechazar</button>

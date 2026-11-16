@@ -6,20 +6,21 @@ use App\Core\View;
 
 $urlBasePaginacion = Url::to('/cargas-masivas') . ($busqueda !== '' ? '?' . http_build_query(['q' => $busqueda]) : '');
 ?>
-<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-    <h1 class="h4 mb-0">Carga masiva de bienes</h1>
+<?php ob_start(); ?>
     <a href="<?= Url::to('/bienes') ?>" class="btn btn-sm btn-outline-secondary">Volver</a>
-</div>
+    <?= ui('menu_acciones', ['opciones' => \App\Helpers\AccionesBienes::opciones(), 'actual' => 'carga_masiva']) ?>
+<?= ui('encabezado_pagina', ['titulo' => 'Carga masiva de bienes', 'icono' => 'subir', 'acciones' => (string) ob_get_clean()]) ?>
 
-<?php if (!empty($mensaje)): ?><div class="alert alert-success py-2 small" style="max-width:640px;"><?= htmlspecialchars($mensaje, ENT_QUOTES) ?></div><?php endif; ?>
-<?php if (!empty($error)): ?><div class="alert alert-danger py-2 small" style="max-width:640px;"><?= htmlspecialchars($error, ENT_QUOTES) ?></div><?php endif; ?>
+<?php if (!empty($mensaje)): ?><?= ui('alerta', ['tipo' => 'exito', 'mensaje' => (string) $mensaje, 'clases' => 'py-2 small contenedor-md']) ?><?php endif; ?>
+<?php if (!empty($error)): ?><?= ui('alerta', ['tipo' => 'peligro', 'mensaje' => (string) $error, 'clases' => 'py-2 small contenedor-md']) ?><?php endif; ?>
 
-<div class="card mb-4" style="max-width: 640px;">
+<div class="card mb-4 contenedor-md">
     <div class="card-body">
         <p class="small text-muted">
             Sube un archivo <strong>.xlsx</strong> con las columnas: Código, Descripción, Marca, Fecha de ingreso
             (opcional), Valor, Ubicación (opcional, código de un espacio ya existente), Categoría
-            (opcional, nombre de una categoría activa ya existente).
+            (opcional, nombre de una categoría activa ya existente) y Responsable individual (opcional, documento
+            de un usuario activo: el bien queda a su cargo y la Ubicación, si la pones, es donde está guardado).
             <a href="<?= Url::to('/cargas-masivas/plantilla.xlsx') ?>">Descargar plantilla</a>.
         </p>
         <form method="post" action="<?= Url::to('/cargas-masivas') ?>" enctype="multipart/form-data" class="d-flex gap-2">
@@ -30,14 +31,14 @@ $urlBasePaginacion = Url::to('/cargas-masivas') . ($busqueda !== '' ? '?' . http
         <hr>
         <p class="small text-muted mb-2">¿Ya subiste los bienes y quieres emparejar sus fotos por código?</p>
         <a href="<?= Url::to('/bienes/carga-masiva-fotos') ?>" class="btn btn-sm btn-outline-secondary">
-            <i class="bi bi-images me-1"></i>Carga masiva de fotos (.zip)
+            <?= icono('subir', 'me-1') ?>Carga masiva de fotos (.zip)
         </a>
     </div>
 </div>
 
 <h2 class="h6">Cargas anteriores</h2>
 
-<div class="mb-2" style="max-width: 420px;">
+<div class="mb-2 contenedor-sm">
     <input type="search" id="buscador" data-buscar="q" class="form-control form-control-sm"
            placeholder="Buscar por quién la subió, fecha o estado..."
            value="<?= htmlspecialchars($busqueda, ENT_QUOTES) ?>">
@@ -49,7 +50,7 @@ $urlBasePaginacion = Url::to('/cargas-masivas') . ($busqueda !== '' ? '?' . http
     'urlBase' => $urlBasePaginacion,
 ]); ?>
 
-<div class="table-responsive" style="max-width: 800px;">
+<div class="table-responsive contenedor-md">
     <table class="table table-sm bg-white tabla-cards">
         <thead>
         <tr><th>Fecha</th><th>Subido por</th><th>Filas</th><th>Nuevos</th><th>Modificados</th><th>Sin cambios</th><th>Estado</th><th></th></tr>

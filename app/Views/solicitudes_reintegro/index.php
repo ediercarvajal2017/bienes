@@ -12,15 +12,7 @@ $etiquetas = [
     'cancelada' => ['Cancelada', 'badge-solicitud badge-solicitud-cancelada'],
 ];
 ?>
-<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-    <div>
-        <h1 class="h4 mb-0">Solicitudes de reintegro</h1>
-        <p class="text-muted small mb-0">
-            <?= $puedeAprobar
-                ? 'Pedidos de reintegro de los docentes: al aprobar uno, el bien se reintegra.'
-                : 'Sus solicitudes de reintegro y su estado. Para pedir una nueva, abra la ficha del bien (escaneando su QR).' ?>
-        </p>
-    </div>
+<?php ob_start(); ?>
     <form method="get" class="d-flex gap-2 align-items-center">
         <label class="small text-muted" for="filtroEstado">Estado</label>
         <select name="estado" id="filtroEstado" class="form-select form-select-sm" onchange="this.form.submit()">
@@ -30,13 +22,13 @@ $etiquetas = [
             <?php endforeach; ?>
         </select>
     </form>
-</div>
+<?= ui('encabezado_pagina', ['titulo' => 'Solicitudes de reintegro', 'icono' => 'solicitud', 'subtitulo' => (string) ($puedeAprobar ? 'Pedidos de reintegro de los docentes: al aprobar uno, el bien se reintegra.' : 'Sus solicitudes de reintegro y su estado. Para pedir una nueva, abra la ficha del bien (escaneando su QR).'), 'acciones' => (string) ob_get_clean()]) ?>
 
 <?php if (!empty($mensaje)): ?>
-    <div class="alert alert-success py-2 small"><?= htmlspecialchars($mensaje, ENT_QUOTES) ?></div>
+    <?= ui('alerta', ['tipo' => 'exito', 'mensaje' => (string) $mensaje, 'clases' => 'py-2 small']) ?>
 <?php endif; ?>
 <?php if (!empty($error)): ?>
-    <div class="alert alert-danger py-2 small"><?= htmlspecialchars($error, ENT_QUOTES) ?></div>
+    <?= ui('alerta', ['tipo' => 'peligro', 'mensaje' => (string) $error, 'clases' => 'py-2 small']) ?>
 <?php endif; ?>
 
 <?php View::render('partials/paginacion', [
@@ -67,7 +59,7 @@ $etiquetas = [
             ]); ?>
         <?php endif; ?>
         <?php foreach ($solicitudes as $s): ?>
-            <?php [$texto, $clase] = $etiquetas[$s['estado']] ?? [$s['estado'], 'text-bg-light']; ?>
+            <?php [$texto, $clase] = $etiquetas[$s['estado']] ?? [$s['estado'], 'badge-neutro']; ?>
             <tr>
                 <td class="mono small" data-label="N.º"><?= (int) $s['id'] ?></td>
                 <td data-label="Bien">
@@ -94,14 +86,15 @@ $etiquetas = [
                               class="d-flex flex-wrap gap-1 justify-content-end mb-1"
                               data-confirmar="¿Aprobar la solicitud? El bien se reintegrará y saldrá de su espacio.">
                             <?= Csrf::field() ?>
-                            <input type="date" name="fecha" min="<?= \App\Helpers\FechaMovimiento::MINIMA ?>" max="<?= \App\Helpers\FechaMovimiento::hoy() ?>" class="form-control form-control-sm" style="max-width: 150px;"
+                            <input type="date" name="fecha" min="<?= \App\Helpers\FechaMovimiento::MINIMA ?>" max="<?= \App\Helpers\FechaMovimiento::hoy() ?>" class="form-control form-control-sm contenedor-sm"
                                    value="<?= date('Y-m-d') ?>" required aria-label="Fecha del reintegro">
-                            <input type="text" name="destino_texto" class="form-control form-control-sm" style="max-width: 180px;"
+                            <input type="text" name="destino_texto" class="form-control form-control-sm contenedor-sm"
                                    placeholder="Destino (ej. Almacén)" required aria-label="Destino del reintegro">
-                            <button type="submit" class="btn btn-sm btn-outline-success">Aprobar</button>
+                            <button type="submit" class="btn btn-sm btn-outline-secondary">Aprobar</button>
                         </form>
                         <form method="post" action="<?= Url::to('/reintegros/solicitudes/' . $s['id'] . '/rechazar') ?>" class="d-inline"
-                              onsubmit="var r = prompt('Motivo del rechazo (lo verá quien hizo la solicitud):'); if (!r || !r.trim()) { return false; } this.respuesta.value = r.trim(); return true;">
+                              data-pedir-texto="Motivo del rechazo" data-pedir-texto-campo="respuesta" data-pedir-texto-tipo="peligro"
+                              data-pedir-texto-titulo="Rechazar la solicitud" data-pedir-texto-mensaje="Quien hizo la solicitud verá este motivo." data-pedir-texto-boton="Rechazar">
                             <?= Csrf::field() ?>
                             <input type="hidden" name="respuesta" value="">
                             <button type="submit" class="btn btn-sm btn-outline-secondary">Rechazar</button>

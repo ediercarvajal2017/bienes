@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { confirmar } from './helpers/confirmacion.js';
 
 /**
  * Solo puede haber una jornada de verificación activa por institución — si una
@@ -13,8 +14,7 @@ async function cerrarJornadaActivaSiExiste(page) {
         return;
     }
     await linkActiva.click();
-    page.once('dialog', (dialog) => dialog.accept());
-    await page.getByRole('button', { name: 'Cerrar jornada' }).click();
+    await confirmar(page, () => page.getByRole('button', { name: 'Cerrar jornada' }).click());
 }
 
 test('crear una jornada, verificar un bien y cerrarla', async ({ page }) => {
@@ -57,8 +57,7 @@ test('crear una jornada, verificar un bien y cerrarla', async ({ page }) => {
     await page.waitForURL(/qOk=/);
     await expect(page.locator('tr', { hasText: codigoBien })).toBeVisible();
 
-    page.once('dialog', (dialog) => dialog.accept());
-    await page.getByRole('button', { name: 'Cerrar jornada' }).click();
+    await confirmar(page, () => page.getByRole('button', { name: 'Cerrar jornada' }).click());
 
     await expect(page.locator('.alert-success')).toBeVisible();
     await expect(page.getByText(/Cerrada el/)).toBeVisible();
