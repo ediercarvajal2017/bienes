@@ -85,7 +85,8 @@ test('filtrar por responsable, tipo y espacio en la lista de bienes', async ({ b
     await pagina.locator('#botonFiltrosBienes').click();
     await pagina.locator('#filtroTipo').selectOption('individual');
     await expect(pagina).toHaveURL(/tipo=individual/);
-    expect(await pagina.locator('tbody td[data-label="Código"]').count()).toBe(2);
+    // toHaveCount espera a que cargue la página filtrada (count() leía antes de tiempo).
+    await expect(pagina.locator('tbody td[data-label="Código"]')).toHaveCount(2);
     await pagina.context().close();
 });
 
