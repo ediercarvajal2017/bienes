@@ -195,6 +195,57 @@ test('reintegro por cantidad: todo o nada y sin generar lote', async ({ browser 
     await rector.contexto.close();
 });
 
+/**
+ * El renglón de la cartera ("10 SILLAS DE PRUEBA", con el código de la placa) no es una
+ * silla más. Caso real: la placa 13019802 "8 SILLA…" salía con CANT. 9 en el comprobante.
+ */
+test('el renglón de la cartera no suma una unidad de más ni se reintegra aparte', async ({ browser }) => {
+    const d = datos();
+    const placa = crearCodigoConUnidades();
+    const renglonId = bd(`SELECT id FROM bienes WHERE codigo_identificacion = '${placa}' AND lote IS NULL`);
+    // Como en los datos reales, el renglón está asignado a un espacio.
+    bd(`INSERT INTO asignaciones (bien_id, espacio_id, fecha_asignacion, activa, asignado_por)
+        VALUES (${renglonId}, ${d.espacios.aulaA}, '2024-02-01', 1, ${d.usuarios.superusuario.id})`);
+    const rector = await sesionDe(browser, 'rector');
+    const { pagina } = rector;
+
+    // No se ofrece reintegrarlo aparte: ni en su ficha ni en Reintegrar bienes.
+    await pagina.goto(`bienes/${renglonId}/editar`);
+    await expect(pagina.locator('#accionBien option[value="reintegrar"]')).toHaveCount(0);
+    await pagina.goto(`reintegros?q=${placa}`);
+    const codigos = await pagina.locator('tr.fila-bien td[data-label="Código"]').allInnerTexts();
+    expect(codigos.map((c) => c.trim()).sort()).toEqual([`${placa}-004`, `${placa}-005`, `${placa}-006`]);
+
+    // Reintegrar las 10 unidades por cantidad: el renglón queda en 0 y sale de la cartera.
+    await pagina.goto(`reintegros/unidades/${placa}`);
+    await pagina.locator(`input[name="cantidad[e${d.espacios.aulaA}-u0]"]`).fill('3');
+    await pagina.locator('input[name="cantidad[sin]"]').fill('7');
+    await confirmar(pagina, () => pagina.locator('#botonReintegrarUnidades').click());
+    await expect(pagina).toHaveURL(/\/reintegros\/lotes\/\d+$/);
+    await expect(pagina.locator('.alert-success')).toContainText(`quedó como "0 SILLAS DE PRUEBA" y pasó a Reintegrado`);
+    expect(resumenDe(placa)).toBe('0 SILLAS DE PRUEBA|0.00|reintegrado');
+    expect(bd(`SELECT COUNT(*) FROM asignaciones WHERE bien_id = ${renglonId} AND activa = 1`), 'sin asignación').toBe('0');
+    expect(bd(`SELECT COUNT(*) FROM movimientos WHERE bien_id = ${renglonId}`), 'sin movimiento propio: no entra a ningún lote').toBe('0');
+
+    // Un lote viejo donde el renglón quedó junto a sus unidades (así salía CANT. 11): ahora 10.
+    const loteId = Number(pagina.url().match(/lotes\/(\d+)$/)[1]);
+    bd(`INSERT INTO movimientos (bien_id, tipo, fecha, responsable_id, destino_texto, lote_reintegro_id)
+        VALUES (${renglonId}, 'reintegro', CURDATE(), ${d.usuarios.rector.id}, 'Bodega de reintegro', ${loteId})`);
+    await pagina.reload();
+    const renglon = pagina.locator('tbody tr', { has: pagina.locator('td[data-label="Placa"]', { hasText: placa }) });
+    await expect(renglon).toHaveCount(1);
+    await expect(renglon.locator('td[data-label="Cant."]')).toHaveText('10');
+    const excel = await rector.contexto.request.get(`reintegros/lotes/${loteId}/formato.xlsx`);
+    const celdas = celdasDelExcel(await excel.body(), ['A15', 'C15', 'A16']);
+    expect([celdas.A15, celdas.C15, celdas.A16 ?? null]).toEqual([placa, 10, null]);
+
+    const hoy = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Bogota' });
+    await pagina.goto(`reintegros/lotes?estado=pendiente&desde=${hoy}&hasta=${hoy}`);
+    const filaLote = pagina.locator('tbody tr', { has: pagina.locator(`a[href$="/reintegros/lotes/${loteId}"]`) });
+    await expect(filaLote.locator('td[data-label="Bienes"]')).toHaveText('10');
+    await rector.contexto.close();
+});
+
 test('la ficha de una unidad sin asignar ofrece "Reintegrar"; un bien suelto sin asignar no', async ({ browser }) => {
     const d = datos();
     const placa = crearCodigoConUnidades();

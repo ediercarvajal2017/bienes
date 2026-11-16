@@ -236,15 +236,30 @@ final class ReporteService
      * placa 200033042, CANT. 3); un bien suelto es un renglón con cantidad 1. Respeta el
      * orden en que llegan los bienes. Lo usan el comprobante FO-ADMI-009 y el detalle del lote.
      *
+     * El "renglón de la cartera" de una placa (bien sin lote con el mismo código que sus
+     * unidades: Bien::resumenDeCodigo) no es una unidad más: si llega junto a unidades de su
+     * placa, no suma cantidad ni valor (antes 8 sillas salían como 9). Solo, cuenta como un bien.
+     *
      * @param array<int, array<string, mixed>> $bienes filas de LoteReintegro::bienesDe()
      * @return list<array{placa: string, descripcion: string, marca: ?string, categoria_nombre: ?string, cantidad: int,
      *     unidades: list<string>, fecha_desde: ?string, fecha_hasta: ?string, destinos: list<string>, origenes: list<string>, valor: float}>
      */
     public static function renglonesPorPlaca(array $bienes): array
     {
+        // 0) Placas que traen unidades (alta masiva) en este lote: su renglón de la cartera no suma.
+        $placasConUnidades = [];
+        foreach ($bienes as $bien) {
+            if (!empty($bien['lote'])) {
+                $placasConUnidades[(string) $bien['lote']] = true;
+            }
+        }
+
         // 1) Las unidades de cada placa (dentro de su categoría), en el orden en que llegan.
         $grupos = [];
         foreach ($bienes as $bien) {
+            if (empty($bien['lote']) && isset($placasConUnidades[(string) $bien['codigo_identificacion']])) {
+                continue;
+            }
             $placa = !empty($bien['lote']) ? (string) $bien['lote'] : (string) $bien['codigo_identificacion'];
             $clave = ($bien['categoria_nombre'] ?? '') . '|' . $placa;
             $grupos[$clave] ??= ['placa' => $placa, 'bienes' => []];

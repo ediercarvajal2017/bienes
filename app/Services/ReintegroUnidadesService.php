@@ -63,7 +63,7 @@ final class ReintegroUnidadesService
      * en lotes de reintegro (uno por categoría) con su comprobante.
      *
      * @param array<mixed> $cantidadesPorUbicacion clave de ubicación => cantidad
-     * @return array{reintegradas: int, lotes: list<array{id: int, categoria: string, bienes: int}>, resumen: ?array{antes: string, despues: string}}
+     * @return array{reintegradas: int, lotes: list<array{id: int, categoria: string, bienes: int}>, resumen: ?array{antes: string, despues: string, reintegrado: bool}}
      */
     public static function reintegrar(
         int $institucionId,
@@ -135,7 +135,11 @@ final class ReintegroUnidadesService
      * valor que quedan en cartera: "178 SILLAS UNIVERSITARIAS" pasa a "175 SILLAS UNIVERSITARIAS"
      * y su valor, al de las 175 unidades. Queda en la auditoría.
      *
-     * @return array{antes: string, despues: string}|null
+     * Cuando ya no queda ninguna unidad en cartera, el renglón también sale de ella: pasa a
+     * 'reintegrado' y se cierra su asignación. No se le crea un movimiento de reintegro propio
+     * (entraría en un lote y el comprobante contaría una silla de más).
+     *
+     * @return array{antes: string, despues: string, reintegrado: bool}|null
      */
     private static function actualizarBienResumen(int $institucionId, string $lote): ?array
     {
@@ -148,12 +152,21 @@ final class ReintegroUnidadesService
         $quedan = (int) $estado['en_cartera'];
         $valor = round((float) $estado['valor_en_cartera'], 2);
         $descripcion = self::descripcionConCantidad((string) $bien['descripcion'], $quedan);
-        Bien::actualizarResumenDeCodigo((int) $bien['id'], $descripcion, $valor);
-        Auditoria::registrar(Auth::id(), $institucionId, 'editar', 'bien', (int) $bien['id'],
-            ['descripcion' => $bien['descripcion'], 'valor' => $bien['valor']],
-            ['descripcion' => $descripcion, 'valor' => $valor, 'motivo' => "Reintegro por cantidad de la placa {$lote}: quedan {$quedan} en cartera"]);
+        $saleDeCartera = $quedan === 0 && in_array($bien['estado'], Bien::ESTADOS_REINTEGRABLES, true);
+        $estadoNuevo = $saleDeCartera ? 'reintegrado' : (string) $bien['estado'];
 
-        return ['antes' => (string) $bien['descripcion'], 'despues' => $descripcion];
+        Bien::actualizarResumenDeCodigo((int) $bien['id'], $descripcion, $valor, $estadoNuevo);
+        if ($saleDeCartera) {
+            Asignacion::cerrarActivasDe((int) $bien['id']);
+        }
+        Auditoria::registrar(Auth::id(), $institucionId, 'editar', 'bien', (int) $bien['id'],
+            ['descripcion' => $bien['descripcion'], 'valor' => $bien['valor'], 'estado' => $bien['estado']],
+            ['descripcion' => $descripcion, 'valor' => $valor, 'estado' => $estadoNuevo,
+                'motivo' => $saleDeCartera
+                    ? "Reintegro por cantidad de la placa {$lote}: se reintegraron todas las unidades"
+                    : "Reintegro por cantidad de la placa {$lote}: quedan {$quedan} en cartera"]);
+
+        return ['antes' => (string) $bien['descripcion'], 'despues' => $descripcion, 'reintegrado' => $saleDeCartera];
     }
 
     /**

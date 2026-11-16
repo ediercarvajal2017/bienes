@@ -81,7 +81,8 @@ final class ReintegroUnidadesController
         $n = $resultado['reintegradas'];
         $hecho = $n === 1 ? "Se reintegró 1 unidad de la placa {$lote}." : "Se reintegraron {$n} unidades de la placa {$lote}.";
         if ($resultado['resumen'] !== null) {
-            $hecho .= " El bien {$lote} de la cartera quedó como \"{$resultado['resumen']['despues']}\".";
+            $hecho .= " El bien {$lote} de la cartera quedó como \"{$resultado['resumen']['despues']}\""
+                . ($resultado['resumen']['reintegrado'] ? ' y pasó a Reintegrado: ya no queda ninguna unidad en cartera.' : '.');
         }
         $lotes = $resultado['lotes'];
 

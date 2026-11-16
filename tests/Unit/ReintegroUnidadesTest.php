@@ -89,4 +89,31 @@ final class ReintegroUnidadesTest extends TestCase
         self::assertSame(1, $renglones[1]['cantidad']);
         self::assertSame([], ReporteService::renglonesPorPlaca([]));
     }
+
+    /** El caso real: placa 13019802 "8 SILLA…" salía con CANT. 9 en el comprobante. */
+    public function testElRenglonDeLaCarteraNoSumaUnaSillaDeMas(): void
+    {
+        $renglonCartera = ['codigo_identificacion' => '13019802', 'lote' => null, 'descripcion' => '8 SILLA DE METAL ASIENTO- ESPALDAR EN PROLIPROP',
+            'marca' => null, 'categoria_nombre' => 'Muebles', 'fecha_reintegro' => '2026-11-15', 'destino_texto' => 'Bodega', 'espacio_origen_nombre' => null, 'valor' => 302847];
+        $unidades = array_map(static fn (int $n): array => [
+            'codigo_identificacion' => sprintf('13019802-%03d', $n), 'lote' => '13019802', 'descripcion' => 'SILLA DE METAL ASIENTO- ESPALDAR EN PROLIPROP',
+            'marca' => null, 'categoria_nombre' => 'Muebles', 'fecha_reintegro' => '2026-11-15', 'destino_texto' => 'Bodega', 'espacio_origen_nombre' => null, 'valor' => 37855.88,
+        ], range(1, 8));
+
+        $renglones = ReporteService::renglonesPorPlaca([$renglonCartera, ...$unidades]);
+        self::assertCount(1, $renglones);
+        self::assertSame('13019802', $renglones[0]['placa']);
+        self::assertSame(8, $renglones[0]['cantidad'], 'el renglón de la cartera no es una silla más');
+        self::assertNotContains('13019802', $renglones[0]['unidades']);
+        self::assertEqualsWithDelta(8 * 37855.88, $renglones[0]['valor'], 0.001, 'ni suma su valor otra vez');
+
+        // También si quedó en otra categoría que sus unidades.
+        $otraCategoria = ['categoria_nombre' => 'Sin clasificar'] + $renglonCartera;
+        self::assertSame([8], array_column(ReporteService::renglonesPorPlaca([...$unidades, $otraCategoria]), 'cantidad'));
+
+        // Solo, sin sus unidades en el lote, sí cuenta: es el bien que se reintegró.
+        $solo = ReporteService::renglonesPorPlaca([$renglonCartera]);
+        self::assertSame(1, $solo[0]['cantidad']);
+        self::assertSame(302847.0, $solo[0]['valor']);
+    }
 }

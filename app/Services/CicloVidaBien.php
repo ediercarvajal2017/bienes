@@ -55,8 +55,10 @@ final class CicloVidaBien
                 $acciones['trasladar_sede'] = 'Trasladar a otra sede';
             }
             // Una unidad de un código con varias unidades (alta masiva) se puede reintegrar
-            // aunque no esté asignada (ver Bien::motivoNoReintegrable).
-            if (($asignacionActiva || !empty($bien['lote'])) && !$sinCartera) {
+            // aunque no esté asignada (ver Bien::motivoNoReintegrable). El renglón de la cartera
+            // de esa placa no: sus unidades se reintegran por cantidad.
+            $esRenglonDePlaca = empty($bien['lote']) && Bien::existeLote((int) $bien['institucion_id'], (string) $bien['codigo_identificacion']);
+            if (($asignacionActiva || !empty($bien['lote'])) && !$sinCartera && !$esRenglonDePlaca) {
                 $acciones['reintegrar'] = 'Reintegrar';
             }
         }

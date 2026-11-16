@@ -30,7 +30,8 @@
                     178 sillas): en su fila de <strong>Bienes</strong> usa "Reintegrar por cantidad" y escribe cuántas
                     unidades salen de cada ubicación (también las que están sin asignar). En el comprobante salen en un
                     solo renglón: la placa y la cantidad. Si el código también está en la cartera como un solo bien
-                    (p. ej. "178 SILLAS UNIVERSITARIAS"), MIA le resta lo reintegrado: queda "175 SILLAS…" con su valor.</li>
+                    (p. ej. "178 SILLAS UNIVERSITARIAS"), MIA le resta lo reintegrado: queda "175 SILLAS…" con su valor. Ese renglón no es
+                    una silla más: no se reintegra aparte, y cuando ya no queda ninguna unidad pasa solo a Reintegrado.</li>
                 <li><strong>Dar de baja</strong> un bien, o aprobar/rechazar bajas que otros reporten (ver tema 6).</li>
                 <li>Para cargar muchos bienes o fotos de una vez, usa <strong>Bienes &gt; Acciones &gt; Carga
                     masiva de bienes</strong>.</li>

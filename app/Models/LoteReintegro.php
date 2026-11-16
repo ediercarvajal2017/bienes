@@ -74,7 +74,15 @@ final class LoteReintegro
 
         $sql = 'SELECT l.*, i.nombre AS institucion_nombre,
                        u.nombres AS registrado_por_nombres, u.apellidos AS registrado_por_apellidos,
-                       COUNT(m.id) AS total_bienes,
+                       -- El renglón de la cartera de una placa (bien sin lote con el código de sus
+                       -- unidades) no suma si sus unidades están en el mismo lote: 8 sillas son 8,
+                       -- no 9 (igual que ReporteService::renglonesPorPlaca).
+                       SUM(CASE WHEN m.id IS NULL THEN 0
+                                WHEN b.lote IS NULL AND EXISTS (
+                                    SELECT 1 FROM movimientos mu JOIN bienes u ON u.id = mu.bien_id
+                                    WHERE mu.lote_reintegro_id = l.id AND u.institucion_id = b.institucion_id
+                                      AND u.lote = b.codigo_identificacion) THEN 0
+                                ELSE 1 END) AS total_bienes,
                        GROUP_CONCAT(DISTINCT CASE WHEN m.id IS NULL THEN NULL ELSE COALESCE(c.nombre, ?) END
                                     ORDER BY c.nombre SEPARATOR "|") AS categorias,
                        MIN(m.fecha) AS reintegro_desde, MAX(m.fecha) AS reintegro_hasta,

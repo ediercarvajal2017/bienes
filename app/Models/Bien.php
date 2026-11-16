@@ -717,6 +717,14 @@ final class Bien
         if (($bien['categoria_nombre'] ?? null) === Categoria::NOMBRE_CATEGORIA_PROTEGIDA) {
             return 'los bienes de la categoría "' . Categoria::NOMBRE_CATEGORIA_PROTEGIDA . '" no admiten reintegro, solo baja';
         }
+        // El renglón de la cartera de una placa con unidades (resumenDeCodigo: "8 SILLAS…" con
+        // sus unidades 13019802-001…-008) no es una silla más: las unidades se reintegran por
+        // cantidad y MIA lo actualiza solo. Reintegrarlo aparte sumaba un ítem (8 salían 9).
+        if (empty($bien['lote']) && isset($bien['institucion_id'], $bien['codigo_identificacion'])
+            && self::existeLote((int) $bien['institucion_id'], (string) $bien['codigo_identificacion'])) {
+            return 'es el renglón de la cartera de la placa ' . $bien['codigo_identificacion']
+                . ' (sus unidades se reintegran en Reintegrar por cantidad y este renglón se actualiza solo)';
+        }
 
         return null;
     }
@@ -1246,11 +1254,14 @@ final class Bien
         return $stmt->fetch() ?: null;
     }
 
-    /** Ajusta la descripción y el valor de un bien resumen (ver resumenDeCodigo). */
-    public static function actualizarResumenDeCodigo(int $id, string $descripcion, float $valor): void
+    /**
+     * Ajusta la descripción, el valor y el estado de un bien resumen (ver resumenDeCodigo):
+     * pasa a 'reintegrado' cuando ya no queda ninguna unidad de su placa en cartera.
+     */
+    public static function actualizarResumenDeCodigo(int $id, string $descripcion, float $valor, string $estado): void
     {
-        $stmt = Database::connection()->prepare('UPDATE bienes SET descripcion = ?, valor = ? WHERE id = ?');
-        $stmt->execute([$descripcion, $valor, $id]);
+        $stmt = Database::connection()->prepare('UPDATE bienes SET descripcion = ?, valor = ?, estado = ? WHERE id = ?');
+        $stmt->execute([$descripcion, $valor, $estado, $id]);
     }
 
     /**
@@ -1272,8 +1283,7 @@ final class Bien
                 LEFT JOIN categorias_bienes c ON c.id = b.categoria_id
                 -- El bien "resumen" de un código con unidades (ver resumenDeCodigo) es el mismo
                 -- código: se cuentan sus unidades, no se suma también el resumen.
-                WHERE NOT (b.lote IS NULL AND EXISTS (
-                    SELECT 1 FROM bienes u WHERE u.institucion_id = b.institucion_id AND u.lote = b.codigo_identificacion))';
+                WHERE NOT ' . self::sqlEsRenglonDePlaca();
         $params = [];
         if ($institucionId !== null) {
             $sql .= ' AND b.institucion_id = ?';
@@ -1380,6 +1390,16 @@ final class Bien
     private static function sqlReglaReintegrable(): string
     {
         return " AND b.estado IN ('activo', 'en_reparacion') AND b.categoria_id IS NOT NULL"
-            . ' AND b.categoria_id NOT IN (SELECT id FROM categorias_bienes WHERE nombre = ?)';
+            . ' AND b.categoria_id NOT IN (SELECT id FROM categorias_bienes WHERE nombre = ?)'
+            . ' AND NOT ' . self::sqlEsRenglonDePlaca();
+    }
+
+    /**
+     * Condición SQL: el bien (alias b) es el renglón de la cartera de una placa con unidades
+     * (sin lote y con el mismo código que el lote de sus unidades; ver resumenDeCodigo).
+     */
+    private static function sqlEsRenglonDePlaca(): string
+    {
+        return '(b.lote IS NULL AND EXISTS (SELECT 1 FROM bienes u WHERE u.institucion_id = b.institucion_id AND u.lote = b.codigo_identificacion))';
     }
 }
