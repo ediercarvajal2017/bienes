@@ -198,7 +198,20 @@ foreach (['/manual', '/mi-cuenta'] as $rutaPie) {
                 </ol>
             </nav>
         <?php endif; ?>
-        <?php $content(); ?>
+        <?php
+        // Los avisos de la acción anterior los pinta el encabezado de la página; si la página
+        // no tiene, van aquí arriba del contenido (por eso el contenido se arma primero).
+        ob_start();
+        try {
+            $content();
+        } catch (\Throwable $errorVista) {
+            ob_end_clean();
+            throw $errorVista;
+        }
+        $contenidoPagina = (string) ob_get_clean();
+        ?>
+        <?= ui('avisos', ['avisos' => \App\Core\Aviso::paraMostrar()]) ?>
+        <?= $contenidoPagina ?>
 
         <?php $configApp = require dirname(__DIR__, 3) . '/config/app.php'; ?>
         <footer class="pie-sigebi small text-muted d-flex flex-wrap justify-content-between gap-2 mt-5 pt-3 border-top">
@@ -213,6 +226,7 @@ foreach (['/manual', '/mi-cuenta'] as $rutaPie) {
 
 <script src="<?= Url::asset('/assets/js/tema.js') ?>"></script>
 <script src="<?= Url::asset('/assets/js/alertas.js') ?>"></script>
+<script src="<?= Url::asset('/assets/js/validacion.js') ?>"></script>
 <script src="<?= Url::asset('/assets/js/mostrar-contrasena.js') ?>"></script>
 <script src="<?= Url::asset('/assets/js/camara.js') ?>"></script>
 <?php require __DIR__ . '/menu_inferior.php'; ?>

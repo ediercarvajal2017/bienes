@@ -39,6 +39,7 @@ $qrImpreso = !empty($bien['qr_impreso_en']);
         <?php if (!empty($error)): ?>
             <?= ui('alerta', ['tipo' => 'peligro', 'mensaje' => (string) $error, 'clases' => 'py-2 small']) ?>
         <?php endif; ?>
+        <?= ui('avisos', ['avisos' => \App\Core\Aviso::paraMostrar()]) ?>
 
         <?php if (!empty($bien['foto_path'])): ?>
             <img src="<?= \App\Helpers\EnlaceArchivo::url($bien['foto_path']) ?>"

@@ -160,7 +160,7 @@ test('Individual sin persona, o con una persona de otra institución, se rechaza
 
     await asignar({});
     await pagina.goto('asignaciones');
-    await expect(pagina.locator('.alert-danger')).toContainText('Selecciona la persona responsable');
+    await expect(pagina.locator('.alert-danger')).toContainText('Elegiste responsabilidad Individual pero no la persona');
 
     await asignar({ persona_id: String(d.usuarios.rector_b.id) });
     await pagina.goto('asignaciones');

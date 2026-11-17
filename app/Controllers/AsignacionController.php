@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Core\Auth;
+use App\Core\Aviso;
 use App\Core\Csrf;
 use App\Core\Database;
 use App\Core\ErrorHandler;
@@ -69,8 +70,6 @@ final class AsignacionController
             'porPagina' => $porPagina,
             'opcionesPorPagina' => self::OPCIONES_POR_PAGINA,
 
-            'mensaje' => Session::pullFlash('ok'),
-            'error' => Session::pullFlash('error'),
             'viejo' => Session::pullOld(),
         ]);
     }
@@ -96,26 +95,33 @@ final class AsignacionController
         $volverA = '/asignaciones' . (Auth::esSuperusuario() ? '?institucion=' . $institucionId : '');
 
         if (empty($bienIds)) {
-            Session::flash('error', 'Selecciona al menos un bien para asignar.');
+            Aviso::enviar(\App\Helpers\Mensajes::seleccionaAlMenosUno('No se asignó ningún bien', 'bien', 'Asignar'));
             Session::flashOld($viejo);
             header('Location: ' . Url::to($volverA));
             exit;
         }
 
         $espacioId = (int) $espacioIdRaw;
-        $error = FechaMovimiento::error($fecha);
-        if ($error === null && $individual && ($personaId <= 0 || Usuario::elegibleACargo($personaId, $institucionId) === null)) {
-            $error = $personaId <= 0 ? 'Selecciona la persona responsable.'
-                : 'La persona seleccionada no puede tener bienes a cargo (debe ser un usuario activo de la institución).';
-        }
-        if ($error === null && !$individual && $espacioId <= 0) {
-            $error = 'Selecciona un espacio.';
-        }
-        if ($error === null && $espacioId > 0 && !Espacio::perteneceYActivo($espacioId, (int) $institucionId)) {
-            $error = 'El espacio seleccionado no es válido (debe ser un espacio activo de la institución).';
+        $titulo = 'No se asignó ningún bien';
+        $error = null;
+        if (($errorFecha = FechaMovimiento::error($fecha)) !== null) {
+            $error = Aviso::error($titulo, $errorFecha, 'Elige una fecha entre el 01/01/2000 y hoy y vuelve a pulsar «Asignar».',
+                null, ['fecha_asignacion' => 'Elige una fecha válida.']);
+        } elseif ($individual && $personaId <= 0) {
+            $error = Aviso::error($titulo, 'Elegiste responsabilidad Individual pero no la persona.',
+                'Elige la persona responsable, o cambia a Grupal y elige el espacio.', null, ['persona_id' => 'Elige la persona.']);
+        } elseif ($individual && Usuario::elegibleACargo($personaId, $institucionId) === null) {
+            $error = Aviso::error($titulo, 'La persona elegida está inactiva o es de otra institución, así que no puede tener bienes a cargo.',
+                'Elige otra persona de la lista.', null, ['persona_id' => 'Elige otra persona.']);
+        } elseif (!$individual && $espacioId <= 0) {
+            $error = Aviso::error($titulo, 'No elegiste el espacio.',
+                'Elige el espacio donde quedan los bienes (responsabilidad Grupal) y vuelve a pulsar «Asignar».', null, ['espacio_id' => 'Elige el espacio.']);
+        } elseif ($espacioId > 0 && !Espacio::perteneceYActivo($espacioId, (int) $institucionId)) {
+            $error = Aviso::error($titulo, 'El espacio elegido está inactivo o es de otra institución.',
+                'Elige otro espacio de la lista. Si falta, créalo o actívalo en Espacios.', null, ['espacio_id' => 'Elige otro espacio.']);
         }
         if ($error !== null) {
-            Session::flash('error', $error);
+            Aviso::enviar($error);
             Session::flashOld($viejo);
             header('Location: ' . Url::to($volverA));
             exit;
@@ -123,14 +129,23 @@ final class AsignacionController
 
         $resultado = $this->asignarLote($bienIds, $institucionId, $espacioId ?: null, $personaId ?: null, $fecha, $observaciones);
 
+        $omitidos = $resultado !== null ? $this->textoOmitidos($resultado, $individual) : '';
+        $comoSeguir = $resultado !== null && $resultado['reintegrados'] > 0
+            ? 'Para asignar un bien reintegrado, primero reactívalo desde su ficha («Reactivar»).'
+            : 'Elige otro destino, o marca otros bienes.';
         if ($resultado === null) {
-            Session::flash('error', 'Ocurrió un error al procesar la asignación masiva. No se aplicó ningún cambio.');
+            Aviso::enviar(Aviso::error($titulo, 'Ocurrió un error al procesar la asignación y no se aplicó ningún cambio.',
+                'Vuelve a pulsar «Asignar». Si se repite, avisa a soporte.'));
             Session::flashOld($viejo);
         } elseif ($resultado['asignados'] === 0) {
-            Session::flash('error', 'Ningún bien seleccionado pudo asignarse.' . $this->textoOmitidos($resultado, $individual));
+            Aviso::enviar(Aviso::error($titulo, $omitidos !== '' ? $omitidos : 'Ninguno de los bienes marcados se pudo asignar.', $comoSeguir));
             Session::flashOld($viejo);
         } else {
-            Session::flash('ok', $resultado['asignados'] . ' bien(es) asignado(s) correctamente.' . $this->textoOmitidos($resultado, $individual));
+            $n = $resultado['asignados'];
+            $hecho = ($n === 1 ? '1 bien asignado' : "{$n} bienes asignados") . ' a ' . $this->nombreDestino($espacioId, $personaId) . '.';
+            Aviso::enviar($omitidos !== ''
+                ? Aviso::advertencia($hecho, $omitidos, $comoSeguir)
+                : Aviso::exito($hecho, 'Puedes comprobarlo en Bienes con el filtro Espacio o Responsable.'));
         }
 
         header('Location: ' . Url::to($volverA));
@@ -183,22 +198,36 @@ final class AsignacionController
         }
     }
 
+    /** Por qué algunos bienes marcados no se asignaron ('' si se asignaron todos). */
     private function textoOmitidos(array $resultado, bool $individual): string
     {
-        $texto = '';
+        $partes = [];
         if ($resultado['mismoEspacio'] > 0) {
-            $texto .= $individual
-                ? " {$resultado['mismoEspacio']} bien(es) ya estaban a cargo de esa persona."
-                : " {$resultado['mismoEspacio']} bien(es) ya estaban en ese espacio.";
+            $partes[] = $individual
+                ? "{$resultado['mismoEspacio']} ya estaban a cargo de esa persona."
+                : "{$resultado['mismoEspacio']} ya estaban en ese espacio.";
         }
         if ($resultado['reintegrados'] > 0) {
-            $texto .= " Se omitieron {$resultado['reintegrados']} bien(es) reintegrado(s): para volver a asignarlos use \"Reactivar\" en la ficha del bien.";
+            $partes[] = "{$resultado['reintegrados']} están reintegrados (ya salieron de la institución).";
         }
         if ($resultado['otros'] > 0) {
-            $texto .= " Se omitieron {$resultado['otros']} bien(es) dados de baja o de otra institución.";
+            $partes[] = "{$resultado['otros']} están dados de baja o son de otra institución.";
         }
 
-        return $texto;
+        return $partes === [] ? '' : 'No se asignaron todos: ' . implode(' ', $partes);
+    }
+
+    /** "el espacio A-101 Aula 1" o "Ana Pérez", para el aviso de la asignación. */
+    private function nombreDestino(int $espacioId, int $personaId): string
+    {
+        if ($personaId > 0) {
+            $persona = Usuario::find($personaId);
+
+            return $persona !== null ? trim($persona['nombres'] . ' ' . $persona['apellidos']) : 'la persona elegida';
+        }
+        $espacio = Espacio::find($espacioId);
+
+        return $espacio !== null ? trim($espacio['codigo'] . ' ' . $espacio['nombre']) : 'el espacio elegido';
     }
 
     private function institucionSeleccionada(): ?int

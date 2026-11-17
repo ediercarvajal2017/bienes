@@ -22,7 +22,20 @@ $sinResultados = $q !== ''
 <?php elseif ($sinPermisos): ?>
     <p class="text-muted">No tienes permiso para ver bienes, espacios ni usuarios.</p>
 <?php elseif ($sinResultados): ?>
-    <p class="text-muted">Nada coincide con "<?= htmlspecialchars($q, ENT_QUOTES) ?>".</p>
+    <?php
+    // Qué revisar y por dónde seguir, en lugar de solo "nada coincide".
+    $accionesVacio = [];
+    if ($puedeVerBienes) {
+        $accionesVacio[] = ['texto' => 'Buscar por foto', 'url' => Url::to('/bienes/buscar-por-foto')];
+    }
+    ?>
+    <?= ui('estado_vacio', [
+        'titulo' => "Nada coincide con «{$q}».",
+        'detalle' => 'Se buscó en bienes, espacios y usuarios' . (\App\Core\Auth::rol() === 'docente' ? ' (de los bienes, solo ves los de tus espacios)' : '')
+            . '. Revisa cómo está escrito, prueba con una parte (por ejemplo «silla» en lugar de «silla plástica azul»)'
+            . ' o con el número de la placa sin guiones ni espacios.' . (\App\Core\Auth::esSuperusuario() ? ' Si filtraste por institución arriba, la búsqueda es solo en esa.' : ''),
+        'acciones' => $accionesVacio,
+    ]) ?>
 <?php else: ?>
 
     <div class="d-flex flex-column gap-4">

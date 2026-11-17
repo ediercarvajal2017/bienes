@@ -17,7 +17,6 @@ $numeros = static function (array $ids): string {
     <a href="<?= Url::to('/reintegros/lotes') ?>" class="btn btn-sm btn-outline-secondary">Volver</a>
 <?= ui('encabezado_pagina', ['titulo' => (string) ($separar ? 'Separar el lote #' . (int) $loteIds[0] . ' por categoría' : 'Unificar lotes'), 'icono' => 'reintegro', 'subtitulo' => 'Revisa el resultado antes de confirmar. Los bienes quedan en un lote nuevo por categoría, cada uno con su comprobante FO-ADMI-009 en Excel.', 'acciones' => (string) ob_get_clean()]) ?>
 
-<?php if (!empty($error)): ?><div class="alert alert-danger py-2 small contenedor-md"><?= $e($error) ?></div><?php endif; ?>
 
 <div class="row g-3 contenedor-md">
     <div class="col-md-5">

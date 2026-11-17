@@ -17,8 +17,6 @@ $estado = (string) $lote['estado'];
 <?= ui('encabezado_pagina', ['titulo' => 'Lote de reintegro #' . (int) $lote['id'], 'icono' => 'reintegro',
     'insignia' => ui('insignia_estado', ['tipo' => 'lote', 'estado' => $estado]), 'acciones' => (string) ob_get_clean()]) ?>
 
-<?php if (!empty($mensaje)): ?><div class="alert alert-success py-2 small contenedor-md"><?= $e($mensaje) ?></div><?php endif; ?>
-<?php if (!empty($error)): ?><div class="alert alert-danger py-2 small contenedor-md"><?= $e($error) ?></div><?php endif; ?>
 
 <?php if ($estado === 'pendiente'): ?>
     <div class="estado-lote estado-lote-pendiente contenedor-md">

@@ -12,7 +12,8 @@
  *  - $vacia (?string): texto de la opción vacía del select (null: sin opción vacía).
  *  - $requerido, $deshabilitado (bool)
  *  - $ayuda (?string): clave de App\Helpers\AyudaCampo.
- *  - $error (?string): mensaje de validación (qué pasó y qué hacer).
+ *  - $error (?string): mensaje de validación (qué pasó y qué hacer). Si no se pasa, se toma
+ *    el que el aviso de error de la acción anterior dejó para este campo (Aviso::errorDeCampo).
  *  - $placeholder (?string)
  *  - $buscable (bool): select con buscador (Tom Select).
  *  - $filas (int): filas del textarea (por defecto 3).
@@ -28,7 +29,7 @@ $vacia ??= '-- Selecciona --';
 $requerido ??= false;
 $deshabilitado ??= false;
 $ayuda ??= null;
-$error ??= null;
+$error ??= \App\Core\Aviso::errorDeCampo($nombre);
 $placeholder ??= null;
 $buscable ??= false;
 $filas ??= 3;

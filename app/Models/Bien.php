@@ -678,8 +678,9 @@ final class Bien
 
         if ($stmt->rowCount() === 0) {
             $actual = self::find($id)['estado'] ?? 'inexistente';
-            throw new \DomainException(
-                'El bien está "' . self::etiquetaEstado($actual) . '" y no puede pasar a "' . self::etiquetaEstado($nuevo) . '".'
+            throw new \App\Core\ErrorGuiado(
+                'El bien está "' . self::etiquetaEstado($actual) . '" y no puede pasar a "' . self::etiquetaEstado($nuevo) . '".',
+                'Recarga su ficha para ver el estado actual y elige una acción de las que aparecen.'
             );
         }
     }
@@ -702,28 +703,53 @@ final class Bien
      */
     public static function motivoNoReintegrable(array $bien, bool $tieneAsignacionActiva): ?string
     {
+        return self::guiaNoReintegrable($bien, $tieneAsignacionActiva)['motivo'] ?? null;
+    }
+
+    /**
+     * La misma regla de motivoNoReintegrable(), con lo que el usuario debe hacer para poder
+     * reintegrarlo (o qué hacer en su lugar) y la pantalla donde se hace. null si se puede.
+     *
+     * @return array{motivo: string, queHacer: string, accion: array{texto: string, url: string}|null}|null
+     */
+    public static function guiaNoReintegrable(array $bien, bool $tieneAsignacionActiva): ?array
+    {
+        $abrirBien = isset($bien['id']) ? \App\Core\Aviso::accion('Abrir el bien', '/bienes/' . (int) $bien['id'] . '/editar') : null;
+
         if (!in_array($bien['estado'], self::ESTADOS_REINTEGRABLES, true)) {
-            return 'el bien está "' . self::etiquetaEstado($bien['estado']) . '"';
+            return ['motivo' => 'el bien está "' . self::etiquetaEstado($bien['estado']) . '"',
+                'queHacer' => $bien['estado'] === 'reintegrado'
+                    ? 'Ya salió de la institución. Si volvió, el rector puede reactivarlo desde su ficha.'
+                    : 'Un bien dado de baja ya no se mueve; su historial queda en la ficha.',
+                'accion' => $abrirBien];
         }
         // Las unidades de un código con varias unidades (alta masiva: bienes.lote) suelen
         // estar en la institución sin espacio ni responsable; se pueden reintegrar igual.
         // A un bien suelto se le sigue exigiendo la asignación.
         if (!$tieneAsignacionActiva && empty($bien['lote'])) {
-            return 'el bien no tiene una asignación activa';
+            return ['motivo' => 'el bien no tiene una asignación activa',
+                'queHacer' => 'Asígnalo primero a un espacio o a una persona desde su ficha y luego reintégralo.',
+                'accion' => $abrirBien];
         }
         if ($bien['categoria_id'] === null) {
-            return 'el bien no tiene categoría asignada';
+            return ['motivo' => 'el bien no tiene categoría asignada',
+                'queHacer' => 'Elige su categoría en la ficha del bien, guarda y vuelve a reintegrarlo.',
+                'accion' => $abrirBien];
         }
         if (($bien['categoria_nombre'] ?? null) === Categoria::NOMBRE_CATEGORIA_PROTEGIDA) {
-            return 'los bienes de la categoría "' . Categoria::NOMBRE_CATEGORIA_PROTEGIDA . '" no admiten reintegro, solo baja';
+            return ['motivo' => 'los bienes de la categoría "' . Categoria::NOMBRE_CATEGORIA_PROTEGIDA . '" no admiten reintegro, solo baja',
+                'queHacer' => 'Si ya no sirve, repórtalo para baja desde su ficha («Reportar baja»).',
+                'accion' => $abrirBien];
         }
         // El renglón de la cartera de una placa con unidades (resumenDeCodigo: "8 SILLAS…" con
         // sus unidades 13019802-001…-008) no es una silla más: las unidades se reintegran por
         // cantidad y MIA lo actualiza solo. Reintegrarlo aparte sumaba un ítem (8 salían 9).
         if (empty($bien['lote']) && isset($bien['institucion_id'], $bien['codigo_identificacion'])
             && self::existeLote((int) $bien['institucion_id'], (string) $bien['codigo_identificacion'])) {
-            return 'es el renglón de la cartera de la placa ' . $bien['codigo_identificacion']
-                . ' (sus unidades se reintegran en Reintegrar por cantidad y este renglón se actualiza solo)';
+            return ['motivo' => 'es el renglón de la cartera de la placa ' . $bien['codigo_identificacion']
+                . ' (sus unidades se reintegran en Reintegrar por cantidad y este renglón se actualiza solo)',
+                'queHacer' => 'Reintegra sus unidades en «Reintegrar por cantidad»; este renglón se actualiza solo.',
+                'accion' => \App\Core\Aviso::accion('Reintegrar por cantidad', '/reintegros/unidades?' . http_build_query(['q' => (string) $bien['codigo_identificacion']]))];
         }
 
         return null;

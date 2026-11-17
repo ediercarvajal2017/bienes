@@ -182,7 +182,7 @@ test('reintegro por cantidad: todo o nada y sin generar lote', async ({ browser 
         form: { _csrf: token, 'cantidad[sin]': '0', fecha: '2026-11-01', destino_texto: 'Bodega de reintegro' }, maxRedirects: 0,
     });
     await rector.pagina.goto(`reintegros/unidades/${placa}`);
-    await expect(rector.pagina.locator('.alert-danger')).toContainText('Indica cuántas unidades');
+    await expect(rector.pagina.locator('.alert-danger')).toContainText('No escribiste cuántas unidades reintegrar');
 
     // Sin "generar lote": quedan como reintegros sueltos, listos para agrupar.
     await rector.pagina.locator('input[name="cantidad[sin]"]').fill('2');
@@ -274,7 +274,7 @@ test('el renglón de la placa se actualiza al reintegrar desde la ficha, pasar a
     await pagina.goto(`bienes/${u009}/editar`);
     await confirmar(pagina, () => seleccionarTomSelect(pagina, 'categoriaBien', 'Sin cartera'));
     await pagina.locator('#botonGuardarBien').click();
-    await expect(pagina.locator('.alert-success')).toContainText('Bien actualizado');
+    await expect(pagina.locator('.alert-success')).toContainText(/Cambios del bien .+ guardados/);
     expect(resumenDe(placa)).toBe('8 SILLAS DE PRUEBA|800000.00|activo');
     await pagina.goto(`reintegros/unidades?q=${placa}`);
     await expect(pagina.locator('tr', { hasText: placa }).locator('td[data-label="En cartera"]')).toHaveText('8 de 10');
@@ -309,7 +309,7 @@ test('el renglón no se toca si no cambia la cantidad ni el estado', async ({ br
     const rector = await sesionDe(browser, 'rector');
     await rector.pagina.goto(`bienes/${unidad}/editar`);
     await rector.pagina.locator('#botonGuardarBien').click();
-    await expect(rector.pagina.locator('.alert-success')).toContainText('Bien actualizado');
+    await expect(rector.pagina.locator('.alert-success')).toContainText(/Cambios del bien .+ guardados/);
     expect(resumenDe(placa)).toBe('10 SILLAS DE PRUEBA|157059.00|activo');
 
     // Al reintegrar una, el valor baja en proporción al suyo: $157.059 ÷ 10 × 9.
@@ -363,7 +363,7 @@ test('un código que agrupa varias unidades: explica el motivo y lleva a registr
     await expect(pagina.locator('#campo-descripcion')).toHaveValue('SILLAS AGRUPADAS');
     await expect(pagina.locator('#campo-valor')).toHaveValue('100000');
     await pagina.getByRole('button', { name: 'Crear bienes del lote' }).click();
-    await expect(pagina.locator('.alert-success')).toContainText(`8 bienes creados correctamente en el lote "${codigo}"`);
+    await expect(pagina.locator('.alert-success')).toContainText(`8 unidades de la placa ${codigo} registradas`);
 
     // Ahora sí aparece para reintegrar por cantidad.
     await pagina.goto(`reintegros/unidades?q=${codigo}`);

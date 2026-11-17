@@ -110,9 +110,14 @@ La ayuda (?) viene de `App\Helpers\AyudaCampo`. El error va debajo del campo y q
 
 ### Aviso, insignia de estado y confirmación
 ```php
-<?= ui('alerta', ['tipo' => 'exito', 'mensaje' => 'Bien registrado.']) ?>
+<?= ui('alerta', ['tipo' => 'info', 'mensaje' => 'Lote pendiente.', 'cerrable' => false]) ?>
 <?= ui('insignia_estado', ['tipo' => 'bien', 'estado' => $bien['estado']]) ?>
 ```
+- **Aviso:** un solo diseño de MIA para todos.
+  - Fondo de la superficie, título y botón en el verde MIA (`--sigebi-primary`).
+  - El tipo cambia solo el ícono y la franja de la izquierda: verde MIA (éxito, información), amarillo de MIA (advertencia) o rojo de MIA (`--sigebi-danger`, error).
+  - No hay fondos de color completos ni colores fuera de los tokens.
+- **El resultado de una acción no se pinta en la vista:** va con `App\Core\Aviso` (sección siguiente).
 - **Insignias:** colores fijos por estado. Solo existen los estados de la base de datos:
   - bien: activo, en reparación, reintegrado, dado de baja;
   - solicitud: pendiente, aprobada, rechazada, cancelada;
@@ -132,6 +137,39 @@ La ayuda (?) viene de `App\Helpers\AyudaCampo`. El error va debajo del campo y q
 | Preguntar desde un script | `miaConfirmar({ mensaje, boton, peligro }).then(...)` y `miaPedirTexto({...}).then(...)` |
 
 No se usan `alert()`, `confirm()` ni `prompt()` del navegador.
+
+### Mensajes: qué pasó, por qué, qué hacer
+Cada acción le dice al usuario cómo terminó. Si no se pudo, le dice por qué y cómo hacerlo bien.
+
+| Parte | Qué lleva | Ejemplo |
+|---|---|---|
+| **Qué pasó** (título) | El resultado, concreto | "No se registró el bien" / "Bien 200388980 registrado." |
+| **Por qué** | El dato y la regla, sin jerga ni nombres internos | "La placa 200388980 ya está registrada en esta institución." |
+| **Qué hacer** | Un paso en imperativo, con el nombre del botón tal como se ve | "Revisa el número. Si es el mismo bien, ábrelo en lugar de registrarlo otra vez." |
+| **Botón** | Lleva a la pantalla donde se corrige | [Ver el bien 200388980] |
+
+**Reglas de redacción:**
+- Nunca se culpa al usuario: se dice "falta…" o "no se pudo…", no "hiciste mal". Siempre de "tú".
+- El éxito también guía: dice qué se hizo y el siguiente paso ("Siguiente paso: agrúpalos en un lote de reintegro").
+- Un fallo técnico dice "No se aplicó ningún cambio" y da el código del incidente para soporte.
+
+**Cómo se arma:**
+```php
+Aviso::enviar(Aviso::error('No se registró el bien', 'La placa 200388980 ya está registrada en esta institución.',
+    'Revisa el número. Si es el mismo bien, ábrelo en lugar de registrarlo otra vez.',
+    Aviso::accion('Ver el bien 200388980', '/bienes/7/editar'), ['codigo_identificacion' => 'Esta placa ya existe.']));
+Aviso::enviar(Aviso::exito('3 bienes reintegrados.', 'Siguiente paso: agrúpalos en un lote de reintegro.'));
+```
+- **Los pinta el encabezado de la página** de destino, debajo del título. Si la página no tiene encabezado, los pinta el layout. Ni el controlador los lee ni la vista los pinta, así que ninguno se pierde ni reaparece en otra página.
+- **`Aviso::error` exige "qué hacer":** sin ese dato lanza una excepción.
+- **Campos marcados:** el último argumento marca cada campo con su mensaje corto. `ui('campo_formulario')` lo muestra solo; en un control escrito a mano van `clase_invalido('campo')` y `error_campo('campo')`.
+- **Reglas de negocio:** lanzan `App\Core\ErrorGuiado` (el porqué, qué hacer y el botón). El controlador la convierte con `Aviso::desdeExcepcion($e, 'No se reintegró el bien', 'qué hacer por defecto')`; un fallo técnico sale como "No se aplicó ningún cambio" con el código del incidente.
+- **Mensajes repetidos** (formulario vencido, nada marcado, elegir institución, error inesperado): `App\Helpers\Mensajes`.
+- **Lo que no aparece también se explica.** La ficha del bien dice por qué no hay "Reintegrar" o "Reportar baja" (`CicloVidaBien::accionesNoDisponibles`). Las búsquedas sin resultados dicen qué se buscó, por qué puede no estar y cómo seguir (`ui('estado_vacio')`).
+- **En el navegador:**
+  - `validacion.js` reemplaza los globos del navegador. No envía un formulario incompleto, marca cada campo con su mensaje en español, pone arriba un resumen ("No se envió: hay 2 datos por corregir") y lleva el foco al primero.
+  - Para personalizarlo: `data-error-requerido` y `data-error-formato`.
+  - Para lo que falla sin recargar (una petición sin conexión): `MIA.avisar(ancla, { titulo, detalle, solucion, boton })`.
 
 ### Barra de proporciones
 ```php
@@ -175,7 +213,7 @@ Patrón del listado de Bienes:
 
 **Textos:**
 - Lenguaje institucional, claro y breve, con el vocabulario del dominio (bien, placa, espacio, reintegro, baja, acta, Grupal, Individual) y el mismo término en todas las pantallas.
-- Los errores dicen qué pasó y qué hacer: "La placa ya existe. Verifica el número o busca el bien."
+- Los mensajes dicen qué pasó, por qué y qué hacer (sección "Mensajes").
 
 | Haz | No hagas |
 |---|---|
@@ -195,6 +233,9 @@ Patrón del listado de Bienes:
 - **Capturas de referencia:** `CAPTURAS_UI=<carpeta> npx playwright test tests/capturas_ui.spec.js` toma el panel, el listado de bienes, el formulario y la ficha del bien y el inicio de sesión, a 375 y 1440 px, en tema claro y oscuro.
   - `docs/capturas/antes/`: estado antes de la estandarización (v1.2.22).
   - `docs/capturas/despues/`: estado al cerrarla (v1.2.26).
+- **Mensajes:** `php database/herramientas/verificar_mensajes.php` (también corre en PHPUnit) falla si un archivo suma un mensaje de una sola línea (`Session::flash` con `ok` o `error`) o una regla sin guía (`new \DomainException`).
+  - La lista de pendientes (`tests/Unit/datos/mensajes_pendientes.php`) solo puede bajar.
+  - Los módulos ya migrados (`RevisionMensajes::MIGRADOS`) deben quedar en cero.
 - **Caché de la PWA:** al cambiar los estilos, sube la versión `CACHE` de `public/sw.js`.
 
 **Excepciones documentadas:**
@@ -211,6 +252,9 @@ Patrón del listado de Bienes:
 | Componentes como piezas PHP con `ui()` | Mismo motor de vistas del proyecto, sin dependencias | Un motor de plantillas (Twig, Blade): cambio grande sin beneficio para este tamaño |
 | Modal propio de confirmación (`<dialog>` nativo) | Se adapta al diseño y al tema oscuro; los botones dicen la acción ("Eliminar") | `confirm()` del navegador: gris, sin tema y con "Aceptar" genérico |
 | Las migas de pan las arma el layout | Salen del menú; no se desincronizan | Migas por vista: había que mantenerlas a mano en cada pantalla |
+| Los avisos de una acción los pinta el encabezado (o el layout) | Ningún mensaje se pierde ni sale después en otra página | Que cada controlador lo leyera y cada vista lo pintara: si la página de destino no lo leía, se perdía |
+| Avisos en el verde MIA; el error solo con ícono y franja roja | Decisión del usuario: el color del sistema y nada fuera de su diseño | Fondos de color completos (verde, rojo, amarillo, azul) por tipo |
+| Avisos fijos arriba, no ventanas flotantes | Decisión del usuario: se leen junto al título y no tapan la pantalla | Toast flotante que se cierra solo |
 | Verificador con lista de pendientes que solo baja | Permite migrar módulo por módulo sin bloquear y sin retroceder | Prohibir todo desde el primer día: obligaba a migrar las 86 vistas de una vez |
 | Encabezado fijo con desplazamiento dentro de la tabla (pantallas grandes) | Las columnas se siguen leyendo en tablas largas | Encabezado fijo a la página: no funciona dentro de `.table-responsive`, que hace falta para las tablas anchas |
 | Accesos rápidos del panel como lista de enlaces | Densidad y lectura rápida; no compite con las cifras | Diecinueve tarjetas iguales con ícono grande: simetría sin contenido que la pida |

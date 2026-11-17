@@ -13,6 +13,9 @@
  *    al final el primario.
  *
  * Uso: <?= ui('encabezado_pagina', ['titulo' => 'Bienes', 'icono' => 'bien', 'acciones' => $botones]) ?>
+ *
+ * Debajo pinta los avisos de la acción anterior (App\Core\Aviso): quedan junto al título,
+ * donde el usuario mira primero.
  */
 
 $icono ??= null;
@@ -31,3 +34,4 @@ $acciones ??= '';
         <div class="encabezado-pagina-acciones"><?= $acciones ?></div>
     <?php endif; ?>
 </div>
+<?= ui('avisos', ['avisos' => \App\Core\Aviso::paraMostrar()]) ?>

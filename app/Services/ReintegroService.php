@@ -6,6 +6,7 @@ namespace App\Services;
 
 use App\Core\Auth;
 use App\Core\Database;
+use App\Core\ErrorGuiado;
 use App\Models\Asignacion;
 use App\Models\Auditoria;
 use App\Models\Bien;
@@ -40,8 +41,9 @@ final class ReintegroService
         array $extraAuditoria = [],
         bool $sincronizarRenglon = true
     ): int {
-        if ($motivo = Bien::motivoNoReintegrable($bien, $asignacionActiva !== null)) {
-            throw new \DomainException('No se puede reintegrar: ' . $motivo . '.');
+        if ($guia = Bien::guiaNoReintegrable($bien, $asignacionActiva !== null)) {
+            throw new ErrorGuiado('No se puede reintegrar ' . ($bien['codigo_identificacion'] ?? 'el bien') . ': ' . $guia['motivo'] . '.',
+                $guia['queHacer'], $guia['accion']);
         }
 
         $bienId = (int) $bien['id'];

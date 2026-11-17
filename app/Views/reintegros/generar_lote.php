@@ -11,8 +11,6 @@ $movimientosSeleccionados = $viejo['movimientos'] ?? [];
     <a href="<?= Url::to('/reintegros/lotes') ?>" class="btn btn-sm btn-outline-secondary">Ver lotes</a>
 <?= ui('encabezado_pagina', ['titulo' => 'Generar lote de reintegro', 'icono' => 'reintegro', 'subtitulo' => 'Reintegros ya registrados que todavía no están agrupados en ningún lote. Selecciona los que quieras consolidar: se crea un lote por cada categoría (Muebles, Tecnología…), cada uno con su comprobante en Excel.', 'acciones' => (string) ob_get_clean()]) ?>
 
-<?php if (!empty($mensaje)): ?><?= ui('alerta', ['tipo' => 'exito', 'mensaje' => (string) $mensaje, 'clases' => 'py-2 small']) ?><?php endif; ?>
-<?php if (!empty($error)): ?><?= ui('alerta', ['tipo' => 'peligro', 'mensaje' => (string) $error, 'clases' => 'py-2 small']) ?><?php endif; ?>
 
 <?php if (empty($pendientes)): ?>
     <p class="text-muted">No hay reintegros sueltos pendientes de agrupar. Aparecerán aquí cada vez que reintegres un bien.</p>

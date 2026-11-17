@@ -13,9 +13,6 @@ $viejo ??= [];
 <?= ui('encabezado_pagina', ['titulo' => 'Reintegrar bienes', 'icono' => 'reintegro', 'acciones' => (string) ob_get_clean()]) ?>
 <p class="text-muted small">Selecciona uno o varios bienes asignados y regístralos como reintegrados. ¿Un código con varias unidades (alta masiva)? <a href="<?= Url::to('/reintegros/unidades') ?>">Reintegrar por cantidad</a>.</p>
 
-<?php if (!empty($mensaje)): ?><?= ui('alerta', ['tipo' => 'exito', 'mensaje' => (string) $mensaje, 'clases' => 'py-2 small']) ?><?php endif; ?>
-<?php if (!empty($error)): ?><?= ui('alerta', ['tipo' => 'peligro', 'mensaje' => (string) $error, 'clases' => 'py-2 small']) ?><?php endif; ?>
-
 <?php if (Auth::esSuperusuario()): ?>
     <div class="mb-3 contenedor-sm">
         <label for="selectorInstitucion" class="form-label small">Institución</label>
@@ -52,12 +49,14 @@ $viejo ??= [];
                 <div class="row g-3">
                     <div class="col-md-6">
                         <label for="campo-destino-texto" class="form-label small">Destino</label>
-                        <input id="campo-destino-texto" type="text" name="destino_texto" class="form-control form-control-sm" placeholder="Ej. Almacén institucional" required
+                        <input id="campo-destino-texto" type="text" name="destino_texto" class="form-control form-control-sm<?= clase_invalido('destino_texto') ?>" placeholder="Ej. Almacén institucional" required
                                value="<?= htmlspecialchars($viejo['destino_texto'] ?? '', ENT_QUOTES) ?>">
+                        <?= error_campo('destino_texto') ?>
                     </div>
                     <div class="col-md-6">
                         <label for="campo-fecha" class="form-label small">Fecha del reintegro</label>
-                        <input id="campo-fecha" type="date" min="<?= \App\Helpers\FechaMovimiento::MINIMA ?>" max="<?= \App\Helpers\FechaMovimiento::hoy() ?>" name="fecha" class="form-control form-control-sm" value="<?= htmlspecialchars($viejo['fecha'] ?? date('Y-m-d'), ENT_QUOTES) ?>" required>
+                        <input id="campo-fecha" type="date" min="<?= \App\Helpers\FechaMovimiento::MINIMA ?>" max="<?= \App\Helpers\FechaMovimiento::hoy() ?>" name="fecha" class="form-control form-control-sm<?= clase_invalido('fecha') ?>" value="<?= htmlspecialchars($viejo['fecha'] ?? date('Y-m-d'), ENT_QUOTES) ?>" required>
+                        <?= error_campo('fecha') ?>
                     </div>
                 </div>
 
@@ -136,6 +135,10 @@ $viejo ??= [];
             'urlBase' => $urlBasePaginacion,
         ]); ?>
 
+        <?php if ($bienes === [] && !empty($sinResultados)): ?>
+            <?php // Por qué la búsqueda no encontró nada para reintegrar (ReintegroController::explicarSinResultados). ?>
+            <?= ui('estado_vacio', $sinResultados + ['clases' => 'mb-3']) ?>
+        <?php endif; ?>
         <div class="table-responsive">
             <table class="table table-sm table-hover align-middle bg-white tabla-cards">
                 <thead>
@@ -223,7 +226,7 @@ $viejo ??= [];
         let seleccion = leerSeleccion(); // { [id]: true }
 
         // Si la operacion se aplico con exito, la seleccion ya cumplio su proposito.
-        <?php if (!empty($mensaje)): ?>
+        <?php if (!empty($limpiarSeleccion)): ?>
         seleccion = {};
         guardarSeleccion();
         <?php endif; ?>
@@ -405,7 +408,7 @@ $viejo ??= [];
                     if (casilla) { casilla.checked = true; }
                     mostrarMensajeEscaneo('Agregado: ' + datos.codigo + ' — ' + datos.descripcion, 'ok');
                 } catch (e) {
-                    mostrarMensajeEscaneo('Error de conexión al buscar el bien.', 'error');
+                    mostrarMensajeEscaneo('No se pudo consultar el bien: MIA no recibió respuesta. Revisa tu conexión y vuelve a escanearlo.', 'error');
                 } finally {
                     procesando = false;
                 }

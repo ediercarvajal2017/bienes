@@ -6,6 +6,7 @@ namespace App\Services;
 
 use App\Core\Auth;
 use App\Core\Database;
+use App\Core\ErrorGuiado;
 use App\Core\Url;
 use App\Helpers\FechaMovimiento;
 use App\Models\Asignacion;
@@ -189,18 +190,23 @@ final class ReintegroUnidadesService
         bool $generarLote
     ): array {
         if ($error = FechaMovimiento::error($fecha)) {
-            throw new \DomainException('Fecha del reintegro: ' . $error);
+            throw new ErrorGuiado('Fecha del reintegro: ' . $error, 'Elige una fecha entre el 01/01/2000 y hoy y vuelve a pulsar «Reintegrar».',
+                null, ['fecha' => 'Elige una fecha válida.']);
         }
         $destino = trim($destino);
         if ($destino === '') {
-            throw new \DomainException('Indica el destino del reintegro.');
+            throw new ErrorGuiado('Falta el destino del reintegro.',
+                'Escribe a dónde van las unidades (por ejemplo «Almacén de la Secretaría de Educación») y vuelve a pulsar «Reintegrar».',
+                null, ['destino_texto' => 'Escribe el destino.']);
         }
         if (mb_strlen($destino) > self::LARGO_MAXIMO_DESTINO) {
-            throw new \DomainException('El destino no puede tener más de ' . self::LARGO_MAXIMO_DESTINO . ' caracteres.');
+            throw new ErrorGuiado('El destino tiene más de ' . self::LARGO_MAXIMO_DESTINO . ' caracteres.', 'Acórtalo y vuelve a pulsar «Reintegrar».',
+                null, ['destino_texto' => 'Máximo ' . self::LARGO_MAXIMO_DESTINO . ' caracteres.']);
         }
         $observaciones = trim((string) $observaciones);
         if (mb_strlen($observaciones) > self::LARGO_MAXIMO_OBSERVACIONES) {
-            throw new \DomainException('Las observaciones no pueden tener más de ' . self::LARGO_MAXIMO_OBSERVACIONES . ' caracteres.');
+            throw new ErrorGuiado('Las observaciones tienen más de ' . self::LARGO_MAXIMO_OBSERVACIONES . ' caracteres.', 'Acórtalas y vuelve a pulsar «Reintegrar».',
+                null, ['observaciones' => 'Máximo ' . self::LARGO_MAXIMO_OBSERVACIONES . ' caracteres.']);
         }
 
         $pedidas = self::cantidadesValidas($cantidadesPorUbicacion);
@@ -214,19 +220,22 @@ final class ReintegroUnidadesService
             foreach ($pedidas as $clave => $cantidad) {
                 $grupo = self::parsearClaveGrupo($clave);
                 if ($grupo === null) {
-                    throw new \DomainException('Una de las ubicaciones no es válida. Vuelve a abrir el formulario.');
+                    throw new ErrorGuiado('Una de las ubicaciones del formulario ya no existe (cambió mientras tenías la página abierta).',
+                        'Vuelve a abrir la placa desde «Reintegrar por cantidad» y escribe de nuevo las cantidades.');
                 }
 
                 $unidades = Bien::unidadesDeLoteParaReintegrar($institucionId, $lote, $grupo['espacio'], $grupo['usuario'], $grupo['sin_asignar'], $cantidad);
                 if (count($unidades) < $cantidad) {
                     $donde = $nombres[$clave] ?? 'esa ubicación';
-                    throw new \DomainException("En {$donde} solo quedan " . count($unidades) . " unidad(es) de la placa {$lote}; pediste {$cantidad}. No se aplicó ningún cambio.");
+                    throw new ErrorGuiado("En {$donde} solo quedan " . count($unidades) . " unidad(es) de la placa {$lote} y pediste {$cantidad}. No se aplicó ningún cambio.",
+                        'Escribe una cantidad igual o menor a la que queda en cada ubicación y vuelve a pulsar «Reintegrar».');
                 }
 
                 foreach ($unidades as $bienId) {
                     $bien = Bien::find($bienId);
                     if ($bien === null) {
-                        throw new \DomainException('Una de las unidades ya no existe. No se aplicó ningún cambio.');
+                        throw new ErrorGuiado('Una de las unidades ya no existe (cambió mientras tenías la página abierta). No se aplicó ningún cambio.',
+                            'Vuelve a abrir la placa desde «Reintegrar por cantidad»: verás las cantidades actualizadas.');
                     }
                     $movimientos[] = ReintegroService::reintegrar($bien, Asignacion::activaDe($bienId), $fecha, $destino, $observacionMovimiento,
                         ['placa' => $lote, 'por_cantidad' => true], false);
@@ -287,12 +296,12 @@ final class ReintegroUnidadesService
                 continue;
             }
             if (preg_match('/^\d{1,4}$/', $texto) !== 1) {
-                throw new \DomainException('Las cantidades deben ser números enteros (0 o más).');
+                throw new ErrorGuiado('Una de las cantidades no es un número entero.', 'Escribe 0 o un número entero, sin puntos ni decimales, en cada ubicación.');
             }
             $validas[(string) $clave] = (int) $texto;
         }
         if ($validas === []) {
-            throw new \DomainException('Indica cuántas unidades vas a reintegrar.');
+            throw new ErrorGuiado('No escribiste cuántas unidades reintegrar.', 'Escribe la cantidad en la ubicación de donde salen las unidades (al menos 1) y vuelve a pulsar «Reintegrar».');
         }
 
         return $validas;

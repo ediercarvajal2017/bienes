@@ -26,8 +26,8 @@ final class Csrf
     }
 
     /**
-     * Verifica el token CSRF del request; si falla, deja el mensaje de siempre (y
-     * opcionalmente los datos del formulario, para no perderlos) y redirige sin volver.
+     * Verifica el token CSRF del request; si falla, avisa que no se guardó nada (y
+     * opcionalmente conserva los datos del formulario, para no perderlos) y redirige sin volver.
      * Antes este mismo bloque estaba copiado en 14 controladores.
      */
     public static function verificarORedirigir(Request $request, string $volverA, array $datosAConservar = []): void
@@ -36,7 +36,7 @@ final class Csrf
             return;
         }
 
-        Session::flash('error', 'Tu sesión expiró, intenta de nuevo.');
+        Aviso::enviar(\App\Helpers\Mensajes::sesionVencida($datosAConservar !== []));
         if ($datosAConservar !== []) {
             Session::flashOld($datosAConservar);
         }

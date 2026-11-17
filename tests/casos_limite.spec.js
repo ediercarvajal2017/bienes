@@ -21,7 +21,7 @@ test('bienes: un valor de más de 10 dígitos se rechaza en el campo correcto', 
     await page.getByRole('button', { name: 'Registrar bien' }).click();
 
     await expect(campoValor).toHaveClass(/is-invalid/);
-    await expect(page.locator('.invalid-feedback', { hasText: 'no puede ser negativo' })).toBeVisible();
+    await expect(page.locator('.invalid-feedback', { hasText: 'entre 0 y 9.999.999.999' })).toBeVisible();
 });
 
 test('bienes: alta masiva idéntica también limita el valor a 10 dígitos', async ({ page }) => {

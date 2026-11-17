@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Core\Auth;
+use App\Core\Aviso;
+use App\Core\ErrorGuiado;
 use App\Core\Csrf;
 use App\Helpers\FechaMovimiento;
 use App\Core\Database;
@@ -41,7 +43,6 @@ final class SolicitudReintegroController
             'bien' => $bien,
             'token' => $token,
             'asignacion' => Asignacion::activaDe((int) $bien['id']),
-            'error' => Session::pullFlash('error'),
             'viejo' => Session::pullOld(),
         ]);
     }
@@ -54,7 +55,9 @@ final class SolicitudReintegroController
         Csrf::verificarORedirigir($request, "/qr/{$token}/solicitar-reintegro", ['motivo' => $motivo]);
 
         if (mb_strlen($motivo) < self::MOTIVO_MINIMO) {
-            Session::flash('error', 'Explique el motivo del reintegro (al menos ' . self::MOTIVO_MINIMO . ' caracteres).');
+            Aviso::enviar(Aviso::error('No se envió la solicitud', 'El motivo es muy corto: escribe al menos ' . self::MOTIVO_MINIMO . ' caracteres.',
+                'Cuenta qué le pasa al bien o por qué ya no se necesita (por ejemplo «Silla con el espaldar partido») y vuelve a enviar.',
+                null, ['motivo' => 'Escribe al menos ' . self::MOTIVO_MINIMO . ' caracteres.']));
             Session::flashOld(['motivo' => $motivo]);
             header('Location: ' . Url::to("/qr/{$token}/solicitar-reintegro"));
             exit;
@@ -68,7 +71,7 @@ final class SolicitudReintegroController
             return $id;
         });
 
-        Session::flash('ok', 'Solicitud de reintegro enviada (n.º ' . $id . '). El rector o el secretario la revisará.');
+        Aviso::enviar(Aviso::exito('Solicitud de reintegro n.º ' . $id . ' enviada.', 'El rector o el secretario la revisará; aquí verás si la aprueba o la rechaza.'));
         header('Location: ' . Url::to('/reintegros/solicitudes'));
         exit;
     }
@@ -105,8 +108,6 @@ final class SolicitudReintegroController
             'opcionesPorPagina' => self::OPCIONES_POR_PAGINA,
             'total' => $total,
             'totalPaginas' => Paginador::totalPaginas($total, $porPagina),
-            'mensaje' => Session::pullFlash('ok'),
-            'error' => Session::pullFlash('error'),
         ]);
     }
 
@@ -121,15 +122,17 @@ final class SolicitudReintegroController
         $respuesta = trim((string) $request->input('respuesta')) ?: null;
 
         if ($destino === '') {
-            $this->volverConError('Indique el destino del reintegro para aprobar la solicitud.');
+            $this->volverConError(Aviso::error('No se aprobó la solicitud', 'Falta el destino del reintegro.',
+                'Escribe a dónde va el bien (por ejemplo «Almacén de la Secretaría de Educación») y vuelve a pulsar «Aprobar».'));
         }
         if ($errorFecha = FechaMovimiento::error($fecha)) {
-            $this->volverConError($errorFecha);
+            $this->volverConError(Aviso::error('No se aprobó la solicitud', $errorFecha, 'Elige una fecha entre el 01/01/2000 y hoy y vuelve a pulsar «Aprobar».'));
         }
 
         $bien = Bien::find((int) $solicitud['bien_id']);
         if (!$bien) {
-            $this->volverConError('El bien de esta solicitud ya no existe.');
+            $this->volverConError(Aviso::error('No se aprobó la solicitud', 'El bien de esta solicitud ya no existe en MIA.',
+                'Rechaza la solicitud explicando que el bien ya no está registrado.'));
         }
 
         try {
@@ -145,17 +148,18 @@ final class SolicitudReintegroController
 
                 // Si otra persona ya la resolvió, se deshace también el reintegro.
                 if (!SolicitudReintegro::aprobarSiPendiente((int) $solicitud['id'], (int) Auth::id(), $movimientoId, $respuesta)) {
-                    throw new \DomainException('Esta solicitud ya había sido resuelta.');
+                    throw new ErrorGuiado('Otra persona ya resolvió esta solicitud.', 'Recarga la lista para ver cómo quedó.');
                 }
 
                 Auditoria::registrar(Auth::id(), (int) $solicitud['institucion_id'], 'aprobar', 'solicitud_reintegro', (int) $solicitud['id'],
                     ['estado' => 'pendiente'], ['estado' => 'aprobada', 'movimiento_id' => $movimientoId, 'respuesta' => $respuesta]);
             });
         } catch (\DomainException $e) {
-            $this->volverConError($e->getMessage());
+            $this->volverConError(Aviso::desdeExcepcion($e, 'No se aprobó la solicitud', 'Revisa el bien en su ficha y vuelve a intentarlo.'));
         }
 
-        Session::flash('ok', 'Solicitud aprobada: el bien quedó reintegrado. Cuando quiera, agrúpelo en un lote para generar el formato.');
+        Aviso::enviar(Aviso::exito('Solicitud aprobada: el bien quedó reintegrado.', 'Siguiente paso: agrúpalo en un lote de reintegro para generar el comprobante.',
+            Aviso::accion('Generar el lote de reintegro', '/reintegros/lotes/generar')));
         header('Location: ' . Url::to('/reintegros/solicitudes'));
         exit;
     }
@@ -168,17 +172,17 @@ final class SolicitudReintegroController
 
         $respuesta = trim((string) $request->input('respuesta'));
         if ($respuesta === '') {
-            $this->volverConError('Indique el motivo del rechazo: quien la solicitó lo verá.');
+            $this->volverConError(Aviso::error('No se rechazó la solicitud', 'Falta el motivo del rechazo.', 'Escribe por qué se rechaza: quien la pidió lo verá.'));
         }
 
         if (!SolicitudReintegro::rechazarSiPendiente((int) $solicitud['id'], (int) Auth::id(), mb_substr($respuesta, 0, 500))) {
-            $this->volverConError('Esta solicitud ya había sido resuelta.');
+            $this->volverConError(Aviso::error('No se rechazó la solicitud', 'Otra persona ya resolvió esta solicitud.', 'Recarga la lista para ver cómo quedó.'));
         }
 
         Auditoria::registrar(Auth::id(), (int) $solicitud['institucion_id'], 'rechazar', 'solicitud_reintegro', (int) $solicitud['id'],
             ['estado' => 'pendiente'], ['estado' => 'rechazada', 'respuesta' => $respuesta]);
 
-        Session::flash('ok', 'Solicitud rechazada. El bien continúa asignado.');
+        Aviso::enviar(Aviso::exito('Solicitud rechazada.', 'El bien sigue asignado y quien la pidió verá tu respuesta.'));
         header('Location: ' . Url::to('/reintegros/solicitudes'));
         exit;
     }
@@ -190,13 +194,13 @@ final class SolicitudReintegroController
 
         $solicitud = SolicitudReintegro::find((int) $id);
         if (!$solicitud || !SolicitudReintegro::cancelarSiPendiente((int) $id, (int) Auth::id())) {
-            $this->volverConError('No se pudo cancelar: la solicitud no es suya o ya fue resuelta.');
+            $this->volverConError(Aviso::error('No se canceló la solicitud', 'La solicitud no es tuya o ya fue resuelta.', 'Recarga la lista para ver su estado.'));
         }
 
         Auditoria::registrar(Auth::id(), (int) $solicitud['institucion_id'], 'cancelar', 'solicitud_reintegro', (int) $id,
             ['estado' => 'pendiente'], ['estado' => 'cancelada']);
 
-        Session::flash('ok', 'Solicitud cancelada.');
+        Aviso::enviar(Aviso::exito('Solicitud cancelada.', 'El bien sigue asignado como estaba.'));
         header('Location: ' . Url::to('/reintegros/solicitudes'));
         exit;
     }
@@ -222,20 +226,25 @@ final class SolicitudReintegroController
         }
 
         if (!Auth::esSuperusuario() && !Bien::esResponsableDe((int) $bien['id'], (int) Auth::id())) {
-            Session::flash('error', 'Solo puede solicitar el reintegro de bienes asignados a espacios a su cargo.');
+            Aviso::enviar(Aviso::error('No se puede solicitar el reintegro', 'El bien no está en un espacio a tu cargo.',
+                'Pídele al responsable de ese espacio, al rector o al secretario que lo solicite.'));
             header('Location: ' . Url::to("/qr/{$token}"));
             exit;
         }
 
-        $motivo = Bien::motivoNoReintegrable($bien, Asignacion::activaDe((int) $bien['id']) !== null);
-        if ($motivo !== null) {
-            Session::flash('error', 'No se puede solicitar el reintegro: ' . $motivo . '.');
+        $guia = Bien::guiaNoReintegrable($bien, Asignacion::activaDe((int) $bien['id']) !== null);
+        if ($guia !== null) {
+            // Quien solicita no puede asignar ni cambiar la categoría: se le dice a quién acudir.
+            Aviso::enviar(Aviso::error('No se puede solicitar el reintegro', 'El bien no se puede reintegrar: ' . $guia['motivo'] . '.',
+                $this->puedeAprobar() ? $guia['queHacer'] : 'Avísale al rector o al secretario para que lo revise.',
+                $this->puedeAprobar() ? $guia['accion'] : null));
             header('Location: ' . Url::to("/qr/{$token}"));
             exit;
         }
 
         if (SolicitudReintegro::tienePendiente((int) $bien['id'])) {
-            Session::flash('error', 'Este bien ya tiene una solicitud de reintegro pendiente.');
+            Aviso::enviar(Aviso::error('No se puede solicitar el reintegro', 'El bien ya tiene una solicitud de reintegro esperando respuesta.',
+                'Espera la respuesta; la ves en «Solicitudes de reintegro».', Aviso::accion('Ver las solicitudes', '/reintegros/solicitudes')));
             header('Location: ' . Url::to("/qr/{$token}"));
             exit;
         }
@@ -266,9 +275,10 @@ final class SolicitudReintegroController
         return Auth::esSuperusuario() || Auth::tienePermiso('asignaciones.crear');
     }
 
-    private function volverConError(string $mensaje): never
+    /** @param array{tipo: string, titulo: string, detalle: string, solucion: string, accion: array{texto: string, url: string}|null, campos: array<string, string>} $aviso */
+    private function volverConError(array $aviso): never
     {
-        Session::flash('error', $mensaje);
+        Aviso::enviar($aviso);
         header('Location: ' . Url::to('/reintegros/solicitudes'));
         exit;
     }
