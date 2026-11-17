@@ -31,13 +31,18 @@ final class ReintegroUnidadesController
     {
         $institucionId = $this->institucionSeleccionada();
         $q = mb_substr(trim((string) ($_GET['q'] ?? '')), 0, 100);
+        $codigos = $institucionId !== null ? Bien::listarLotes($institucionId, $q !== '' ? $q : null) : [];
 
         View::layout('partials/layout', 'reintegros/unidades_index', [
             'title' => 'Reintegrar por cantidad',
             'instituciones' => Auth::esSuperusuario() ? Institucion::listadoParaSelect(true) : [],
             'institucionId' => $institucionId,
             'q' => $q,
-            'codigos' => $institucionId !== null ? Bien::listarLotes($institucionId, $q !== '' ? $q : null) : [],
+            'codigos' => $codigos,
+            // Sin resultados: por qué no aparece el código y qué hacer (antes no se decía nada).
+            'sinResultados' => $institucionId !== null && $codigos === []
+                ? ReintegroUnidadesService::explicarSinResultados($institucionId, $q, Auth::esSuperusuario() ? '?institucion=' . $institucionId : '')
+                : null,
             'error' => Session::pullFlash('error'),
         ]);
     }

@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Core\Auth;
 use App\Core\Database;
+use App\Core\Url;
 use App\Helpers\FechaMovimiento;
 use App\Models\Asignacion;
 use App\Models\Bien;
+use App\Models\Categoria;
 
 /**
  * Reintegro POR CANTIDAD de un código con varias unidades (alta masiva: bienes.lote, p. ej.
@@ -21,6 +24,119 @@ final class ReintegroUnidadesService
     public const CLAVE_SIN_ASIGNAR = 'sin';
     private const LARGO_MAXIMO_DESTINO = 200;
     private const LARGO_MAXIMO_OBSERVACIONES = 500;
+    /** Máximo de unidades de una alta masiva (BienController::validarLote). */
+    public const MAXIMO_ALTA_MASIVA = 500;
+
+    /**
+     * Por qué Reintegrar por cantidad no muestra ningún código, y qué hacer, con la acción a un
+     * clic. Aquí solo aparecen los códigos con varias unidades (Alta masiva idéntica); un bien
+     * registrado como uno solo no aparece, y antes la pantalla no decía por qué.
+     *
+     * @param string $sufijoInstitucion "?institucion=N" del superusuario, o ''
+     * @return array{titulo: string, detalle: string, acciones: list<array{texto: string, url: string}>}
+     */
+    public static function explicarSinResultados(int $institucionId, string $busqueda, string $sufijoInstitucion = ''): array
+    {
+        // El superusuario trabaja sobre una institución elegida: los enlaces la llevan.
+        $conInstitucion = static function (string $ruta, array $consulta = []) use ($sufijoInstitucion, $institucionId): string {
+            if ($sufijoInstitucion !== '') {
+                $consulta['institucion'] = $institucionId;
+            }
+
+            return Url::to($ruta) . ($consulta !== [] ? '?' . http_build_query($consulta) : '');
+        };
+        $reintegrarBienes = static fn (string $texto, string $q): array => ['texto' => $texto, 'url' => $conInstitucion('/reintegros', ['q' => $q])];
+
+        if ($busqueda === '') {
+            return [
+                'titulo' => 'Esta institución todavía no tiene códigos con varias unidades',
+                'detalle' => 'Aquí aparecen los códigos registrados con Alta masiva idéntica (por ejemplo, una placa con 178 sillas). '
+                    . 'Un bien registrado como uno solo se reintegra en Reintegrar bienes.',
+                'acciones' => [['texto' => 'Ir a Reintegrar bienes', 'url' => $conInstitucion('/reintegros')]],
+            ];
+        }
+
+        $exacto = Bien::buscarPorCodigoInstitucion($institucionId, $busqueda);
+        $bien = $exacto !== null ? Bien::find((int) $exacto['id']) : null;
+        if ($bien === null) {
+            // Sin un código exacto: ¿hay bienes individuales que coincidan por código o descripción?
+            $sueltos = Bien::contarListado($institucionId, $busqueda, true);
+
+            return $sueltos > 0
+                ? [
+                    'titulo' => "Ningún código con varias unidades coincide con \"{$busqueda}\"",
+                    'detalle' => ($sueltos === 1 ? 'Hay 1 bien registrado como uno solo que coincide' : "Hay {$sueltos} bienes registrados como uno solo que coinciden")
+                        . ': se reintegran en Reintegrar bienes. Aquí solo aparecen los códigos registrados con Alta masiva idéntica.',
+                    'acciones' => [$reintegrarBienes('Buscar en Reintegrar bienes', $busqueda)],
+                ]
+                : [
+                    'titulo' => "No hay ningún bien con \"{$busqueda}\" en esta institución",
+                    'detalle' => 'Revisa la placa (completa y sin espacios) o busca por la descripción.',
+                    'acciones' => [['texto' => 'Buscar en Bienes', 'url' => Url::to('/bienes') . '?' . http_build_query(['q' => $busqueda])]],
+                ];
+        }
+
+        $codigo = (string) $bien['codigo_identificacion'];
+        $verBien = ['texto' => 'Ver el bien', 'url' => Url::to('/bienes/' . (int) $bien['id'] . '/editar')];
+
+        // Una unidad de una placa: aquí se busca la placa completa.
+        if (!empty($bien['lote'])) {
+            return [
+                'titulo' => "{$codigo} es una unidad de la placa {$bien['lote']}",
+                'detalle' => 'En Reintegrar por cantidad se busca la placa completa, no cada unidad: elige la placa y di cuántas reintegras.',
+                'acciones' => [['texto' => "Ver la placa {$bien['lote']}", 'url' => $conInstitucion('/reintegros/unidades', ['q' => (string) $bien['lote']])]],
+            ];
+        }
+
+        if ($bien['estado'] === 'reintegrado') {
+            return ['titulo' => "El bien {$codigo} ya está reintegrado",
+                'detalle' => 'No queda nada por reintegrar. Si fue un error, el rector puede reactivarlo desde su ficha.', 'acciones' => [$verBien]];
+        }
+        if ($bien['estado'] === 'dado_de_baja') {
+            return ['titulo' => "El bien {$codigo} fue dado de baja", 'detalle' => 'Un bien dado de baja ya no se reintegra.', 'acciones' => [$verBien]];
+        }
+        if (($bien['categoria_nombre'] ?? null) === Categoria::NOMBRE_CATEGORIA_PROTEGIDA) {
+            return ['titulo' => "El bien {$codigo} es de la categoría \"" . Categoria::NOMBRE_CATEGORIA_PROTEGIDA . '"',
+                'detalle' => 'Esos bienes no se reintegran a la Alcaldía: solo se dan de baja, desde su ficha.', 'acciones' => [$verBien]];
+        }
+
+        // Un renglón de la cartera que agrupa varias unidades ("8 SILLA…") sin unidades registradas.
+        $cantidad = RenglonDePlaca::cantidadQueDice((string) $bien['descripcion']);
+        if ($cantidad !== null && $cantidad > 1) {
+            $puedeRegistrar = Auth::esSuperusuario() || Auth::tienePermiso('bienes.crear');
+            $detalle = "Para reintegrar por cantidad, sus {$cantidad} unidades deben estar registradas por separado. "
+                . "Regístralas con Alta masiva idéntica, con el mismo código y la cantidad {$cantidad}: después la placa aparece aquí y "
+                . "reintegras solo las que necesites. \"{$bien['descripcion']}\" queda como el renglón de la cartera y MIA lo mantiene al día.";
+            if ($cantidad > self::MAXIMO_ALTA_MASIVA) {
+                $detalle = "Son más de " . self::MAXIMO_ALTA_MASIVA . " unidades, el máximo de una alta masiva: pide ayuda al administrador de MIA.";
+            } elseif (!$puedeRegistrar) {
+                $detalle .= ' Pídele a quien registra los bienes en tu institución que lo haga.';
+            }
+
+            return [
+                'titulo' => "El bien {$codigo} está registrado como un solo bien de {$cantidad} unidades",
+                'detalle' => $detalle,
+                'acciones' => $puedeRegistrar && $cantidad <= self::MAXIMO_ALTA_MASIVA
+                    ? [['texto' => "Registrar sus {$cantidad} unidades", 'url' => Url::to('/bienes/alta-masiva') . '?desde_bien=' . (int) $bien['id']]]
+                    : [$verBien],
+            ];
+        }
+
+        // Un bien individual: se reintegra en Reintegrar bienes (si cumple la regla).
+        $motivo = Bien::motivoNoReintegrable($bien, Asignacion::activaDe((int) $bien['id']) !== null);
+
+        return $motivo === null
+            ? [
+                'titulo' => "El bien {$codigo} es un bien individual",
+                'detalle' => 'Reintegrar por cantidad es solo para códigos con varias unidades (Alta masiva idéntica). Este bien se reintegra en Reintegrar bienes.',
+                'acciones' => [$reintegrarBienes('Reintegrarlo en Reintegrar bienes', $codigo)],
+            ]
+            : [
+                'titulo' => "El bien {$codigo} es un bien individual",
+                'detalle' => "Se reintegra en Reintegrar bienes, pero todavía no se puede: {$motivo}. Corrígelo desde su ficha.",
+                'acciones' => [$verBien],
+            ];
+    }
 
     /**
      * Datos del código y unidades disponibles por ubicación, para el formulario. null si el

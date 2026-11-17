@@ -333,3 +333,85 @@ test('la ficha de una unidad sin asignar ofrece "Reintegrar"; un bien suelto sin
     await expect(rector.pagina.locator('#accionBien option[value="reintegrar"]')).toHaveCount(0);
     await rector.contexto.close();
 });
+
+/**
+ * La búsqueda de Reintegrar por cantidad dice POR QUÉ no aparece un código y qué hacer (antes
+ * solo decía "Ningún código coincide"). Caso principal: un bien registrado como uno solo que
+ * agrupa varias unidades ("8 SILLAS…"): se ofrece registrar sus unidades con Alta masiva
+ * idéntica, ya prellenada, y después la placa aparece para reintegrar por cantidad.
+ */
+test('un código que agrupa varias unidades: explica el motivo y lleva a registrarlas', async ({ browser }) => {
+    const d = datos();
+    const codigo = `PWG${Date.now()}`;
+    bd(`INSERT INTO bienes (institucion_id, codigo_identificacion, descripcion, categoria_id, fecha_ingreso, valor, estado, qr_token, created_by)
+        SELECT ${d.instituciones.A}, '${codigo}', '8 SILLAS AGRUPADAS', id, '2024-03-01', 800000, 'activo', UUID(), ${d.usuarios.superusuario.id}
+          FROM categorias_bienes WHERE institucion_id = ${d.instituciones.A} AND nombre = 'Muebles' LIMIT 1`);
+    const rector = await sesionDe(browser, 'rector');
+    const { pagina } = rector;
+
+    await pagina.goto(`reintegros/unidades?q=${codigo}`);
+    const aviso = pagina.locator('.estado-vacio-explicado');
+    await expect(aviso.locator('.estado-vacio-titulo')).toHaveText(`El bien ${codigo} está registrado como un solo bien de 8 unidades`);
+    await expect(aviso.locator('.estado-vacio-detalle')).toContainText('Regístralas con Alta masiva idéntica, con el mismo código y la cantidad 8');
+
+    // La alta masiva llega con los datos del bien: código, cantidad, descripción y valor por unidad.
+    await aviso.getByRole('link', { name: 'Registrar sus 8 unidades' }).click();
+    await expect(pagina).toHaveURL(/\/bienes\/alta-masiva\?desde_bien=\d+$/);
+    await expect(pagina.locator('.alert-info')).toContainText(`Datos tomados del bien ${codigo} "8 SILLAS AGRUPADAS"`);
+    await expect(pagina.locator('#campo-lote')).toHaveValue(codigo);
+    await expect(pagina.locator('#campo-cantidad')).toHaveValue('8');
+    await expect(pagina.locator('#campo-descripcion')).toHaveValue('SILLAS AGRUPADAS');
+    await expect(pagina.locator('#campo-valor')).toHaveValue('100000');
+    await pagina.getByRole('button', { name: 'Crear bienes del lote' }).click();
+    await expect(pagina.locator('.alert-success')).toContainText(`8 bienes creados correctamente en el lote "${codigo}"`);
+
+    // Ahora sí aparece para reintegrar por cantidad.
+    await pagina.goto(`reintegros/unidades?q=${codigo}`);
+    await expect(pagina.locator('tr', { hasText: codigo }).locator('td[data-label="En cartera"]')).toHaveText('8 de 8');
+    await rector.contexto.close();
+});
+
+test('la búsqueda sin resultados explica cada caso y ofrece qué hacer', async ({ browser }) => {
+    const d = datos();
+    const placa = crearCodigoConUnidades();
+    const marca = `PWP${Date.now()}`;
+    bd(`INSERT INTO bienes (institucion_id, codigo_identificacion, descripcion, categoria_id, fecha_ingreso, valor, estado, qr_token, created_by)
+        SELECT ${d.instituciones.A}, '${marca}-X', 'PW PARCIAL ${marca}', id, '2024-03-01', 1000, 'activo', UUID(), ${d.usuarios.superusuario.id}
+          FROM categorias_bienes WHERE institucion_id = ${d.instituciones.A} AND nombre = 'Muebles' LIMIT 1`);
+    const codigoDe = (id) => bd(`SELECT codigo_identificacion FROM bienes WHERE id = ${id}`);
+    const rector = await sesionDe(browser, 'rector');
+    const { pagina } = rector;
+    const titulo = pagina.locator('.estado-vacio-titulo');
+    const accion = (nombre) => pagina.locator('.estado-vacio-acciones').getByRole('link', { name: nombre });
+    const buscar = (q) => pagina.goto(`reintegros/unidades?q=${encodeURIComponent(q)}`);
+
+    // Un bien individual: se reintegra en Reintegrar bienes.
+    const silla = codigoDe(d.bienes.A.silla);
+    await buscar(silla);
+    await expect(titulo).toHaveText(`El bien ${silla} es un bien individual`);
+    await expect(accion('Reintegrarlo en Reintegrar bienes')).toHaveAttribute('href', `/reintegros?q=${silla}`);
+
+    // Una unidad: se busca su placa.
+    await buscar(`${placa}-003`);
+    await expect(titulo).toHaveText(`${placa}-003 es una unidad de la placa ${placa}`);
+    await accion(`Ver la placa ${placa}`).click();
+    await expect(pagina.locator('tr', { hasText: placa }).locator('td[data-label="En cartera"]')).toHaveText('10 de 10');
+
+    // Un bien "Sin cartera": no se reintegra, solo se da de baja.
+    const sinCartera = codigoDe(d.bienes.A.para_rechazo);
+    await buscar(sinCartera);
+    await expect(titulo).toHaveText(`El bien ${sinCartera} es de la categoría "Sin cartera"`);
+    await expect(accion('Ver el bien')).toBeVisible();
+
+    // Coincidencias parciales con bienes individuales.
+    await buscar(`PARCIAL ${marca}`);
+    await expect(titulo).toHaveText(`Ningún código con varias unidades coincide con "PARCIAL ${marca}"`);
+    await expect(pagina.locator('.estado-vacio-detalle')).toContainText('Hay 1 bien registrado como uno solo que coincide');
+    await expect(accion('Buscar en Reintegrar bienes')).toBeVisible();
+
+    // Nada de nada.
+    await buscar('NO-EXISTE-PW-999');
+    await expect(titulo).toHaveText('No hay ningún bien con "NO-EXISTE-PW-999" en esta institución');
+    await expect(accion('Buscar en Bienes')).toHaveAttribute('href', /\/bienes\?q=NO-EXISTE-PW-999$/);
+    await rector.contexto.close();
+});

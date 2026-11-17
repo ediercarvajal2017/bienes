@@ -33,7 +33,9 @@
                     (p. ej. "178 SILLAS UNIVERSITARIAS"), MIA lo mantiene al día: al reintegrar unidades (por cantidad, desde su
                     ficha o en Reintegrar bienes), al reactivarlas o al pasarlas a "Sin cartera", queda "175 SILLAS…" con su
                     valor en proporción. Ese renglón no es una silla más: no se reintegra aparte, y cuando ya no queda ninguna
-                    unidad pasa solo a Reintegrado.</li>
+                    unidad pasa solo a Reintegrado. Si el código que buscas no aparece, MIA te dice por qué y qué hacer: por
+                    ejemplo, si está registrado como un solo bien de 8 unidades, te lleva a registrarlas con Alta masiva
+                    idéntica, ya con sus datos.</li>
                 <li><strong>Dar de baja</strong> un bien, o aprobar/rechazar bajas que otros reporten (ver tema 4).</li>
                 <li>Para cargar muchos bienes o fotos de una vez, usa <strong>Bienes &gt; Acciones &gt; Carga
                     masiva de bienes</strong>.</li>

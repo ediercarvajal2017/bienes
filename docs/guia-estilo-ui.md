@@ -142,6 +142,11 @@ Es el único lugar donde el ancho va en línea: es un dato, no un estilo de dise
 
 ### Estado vacío y paginación
 - **Estado vacío:** `partials/tabla_vacia.php`, con una línea de texto y, si aplica, una acción.
+- **Estado vacío que explica:** `ui('estado_vacio', ['titulo' => …, 'detalle' => …, 'acciones' => [['texto' => …, 'url' => …]]])`, cuando el motivo no es obvio.
+  - **Título:** qué pasó ("El bien 13019802 está registrado como un solo bien de 8 unidades").
+  - **Detalle:** por qué y qué hacer.
+  - **Acción:** la primera es la principal.
+  - **Ejemplo:** la búsqueda de Reintegrar por cantidad (`ReintegroUnidadesService::explicarSinResultados`).
 - **Paginación:** `partials/paginacion.php`.
 
 ### Filtros de un listado
