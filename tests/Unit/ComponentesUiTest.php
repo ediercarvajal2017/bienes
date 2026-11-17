@@ -129,6 +129,20 @@ final class ComponentesUiTest extends TestCase
         self::assertStringContainsString('<li>extra</li>', ui('menu_acciones', ['opciones' => [], 'extras' => '<li>extra</li>']));
     }
 
+    public function testElEstadoVacioExplicaYOfreceLaAccion(): void
+    {
+        $html = ui('estado_vacio', ['titulo' => 'El bien "X" <b>', 'detalle' => 'Regístralo.', 'acciones' => [
+            ['texto' => 'Registrar sus 8 unidades', 'url' => '/bienes/alta-masiva?desde_bien=3&a=1'],
+            ['texto' => 'Ver el bien', 'url' => '/bienes/3/editar'],
+        ]]);
+
+        self::assertStringContainsString('role="status"', $html, 'los lectores de pantalla lo anuncian');
+        self::assertStringContainsString('El bien &quot;X&quot; &lt;b&gt;', $html);
+        self::assertStringContainsString('<a href="/bienes/alta-masiva?desde_bien=3&amp;a=1" class="btn btn-primary btn-sm">Registrar sus 8 unidades', $html, 'la primera acción es la principal');
+        self::assertStringContainsString('class="btn btn-outline-secondary btn-sm">Ver el bien', $html);
+        self::assertStringNotContainsString('estado-vacio-acciones', ui('estado_vacio', ['titulo' => 'Nada', 'detalle' => '']));
+    }
+
     public function testUnComponenteConNombreRaroSeRechaza(): void
     {
         $this->expectException(\InvalidArgumentException::class);

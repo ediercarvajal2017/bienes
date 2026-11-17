@@ -1198,6 +1198,17 @@ html { scroll-padding-top: calc(var(--alto-navbar) + 0.75rem); }
 /* Estado vacío: una línea de texto y, si aplica, una acción. */
 .estado-vacio { padding: var(--sigebi-espacio-5) var(--sigebi-espacio-3); text-align: center; color: var(--sigebi-text-muted); }
 .estado-vacio .btn { margin-top: var(--sigebi-espacio-2); }
+/* Estado vacío que explica qué pasó y qué hacer (ui/estado_vacio): sobrio, alineado a la
+   izquierda, con la acción a un clic. */
+.estado-vacio-explicado {
+  max-width: var(--sigebi-ancho-md);
+  padding: var(--sigebi-espacio-4);
+  border: 1px solid var(--sigebi-border); border-radius: var(--sigebi-radio);
+  background: var(--sigebi-surface);
+}
+.estado-vacio-titulo { margin: 0 0 var(--sigebi-espacio-1); font-weight: var(--sigebi-peso-fuerte); color: var(--sigebi-text); }
+.estado-vacio-detalle { margin: 0; font-size: var(--sigebi-texto-pequeno); color: var(--sigebi-text-muted); }
+.estado-vacio-acciones { display: flex; flex-wrap: wrap; gap: var(--sigebi-espacio-2); margin-top: var(--sigebi-espacio-3); }
 
 /* Botón con solo ícono: área cuadrada (lleva aria-label y title). */
 .btn-icono { display: inline-flex; align-items: center; justify-content: center; min-width: 2.375rem; }

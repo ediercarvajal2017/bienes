@@ -14,6 +14,13 @@ $e = static fn (mixed $texto): string => htmlspecialchars((string) $texto, ENT_Q
         'subtitulo' => 'Registra muchas unidades iguales con un solo código (ej. 250 sillas): cada una queda como un bien con su propio código y QR.',
         'acciones' => ui('boton', ['texto' => 'Volver', 'icono' => 'volver', 'tamano' => 'sm', 'url' => Url::to('/bienes')]) . ui('menu_acciones', ['opciones' => \App\Helpers\AccionesBienes::opciones(), 'actual' => 'alta_masiva'])]) ?>
     <?php if (!empty($error)): ?><?= ui('alerta', ['tipo' => 'peligro', 'mensaje' => (string) $error, 'clases' => 'py-2 small']) ?><?php endif; ?>
+    <?php if (!empty($origen)): ?>
+        <?php // Desde Reintegrar por cantidad: las unidades de un bien que agrupa varias (BienController::unidadesDesdeBien). ?>
+        <?= ui('alerta', ['tipo' => 'info', 'cerrable' => false, 'clases' => 'py-2 small',
+            'mensaje' => "Datos tomados del bien {$origen['codigo']} \"{$origen['descripcion']}\": revísalos y confirma. Se registrarán sus "
+                . "{$origen['cantidad']} unidades por separado ({$origen['codigo']}-001 a -" . str_pad((string) $origen['cantidad'], 3, '0', STR_PAD_LEFT)
+                . "). Ese bien queda como el renglón de la cartera y MIA lo mantiene al día; después podrás reintegrar por cantidad."]) ?>
+    <?php endif; ?>
 </div>
 
 <form method="post" action="<?= Url::to('/bienes/alta-masiva') ?>" class="formulario-secciones">

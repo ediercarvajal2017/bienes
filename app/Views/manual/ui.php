@@ -142,6 +142,14 @@ $filasEjemplo = [
     <?= ui('tabla_fin') ?>
     <?php View::render('partials/paginacion', ['pagina' => 2, 'porPagina' => 25, 'total' => 1340, 'totalPaginas' => 54, 'urlBase' => Url::to('/manual/ui')]); ?>
 
+    <?= ui('tarjeta', ['titulo' => 'Estado vacío que explica', 'id' => 'estado-vacio']) ?>
+        <?= ui('estado_vacio', [
+            'titulo' => 'El bien 13019802 está registrado como un solo bien de 8 unidades',
+            'detalle' => 'Para reintegrar por cantidad, sus 8 unidades deben estar registradas por separado. Regístralas con Alta masiva idéntica: después la placa aparece aquí.',
+            'acciones' => [['texto' => 'Registrar sus 8 unidades', 'url' => Url::to('/manual/ui#estado-vacio')]],
+        ]) ?>
+    <?= ui('tarjeta_fin') ?>
+
     <?= ui('tarjeta', ['titulo' => 'Filtros aplicados', 'id' => 'filtros']) ?>
         <?= ui('filtros_activos', ['filtros' => [
             ['etiqueta' => 'Estado', 'valor' => 'Reintegrado', 'urlQuitar' => Url::to('/manual/ui#filtros')],

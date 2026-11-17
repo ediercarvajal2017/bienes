@@ -41,7 +41,8 @@ $conInstitucion = static fn (string $ruta): string => Url::to($ruta)
     </form>
 
     <?php if ($codigos === []): ?>
-        <p class="text-muted"><?= $q !== '' ? 'Ningún código coincide con la búsqueda.' : 'Esta institución no tiene códigos con varias unidades.' ?></p>
+        <?php // Por qué no aparece el código y qué hacer (ReintegroUnidadesService::explicarSinResultados). ?>
+        <?= ui('estado_vacio', $sinResultados ?? ['titulo' => 'Ningún código coincide con la búsqueda.', 'detalle' => '']) ?>
     <?php else: ?>
         <div class="table-responsive">
             <table class="table table-sm table-hover align-middle bg-white tabla-cards">

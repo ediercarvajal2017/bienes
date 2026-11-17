@@ -26,6 +26,7 @@ use App\Models\Movimiento;
 use App\Models\Usuario;
 use App\Models\Verificacion;
 use App\Services\CicloVidaBien;
+use App\Services\ReintegroUnidadesService;
 use App\Services\RenglonDePlaca;
 
 final class BienController
@@ -330,13 +331,56 @@ final class BienController
      */
     public function crearLote(): void
     {
+        $viejo = Session::pullOld();
+        // Desde Reintegrar por cantidad: registrar las unidades de un bien que agrupa varias
+        // ("8 SILLA…"), con sus datos ya puestos para revisar y confirmar.
+        $origen = $viejo === [] && isset($_GET['desde_bien']) ? $this->unidadesDesdeBien((int) $_GET['desde_bien']) : null;
+
         View::layout('partials/layout', 'bienes/form_lote', [
             'title' => 'Alta masiva de bienes idénticos',
             'categorias' => Auth::esSuperusuario() ? [] : Categoria::activas((int) Auth::institucionId()),
             'instituciones' => Auth::esSuperusuario() ? Institucion::listadoParaSelect() : [],
             'error' => Session::pullFlash('error'),
-            'viejo' => Session::pullOld(),
+            'viejo' => $origen['viejo'] ?? $viejo,
+            'origen' => $origen['bien'] ?? null,
         ]);
+    }
+
+    /**
+     * Datos de la alta masiva para registrar por separado las unidades de un bien que agrupa
+     * varias (renglón de la cartera "8 SILLA…" sin unidades): mismo código, la cantidad que
+     * dice, la descripción sin el número y el valor por unidad. null si el bien no es de ese
+     * tipo, no es accesible o ya tiene sus unidades.
+     *
+     * @return array{viejo: array<string, mixed>, bien: array{codigo: string, descripcion: string, cantidad: int}}|null
+     */
+    private function unidadesDesdeBien(int $bienId): ?array
+    {
+        $bien = Bien::find($bienId);
+        if ($bien === null || !empty($bien['lote']) || !in_array($bien['estado'], Bien::ESTADOS_REINTEGRABLES, true)
+            || (!Auth::esSuperusuario() && (int) $bien['institucion_id'] !== Auth::institucionId())
+            || ($bien['categoria_nombre'] ?? null) === Categoria::NOMBRE_CATEGORIA_PROTEGIDA) {
+            return null;
+        }
+        $cantidad = RenglonDePlaca::cantidadQueDice((string) $bien['descripcion']);
+        if ($cantidad === null || $cantidad < 2 || $cantidad > ReintegroUnidadesService::MAXIMO_ALTA_MASIVA
+            || Bien::existeLote((int) $bien['institucion_id'], (string) $bien['codigo_identificacion'])) {
+            return null;
+        }
+
+        return [
+            'viejo' => [
+                'institucion_id' => (int) $bien['institucion_id'],
+                'lote' => (string) $bien['codigo_identificacion'],
+                'cantidad' => (string) $cantidad,
+                'descripcion' => (string) preg_replace('/^\d{1,5}\s+/u', '', trim((string) $bien['descripcion'])),
+                'marca' => $bien['marca'] ?? '',
+                'categoria_id' => $bien['categoria_id'],
+                'fecha_ingreso' => (string) $bien['fecha_ingreso'],
+                'valor' => (string) round((float) $bien['valor'] / $cantidad, 2),
+            ],
+            'bien' => ['codigo' => (string) $bien['codigo_identificacion'], 'descripcion' => (string) $bien['descripcion'], 'cantidad' => $cantidad],
+        ];
     }
 
     public function guardarLote(): void
