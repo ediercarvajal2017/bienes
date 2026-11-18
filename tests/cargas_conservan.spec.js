@@ -107,3 +107,23 @@ test('usuarios: uno existente con columnas en blanco conserva sus datos y su rol
     expect(bd(`SELECT r.nombre FROM usuarios u JOIN roles r ON r.id = u.rol_id WHERE u.documento = 'NU${s}'`), 'Rol en blanco: docente').toBe('docente');
     expect(bd(`SELECT COUNT(*) FROM usuarios WHERE documento IN ('NS${s}', 'NC${s}')`)).toBe('0');
 });
+
+test('usuarios: un rector no puede modificar una cuenta de superusuario por la carga masiva', async ({ page }) => {
+    const s = Date.now();
+    const d = datos();
+    const superusuario = d.usuarios.superusuario.id;
+    const institucionRector = bd(`SELECT institucion_id FROM usuarios WHERE id = ${d.usuarios.rector.id}`);
+    test.skip(bd(`SELECT institucion_id FROM usuarios WHERE id = ${superusuario}`) !== institucionRector,
+        'El superusuario de prueba no comparte institución con el rector');
+    const antes = bd(`SELECT CONCAT_WS('|', email, rol_id) FROM usuarios WHERE id = ${superusuario}`);
+
+    const archivo = crearExcel(['Documento', 'Nombres', 'Apellidos', 'Cargo', 'Correo', 'Rol'], [
+        [documentoDe(superusuario), '', '', '', `atacante${s}@prueba.test`, ''],
+    ]);
+    await analizar(page, 'usuarios/carga-masiva', archivo);
+
+    await expect(fila(page, documentoDe(superusuario))).toContainText('Es una cuenta de superusuario: solo otro superusuario puede modificarla');
+    await confirmar(page, () => page.getByRole('button', { name: 'Confirmar importación' }).click());
+    await expect(page.locator('.avisos-pagina .alert-danger')).toContainText('aplicada parcialmente');
+    expect(bd(`SELECT CONCAT_WS('|', email, rol_id) FROM usuarios WHERE id = ${superusuario}`), 'el correo y el rol del superusuario no cambian').toBe(antes);
+});

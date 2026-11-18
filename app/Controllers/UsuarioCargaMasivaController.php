@@ -146,7 +146,7 @@ final class UsuarioCargaMasivaController
         $filas = json_decode($carga['resultado_diff_json'], true) ?? [];
         try {
             $omitidas = CargaMasiva::aplicarUnaVez($id, static function () use ($filas, $carga, $id): int {
-                $omitidas = UsuarioCargaMasivaService::aplicar($filas, (int) $carga['institucion_id']);
+                $omitidas = UsuarioCargaMasivaService::aplicar($filas, (int) $carga['institucion_id'], Auth::esSuperusuario());
                 Auditoria::registrar(Auth::id(), (int) $carga['institucion_id'], 'aplicar', 'carga_masiva', $id, null, [
                     'tipo' => 'usuarios',
                     'filas' => count($filas),

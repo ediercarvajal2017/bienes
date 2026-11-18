@@ -66,6 +66,19 @@ final class UsuarioCargaMasivaService
 
             // Un usuario que ya existe conserva lo que la fila deja en blanco.
             $existenteEnInstitucion = Usuario::findByDocumento($documento, $institucionId);
+
+            // Una cuenta de superusuario solo la administra otro superusuario, igual que en el
+            // formulario (UsuarioController::verificarAcceso). Sin esto, un rector que comparta
+            // institución con él podía cambiarle el correo (y recuperar su contraseña) o el rol.
+            if (!$permiteSuperusuario && ($existenteEnInstitucion['rol_nombre'] ?? '') === 'superusuario') {
+                $filas[] = [
+                    'fila' => $numeroFila, 'tipo' => 'invalido',
+                    'motivo' => 'Es una cuenta de superusuario: solo otro superusuario puede modificarla',
+                    'documento' => $documento, 'nombres' => $nombres, 'apellidos' => $apellidos,
+                ];
+                continue;
+            }
+
             if ($existenteEnInstitucion !== null) {
                 $nombres = $nombres !== '' ? $nombres : (string) $existenteEnInstitucion['nombres'];
                 $apellidos = $apellidos !== '' ? $apellidos : (string) $existenteEnInstitucion['apellidos'];
@@ -200,13 +213,23 @@ final class UsuarioCargaMasivaService
      *
      * Devuelve cuántas filas se omitieron por un choque de documento/correo detectado justo
      * al escribir (p. ej. si alguien registró ese mismo documento por otra vía entre que se
-     * analizó el archivo y se confirmó la carga).
+     * analizó el archivo y se confirmó la carga), o porque quien confirma no es superusuario
+     * y la fila crea o toca una cuenta de superusuario (se vuelve a comprobar aquí: quien
+     * confirma puede no ser quien analizó, y el rol pudo cambiar entre tanto).
      */
-    public static function aplicar(array $filas, int $institucionId): int
+    public static function aplicar(array $filas, int $institucionId, bool $permiteSuperusuario): int
     {
         $omitidas = 0;
 
         foreach ($filas as $fila) {
+            if (!$permiteSuperusuario && in_array($fila['tipo'], ['nuevo', 'modificado'], true)) {
+                $actual = $fila['tipo'] === 'modificado' ? Usuario::find((int) $fila['usuario_id']) : null;
+                if (($fila['datos']['rol_nombre'] ?? '') === 'superusuario' || ($actual['rol_nombre'] ?? '') === 'superusuario') {
+                    $omitidas++;
+                    continue;
+                }
+            }
+
             try {
                 if ($fila['tipo'] === 'nuevo') {
                     Usuario::create([
