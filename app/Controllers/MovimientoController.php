@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Core\Auth;
+use App\Core\Aviso;
 use App\Core\Csrf;
 use App\Core\Request;
-use App\Core\Session;
 use App\Core\Url;
 use App\Core\View;
 use App\Models\Bien;
@@ -27,7 +27,7 @@ final class MovimientoController
         $request = $this->request($bien);
         $verificacionId = Verificacion::idValidoParaBien((int) $bien['id'], (string) $request->input('verificacion_id'));
 
-        $this->ejecutar($bien, static fn () => CicloVidaBien::asignarOTrasladar(
+        $this->ejecutar($bien, 'No se asignó el bien', static fn () => CicloVidaBien::asignarOTrasladar(
             $bien,
             (int) $request->input('espacio_id'),
             (string) $request->input('fecha_asignacion'),
@@ -46,7 +46,7 @@ final class MovimientoController
         $request = $this->request($bien);
         $verificacionId = Verificacion::idValidoParaBien((int) $bien['id'], (string) $request->input('verificacion_id'));
 
-        $this->ejecutar($bien, static fn () => CicloVidaBien::asignarOTrasladar(
+        $this->ejecutar($bien, 'No se trasladó el bien', static fn () => CicloVidaBien::asignarOTrasladar(
             $bien,
             (int) $request->input('espacio_destino_id'),
             (string) $request->input('fecha'),
@@ -66,7 +66,7 @@ final class MovimientoController
         $bien = $this->bienDeLaInstitucion((int) $id);
         $request = $this->request($bien);
 
-        $this->ejecutar($bien, static fn () => CicloVidaBien::trasladarSede(
+        $this->ejecutar($bien, 'No se trasladó el bien a la otra sede', static fn () => CicloVidaBien::trasladarSede(
             $bien,
             (int) $request->input('institucion_destino_id'),
             (int) $request->input('espacio_destino_id'),
@@ -81,7 +81,7 @@ final class MovimientoController
         $bien = $this->bienDeLaInstitucion((int) $id);
         $request = $this->request($bien);
 
-        $this->ejecutar($bien, static fn () => CicloVidaBien::reintegrar(
+        $this->ejecutar($bien, 'No se reintegró el bien', static fn () => CicloVidaBien::reintegrar(
             $bien,
             (string) $request->input('fecha'),
             (string) $request->input('destino_texto'),
@@ -104,7 +104,7 @@ final class MovimientoController
         }
         $request = $this->request($bien);
 
-        $this->ejecutar($bien, static fn () => CicloVidaBien::reactivar(
+        $this->ejecutar($bien, 'No se reactivó el bien', static fn () => CicloVidaBien::reactivar(
             $bien,
             (string) $request->input('fecha'),
             (string) $request->input('motivo')
@@ -112,13 +112,16 @@ final class MovimientoController
         $this->redirigir("/bienes/{$bien['id']}/editar");
     }
 
-    /** Ejecuta la acción: si una regla no se cumple, vuelve a la ficha del bien con el mensaje. */
-    private function ejecutar(array $bien, callable $accion): void
+    /**
+     * Ejecuta la acción: si una regla no se cumple, vuelve a la ficha del bien con el aviso
+     * (qué no se hizo, por qué y qué hacer).
+     */
+    private function ejecutar(array $bien, string $queNoSe, callable $accion): void
     {
         try {
-            Session::flash('ok', $accion());
+            Aviso::enviar(Aviso::exito((string) $accion()));
         } catch (\DomainException $e) {
-            Session::flash('error', $e->getMessage());
+            Aviso::enviar(Aviso::desdeExcepcion($e, $queNoSe, 'Revisa los datos del movimiento y vuelve a intentarlo.'));
             $this->redirigir("/bienes/{$bien['id']}/editar");
         }
     }

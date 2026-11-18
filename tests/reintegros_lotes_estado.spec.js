@@ -147,7 +147,7 @@ test('todo o nada: no se marca un lote ya reintegrado ni uno de otra institució
         ['_csrf', rectorB.token], ['lotes[]', lotePendiente], ['fecha_entrega', '2024-08-01'],
     ]);
     await rectorB.pagina.goto('reintegros/lotes');
-    await expect(rectorB.pagina.locator('.alert-danger')).toContainText('No tienes acceso');
+    await expect(rectorB.pagina.locator('.alert-danger')).toContainText('es de otra institución');
     expect(estadoDe(lotePendiente)).toBe('pendiente||');
     await rectorB.contexto.close();
 });
@@ -280,7 +280,7 @@ test('unificar lotes pendientes: un lote nuevo por categoría', async ({ browser
     await confirmar(pagina, () => pagina.locator('#botonConfirmarUnificar').click());
 
     await expect(pagina).toHaveURL(/\/reintegros\/lotes\?estado=pendiente$/);
-    await expect(pagina.locator('.alert-success')).toContainText(/Listo: 2 lotes nuevos, uno por categoría: #\d+ Muebles \(3 bienes\) y #\d+ Tecnología \(1 bien\)\./);
+    await expect(pagina.locator('.alert-success')).toContainText(/2 lotes nuevos, uno por categoría: #\d+ Muebles \(3 bienes\) y #\d+ Tecnología \(1 bien\)\./);
 
     // Los de origen quedan "unificado" y vacíos; los nuevos tienen los 4 bienes, uno por categoría.
     expect(bd(`SELECT GROUP_CONCAT(estado) FROM lotes_reintegro WHERE id IN (${loteMixto}, ${loteMuebles})`)).toBe('unificado,unificado');
@@ -338,7 +338,7 @@ test('unificar: todo o nada y reglas', async ({ browser }) => {
 
     // Un lote de otra institución: sin acceso.
     await rector.pagina.goto(`reintegros/lotes/unificar?lotes[]=${lotePendiente}&lotes[]=${loteOtraSede}`);
-    await expect(rector.pagina.locator('.alert-danger')).toContainText(`No tienes acceso al lote #${loteOtraSede}`);
+    await expect(rector.pagina.locator('.alert-danger')).toContainText(`El lote #${loteOtraSede} es de otra institución`);
     await rector.contexto.close();
 
     // El superusuario tampoco puede mezclar sedes.
@@ -364,7 +364,7 @@ test('separar un lote mixto por categoría desde su detalle', async ({ browser }
     await expect(pagina.getByRole('heading', { name: `Separar el lote #${loteMixto} por categoría` })).toBeVisible();
 
     await confirmar(pagina, () => pagina.getByRole('button', { name: 'Confirmar separación' }).click());
-    await expect(pagina.locator('.alert-success')).toContainText(/Listo: 2 lotes nuevos, uno por categoría: #\d+ Muebles \(2 bienes\) y #\d+ Tecnología \(1 bien\)\./);
+    await expect(pagina.locator('.alert-success')).toContainText(/2 lotes nuevos, uno por categoría: #\d+ Muebles \(2 bienes\) y #\d+ Tecnología \(1 bien\)\./);
 
     expect(estadoDe(loteMixto)).toBe('unificado||');
     const nuevos = lotesDestinoDe([loteMixto]);

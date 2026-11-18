@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Core\Auth;
+use App\Core\Aviso;
 use App\Core\Csrf;
-use App\Core\ErrorHandler;
 use App\Core\Request;
 use App\Core\Session;
 use App\Core\Url;
@@ -43,7 +43,6 @@ final class ReintegroUnidadesController
             'sinResultados' => $institucionId !== null && $codigos === []
                 ? ReintegroUnidadesService::explicarSinResultados($institucionId, $q, Auth::esSuperusuario() ? '?institucion=' . $institucionId : '')
                 : null,
-            'error' => Session::pullFlash('error'),
         ]);
     }
 
@@ -56,7 +55,6 @@ final class ReintegroUnidadesController
             'institucionId' => $institucionId,
             'resumen' => $resumen,
             'hoy' => FechaMovimiento::hoy(),
-            'error' => Session::pullFlash('error'),
             'viejo' => Session::pullOld(),
         ]);
     }
@@ -76,28 +74,28 @@ final class ReintegroUnidadesController
 
         try {
             $resultado = ReintegroUnidadesService::reintegrar($institucionId, $lote, $cantidades, $fecha, $destino, $observaciones, $generarLote);
-        } catch (\DomainException $e) {
-            $this->volver($volverA, $e->getMessage(), $viejo);
         } catch (\Throwable $e) {
-            $incidente = ErrorHandler::reportar($e, __METHOD__);
-            $this->volver($volverA, "Ocurrió un error al reintegrar. No se aplicó ningún cambio. (código de incidente: {$incidente})", $viejo);
+            // Una regla trae su porqué y qué hacer; un fallo técnico, el código del incidente.
+            $this->volver($volverA, Aviso::desdeExcepcion($e, 'No se reintegró ninguna unidad', 'Revisa los datos y vuelve a pulsar «Reintegrar».'), $viejo);
         }
 
         $n = $resultado['reintegradas'];
         $hecho = $n === 1 ? "Se reintegró 1 unidad de la placa {$lote}." : "Se reintegraron {$n} unidades de la placa {$lote}.";
+        $renglon = '';
         if ($resultado['resumen'] !== null) {
-            $hecho .= " El bien {$lote} de la cartera quedó como \"{$resultado['resumen']['despues']}\""
-                . ($resultado['resumen']['reintegrado'] ? ' y pasó a Reintegrado: ya no queda ninguna unidad en cartera.' : '.');
+            $renglon = "El bien {$lote} de la cartera quedó como \"{$resultado['resumen']['despues']}\""
+                . ($resultado['resumen']['reintegrado'] ? ' y pasó a Reintegrado: ya no queda ninguna unidad en cartera. ' : '. ');
         }
         $lotes = $resultado['lotes'];
 
         if ($lotes === []) {
-            Session::flash('ok', $hecho . ' Cuando quieras, agrúpalas en un lote de reintegro para generar el comprobante.');
+            Aviso::enviar(Aviso::exito($hecho, $renglon . 'Siguiente paso: marca las unidades en esta lista y pulsa «Generar lote» para el comprobante.'));
             header('Location: ' . Url::to('/reintegros/lotes/generar'));
             exit;
         }
 
-        Session::flash('ok', $hecho . ' Lote de reintegro ' . LoteReintegroService::resumenLotes($lotes) . ' generado: ya puedes descargar el comprobante en Excel.');
+        Aviso::enviar(Aviso::exito($hecho, $renglon . 'Lote de reintegro ' . LoteReintegroService::resumenLotes($lotes)
+            . ' generado. Siguiente paso: descarga el comprobante en Excel para entregarlo.'));
         header('Location: ' . Url::to(count($lotes) === 1 ? '/reintegros/lotes/' . $lotes[0]['id'] : '/reintegros/lotes?estado=pendiente'));
         exit;
     }
@@ -146,9 +144,10 @@ final class ReintegroUnidadesController
         return '/reintegros/unidades/' . rawurlencode($lote) . (Auth::esSuperusuario() ? '?institucion=' . $institucionId : '');
     }
 
-    private function volver(string $volverA, string $error, array $viejo): never
+    /** @param array{tipo: string, titulo: string, detalle: string, solucion: string, accion: array{texto: string, url: string}|null, campos: array<string, string>} $aviso */
+    private function volver(string $volverA, array $aviso, array $viejo): never
     {
-        Session::flash('error', $error);
+        Aviso::enviar($aviso);
         Session::flashOld($viejo);
         header('Location: ' . Url::to($volverA));
         exit;

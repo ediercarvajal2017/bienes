@@ -101,9 +101,6 @@ $alcanceDescarga = array_filter([
 <?php endif; ?>
 <?= ui('encabezado_pagina', ['titulo' => 'Bienes', 'icono' => 'bien', 'acciones' => (string) ob_get_clean()]) ?>
 
-<?php if (!empty($mensaje)): ?><?= ui('alerta', ['tipo' => 'exito', 'mensaje' => $mensaje, 'clases' => 'py-2 small']) ?><?php endif; ?>
-<?php if (!empty($error)): ?><?= ui('alerta', ['tipo' => 'peligro', 'mensaje' => $error, 'clases' => 'py-2 small']) ?><?php endif; ?>
-
 <?php if (!empty($soloPropios)): ?>
     <p class="text-muted small">Mostrando solo los bienes de los espacios donde eres responsable.</p>
 <?php endif; ?>
@@ -200,15 +197,38 @@ $alcanceDescarga = array_filter([
     ['texto' => 'Responsable / ubicación'], ['texto' => 'Valor', 'alineacion' => 'derecha'], ['texto' => 'Estado'], ['texto' => 'QR'],
     ['texto' => 'Acciones', 'alineacion' => 'derecha', 'oculta' => true],
 ]]) ?>
-        <?php if (empty($lotes) && empty($bienes)): ?>
+        <?php if (empty($lotes) && empty($bienes) && !$algunFiltroActivo): ?>
             <?php View::render('partials/tabla_vacia', [
                 'colspan' => 9,
-                'mensaje' => $algunFiltroActivo
-                    ? 'Ningún bien coincide con los filtros aplicados.'
-                    : 'Todavía no hay bienes registrados.',
-                'ctaTexto' => $algunFiltroActivo ? 'Quitar filtros' : ($puedeCrear ? 'Registrar bien' : null),
-                'ctaUrl' => $algunFiltroActivo ? Url::to('/bienes') : ($puedeCrear ? Url::to('/bienes/crear') : null),
+                'mensaje' => 'Todavía no hay bienes registrados.',
+                'ctaTexto' => $puedeCrear ? 'Registrar bien' : null,
+                'ctaUrl' => $puedeCrear ? Url::to('/bienes/crear') : null,
             ]); ?>
+        <?php elseif (empty($lotes) && empty($bienes)): ?>
+            <?php
+            // Sin resultados con búsqueda o filtros: qué se buscó, por qué puede no aparecer y
+            // cómo seguir (en lugar de solo "ningún bien coincide").
+            $partesBusqueda = array_map(static fn (array $f): string => $f['etiqueta'] . ': ' . $f['valor'], $filtrosAplicados);
+            $detalleVacio = ($busqueda !== '' ? "Buscaste «{$busqueda}»" . ($partesBusqueda !== [] ? ' con ' : '.') : 'Filtros: ')
+                . ($partesBusqueda !== [] ? implode(' · ', $partesBusqueda) . '.' : '')
+                . ($partesBusqueda !== [] ? ' Quita un filtro a la vez para ver dónde está el bien.' : '')
+                . ($busqueda !== '' ? ' Revisa cómo está escrita la placa o prueba con una parte de la descripción (por ejemplo «silla» en lugar de «silla plástica azul»).' : '')
+                . (!empty($soloPropios) ? ' Solo ves los bienes de los espacios donde eres responsable.' : '');
+            $accionesVacio = [];
+            if ($partesBusqueda !== [] && $busqueda !== '') {
+                $accionesVacio[] = ['texto' => 'Buscar sin filtros', 'url' => Url::to('/bienes') . '?' . http_build_query(['q' => $busqueda])];
+            }
+            $accionesVacio[] = ['texto' => $partesBusqueda === [] ? 'Quitar la búsqueda' : ($busqueda !== '' ? 'Quitar búsqueda y filtros' : 'Quitar filtros'), 'url' => Url::to('/bienes')];
+            if ($busqueda !== '' && empty($soloPropios)) {
+                $accionesVacio[] = ['texto' => 'Buscar en todo MIA', 'url' => Url::to('/buscar') . '?' . http_build_query(['q' => $busqueda])];
+            }
+            ?>
+            <tr>
+                <td colspan="9" class="p-0">
+                    <?= ui('estado_vacio', ['titulo' => 'Ningún bien coincide con la búsqueda.', 'detalle' => trim($detalleVacio),
+                        'acciones' => $accionesVacio, 'clases' => 'border-0']) ?>
+                </td>
+            </tr>
         <?php endif; ?>
         <?php foreach ($lotes as $l): ?>
             <tr>

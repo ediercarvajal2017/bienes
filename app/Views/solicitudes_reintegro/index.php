@@ -24,12 +24,6 @@ $etiquetas = [
     </form>
 <?= ui('encabezado_pagina', ['titulo' => 'Solicitudes de reintegro', 'icono' => 'solicitud', 'subtitulo' => (string) ($puedeAprobar ? 'Pedidos de reintegro de los docentes: al aprobar uno, el bien se reintegra.' : 'Sus solicitudes de reintegro y su estado. Para pedir una nueva, abra la ficha del bien (escaneando su QR).'), 'acciones' => (string) ob_get_clean()]) ?>
 
-<?php if (!empty($mensaje)): ?>
-    <?= ui('alerta', ['tipo' => 'exito', 'mensaje' => (string) $mensaje, 'clases' => 'py-2 small']) ?>
-<?php endif; ?>
-<?php if (!empty($error)): ?>
-    <?= ui('alerta', ['tipo' => 'peligro', 'mensaje' => (string) $error, 'clases' => 'py-2 small']) ?>
-<?php endif; ?>
 
 <?php View::render('partials/paginacion', [
     'pagina' => $pagina, 'porPagina' => $porPagina, 'total' => $total, 'totalPaginas' => $totalPaginas,

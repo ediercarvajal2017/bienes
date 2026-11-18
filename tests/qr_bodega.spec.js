@@ -99,14 +99,14 @@ test('"Imprimir QR" viene desmarcada al crear, y guardar un bien sin marcarla no
     const volverAImprimir = page.getByLabel('Volver a imprimir el QR');
     await expect(volverAImprimir).not.toBeChecked();
     await page.locator('#botonGuardarBien').click();
-    await expect(page.locator('.alert-success')).toContainText('Bien actualizado');
+    await expect(page.locator('.alert-success')).toContainText(/Cambios del bien .+ guardados/);
     expect(bd(`SELECT qr_solicitado_en FROM bienes WHERE id = ${id}`)).toBe(solicitadoAntes);
 
     // Marcarla sí lo manda de nuevo a imprimir…
     await page.goto(`bienes/${id}/editar`);
     await page.getByLabel('Volver a imprimir el QR').check();
     await page.locator('#botonGuardarBien').click();
-    await expect(page.locator('.alert-success')).toContainText('Bien actualizado');
+    await expect(page.locator('.alert-success')).toContainText(/Cambios del bien .+ guardados/);
     expect(bd(`SELECT qr_impreso_en < qr_solicitado_en FROM bienes WHERE id = ${id}`)).toBe('1');
 
     // …y "Quitar de la Bodega de QR" lo saca.
@@ -114,6 +114,6 @@ test('"Imprimir QR" viene desmarcada al crear, y guardar un bien sin marcarla no
     await expect(page.getByText('pendiente de imprimir')).toBeVisible();
     await page.getByLabel('Quitar de la Bodega de QR').check();
     await page.locator('#botonGuardarBien').click();
-    await expect(page.locator('.alert-success')).toContainText('Bien actualizado');
+    await expect(page.locator('.alert-success')).toContainText(/Cambios del bien .+ guardados/);
     expect(bd(`SELECT qr_solicitado_en IS NULL FROM bienes WHERE id = ${id}`)).toBe('1');
 });

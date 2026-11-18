@@ -92,10 +92,16 @@ $filasEjemplo = [
     <?= ui('tarjeta_fin') ?>
 
     <?= ui('tarjeta', ['titulo' => 'Avisos', 'id' => 'avisos']) ?>
-        <?= ui('alerta', ['tipo' => 'exito', 'mensaje' => 'Bien registrado. Ya puedes asignarlo a un espacio.', 'cerrable' => false]) ?>
-        <?= ui('alerta', ['tipo' => 'info', 'mensaje' => 'Corrigiendo la ubicación a partir de una discrepancia de la verificación física.', 'cerrable' => false]) ?>
-        <?= ui('alerta', ['tipo' => 'advertencia', 'mensaje' => 'Este lote lleva 8 meses pendiente de entregar a la Alcaldía.', 'cerrable' => false]) ?>
-        <?= ui('alerta', ['tipo' => 'peligro', 'mensaje' => 'La placa ya existe. Verifica el número o busca el bien.', 'cerrable' => false, 'clases' => 'mb-0']) ?>
+        <p class="small text-muted">El resultado de cada acción: qué pasó, por qué y qué hacer, con el botón a donde se corrige (App\Core\Aviso). Mismo diseño para todos; el tipo cambia el ícono y la franja.</p>
+        <?= ui('alerta', ['tipo' => 'exito', 'titulo' => 'Bien 200388980 registrado.', 'cerrable' => false,
+            'detalle' => 'Siguiente paso: asígnalo a un espacio o a una persona en «¿Qué deseas hacer con este bien?».']) ?>
+        <?= ui('alerta', ['tipo' => 'peligro', 'titulo' => 'No se registró el bien', 'cerrable' => false,
+            'detalle' => 'La placa 200388980 ya está registrada en esta institución.',
+            'solucion' => 'Revisa el número. Si es el mismo bien, ábrelo en lugar de registrarlo otra vez.',
+            'accion' => ['texto' => 'Ver el bien 200388980', 'url' => Url::to('/manual/ui#avisos')]]) ?>
+        <?= ui('alerta', ['tipo' => 'advertencia', 'titulo' => '3 bienes reintegrados.', 'cerrable' => false,
+            'detalle' => '1 bien se omitió porque ya no estaba asignado.', 'solucion' => 'Revisa en Bienes el que no se reintegró.']) ?>
+        <?= ui('alerta', ['tipo' => 'info', 'mensaje' => 'Corrigiendo la ubicación a partir de una discrepancia de la verificación física.', 'cerrable' => false, 'clases' => 'mb-0']) ?>
     <?= ui('tarjeta_fin') ?>
 
     <?= ui('tarjeta', ['titulo' => 'Formulario', 'id' => 'formulario']) ?>

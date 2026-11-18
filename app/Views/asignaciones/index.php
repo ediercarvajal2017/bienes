@@ -13,8 +13,6 @@ $bienesSeleccionados = $viejo['bienes'] ?? [];
     <?= ui('menu_acciones', ['opciones' => \App\Helpers\AccionesBienes::opciones(), 'actual' => 'asignar']) ?>
 <?= ui('encabezado_pagina', ['titulo' => 'Asignar bienes', 'icono' => 'asignacion', 'subtitulo' => 'Selecciona uno o varios bienes y asígnalos (o reasígnalos) a un espacio o a una persona.', 'acciones' => (string) ob_get_clean()]) ?>
 
-<?php if (!empty($mensaje)): ?><?= ui('alerta', ['tipo' => 'exito', 'mensaje' => (string) $mensaje, 'clases' => 'py-2 small']) ?><?php endif; ?>
-<?php if (!empty($error)): ?><?= ui('alerta', ['tipo' => 'peligro', 'mensaje' => (string) $error, 'clases' => 'py-2 small']) ?><?php endif; ?>
 
 <?php if (Auth::esSuperusuario()): ?>
     <div class="mb-3 contenedor-sm">
@@ -73,7 +71,8 @@ $bienesSeleccionados = $viejo['bienes'] ?? [];
                     </div>
                     <div class="col-md-5">
                         <label for="campo-fecha-asignacion" class="form-label small">Fecha de asignación</label>
-                        <input id="campo-fecha-asignacion" type="date" min="<?= \App\Helpers\FechaMovimiento::MINIMA ?>" max="<?= \App\Helpers\FechaMovimiento::hoy() ?>" name="fecha_asignacion" class="form-control form-control-sm" value="<?= htmlspecialchars($viejo['fecha_asignacion'] ?? date('Y-m-d'), ENT_QUOTES) ?>" required>
+                        <input id="campo-fecha-asignacion" type="date" min="<?= \App\Helpers\FechaMovimiento::MINIMA ?>" max="<?= \App\Helpers\FechaMovimiento::hoy() ?>" name="fecha_asignacion" class="form-control form-control-sm<?= clase_invalido('fecha_asignacion') ?>" value="<?= htmlspecialchars($viejo['fecha_asignacion'] ?? date('Y-m-d'), ENT_QUOTES) ?>" required>
+                        <?= error_campo('fecha_asignacion') ?>
                     </div>
                 </div>
 

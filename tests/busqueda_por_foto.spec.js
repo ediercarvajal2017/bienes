@@ -18,7 +18,8 @@ test('busca un bien por su foto y lo encuentra por parecido', async ({ page }) =
     // Código fijo a propósito (igual que bienes_carga_masiva_fotos.spec.js): reutiliza
     // el bien si una corrida anterior ya lo creó con esta misma foto.
     await page.goto('bienes?q=' + CODIGO);
-    const yaExiste = (await page.locator('tr', { hasText: CODIGO }).count()) > 0;
+    // La celda del código, no cualquier fila: sin resultados, el listado repite lo buscado.
+    const yaExiste = (await page.locator('td[data-label="Código"]', { hasText: CODIGO }).count()) > 0;
     if (!yaExiste) {
         await page.goto('bienes/crear');
         await page.locator('input[name="codigo_identificacion"]').fill(CODIGO);

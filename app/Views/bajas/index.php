@@ -9,13 +9,6 @@ use App\Models\Categoria;
 ?>
 <?= ui('encabezado_pagina', ['titulo' => 'Bajas de bienes', 'icono' => 'baja', 'subtitulo' => 'Reportes enviados desde la ficha de cada bien, pendientes de aprobación.']) ?>
 
-<?php if (!empty($mensaje)): ?>
-    <?= ui('alerta', ['tipo' => 'exito', 'mensaje' => (string) $mensaje, 'clases' => 'py-2 small']) ?>
-<?php endif; ?>
-
-<?php if (!empty($error)): ?>
-    <?= ui('alerta', ['tipo' => 'peligro', 'mensaje' => (string) $error, 'clases' => 'py-2 small']) ?>
-<?php endif; ?>
 
 <?php View::render('partials/paginacion', [
     'pagina' => $pagina, 'porPagina' => $porPagina, 'total' => $total, 'totalPaginas' => $totalPaginas,

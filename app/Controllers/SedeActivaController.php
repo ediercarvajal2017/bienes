@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Core\Auth;
+use App\Core\Aviso;
 use App\Core\Csrf;
 use App\Core\Request;
-use App\Core\Session;
 use App\Core\Url;
 use App\Core\View;
 use App\Models\Institucion;
@@ -20,7 +20,7 @@ final class SedeActivaController
         $volverA = $this->volverSeguro((string) $request->input('volver', '/dashboard'));
 
         if (!Csrf::verify((string) $request->input('_csrf'))) {
-            Session::flash('error', 'Tu sesión expiró, intenta de nuevo.');
+            Aviso::enviar(\App\Helpers\Mensajes::sesionVencida(false));
             header('Location: ' . Url::to($volverA));
             exit;
         }
@@ -34,21 +34,24 @@ final class SedeActivaController
         $destino = (int) $request->input('institucion_id');
         $familia = Institucion::familiaDe((int) Auth::institucionId());
 
-        $perteneceAFamilia = false;
+        $sedeElegida = null;
         foreach ($familia as $sede) {
             if ((int) $sede['id'] === $destino) {
-                $perteneceAFamilia = true;
+                $sedeElegida = $sede;
                 break;
             }
         }
 
-        if (!$perteneceAFamilia) {
-            Session::flash('error', 'Esa sede no pertenece a tu institución.');
+        if ($sedeElegida === null) {
+            Aviso::enviar(Aviso::error('No se cambió de sede', 'La sede elegida no pertenece a tu institución.',
+                'Elige una de las sedes de la lista de arriba.'));
             header('Location: ' . Url::to($volverA));
             exit;
         }
 
         Auth::cambiarSedeActiva($destino);
+        Aviso::enviar(Aviso::exito('Ahora trabajas en la sede ' . $sedeElegida['nombre'] . '.',
+            'Los listados y lo que registres desde ahora son de esta sede.'));
         header('Location: ' . Url::to($volverA));
         exit;
     }

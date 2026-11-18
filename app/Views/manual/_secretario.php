@@ -41,6 +41,10 @@
                     masiva de bienes</strong>.</li>
                 <li>Cada pantalla a la que lleva <strong>Acciones</strong> tiene el mismo botón, con la pantalla actual
                     resaltada: pasas de una acción a otra (por ejemplo, de Alta masiva a Generar QR masivo) sin volver a Bienes.</li>
+                <li>Después de cada acción, MIA te dice arriba de la página <strong>qué pasó</strong>. Si algo no se pudo hacer,
+                    te dice <strong>por qué y qué hacer</strong>, marca en rojo el campo que hay que corregir y, cuando se puede,
+                    te da un botón que lleva a donde se corrige. Si en la ficha de un bien no ves una acción (por ejemplo
+                    "Reportar baja"), abre <strong>¿Por qué no aparecen otras acciones?</strong>.</li>
             </ol>
         </div>
     </details>

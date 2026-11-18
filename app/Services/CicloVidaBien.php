@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Core\Auth;
+use App\Core\Aviso;
 use App\Core\Database;
+use App\Core\ErrorGuiado;
 use App\Helpers\FechaMovimiento;
 use App\Models\Asignacion;
 use App\Models\Auditoria;
@@ -24,8 +26,8 @@ use App\Models\Verificacion;
  * BajaController; ahora las usan ellos y también el formulario único de edición del bien
  * (BienController::actualizar), que guarda los datos y la acción elegida a la vez.
  *
- * Cada método valida sus reglas y lanza \DomainException con un mensaje para el usuario si
- * algo no se cumple; las escrituras van en Database::transaccion (si el llamador ya abrió
+ * Cada método valida sus reglas y lanza ErrorGuiado (qué pasó y qué hacer) si algo no se
+ * cumple; las escrituras van en Database::transaccion (si el llamador ya abrió
  * una, se reutiliza: así "guardar datos + acción" es todo o nada). El control de acceso al
  * bien (institución, permiso de la ruta) lo hace el controlador antes de llamar aquí.
  */
@@ -73,6 +75,59 @@ final class CicloVidaBien
     }
 
     /**
+     * Acciones que el usuario esperaría y no aparecen en la ficha de este bien, con el porqué
+     * y qué hacer en su lugar ("¿Por qué no aparecen otras acciones?"). Las mismas reglas de
+     * accionesDisponibles(); solo se explica lo que el rol del usuario sí le permitiría.
+     *
+     * @return array<string, array{titulo: string, porQue: string, queHacer: string, accion: array{texto: string, url: string}|null}>
+     */
+    public static function accionesNoDisponibles(array $bien, ?array $asignacionActiva): array
+    {
+        $no = [];
+        $estado = (string) $bien['estado'];
+        $enCirculacion = !in_array($estado, ['dado_de_baja', 'reintegrado'], true);
+        $puedeMover = Auth::esSuperusuario() || Auth::tienePermiso('asignaciones.crear');
+        $sinCartera = ($bien['categoria_nombre'] ?? null) === Categoria::NOMBRE_CATEGORIA_PROTEGIDA;
+        $esRector = Auth::esSuperusuario() || Auth::rol() === 'rector';
+
+        if (!$enCirculacion && $puedeMover) {
+            $no['mover'] = ['titulo' => 'Asignar, trasladar o reintegrar',
+                'porQue' => 'El bien está «' . Bien::etiquetaEstado($estado) . '»: ya no está en la institución.',
+                'queHacer' => $estado === 'reintegrado'
+                    ? ($esRector ? 'Si volvió, elige «Reactivar» y luego podrás asignarlo.' : 'Si volvió, pídele al rector que lo reactive desde esta ficha.')
+                    : 'Un bien dado de baja ya no se mueve; su historial queda en esta ficha.',
+                'accion' => null];
+        }
+        if ($estado === 'reintegrado' && !$esRector) {
+            $no['reactivar'] = ['titulo' => 'Reactivar', 'porQue' => 'Solo el rector puede reactivar un bien reintegrado.',
+                'queHacer' => 'Pídele al rector que lo reactive desde esta ficha.', 'accion' => null];
+        }
+        if ($enCirculacion && $puedeMover) {
+            $esRenglonDePlaca = empty($bien['lote']) && Bien::existeLote((int) $bien['institucion_id'], (string) $bien['codigo_identificacion']);
+            if ($esRenglonDePlaca) {
+                $no['reintegrar'] = ['titulo' => 'Reintegrar',
+                    'porQue' => 'Es el renglón de la cartera de la placa ' . $bien['codigo_identificacion'] . ': sus unidades se reintegran por cantidad y este renglón se actualiza solo.',
+                    'queHacer' => 'Usa «Reintegrar por cantidad».',
+                    'accion' => Aviso::accion('Reintegrar por cantidad', '/reintegros/unidades?' . http_build_query(['q' => (string) $bien['codigo_identificacion']]))];
+            } elseif ($sinCartera) {
+                $no['reintegrar'] = ['titulo' => 'Reintegrar', 'porQue' => 'Los bienes «' . Categoria::NOMBRE_CATEGORIA_PROTEGIDA . '» no se reintegran.',
+                    'queHacer' => 'Si ya no sirve, elige «Reportar baja».', 'accion' => null];
+            } elseif (!$asignacionActiva && empty($bien['lote'])) {
+                $no['reintegrar'] = ['titulo' => 'Reintegrar', 'porQue' => 'El bien no está asignado a un espacio ni a una persona.',
+                    'queHacer' => 'Asígnalo primero («Asignar a un espacio o a una persona») y luego podrás reintegrarlo.', 'accion' => null];
+            }
+        }
+        if ($enCirculacion && !$sinCartera && (Auth::esSuperusuario() || Auth::tienePermiso('bajas.crear'))) {
+            $no['reportar_baja'] = ['titulo' => 'Reportar baja',
+                'porQue' => 'El bien está en la cartera de la Alcaldía, y solo los bienes «' . Categoria::NOMBRE_CATEGORIA_PROTEGIDA . '» se dan de baja.',
+                'queHacer' => 'Si ya no se usa, reintégralo; si está dañado, cambia su estado a «En reparación».',
+                'accion' => null];
+        }
+
+        return $no;
+    }
+
+    /**
      * Responsabilidad grupal: asigna el bien a un espacio (si no tenía) o lo traslada.
      * Se conserva para los llamadores que solo manejan espacios (hallazgos, verificación,
      * rutas antiguas). Devuelve el mensaje de éxito.
@@ -100,21 +155,25 @@ final class CicloVidaBien
         $personaId = $personaId !== null && $personaId > 0 ? $personaId : null;
 
         if ($personaId === null && $espacioId === null) {
-            throw new \DomainException('Selecciona el espacio (responsabilidad grupal) o la persona responsable (individual).');
+            throw new ErrorGuiado('No elegiste dónde queda el bien ni quién responde por él.',
+                'Elige el espacio (responsabilidad Grupal) o la persona responsable (Individual) y vuelve a guardar.');
         }
         if ($espacioId !== null && !Espacio::perteneceYActivo($espacioId, $institucionId)) {
-            throw new \DomainException('El espacio seleccionado no es válido para este bien (debe ser un espacio activo de su misma institución).');
+            throw new ErrorGuiado('El espacio elegido está inactivo o es de otra institución.',
+                'Elige otro espacio de la lista. Si falta, créalo o actívalo en Espacios.');
         }
         $persona = null;
         if ($personaId !== null && ($persona = Usuario::elegibleACargo($personaId, $institucionId)) === null) {
-            throw new \DomainException('La persona seleccionada no puede tener este bien a cargo (debe ser un usuario activo de la misma institución).');
+            throw new ErrorGuiado('La persona elegida está inactiva o es de otra institución, así que no puede tener el bien a cargo.',
+                'Elige otra persona de la lista, o marca la responsabilidad Grupal y elige un espacio.');
         }
 
         $anterior = Asignacion::activaDe($id);
         if ($anterior
             && (int) ($anterior['espacio_id'] ?? 0) === (int) $espacioId
             && (int) ($anterior['usuario_responsable_id'] ?? 0) === (int) $personaId) {
-            throw new \DomainException($personaId !== null ? 'El bien ya está a cargo de esa persona.' : 'El bien ya está en ese espacio.');
+            throw new ErrorGuiado($personaId !== null ? 'El bien ya está a cargo de esa persona.' : 'El bien ya está en ese espacio.',
+                'Elige otro destino; si no quieres moverlo, deja la acción en «Ninguna».');
         }
 
         Database::transaccion(static function () use ($id, $institucionId, $espacioId, $personaId, $fecha, $observaciones, $anterior): void {
@@ -175,10 +234,12 @@ final class CicloVidaBien
 
         $asignacionActiva = Asignacion::activaDe($id);
         if (!$asignacionActiva) {
-            throw new \DomainException('Este bien no tiene una asignación activa.');
+            throw new ErrorGuiado('El bien no está asignado a ningún espacio ni persona.',
+                'Asígnalo primero en esta sede y luego trasládalo a la otra.');
         }
         if ($institucionDestinoId <= 0 || $espacioId <= 0) {
-            throw new \DomainException('Selecciona una fecha, una sede destino y un espacio válidos.');
+            throw new ErrorGuiado('Faltan la sede o el espacio de destino.',
+                'Elige la sede destino y un espacio de esa sede y vuelve a guardar.');
         }
 
         $sedeDestino = null;
@@ -189,15 +250,18 @@ final class CicloVidaBien
             }
         }
         if ($sedeDestino === null || $institucionDestinoId === (int) $bien['institucion_id']) {
-            throw new \DomainException('Esa sede no pertenece a la familia de tu institución.');
+            throw new ErrorGuiado('Esa sede no pertenece a tu institución.',
+                'Elige una de las sedes de la lista.');
         }
 
         $espacio = Espacio::find($espacioId);
         if (!$espacio || (int) $espacio['institucion_id'] !== $institucionDestinoId) {
-            throw new \DomainException('Ese espacio no pertenece a la sede destino seleccionada.');
+            throw new ErrorGuiado('El espacio elegido no es de la sede destino.',
+                'Elige primero la sede y luego uno de sus espacios.');
         }
         if (Bien::existeCodigo($institucionDestinoId, $bien['codigo_identificacion'], $id)) {
-            throw new \DomainException('Ya existe un bien con ese código de identificación en la sede destino.');
+            throw new ErrorGuiado('La sede destino ya tiene un bien con la placa ' . $bien['codigo_identificacion'] . '.',
+                'Revisa en esa sede si es el mismo bien registrado dos veces; corrige la placa de uno de los dos antes de trasladarlo.');
         }
 
         $nota = 'Traslado entre sedes: ' . $sedeDestino['nombre'] . '.';
@@ -240,17 +304,19 @@ final class CicloVidaBien
         $asignacionActiva = Asignacion::activaDe((int) $bien['id']);
         // Misma regla que el reintegro masivo, el escáner y el reintegro por cantidad (una
         // unidad de un lote puede no estar asignada).
-        if ($motivo = Bien::motivoNoReintegrable($bien, $asignacionActiva !== null)) {
-            throw new \DomainException('No se puede reintegrar: ' . $motivo . '.');
+        if ($guia = Bien::guiaNoReintegrable($bien, $asignacionActiva !== null)) {
+            throw new ErrorGuiado('No se puede reintegrar: ' . $guia['motivo'] . '.', $guia['queHacer'], $guia['accion']);
         }
         self::verificarFecha($fecha);
         if (trim($destino) === '') {
-            throw new \DomainException('Indica el destino del reintegro.');
+            throw new ErrorGuiado('Falta el destino del reintegro.',
+                'Escribe a dónde va el bien (por ejemplo «Almacén de la Secretaría de Educación») y vuelve a guardar.',
+                null, ['accion_destino' => 'Escribe el destino.']);
         }
 
         ReintegroService::reintegrar($bien, $asignacionActiva, $fecha, trim($destino), $observaciones);
 
-        return 'Reintegro registrado. Cuando quieras, agrúpalo en un lote desde "Lotes de reintegro" para generar el formato.';
+        return 'Reintegro registrado. Siguiente paso: agrúpalo en un lote desde «Lotes de reintegro» para generar el comprobante.';
     }
 
     /**
@@ -260,15 +326,19 @@ final class CicloVidaBien
     public static function reactivar(array $bien, string $fecha, string $motivo): string
     {
         if (!Auth::esSuperusuario() && Auth::rol() !== 'rector') {
-            throw new \DomainException('Solo el rector o el superusuario pueden reactivar un bien.');
+            throw new ErrorGuiado('Solo el rector puede reactivar un bien.',
+                'Pídele al rector de la institución que lo reactive desde la ficha del bien.');
         }
         if ($bien['estado'] !== 'reintegrado') {
-            throw new \DomainException('Solo se puede reactivar un bien reintegrado.');
+            throw new ErrorGuiado('Solo se reactiva un bien reintegrado, y este está «' . Bien::etiquetaEstado($bien['estado']) . '».',
+                'No hace falta reactivarlo: ya está en la institución.');
         }
         $motivo = trim($motivo);
         self::verificarFecha($fecha);
         if ($motivo === '') {
-            throw new \DomainException('Indica el motivo de la reactivación.');
+            throw new ErrorGuiado('Falta el motivo de la reactivación.',
+                'Escribe por qué vuelve (por ejemplo «La Alcaldía lo devolvió») y vuelve a guardar.',
+                null, ['accion_motivo' => 'Escribe el motivo.']);
         }
 
         $id = (int) $bien['id'];
@@ -299,19 +369,22 @@ final class CicloVidaBien
     public static function reportarBaja(array $bien, string $estadoReportado, ?string $ubicacion, string $descripcion, ?string $fotoPath, ?int $verificacionId = null): string
     {
         if (($bien['categoria_nombre'] ?? null) !== Categoria::NOMBRE_CATEGORIA_PROTEGIDA) {
-            throw new \DomainException('Este bien no admite baja directa — solo bienes en la categoría "'
-                . Categoria::NOMBRE_CATEGORIA_PROTEGIDA . '" pueden darse de baja. Use Traslado, Reintegro o marque "En reparación".');
+            throw new ErrorGuiado('El bien está en la cartera de la Alcaldía, y solo los bienes «'
+                . Categoria::NOMBRE_CATEGORIA_PROTEGIDA . '» se dan de baja.',
+                'Si ya no se usa, reintégralo; si está dañado, márcalo «En reparación».');
         }
         if ($bien['estado'] === 'dado_de_baja') {
-            throw new \DomainException('Este bien ya está dado de baja.');
+            throw new ErrorGuiado('El bien ya está dado de baja.', 'No hace falta reportarlo otra vez; su historial queda en la ficha.');
         }
         if (Baja::tienePendiente((int) $bien['id'])) {
-            throw new \DomainException('Este bien ya tiene un reporte de baja pendiente de aprobación.');
+            throw new ErrorGuiado('El bien ya tiene un reporte de baja esperando aprobación.',
+                'Espera a que el rector lo apruebe o rechace en «Bajas».', Aviso::accion('Ver las bajas', '/bajas'));
         }
         $estadoReportado = trim($estadoReportado);
         $descripcion = trim($descripcion);
         if ($estadoReportado === '' || $descripcion === '') {
-            throw new \DomainException('Describe el estado del bien y el motivo de la baja.');
+            throw new ErrorGuiado('Faltan el estado del bien o el motivo de la baja.',
+                'Elige en qué estado está y describe por qué se da de baja; luego vuelve a guardar.');
         }
 
         Database::transaccion(static function () use ($bien, $verificacionId, $estadoReportado, $ubicacion, $descripcion, $fotoPath): void {
@@ -345,15 +418,17 @@ final class CicloVidaBien
     private static function verificarEnCirculacion(array $bien): void
     {
         if (in_array($bien['estado'], ['dado_de_baja', 'reintegrado'], true)) {
-            $estado = str_replace('_', ' ', $bien['estado']);
-            throw new \DomainException("Este bien está {$estado} y no admite movimientos.");
+            throw new ErrorGuiado('El bien está «' . Bien::etiquetaEstado($bien['estado']) . '» y ya no está en la institución, así que no se mueve.',
+                $bien['estado'] === 'reintegrado'
+                    ? 'Si volvió, el rector debe reactivarlo primero desde su ficha.'
+                    : 'Un bien dado de baja ya no se mueve; su historial queda en la ficha.');
         }
     }
 
     private static function verificarFecha(string $fecha): void
     {
         if ($error = FechaMovimiento::error($fecha)) {
-            throw new \DomainException($error);
+            throw new ErrorGuiado($error, 'Elige una fecha entre el 01/01/2000 y hoy y vuelve a guardar.');
         }
     }
 }

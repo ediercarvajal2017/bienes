@@ -6,6 +6,7 @@ namespace App\Services;
 
 use App\Core\Auth;
 use App\Core\Database;
+use App\Core\ErrorGuiado;
 use App\Helpers\FechaMovimiento;
 use App\Models\Auditoria;
 use App\Models\LoteReintegro;
@@ -37,7 +38,7 @@ final class LoteReintegroService
     {
         $movimientoIds = self::idsUnicos($movimientoIds);
         if ($movimientoIds === []) {
-            throw new \DomainException('Selecciona al menos un reintegro para agrupar en el lote.');
+            throw new ErrorGuiado('No marcaste ningún reintegro.', 'Marca la casilla de cada reintegro que va en el lote y pulsa «Generar lote».');
         }
         $descripcion = self::textoOpcional($descripcion, 'La descripción', self::LARGO_MAXIMO_DESCRIPCION);
         $observaciones = self::textoOpcional($observaciones, 'Las observaciones');
@@ -50,7 +51,8 @@ final class LoteReintegroService
             }
         }
         if ($porInstitucion === []) {
-            throw new \DomainException('Ningún reintegro seleccionado pudo agruparse (verifica que sigan sin lote y que tengas acceso).');
+            throw new ErrorGuiado('Ninguno de los reintegros marcados se pudo agrupar: ya están en un lote o son de otra institución.',
+                'Recarga la página: la lista mostrará solo los reintegros que siguen sin lote.');
         }
 
         return Database::transaccion(static function () use ($porInstitucion, $descripcion, $observaciones): array {
@@ -146,7 +148,8 @@ final class LoteReintegroService
                     ? LoteReintegro::asignarMovimientos($loteId, $grupo['movimientos'])
                     : LoteReintegro::moverMovimientos($loteId, $grupo['movimientos'], $grupo['origenes']);
                 if ($asignados !== count($grupo['movimientos'])) {
-                    throw new \DomainException('Otro usuario agrupó alguno de estos reintegros al mismo tiempo. No se aplicó ningún cambio; intenta de nuevo.');
+                    throw new ErrorGuiado('Otro usuario agrupó alguno de estos reintegros al mismo tiempo. No se aplicó ningún cambio.',
+                        'Recarga la página y vuelve a generar el lote con los que quedan.');
                 }
                 if ($grupo['origenes'] !== []) {
                     LoteReintegro::registrarOrigenes($loteId, $grupo['origenes']);
@@ -177,10 +180,10 @@ final class LoteReintegroService
     {
         $loteIds = self::idsUnicos($loteIds);
         if ($loteIds === []) {
-            throw new \DomainException('Selecciona al menos un lote.');
+            throw new ErrorGuiado('No marcaste ningún lote.', 'Marca la casilla de cada lote que entregaste y vuelve a pulsar el botón.');
         }
         if ($error = FechaMovimiento::error($fecha)) {
-            throw new \DomainException('Fecha de entrega: ' . $error);
+            throw new ErrorGuiado('Fecha de entrega: ' . $error, 'Elige la fecha en que entregaste los bienes (entre el 01/01/2000 y hoy).');
         }
         $nota = self::textoOpcional($nota, 'La nota');
 
@@ -188,12 +191,13 @@ final class LoteReintegroService
             $lotes = self::bloquearAccesibles($loteIds);
             foreach ($lotes as $lote) {
                 if ($lote['estado'] !== 'pendiente') {
-                    throw new \DomainException(self::noPendiente($lote));
+                    throw new ErrorGuiado(self::noPendiente($lote), 'Recarga la página: verás el estado actual de cada lote.');
                 }
             }
 
             if (LoteReintegro::marcarReintegrados($loteIds, $fecha, $nota, (int) Auth::id()) !== count($loteIds)) {
-                throw new \DomainException('Otro usuario cambió alguno de los lotes al mismo tiempo. No se aplicó ningún cambio; intenta de nuevo.');
+                throw new ErrorGuiado('Otro usuario cambió alguno de los lotes al mismo tiempo. No se aplicó ningún cambio.',
+                    'Recarga la página para ver su estado actual y vuelve a intentarlo.');
             }
 
             foreach ($lotes as $lote) {
@@ -214,18 +218,18 @@ final class LoteReintegroService
     {
         $motivo = trim($motivo);
         if ($motivo === '') {
-            throw new \DomainException('Escribe el motivo para reabrir el lote.');
+            throw new ErrorGuiado('Falta el motivo para reabrir el lote.', 'Escribe por qué se reabre (por ejemplo «La Alcaldía devolvió el formato para corregirlo») y vuelve a pulsar «Reabrir».');
         }
         $motivo = self::textoOpcional($motivo, 'El motivo');
 
         Database::transaccion(static function () use ($loteId, $motivo): void {
             [$lote] = self::bloquearAccesibles([$loteId]);
             if ($lote['estado'] !== 'reintegrado') {
-                throw new \DomainException("El lote #{$loteId} no está reintegrado; no hay nada que reabrir.");
+                throw new ErrorGuiado("El lote #{$loteId} no está reintegrado, así que no hay nada que reabrir.", 'Recarga la página para ver su estado actual.');
             }
 
             if (LoteReintegro::reabrir($loteId) !== 1) {
-                throw new \DomainException('Otro usuario cambió el lote al mismo tiempo. Intenta de nuevo.');
+                throw new ErrorGuiado('Otro usuario cambió el lote al mismo tiempo. No se aplicó ningún cambio.', 'Recarga la página y vuelve a intentarlo.');
             }
 
             Auditoria::registrar(Auth::id(), (int) $lote['institucion_id'], 'reabrir', 'lote_reintegro', $loteId,
@@ -274,7 +278,8 @@ final class LoteReintegroService
             $creados = self::crearPorCategoria($institucionId, $grupos, FechaMovimiento::hoy(), $descripcion, $observaciones);
 
             if (LoteReintegro::marcarUnificados($loteIds, (int) Auth::id()) !== count($loteIds)) {
-                throw new \DomainException('Otro usuario cambió alguno de los lotes al mismo tiempo. No se aplicó ningún cambio; intenta de nuevo.');
+                throw new ErrorGuiado('Otro usuario cambió alguno de los lotes al mismo tiempo. No se aplicó ningún cambio.',
+                    'Recarga la página para ver su estado actual y vuelve a intentarlo.');
             }
 
             // A qué lotes nuevos fue cada lote de origen (crearPorCategoria respeta el orden de los grupos).
@@ -350,13 +355,14 @@ final class LoteReintegroService
     {
         foreach ($lotes as $lote) {
             if ($lote['estado'] !== 'pendiente') {
-                throw new \DomainException(self::noPendiente($lote));
+                throw new ErrorGuiado(self::noPendiente($lote), 'Recarga la página: verás el estado actual de cada lote.');
             }
         }
 
         $sedes = array_unique(array_map(static fn (array $l): int => (int) $l['institucion_id'], $lotes));
         if (count($sedes) > 1) {
-            throw new \DomainException('Solo se pueden unificar lotes de una misma sede. No se aplicó ningún cambio.');
+            throw new ErrorGuiado('Los lotes marcados son de sedes distintas, y solo se unifican lotes de una misma sede. No se aplicó ningún cambio.',
+                'Marca solo lotes de la misma sede (filtra la lista por institución) y vuelve a intentarlo.');
         }
 
         return (int) reset($sedes);
@@ -372,14 +378,15 @@ final class LoteReintegroService
     {
         $movimientos = LoteReintegro::movimientosDeLotes($loteIds);
         if ($movimientos === []) {
-            throw new \DomainException('Los lotes seleccionados no tienen bienes para unificar.');
+            throw new ErrorGuiado('Los lotes marcados no tienen bienes para unificar.', 'Marca lotes que tengan bienes y vuelve a intentarlo.');
         }
 
         $grupos = self::agruparPorCategoria($movimientos);
         if (self::esUnificacionSinCambios($grupos)) {
-            throw new \DomainException(count($loteIds) === 1
+            throw new ErrorGuiado(count($loteIds) === 1
                 ? "El lote #{$loteIds[0]} ya es de una sola categoría: no hay nada que separar."
-                : 'Los lotes seleccionados ya están separados por categoría y no comparten ninguna: no hay nada que unificar.');
+                : 'Los lotes marcados ya están separados por categoría y no comparten ninguna: no hay nada que unificar.',
+                'No hace falta hacer nada: cada lote ya tiene su comprobante por categoría.');
         }
 
         $bienesPorLote = array_fill_keys($loteIds, 0);
@@ -409,15 +416,15 @@ final class LoteReintegroService
     private static function accesibles(array $lotes, array $loteIds): array
     {
         if ($loteIds === []) {
-            throw new \DomainException('Selecciona al menos un lote.');
+            throw new ErrorGuiado('No marcaste ningún lote.', 'Marca la casilla de cada lote y vuelve a pulsar el botón.');
         }
         if ($lotes === [] || count($lotes) !== count($loteIds)) {
-            throw new \DomainException('Alguno de los lotes seleccionados ya no existe. No se aplicó ningún cambio.');
+            throw new ErrorGuiado('Alguno de los lotes marcados ya no existe. No se aplicó ningún cambio.', 'Recarga la página y vuelve a marcarlos.');
         }
 
         foreach ($lotes as $lote) {
             if (!Auth::esSuperusuario() && (int) $lote['institucion_id'] !== Auth::institucionId()) {
-                throw new \DomainException("No tienes acceso al lote #{$lote['id']}. No se aplicó ningún cambio.");
+                throw new ErrorGuiado("El lote #{$lote['id']} es de otra institución. No se aplicó ningún cambio.", 'Marca solo lotes de tu institución.');
             }
         }
 
@@ -426,8 +433,8 @@ final class LoteReintegroService
 
     private static function noPendiente(array $lote): string
     {
-        return "El lote #{$lote['id']} ya no está pendiente (está \"" . self::etiquetaEstado((string) $lote['estado'])
-            . '"). No se aplicó ningún cambio.';
+        return "El lote #{$lote['id']} ya no está pendiente (está «" . self::etiquetaEstado((string) $lote['estado'])
+            . '»). No se aplicó ningún cambio.';
     }
 
     private static function textoOpcional(?string $texto, string $nombre, int $maximo = self::LARGO_MAXIMO_NOTA): ?string
@@ -437,7 +444,7 @@ final class LoteReintegroService
             return null;
         }
         if (mb_strlen($texto) > $maximo) {
-            throw new \DomainException("{$nombre} no puede tener más de {$maximo} caracteres.");
+            throw new ErrorGuiado("{$nombre} tiene más de {$maximo} caracteres.", 'Acórtalo y vuelve a intentarlo.');
         }
 
         return $texto;

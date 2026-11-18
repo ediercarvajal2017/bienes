@@ -26,9 +26,6 @@ $viejo ??= [];
     </div>
 </div>
 
-<?php if (!empty($error)): ?>
-    <?= ui('alerta', ['tipo' => 'peligro', 'mensaje' => (string) $error, 'clases' => 'py-2 small contenedor-md']) ?>
-<?php endif; ?>
 
 <div class="alert alert-info py-2 small contenedor-md">
     <?= icono('info', 'me-1') ?>
@@ -41,8 +38,9 @@ $viejo ??= [];
 
     <div class="col-12">
         <label class="form-label small requerido" for="motivoReintegro">¿Por qué debe reintegrarse este bien?</label>
-        <textarea name="motivo" id="motivoReintegro" class="form-control" rows="3" required minlength="10" maxlength="500"
+        <textarea name="motivo" id="motivoReintegro" class="form-control<?= clase_invalido('motivo') ?>" rows="3" required minlength="10" maxlength="500"
                   placeholder="Ej. Ya no se usa en el aula, está obsoleto o sobra después de la reubicación."><?= htmlspecialchars((string) ($viejo['motivo'] ?? ''), ENT_QUOTES) ?></textarea>
+        <?= error_campo('motivo') ?>
         <div class="form-text">Mínimo 10 caracteres.</div>
     </div>
 

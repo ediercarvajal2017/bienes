@@ -17,7 +17,6 @@ $volverLista = Url::to('/reintegros/unidades') . (Auth::esSuperusuario() ? '?ins
     <a href="<?= $e($volverLista) ?>" class="btn btn-sm btn-outline-secondary">Volver</a>
 <?= ui('encabezado_pagina', ['titulo' => 'Reintegrar por cantidad · Placa ' . (string) ($placa), 'icono' => 'reintegro', 'subtitulo' => (string) ($lote['descripcion']) . (string) (!empty($lote['categoria_nombre']) ? ' · ' . $lote['categoria_nombre'] : ''), 'acciones' => (string) ob_get_clean()]) ?>
 
-<?php if (!empty($error)): ?><div class="alert alert-danger py-2 small contenedor-md"><?= $e($error) ?></div><?php endif; ?>
 
 <div class="d-flex flex-wrap gap-2 mb-3" aria-label="Resumen del código">
     <span class="badge badge-neutro fs-6 fw-normal">En cartera: <strong><?= (int) $lote['en_cartera'] ?></strong> de <?= (int) $lote['total'] ?></span>
@@ -87,18 +86,21 @@ $volverLista = Url::to('/reintegros/unidades') . (Auth::esSuperusuario() ? '?ins
                 <div class="row g-3">
                     <div class="col-sm-4">
                         <label for="campoFecha" class="form-label small">Fecha del reintegro</label>
-                        <input id="campoFecha" type="date" name="fecha" required max="<?= $e($hoy) ?>" class="form-control form-control-sm"
+                        <input id="campoFecha" type="date" name="fecha" required max="<?= $e($hoy) ?>" class="form-control form-control-sm<?= clase_invalido('fecha') ?>"
                                value="<?= $e($viejo['fecha'] ?? $hoy) ?>">
+                        <?= error_campo('fecha') ?>
                     </div>
                     <div class="col-sm-8">
                         <label for="campoDestino" class="form-label small">Destino</label>
-                        <input id="campoDestino" type="text" name="destino_texto" required maxlength="200" class="form-control form-control-sm"
+                        <input id="campoDestino" type="text" name="destino_texto" required maxlength="200" class="form-control form-control-sm<?= clase_invalido('destino_texto') ?>"
                                value="<?= $e($viejo['destino_texto'] ?? 'Bodega de reintegro') ?>">
+                        <?= error_campo('destino_texto') ?>
                     </div>
                     <div class="col-12">
                         <label for="campoObservaciones" class="form-label small">Observaciones (opcional)</label>
-                        <input id="campoObservaciones" type="text" name="observaciones" maxlength="500" class="form-control form-control-sm"
+                        <input id="campoObservaciones" type="text" name="observaciones" maxlength="500" class="form-control form-control-sm<?= clase_invalido('observaciones') ?>"
                                value="<?= $e($viejo['observaciones'] ?? '') ?>" placeholder="Ej. Sillas con el espaldar partido">
+                        <?= error_campo('observaciones') ?>
                     </div>
                     <div class="col-12">
                         <div class="form-check">

@@ -39,7 +39,9 @@ test.describe('Aislamiento entre instituciones', () => {
         }
 
         await pagina.goto('bienes?q=PB-0001');
-        await expect(pagina.getByText('PB-0001')).toHaveCount(0);
+        // Ninguna fila con esa placa (el aviso de "sin resultados" sí repite lo que se buscó).
+        await expect(pagina.getByText('PB-0001', { exact: true })).toHaveCount(0);
+        await expect(pagina.locator('.estado-vacio-explicado')).toContainText('Ningún bien coincide');
         await pagina.goto('buscar?q=PB-0001');
         await expect(pagina.getByText('Silla de otra institución')).toHaveCount(0);
     });

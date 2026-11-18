@@ -15,6 +15,27 @@ if (!function_exists('icono')) {
     }
 }
 
+if (!function_exists('error_campo')) {
+    /**
+     * Mensaje que el aviso de error de la acción anterior dejó para el campo $campo
+     * (App\Core\Aviso::errorDeCampo), listo para ponerlo debajo del control; '' si no hay.
+     * Para los controles escritos a mano; ui('campo_formulario') ya lo hace solo.
+     */
+    function error_campo(string $campo): string
+    {
+        $mensaje = \App\Core\Aviso::errorDeCampo($campo);
+
+        return $mensaje === null ? '' : '<div class="invalid-feedback d-block" id="' . htmlspecialchars($campo, ENT_QUOTES)
+            . '-error">' . htmlspecialchars($mensaje, ENT_QUOTES) . '</div>';
+    }
+
+    /** ' is-invalid' si el aviso de error de la acción anterior marcó el campo $campo. */
+    function clase_invalido(string $campo): string
+    {
+        return \App\Core\Aviso::errorDeCampo($campo) === null ? '' : ' is-invalid';
+    }
+}
+
 if (!function_exists('ui')) {
     /**
      * HTML de un componente de app/Views/partials/ui (docs/guia-estilo-ui.md):

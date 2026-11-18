@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Core\Auth;
+use App\Core\Aviso;
 use App\Core\Csrf;
 use App\Core\Database;
 use App\Core\ErrorHandler;
@@ -130,8 +131,6 @@ final class BienController
             'opcionesPorPagina' => self::OPCIONES_POR_PAGINA,
             'total' => $total,
             'totalPaginas' => Paginador::totalPaginas($total, $porPagina),
-            'mensaje' => Session::pullFlash('ok'),
-            'error' => Session::pullFlash('error'),
         ]);
     }
 
@@ -156,8 +155,6 @@ final class BienController
                 ? Usuario::elegiblesACargo((int) Auth::institucionId()) : [],
             'categorias' => Auth::esSuperusuario() ? [] : Categoria::activas((int) Auth::institucionId()),
             'instituciones' => Auth::esSuperusuario() ? Institucion::listadoParaSelect() : [],
-            'error' => Session::pullFlash('error'),
-            'errorCampo' => Session::pullFlash('error_campo'),
             'viejo' => $viejo,
             'hallazgo' => $hallazgo,
         ]);
@@ -212,11 +209,8 @@ final class BienController
         );
         $volverA = '/bienes/crear' . ($hallazgo !== null ? '?hallazgo_id=' . $hallazgo['id'] : '');
 
-        if ($resultado = $this->validar($datos, null)) {
-            Session::flash('error', $resultado['mensaje']);
-            if ($resultado['campo'] !== null) {
-                Session::flash('error_campo', $resultado['campo']);
-            }
+        if ($falla = $this->validar($datos, null)) {
+            Aviso::enviar(self::avisoDeValidacion('No se registró el bien', $falla));
             Session::flashOld($datos);
             header('Location: ' . Url::to($volverA));
             exit;
@@ -241,14 +235,17 @@ final class BienController
 
         $errorAsignacion = null;
         if (($espacioId > 0 || $individual) && (Auth::esSuperusuario() || !Auth::tienePermiso('asignaciones.crear'))) {
-            $errorAsignacion = 'No tienes permiso para asignar bienes.';
+            $errorAsignacion = Aviso::error('No se registró el bien', 'Tu usuario no tiene permiso para asignar bienes.',
+                'Registra el bien sin elegir espacio ni persona; quien tenga permiso de asignar lo hará después.');
         } elseif ($individual && $personaId <= 0) {
-            $errorAsignacion = 'Elige la persona responsable, o marca la responsabilidad Grupal.';
+            $errorAsignacion = Aviso::error('No se registró el bien', 'Elegiste responsabilidad Individual pero no la persona.',
+                'Elige la persona responsable, o cambia a Grupal y elige el espacio.', null, ['persona_id' => 'Elige la persona.']);
         } elseif ($espacioId > 0 && !Espacio::perteneceYActivo($espacioId, (int) $datos['institucion_id'])) {
-            $errorAsignacion = 'El espacio seleccionado no es válido (debe ser un espacio activo de la institución).';
+            $errorAsignacion = Aviso::error('No se registró el bien', 'El espacio elegido está inactivo o es de otra institución.',
+                'Elige otro espacio de la lista. Si falta, créalo o actívalo en Espacios.', null, ['espacio_id' => 'Elige otro espacio.']);
         }
         if ($errorAsignacion !== null) {
-            Session::flash('error', $errorAsignacion);
+            Aviso::enviar($errorAsignacion);
             Session::flashOld($datosParaReintentar);
             header('Location: ' . Url::to($volverA));
             exit;
@@ -284,7 +281,7 @@ final class BienController
                 return $id;
             });
         } catch (\DomainException $e) {
-            Session::flash('error', $e->getMessage());
+            Aviso::enviar(Aviso::desdeExcepcion($e, 'No se registró el bien', 'Revisa los datos y vuelve a guardar.'));
             Session::flashOld($datosParaReintentar);
             header('Location: ' . Url::to($volverA));
             exit;
@@ -298,8 +295,8 @@ final class BienController
                 throw $e;
             }
 
-            Session::flash('error', 'Ya existe un bien con ese código en la institución.');
-            Session::flash('error_campo', 'codigo_identificacion');
+            Aviso::enviar(self::avisoDeValidacion('No se registró el bien',
+                self::fallaCodigoRepetido((int) $datos['institucion_id'], (string) $datos['codigo_identificacion'])));
             Session::flashOld($datosParaReintentar);
             header('Location: ' . Url::to($volverA));
             exit;
@@ -308,14 +305,18 @@ final class BienController
         $this->procesarArchivos($id, $request, $datos['codigo_identificacion']);
         $this->procesarSolicitudQr($id, $imprimirQr);
 
+        $codigo = $datos['codigo_identificacion'];
+        $siguienteQr = $imprimirQr ? 'Su código QR quedó en la Bodega de QR para imprimirlo.' : '';
         if ($hallazgo !== null) {
-            Session::flash('ok', 'Bien registrado y asignado a ' . $hallazgo['espacio_nombre'] . '.');
+            Aviso::enviar(Aviso::exito("Bien {$codigo} registrado y asignado a {$hallazgo['espacio_nombre']}.",
+                trim('El hallazgo de la verificación quedó resuelto. ' . $siguienteQr)));
         } elseif ($personaId > 0 && $mensajeAsignacion !== null) {
-            Session::flash('ok', 'Bien registrado. ' . $mensajeAsignacion);
+            Aviso::enviar(Aviso::exito("Bien {$codigo} registrado.", trim($mensajeAsignacion . ' ' . $siguienteQr)));
         } elseif ($espacioId > 0) {
-            Session::flash('ok', 'Bien registrado y asignado a ' . (Espacio::find($espacioId)['nombre'] ?? 'el espacio elegido') . '.');
+            Aviso::enviar(Aviso::exito("Bien {$codigo} registrado y asignado a " . (Espacio::find($espacioId)['nombre'] ?? 'el espacio elegido') . '.', $siguienteQr));
         } else {
-            Session::flash('ok', 'Bien registrado correctamente.');
+            Aviso::enviar(Aviso::exito("Bien {$codigo} registrado.",
+                trim('Siguiente paso: asígnalo a un espacio o a una persona en «¿Qué deseas hacer con este bien?», más abajo. ' . $siguienteQr)));
         }
 
         // Se abre la ficha del bien recién creado, para seguir con él (asignarlo, imprimir
@@ -340,7 +341,6 @@ final class BienController
             'title' => 'Alta masiva de bienes idénticos',
             'categorias' => Auth::esSuperusuario() ? [] : Categoria::activas((int) Auth::institucionId()),
             'instituciones' => Auth::esSuperusuario() ? Institucion::listadoParaSelect() : [],
-            'error' => Session::pullFlash('error'),
             'viejo' => $origen['viejo'] ?? $viejo,
             'origen' => $origen['bien'] ?? null,
         ]);
@@ -389,8 +389,8 @@ final class BienController
         $datos = $this->datosDesdeFormularioLote($request);
         $this->verificarCsrf($request, '/bienes/alta-masiva', $datos);
 
-        if ($error = $this->validarLote($datos)) {
-            Session::flash('error', $error);
+        if ($falla = $this->validarLote($datos)) {
+            Aviso::enviar(self::avisoDeValidacion('No se registraron las unidades', $falla));
             Session::flashOld($datos);
             header('Location: ' . Url::to('/bienes/alta-masiva'));
             exit;
@@ -405,7 +405,9 @@ final class BienController
         $idsCreados = $this->crearBienesEnLote($datos);
 
         if ($idsCreados === null) {
-            Session::flash('error', 'Ocurrió un error al crear los bienes del lote. No se aplicó ningún cambio.');
+            $ultimo = $datos['lote'] . '-' . str_pad((string) $datos['cantidad'], 3, '0', STR_PAD_LEFT);
+            Aviso::enviar(Aviso::error('No se registraron las unidades', 'Ocurrió un error al crearlas y no se aplicó ningún cambio.',
+                "Revisa que ningún código entre {$datos['lote']}-001 y {$ultimo} exista ya y vuelve a intentarlo. Si se repite, avisa a soporte."));
             Session::flashOld($datos);
             header('Location: ' . Url::to('/bienes/alta-masiva'));
             exit;
@@ -416,7 +418,10 @@ final class BienController
         }
 
         $creados = count($idsCreados);
-        Session::flash('ok', "{$creados} bienes creados correctamente en el lote \"{$datos['lote']}\".");
+        Aviso::enviar(Aviso::exito("{$creados} unidades de la placa {$datos['lote']} registradas.",
+            'Siguiente paso: asígnalas a sus espacios desde la lista de la placa.'
+                . ($imprimirQr ? ' Sus códigos QR quedaron en la Bodega de QR para imprimirlos.' : ''),
+            Aviso::accion('Ver las unidades', '/bienes?' . http_build_query(['q' => $datos['lote']]))));
         header('Location: ' . Url::to('/bienes'));
         exit;
     }
@@ -441,32 +446,49 @@ final class BienController
         ];
     }
 
-    private function validarLote(array $datos): ?string
+    /** @return array{campo: ?string, porQue: string, queHacer: string, enCampo: string, accion?: array{texto: string, url: string}|null}|null */
+    private function validarLote(array $datos): ?array
     {
-        if ($datos['lote'] === '' || $datos['descripcion'] === '' || $datos['fecha_ingreso'] === '' || !strtotime($datos['fecha_ingreso'])) {
-            return 'Indica el código de lote, la descripción y una fecha de ingreso válida.';
+        if ($datos['lote'] === '') {
+            return ['campo' => 'lote', 'porQue' => 'Falta el código de la placa.', 'enCampo' => 'Escribe el código de la placa.',
+                'queHacer' => 'Escribe el código que comparten todas las unidades (por ejemplo 200388980); a cada una se le agrega -001, -002…'];
+        }
+        if ($datos['descripcion'] === '') {
+            return ['campo' => 'descripcion', 'porQue' => 'Falta la descripción.', 'enCampo' => 'Escribe qué son las unidades.',
+                'queHacer' => 'Escribe qué es cada unidad, sin la cantidad (por ejemplo «SILLA PLÁSTICA AZUL»).'];
+        }
+        if ($datos['fecha_ingreso'] === '' || !strtotime($datos['fecha_ingreso'])) {
+            return ['campo' => 'fecha_ingreso', 'porQue' => 'La fecha de ingreso no es válida.', 'enCampo' => 'Elige una fecha válida.',
+                'queHacer' => 'Elige la fecha en el calendario del campo «Fecha de ingreso».'];
         }
 
         if (!preg_match('/^[A-Za-z0-9\-]+$/', $datos['lote'])) {
-            return 'El código de lote solo puede tener letras, números y guiones, sin espacios.';
+            return ['campo' => 'lote', 'porQue' => 'El código de la placa solo puede tener letras, números y guiones, sin espacios.',
+                'enCampo' => 'Solo letras, números y guiones.', 'queHacer' => 'Quita los espacios y otros signos del código y vuelve a guardar.'];
         }
 
-        if ($datos['cantidad'] < 2 || $datos['cantidad'] > 500) {
-            return 'La cantidad debe estar entre 2 y 500 (para un solo bien, usa "Registrar bien").';
+        if ($datos['cantidad'] < 2 || $datos['cantidad'] > ReintegroUnidadesService::MAXIMO_ALTA_MASIVA) {
+            return ['campo' => 'cantidad', 'porQue' => 'La cantidad debe estar entre 2 y ' . ReintegroUnidadesService::MAXIMO_ALTA_MASIVA . '.',
+                'enCampo' => 'Entre 2 y ' . ReintegroUnidadesService::MAXIMO_ALTA_MASIVA . '.',
+                'queHacer' => 'Para un solo bien usa «Registrar bien»; para más de ' . ReintegroUnidadesService::MAXIMO_ALTA_MASIVA
+                    . ', haz varias altas masivas con códigos distintos.'];
         }
 
         if (!is_numeric($datos['valor']) || (float) $datos['valor'] < 0 || (float) $datos['valor'] >= self::VALOR_MAXIMO) {
-            return 'Indica un valor unitario válido (no puede ser negativo ni tener más de 10 dígitos).';
+            return ['campo' => 'valor', 'porQue' => 'El valor unitario no es válido: no puede ser negativo ni tener más de 10 dígitos.',
+                'enCampo' => 'Escribe el valor de una unidad.', 'queHacer' => 'Escribe el valor de una sola unidad, en pesos y sin puntos (por ejemplo 45000).'];
         }
 
         if (Bien::existeLote($datos['institucion_id'], $datos['lote'])) {
-            return 'Ya existe un lote con ese código en esta institución.';
+            return ['campo' => 'lote', 'porQue' => "Ya se registraron unidades con la placa {$datos['lote']} en esta institución.",
+                'enCampo' => 'Esta placa ya tiene unidades.', 'queHacer' => 'Usa otro código, o abre las unidades que ya existen.',
+                'accion' => Aviso::accion("Ver la placa {$datos['lote']}", '/bienes?' . http_build_query(['q' => $datos['lote']]))];
         }
 
         if ($datos['categoria_id'] !== null) {
             $categoria = Categoria::find((int) $datos['categoria_id']);
             if (!$categoria || (int) $categoria['institucion_id'] !== (int) $datos['institucion_id']) {
-                return 'La categoría seleccionada no pertenece a esta institución.';
+                return self::fallaCategoriaAjena();
             }
         }
 
@@ -562,9 +584,7 @@ final class BienController
             'familiaSedesDestino' => $familiaSedesDestino,
             'espaciosPorSedeDestino' => $espaciosPorSedeDestino,
             'verificacionId' => Verificacion::idValidoParaBien($id, (string) ($_GET['verificacion_id'] ?? '')),
-            'error' => Session::pullFlash('error'),
-            'errorCampo' => Session::pullFlash('error_campo'),
-            'mensaje' => Session::pullFlash('ok'),
+            'noDisponibles' => CicloVidaBien::accionesNoDisponibles($bien, $asignacionActiva),
             'viejo' => Session::pullOld(),
         ]);
     }
@@ -579,7 +599,9 @@ final class BienController
         // código) quedan como estaban al darse de baja, para que el historial y los
         // reportes no cambien después.
         if ($bien['estado'] === 'dado_de_baja') {
-            Session::flash('error', 'Este bien está dado de baja: sus datos ya no se pueden modificar.');
+            Aviso::enviar(Aviso::error('No se guardaron los cambios',
+                'El bien está dado de baja: sus datos quedan como estaban ese día, para que el historial y los reportes no cambien.',
+                'Consulta su historial en esta ficha. Si se dio de baja por error, comunícate con el administrador de MIA.'));
             header('Location: ' . Url::to("/bienes/{$id}/editar"));
             exit;
         }
@@ -589,11 +611,8 @@ final class BienController
         $datos['estado'] = $this->estadoPermitidoDesdeFormulario($bien['estado'], $datos['estado']);
         $this->verificarCsrf($request, "/bienes/{$id}/editar", $datos);
 
-        if ($resultado = $this->validar($datos, $id)) {
-            Session::flash('error', $resultado['mensaje']);
-            if ($resultado['campo'] !== null) {
-                Session::flash('error_campo', $resultado['campo']);
-            }
+        if ($falla = $this->validar($datos, $id)) {
+            Aviso::enviar(self::avisoDeValidacion('No se guardaron los cambios', $falla));
             Session::flashOld($datos);
             header('Location: ' . Url::to("/bienes/{$id}/editar"));
             exit;
@@ -603,7 +622,7 @@ final class BienController
         $datosParaReintentar = $datos + $this->camposAccion($request);
         unset($datos['imprimir_qr']);
 
-        // Acción elegida en "¿Qué desea hacer con este bien?" (por defecto, ninguna).
+        // Acción elegida en "¿Qué deseas hacer con este bien?" (por defecto, ninguna).
         $accion = (string) $request->input('accion');
         $asignacionActiva = Asignacion::activaDe($id);
         $familia = Auth::rol() === 'rector' ? array_filter(
@@ -612,7 +631,9 @@ final class BienController
         ) : [];
         if ($accion !== '' && $accion !== 'ninguna'
             && !array_key_exists($accion, CicloVidaBien::accionesDisponibles($bien, $asignacionActiva, $familia))) {
-            $this->volverConError($id, 'Esa acción no está disponible para este bien.', $datosParaReintentar);
+            $this->volverConError($id, Aviso::error('No se guardaron los cambios',
+                'La acción elegida ya no está disponible para este bien (su estado cambió mientras tenías la página abierta).',
+                'Revisa la ficha actualizada y elige otra acción en «¿Qué deseas hacer con este bien?».'), $datosParaReintentar);
         }
 
         // La foto de un reporte de baja se guarda antes (fuera de la transacción).
@@ -621,7 +642,8 @@ final class BienController
             try {
                 $fotoBaja = Uploader::storeImage($archivo, 'bajas');
             } catch (\RuntimeException $e) {
-                $this->volverConError($id, $e->getMessage(), $datosParaReintentar);
+                $this->volverConError($id, Aviso::error('No se guardaron los cambios', 'La foto del reporte de baja no se pudo guardar: ' . $e->getMessage(),
+                    'Elige otra foto que cumpla esa condición y vuelve a guardar.', null, ['accion_foto_baja' => 'Elige otra foto.']), $datosParaReintentar);
             }
         }
 
@@ -658,13 +680,13 @@ final class BienController
                 };
             });
         } catch (\DomainException $e) {
-            $this->volverConError($id, $e->getMessage(), $datosParaReintentar);
+            $this->volverConError($id, Aviso::desdeExcepcion($e, 'No se guardaron los cambios', 'Revisa los datos de la acción y vuelve a guardar.'), $datosParaReintentar);
         } catch (\PDOException $e) {
             if (!$this->esViolacionCodigoDuplicado($e)) {
                 throw $e;
             }
-            Session::flash('error_campo', 'codigo_identificacion');
-            $this->volverConError($id, 'Ya existe un bien con ese código en la institución.', $datosParaReintentar);
+            $this->volverConError($id, self::avisoDeValidacion('No se guardaron los cambios',
+                self::fallaCodigoRepetido((int) $datos['institucion_id'], (string) $datos['codigo_identificacion'])), $datosParaReintentar);
         }
 
         Auditoria::registrar(Auth::id(), (int) $datos['institucion_id'], 'editar', 'bien', $id, $bien, $datos);
@@ -672,7 +694,9 @@ final class BienController
         $this->procesarArchivos($id, $request, $datos['codigo_identificacion']);
         $this->procesarSolicitudQr($id, $imprimirQr, $request->input('quitar_qr') === '1');
 
-        Session::flash('ok', trim('Bien actualizado. ' . $mensajeAccion));
+        Aviso::enviar($mensajeAccion !== ''
+            ? Aviso::exito('Cambios del bien ' . $datos['codigo_identificacion'] . ' guardados.', $mensajeAccion)
+            : Aviso::exito('Cambios del bien ' . $datos['codigo_identificacion'] . ' guardados.'));
 
         // Se queda en la ficha del bien para seguir trabajando con él. Excepciones: al
         // asignar un bien de un lote de alta masiva se va al listado del lote (para asignar
@@ -712,7 +736,8 @@ final class BienController
         }
         $personaId = (int) $request->input('accion_persona_id');
         if ($personaId <= 0) {
-            throw new \DomainException('Elige la persona responsable, o marca la responsabilidad Grupal.');
+            throw new \App\Core\ErrorGuiado('Elegiste responsabilidad Individual pero no la persona.',
+                'Elige la persona responsable, o cambia a Grupal y elige el espacio.', null, ['accion_persona_id' => 'Elige la persona.']);
         }
 
         return $personaId;
@@ -731,9 +756,10 @@ final class BienController
         return $campos;
     }
 
-    private function volverConError(int $id, string $mensaje, array $datosParaReintentar): never
+    /** @param array{tipo: string, titulo: string, detalle: string, solucion: string, accion: array{texto: string, url: string}|null, campos: array<string, string>} $aviso */
+    private function volverConError(int $id, array $aviso, array $datosParaReintentar): never
     {
-        Session::flash('error', $mensaje);
+        Aviso::enviar($aviso);
         Session::flashOld($datosParaReintentar);
         header('Location: ' . Url::to("/bienes/{$id}/editar"));
         exit;
@@ -769,7 +795,10 @@ final class BienController
                 }
             }
         } catch (\RuntimeException $e) {
-            Session::flash('error', $e->getMessage());
+            // El bien ya se guardó: solo faltó el archivo.
+            Aviso::enviar(Aviso::advertencia('La foto o la factura no se guardó', $e->getMessage(),
+                'Abre el bien y vuelve a adjuntar el archivo (foto JPG o PNG; factura en PDF).',
+                Aviso::accion('Abrir el bien', "/bienes/{$bienId}/editar")));
         }
     }
 
@@ -836,36 +865,42 @@ final class BienController
     }
 
     /**
-     * @return array{campo: ?string, mensaje: string}|null "campo" es el name del input a
-     * resaltar en el formulario (ver BienController::guardar()/actualizar() y
-     * bienes/form.php) — null cuando el error no corresponde a un campo puntual.
+     * Primera regla del formulario que no se cumple, para el aviso de error: "campo" es el
+     * name del control a marcar (null si no es de un campo puntual), "enCampo" el mensaje
+     * corto debajo de él (ver avisoDeValidacion()).
+     *
+     * @return array{campo: ?string, porQue: string, queHacer: string, enCampo: string, accion?: array{texto: string, url: string}|null}|null
      */
     private function validar(array $datos, ?int $exceptId): ?array
     {
         if ($datos['codigo_identificacion'] === '') {
-            return ['campo' => 'codigo_identificacion', 'mensaje' => 'El código de identificación es obligatorio.'];
+            return ['campo' => 'codigo_identificacion', 'porQue' => 'Falta el código de identificación (la placa).',
+                'enCampo' => 'Escribe la placa del bien.', 'queHacer' => 'Escribe la placa tal como aparece en la etiqueta del bien y vuelve a guardar.'];
         }
 
         if ($datos['descripcion'] === '') {
-            return ['campo' => 'descripcion', 'mensaje' => 'La descripción es obligatoria.'];
+            return ['campo' => 'descripcion', 'porQue' => 'Falta la descripción del bien.', 'enCampo' => 'Escribe qué es el bien.',
+                'queHacer' => 'Escribe qué es el bien (por ejemplo «SILLA PLÁSTICA AZUL») y vuelve a guardar.'];
         }
 
         if ($datos['fecha_ingreso'] === '' || !strtotime($datos['fecha_ingreso'])) {
-            return ['campo' => 'fecha_ingreso', 'mensaje' => 'La fecha de ingreso no es válida.'];
+            return ['campo' => 'fecha_ingreso', 'porQue' => 'La fecha de ingreso no es válida.', 'enCampo' => 'Elige una fecha válida.',
+                'queHacer' => 'Elige la fecha en el calendario del campo «Fecha de ingreso».'];
         }
 
         if ($datos['valor'] < 0 || $datos['valor'] >= self::VALOR_MAXIMO) {
-            return ['campo' => 'valor', 'mensaje' => 'El valor no puede ser negativo ni tener más de 10 dígitos.'];
+            return ['campo' => 'valor', 'porQue' => 'El valor no puede ser negativo ni tener más de 10 dígitos.',
+                'enCampo' => 'Escribe un valor entre 0 y 9.999.999.999.', 'queHacer' => 'Escribe el valor en pesos, sin puntos ni signos (por ejemplo 350000).'];
         }
 
         if (Bien::existeCodigo($datos['institucion_id'], $datos['codigo_identificacion'], $exceptId)) {
-            return ['campo' => 'codigo_identificacion', 'mensaje' => 'Ya existe un bien con ese código en la institución.'];
+            return self::fallaCodigoRepetido((int) $datos['institucion_id'], (string) $datos['codigo_identificacion']);
         }
 
         if ($datos['categoria_id'] !== null) {
             $categoria = Categoria::find((int) $datos['categoria_id']);
             if (!$categoria || (int) $categoria['institucion_id'] !== (int) $datos['institucion_id']) {
-                return ['campo' => 'categoria_id', 'mensaje' => 'La categoría seleccionada no pertenece a esta institución.'];
+                return self::fallaCategoriaAjena();
             }
 
             // Mientras el bien esté en "Sin cartera", el código es obligatoriamente de 10
@@ -876,12 +911,47 @@ final class BienController
             if (Categoria::esProtegida($categoria) && !preg_match('/^[0-9]{10}$/', $datos['codigo_identificacion'])) {
                 return [
                     'campo' => 'codigo_identificacion',
-                    'mensaje' => 'El código debe tener exactamente 10 dígitos numéricos para bienes en la categoría "' . Categoria::NOMBRE_CATEGORIA_PROTEGIDA . '".',
+                    'porQue' => 'Los bienes de la categoría «' . Categoria::NOMBRE_CATEGORIA_PROTEGIDA . '» llevan un código de exactamente 10 números.',
+                    'enCampo' => 'Debe tener exactamente 10 números.',
+                    'queHacer' => 'Deja el código que MIA propone al elegir la categoría, o escribe uno de 10 números.',
                 ];
             }
         }
 
         return null;
+    }
+
+    /**
+     * La placa ya existe en la institución: el aviso ofrece abrir el bien que la tiene.
+     *
+     * @return array{campo: ?string, porQue: string, queHacer: string, enCampo: string, accion: array{texto: string, url: string}|null}
+     */
+    private static function fallaCodigoRepetido(int $institucionId, string $codigo): array
+    {
+        $existente = Bien::buscarPorCodigoInstitucion($institucionId, $codigo);
+
+        return ['campo' => 'codigo_identificacion', 'porQue' => "La placa {$codigo} ya está registrada en esta institución.",
+            'enCampo' => 'Esta placa ya existe.', 'queHacer' => 'Revisa el número. Si es el mismo bien, ábrelo en lugar de registrarlo otra vez.',
+            'accion' => $existente !== null ? Aviso::accion("Ver el bien {$codigo}", '/bienes/' . (int) $existente['id'] . '/editar') : null];
+    }
+
+    /** @return array{campo: ?string, porQue: string, queHacer: string, enCampo: string} */
+    private static function fallaCategoriaAjena(): array
+    {
+        return ['campo' => 'categoria_id', 'porQue' => 'La categoría elegida no pertenece a esta institución.',
+            'enCampo' => 'Elige una categoría de la lista.', 'queHacer' => 'Elige una categoría de la lista; si no está, pídele al rector que la cree en Categorías.'];
+    }
+
+    /**
+     * Aviso de error de una regla del formulario (validar()/validarLote()), con su campo marcado.
+     *
+     * @param array{campo: ?string, porQue: string, queHacer: string, enCampo: string, accion?: array{texto: string, url: string}|null} $falla
+     * @return array{tipo: string, titulo: string, detalle: string, solucion: string, accion: array{texto: string, url: string}|null, campos: array<string, string>}
+     */
+    private static function avisoDeValidacion(string $queNoSe, array $falla): array
+    {
+        return Aviso::error($queNoSe, $falla['porQue'], $falla['queHacer'], $falla['accion'] ?? null,
+            $falla['campo'] !== null ? [$falla['campo'] => $falla['enCampo']] : []);
     }
 
     /**

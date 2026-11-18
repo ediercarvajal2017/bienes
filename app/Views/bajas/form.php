@@ -25,9 +25,6 @@ $descripcionSugerida ??= '';
     </div>
 </div>
 
-<?php if (!empty($error)): ?>
-    <?= ui('alerta', ['tipo' => 'peligro', 'mensaje' => (string) $error, 'clases' => 'py-2 small contenedor-md']) ?>
-<?php endif; ?>
 
 <?php if ($verificacionId !== null): ?>
     <div class="alert alert-info py-2 small contenedor-md">
@@ -45,7 +42,8 @@ $descripcionSugerida ??= '';
 
     <div class="col-12">
         <label for="campo-estado-reportado" class="form-label small requerido">Estado del bien</label>
-        <input id="campo-estado-reportado" type="text" name="estado_reportado" class="form-control" required list="sugerenciasEstado" placeholder="Ej. Dañado, Perdido, Obsoleto...">
+        <input id="campo-estado-reportado" type="text" name="estado_reportado" class="form-control<?= clase_invalido('estado_reportado') ?>" required list="sugerenciasEstado" placeholder="Ej. Dañado, Perdido, Obsoleto...">
+        <?= error_campo('estado_reportado') ?>
         <datalist id="sugerenciasEstado">
             <option value="Dañado">
             <option value="Perdido">
@@ -62,7 +60,8 @@ $descripcionSugerida ??= '';
 
     <div class="col-12">
         <label for="campo-descripcion" class="form-label small requerido">Descripción de la baja</label>
-        <textarea id="campo-descripcion" name="descripcion" class="form-control" rows="3" required placeholder="Qué pasó y por qué se solicita la baja"><?= htmlspecialchars($descripcionSugerida, ENT_QUOTES) ?></textarea>
+        <textarea id="campo-descripcion" name="descripcion" class="form-control<?= clase_invalido('descripcion') ?>" rows="3" required placeholder="Qué pasó y por qué se solicita la baja"><?= htmlspecialchars($descripcionSugerida, ENT_QUOTES) ?></textarea>
+        <?= error_campo('descripcion') ?>
     </div>
 
     <div class="col-12">

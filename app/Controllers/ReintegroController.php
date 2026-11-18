@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Core\Auth;
+use App\Core\Aviso;
 use App\Core\Csrf;
 use App\Core\Database;
 use App\Core\ErrorHandler;
@@ -70,10 +71,45 @@ final class ReintegroController
             'soloSeleccionados' => $soloSeleccionados,
             'idsSeleccionados' => $idsSeleccionados ?? [],
 
-            'mensaje' => Session::pullFlash('ok'),
-            'error' => Session::pullFlash('error'),
+            // Tras un reintegro que salió bien, la selección guardada en el navegador ya cumplió.
+            'limpiarSeleccion' => Session::pullFlash('reintegro_aplicado') !== null,
+            'sinResultados' => $institucionId !== null && $total === 0 && $q !== '' ? $this->explicarSinResultados($institucionId, $q) : null,
             'viejo' => Session::pullOld(),
         ]);
+    }
+
+    /**
+     * Por qué la búsqueda no encontró nada para reintegrar y qué hacer. Si la placa existe, la
+     * razón es la regla de reintegro (Bien::guiaNoReintegrable): sin asignación, "Sin cartera",
+     * ya reintegrado, unidad de una placa…
+     *
+     * @return array{titulo: string, detalle: string, acciones: list<array{texto: string, url: string}>}
+     */
+    private function explicarSinResultados(int $institucionId, string $q): array
+    {
+        $sufijo = Auth::esSuperusuario() ? ['institucion' => $institucionId] : [];
+        $encontrado = Bien::buscarPorCodigoInstitucion($institucionId, $q);
+        $bien = $encontrado !== null ? Bien::find((int) $encontrado['id']) : null;
+        if ($bien !== null) {
+            $codigo = (string) $bien['codigo_identificacion'];
+            if (!empty($bien['lote']) && in_array($bien['estado'], Bien::ESTADOS_REINTEGRABLES, true)) {
+                return ['titulo' => "El bien {$codigo} no aparece aquí porque es una unidad de la placa {$bien['lote']}.",
+                    'detalle' => 'Las unidades de una placa se reintegran por cantidad: eliges cuántas y MIA toma las que siguen en cartera.',
+                    'acciones' => [['texto' => 'Reintegrar por cantidad', 'url' => Url::to('/reintegros/unidades') . '?' . http_build_query(['q' => $bien['lote']] + $sufijo)]]];
+            }
+            $guia = Bien::guiaNoReintegrable($bien, Asignacion::activaDe((int) $bien['id']) !== null);
+            if ($guia !== null) {
+                return ['titulo' => "El bien {$codigo} no aparece porque {$guia['motivo']}.", 'detalle' => $guia['queHacer'],
+                    'acciones' => $guia['accion'] !== null ? [$guia['accion']] : []];
+            }
+        }
+
+        return ['titulo' => "Ningún bien para reintegrar coincide con «{$q}».",
+            'detalle' => 'Aquí solo aparecen los bienes asignados que se pueden reintegrar. Revisa cómo está escrita la placa, o búscala en Bienes para ver su estado.',
+            'acciones' => [
+                ['texto' => 'Buscar en Bienes', 'url' => Url::to('/bienes') . '?' . http_build_query(['q' => $q] + $sufijo)],
+                ['texto' => 'Quitar la búsqueda', 'url' => Url::to('/reintegros') . ($sufijo !== [] ? '?' . http_build_query($sufijo) : '')],
+            ]];
     }
 
     public function guardar(): void
@@ -90,7 +126,7 @@ final class ReintegroController
         $this->verificarCsrf($request, $volverA, $viejo);
 
         if (empty($bienIds)) {
-            Session::flash('error', 'Selecciona al menos un bien para reintegrar.');
+            Aviso::enviar(\App\Helpers\Mensajes::seleccionaAlMenosUno('No se reintegró ningún bien', 'bien', 'Reintegro'));
             Session::flashOld($viejo);
             header('Location: ' . Url::to($volverA));
             exit;
@@ -98,7 +134,12 @@ final class ReintegroController
 
         $errorFecha = FechaMovimiento::error($fecha);
         if ($destino === '' || $errorFecha !== null) {
-            Session::flash('error', $destino === '' ? 'Indica el destino del reintegro.' : $errorFecha);
+            Aviso::enviar($destino === ''
+                ? Aviso::error('No se reintegró ningún bien', 'Falta el destino del reintegro.',
+                    'Escribe a dónde van los bienes (por ejemplo «Almacén de la Secretaría de Educación») y vuelve a pulsar «Reintegro».',
+                    null, ['destino_texto' => 'Escribe el destino.'])
+                : Aviso::error('No se reintegró ningún bien', (string) $errorFecha, 'Elige una fecha entre el 01/01/2000 y hoy y vuelve a pulsar «Reintegro».',
+                    null, ['fecha' => 'Elige una fecha válida.']));
             Session::flashOld($viejo);
             header('Location: ' . Url::to($volverA));
             exit;
@@ -106,18 +147,25 @@ final class ReintegroController
 
         $resultado = $this->reintegrarLote($bienIds, $fecha, $destino, $observaciones);
         $reintegrados = $resultado['reintegrados'] ?? 0;
-        $avisoOmitidos = ($resultado['omitidos'] ?? 0) > 0
-            ? ' Se omitieron ' . $resultado['omitidos'] . ' bien(es) que ya no cumplían las condiciones (asignado, con categoría, fuera de "' . Categoria::NOMBRE_CATEGORIA_PROTEGIDA . '").'
-            : '';
+        $omitidos = $resultado['omitidos'] ?? 0;
+        $porQueOmitidos = 'ya no cumplían las condiciones: estar asignados, tener categoría y no ser «' . Categoria::NOMBRE_CATEGORIA_PROTEGIDA . '»';
+        $irALotes = Aviso::accion('Generar el lote de reintegro', '/reintegros/lotes/generar');
 
         if ($resultado === null) {
-            Session::flash('error', 'Ocurrió un error al procesar el reintegro masivo. No se aplicó ningún cambio.');
+            Aviso::enviar(Aviso::error('No se reintegró ningún bien', 'Ocurrió un error al procesar el reintegro y no se aplicó ningún cambio.',
+                'Vuelve a pulsar «Reintegro». Si se repite, avisa a soporte.'));
             Session::flashOld($viejo);
         } elseif ($reintegrados === 0) {
-            Session::flash('error', 'Ningún bien seleccionado pudo reintegrarse.' . $avisoOmitidos);
+            Aviso::enviar(Aviso::error('No se reintegró ningún bien', "Los {$omitidos} bienes elegidos {$porQueOmitidos}.",
+                'Recarga la lista: solo quedan los que se pueden reintegrar. Si falta alguno, ábrelo en Bienes para ver su estado.'));
             Session::flashOld($viejo);
         } else {
-            Session::flash('ok', $reintegrados . ' bien(es) reintegrado(s) correctamente. Cuando quieras, agrúpalos en un lote desde "Lotes de reintegro" para generar el formato.' . $avisoOmitidos);
+            Session::flash('reintegro_aplicado', '1');
+            $hecho = $reintegrados === 1 ? '1 bien reintegrado.' : "{$reintegrados} bienes reintegrados.";
+            Aviso::enviar($omitidos > 0
+                ? Aviso::advertencia($hecho, ($omitidos === 1 ? '1 bien se omitió porque ' : "{$omitidos} bienes se omitieron porque ") . $porQueOmitidos . '.',
+                    'Revisa en Bienes los que no se reintegraron. Siguiente paso: agrupa los reintegrados en un lote para generar el comprobante.', $irALotes)
+                : Aviso::exito($hecho, 'Siguiente paso: agrúpalos en un lote de reintegro para generar el comprobante.', $irALotes));
         }
 
         header('Location: ' . Url::to($volverA));
@@ -146,12 +194,10 @@ final class ReintegroController
             return;
         }
 
-        $bien = Bien::buscarReintegrablePorToken($this->extraerToken($crudo), $institucionId);
+        $token = $this->extraerToken($crudo);
+        $bien = Bien::buscarReintegrablePorToken($token, $institucionId);
         if (!$bien) {
-            echo json_encode([
-                'ok' => false,
-                'mensaje' => 'Ese código no corresponde a un bien reintegrable de esta institución (verifica que tenga una asignación activa).',
-            ]);
+            echo json_encode(['ok' => false, 'mensaje' => $this->porQueNoSeAgrega($token, $institucionId)]);
             return;
         }
 
@@ -163,6 +209,26 @@ final class ReintegroController
             'espacio' => $bien['espacio_nombre'],
             'responsables' => $bien['responsables_nombres'],
         ]);
+    }
+
+    /** Por qué el código escaneado no se agregó a la selección, y qué hacer. */
+    private function porQueNoSeAgrega(string $token, int $institucionId): string
+    {
+        $bien = Bien::findPorToken($token);
+        if ($bien === null) {
+            return 'Ese código QR no es de ningún bien de MIA. Revisa que sea la etiqueta del bien, o busca su placa en la lista.';
+        }
+        if ((int) $bien['institucion_id'] !== $institucionId) {
+            return "El bien {$bien['codigo_identificacion']} es de otra institución ({$bien['institucion_nombre']}): no se puede reintegrar desde aquí.";
+        }
+        if (!empty($bien['lote']) && in_array($bien['estado'], Bien::ESTADOS_REINTEGRABLES, true)) {
+            return "El bien {$bien['codigo_identificacion']} es una unidad de la placa {$bien['lote']}: reintégralo en «Reintegrar por cantidad».";
+        }
+        $guia = Bien::guiaNoReintegrable($bien, Asignacion::activaDe((int) $bien['id']) !== null);
+
+        return $guia !== null
+            ? "No se agregó {$bien['codigo_identificacion']}: {$guia['motivo']}. {$guia['queHacer']}"
+            : "No se agregó {$bien['codigo_identificacion']}. Búscalo por su placa en la lista.";
     }
 
     /**

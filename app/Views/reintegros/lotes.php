@@ -38,8 +38,6 @@ $e = static fn (?string $texto): string => htmlspecialchars((string) $texto, ENT
 <?= ui('encabezado_pagina', ['titulo' => 'Lotes de reintegro', 'icono' => 'reintegro', 'subtitulo' => 'Cada lote agrupa reintegros de una categoría para entregarlos a la Alcaldía con el comprobante FO-ADMI-009 (Excel). Puedes unificar varios lotes pendientes; cuando los entregues, márcalos como reintegrados.', 'acciones' => (string) ob_get_clean()]) ?>
 </div>
 
-<?php if (!empty($mensaje)): ?><div class="alert alert-success py-2 small"><?= $e($mensaje) ?></div><?php endif; ?>
-<?php if (!empty($error)): ?><div class="alert alert-danger py-2 small"><?= $e($error) ?></div><?php endif; ?>
 
 <?php if ($pendientesDeLote > 0): ?>
     <div class="alert alert-warning py-2 small">

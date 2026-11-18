@@ -35,14 +35,14 @@ test('crear en "Sin cartera" la deja en minúscula, y cambiar de categoría la a
     await seleccionarTomSelect(page, 'categoriaBien', 'Tecnología');
     await expect(campo).toHaveValue('SILLA AZUL ÑANDÚ');
     await page.locator('#botonGuardarBien').click();
-    await expect(page.locator('.alert-success')).toContainText('Bien actualizado');
+    await expect(page.locator('.alert-success')).toContainText(/Cambios del bien .+ guardados/);
     expect(descripcionDe(id)).toBe('SILLA AZUL ÑANDÚ');
 
     // De vuelta a "Sin cartera": minúscula otra vez.
     await seleccionarTomSelect(page, 'categoriaBien', 'Sin cartera');
     await expect(campo).toHaveValue('silla azul ñandú');
     await page.locator('#botonGuardarBien').click();
-    await expect(page.locator('.alert-success')).toContainText('Bien actualizado');
+    await expect(page.locator('.alert-success')).toContainText(/Cambios del bien .+ guardados/);
     expect(descripcionDe(id)).toBe('silla azul ñandú');
 });
 

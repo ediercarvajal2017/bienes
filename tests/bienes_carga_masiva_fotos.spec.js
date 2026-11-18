@@ -13,7 +13,8 @@ test('carga masiva de fotos empareja una imagen con su bien por código', async 
     // en cada corrida no aportaría nada. Por eso esta prueba es idempotente: reutiliza
     // el bien si una corrida anterior ya lo creó, en vez de fallar por "código duplicado".
     await page.goto('bienes?q=' + CODIGO);
-    const yaExiste = (await page.locator('tr', { hasText: CODIGO }).count()) > 0;
+    // La celda del código, no cualquier fila: sin resultados, el listado repite lo buscado.
+    const yaExiste = (await page.locator('td[data-label="Código"]', { hasText: CODIGO }).count()) > 0;
     if (!yaExiste) {
         await page.goto('bienes/crear');
         await page.locator('input[name="codigo_identificacion"]').fill(CODIGO);

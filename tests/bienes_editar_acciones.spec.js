@@ -4,7 +4,7 @@ import { seleccionarTomSelect } from './helpers/tomSelect.js';
 import { confirmar } from './helpers/confirmacion.js';
 
 /**
- * Formulario único de la ficha del bien: los datos y la acción elegida en "¿Qué desea
+ * Formulario único de la ficha del bien: los datos y la acción elegida en "¿Qué deseas
  * hacer con este bien?" se guardan con un solo botón, en una sola transacción, y al
  * terminar se vuelve al listado con la misma búsqueda y página.
  */
@@ -44,7 +44,7 @@ test('editar datos y trasladar con un solo guardado, y volver al listado como es
 
     // Se queda en la ficha, que ya muestra la nueva ubicación.
     await expect(page).toHaveURL(new RegExp(`/bienes/${bienId}/editar$`));
-    await expect(page.locator('.alert-success')).toContainText('Bien actualizado. Trasladado a PW Espacio B');
+    await expect(page.locator('.alert-success')).toContainText('Trasladado a PW Espacio B');
     await expect(page.locator('#ubicacionActual')).toContainText(`PW Espacio B ${sufijo}`);
 
     // "Volver" regresa al listado con la misma búsqueda y página, resaltando el bien.
@@ -81,8 +81,8 @@ test('si la acción no se puede hacer, tampoco se guardan los datos', async ({ p
     await page.goto(`bienes/${bienId}/editar`);
     await page.locator('input[name="descripcion"]').fill(`PW no debe guardarse ${sufijo}`);
     await page.selectOption('#accionBien', 'reintegrar');
-    // Se salta la validación del navegador para que el servidor reciba el destino vacío.
-    await page.evaluate(() => { document.getElementById('datosBien').noValidate = true; });
+    // Se salta la validación del navegador (validacion.js) para que el servidor reciba el destino vacío.
+    await page.evaluate(() => { document.getElementById('datosBien').setAttribute('data-sin-validar', ''); });
     await confirmar(page, () => page.getByRole('button', { name: 'Guardar y reintegrar' }).click());
 
     await expect(page).toHaveURL(new RegExp(`/bienes/${bienId}/editar`));
@@ -146,7 +146,7 @@ test('registrar un bien con su ubicación en un solo paso abre su ficha', async 
     await page.getByRole('button', { name: 'Registrar bien' }).click();
 
     await expect(page).toHaveURL(/\/bienes\/\d+\/editar$/);
-    await expect(page.locator('.alert-success')).toContainText(`Bien registrado y asignado a PW Espacio nuevo ${sufijo}`);
+    await expect(page.locator('.alert-success')).toContainText(`registrado y asignado a PW Espacio nuevo ${sufijo}`);
     await expect(page.locator('#ubicacionActual')).toContainText(`PW Espacio nuevo ${sufijo}`);
     const bienId = Number(bd(`SELECT id FROM bienes WHERE codigo_identificacion = 'PW-NUEVO-${sufijo}'`));
     expect(bd(`SELECT espacio_id FROM asignaciones WHERE bien_id = ${bienId} AND activa = 1`)).toBe(String(espacio));

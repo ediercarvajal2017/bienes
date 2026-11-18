@@ -12,8 +12,6 @@ $conInstitucion = static fn (string $ruta): string => Url::to($ruta)
     <?= ui('menu_acciones', ['opciones' => \App\Helpers\AccionesBienes::opciones(), 'actual' => 'reintegrar_cantidad']) ?>
 <?= ui('encabezado_pagina', ['titulo' => 'Reintegrar por cantidad', 'icono' => 'reintegro', 'subtitulo' => 'Códigos con varias unidades (alta masiva), por ejemplo una placa con 178 sillas. Elige uno para reintegrar solo las unidades que necesites.', 'acciones' => (string) ob_get_clean()]) ?>
 
-<?php if (!empty($error)): ?><div class="alert alert-danger py-2 small"><?= $e($error) ?></div><?php endif; ?>
-
 <?php if (Auth::esSuperusuario()): ?>
     <div class="mb-3 contenedor-sm">
         <label for="selectorInstitucion" class="form-label small">Institución</label>

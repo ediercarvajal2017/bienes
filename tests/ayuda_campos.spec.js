@@ -85,7 +85,7 @@ test('el nombre de cada campo no cambia y ya no hay textos sueltos', async ({ pa
 test('la ficha del bien y el alta masiva también tienen su ayuda', async ({ page }) => {
     test.skip(datos().remoto === true, 'Necesita la base de pruebas local');
     await page.goto(`bienes/${datos().bienes.A.silla}/editar`);
-    await ayudaDe(page, '¿Qué desea hacer con este bien?').click();
+    await ayudaDe(page, '¿Qué deseas hacer con este bien?').click();
     await expect(page.locator('.ayuda-campo-globo:visible')).toContainText('pendiente de aprobación');
     await expect(ayudaDe(page, 'Imprimir QR')).toBeVisible();
 

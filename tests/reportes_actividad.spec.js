@@ -48,7 +48,7 @@ test('el rector descarga la actividad de hoy: quién creó, qué cambió y el re
     await pagina.goto(`bienes/${id}/editar`);
     await pagina.locator('#campo-marca').fill('Rimax');
     await pagina.locator('#botonGuardarBien').click();
-    await expect(pagina.locator('.alert-success')).toContainText('Bien actualizado');
+    await expect(pagina.locator('.alert-success')).toContainText(/Cambios del bien .+ guardados/);
 
     // La tarjeta está en Reportes.
     await pagina.goto('reportes');

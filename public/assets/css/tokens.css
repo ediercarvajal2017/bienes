@@ -104,6 +104,9 @@
   --bs-link-color-rgb: 31, 111, 84;
   --bs-link-hover-color: var(--sigebi-secondary);
   --bs-link-hover-color-rgb: 20, 92, 67;
+  /* Campo con error: el rojo de MIA, no el de Bootstrap (#dc3545). Con var() cada tema toma el suyo. */
+  --bs-form-invalid-color: var(--sigebi-peligro-texto);
+  --bs-form-invalid-border-color: var(--sigebi-danger);
   --bs-secondary-color: var(--sigebi-text-muted);
   --bs-border-color: var(--sigebi-border);
   --bs-border-radius: var(--sigebi-radio);

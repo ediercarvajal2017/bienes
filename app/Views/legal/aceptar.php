@@ -43,6 +43,7 @@ $primerNombre = explode(' ', trim($nombre))[0] ?? '';
         <?php if (!empty($error)): ?>
             <div class="alert alert-danger py-2 small" role="alert"><?= $e($error) ?></div>
         <?php endif; ?>
+        <?= ui('avisos', ['avisos' => \App\Core\Aviso::paraMostrar()]) ?>
 
         <div class="caja-texto-legal mb-3" tabindex="0" role="region" aria-label="Texto de la política de datos y términos de uso">
             <?php require __DIR__ . '/_texto.php'; ?>

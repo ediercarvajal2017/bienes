@@ -13,7 +13,6 @@ $e = static fn (mixed $texto): string => htmlspecialchars((string) $texto, ENT_Q
     <?= ui('encabezado_pagina', ['titulo' => 'Alta masiva de bienes idénticos', 'icono' => 'bien',
         'subtitulo' => 'Registra muchas unidades iguales con un solo código (ej. 250 sillas): cada una queda como un bien con su propio código y QR.',
         'acciones' => ui('boton', ['texto' => 'Volver', 'icono' => 'volver', 'tamano' => 'sm', 'url' => Url::to('/bienes')]) . ui('menu_acciones', ['opciones' => \App\Helpers\AccionesBienes::opciones(), 'actual' => 'alta_masiva'])]) ?>
-    <?php if (!empty($error)): ?><?= ui('alerta', ['tipo' => 'peligro', 'mensaje' => (string) $error, 'clases' => 'py-2 small']) ?><?php endif; ?>
     <?php if (!empty($origen)): ?>
         <?php // Desde Reintegrar por cantidad: las unidades de un bien que agrupa varias (BienController::unidadesDesdeBien). ?>
         <?= ui('alerta', ['tipo' => 'info', 'cerrable' => false, 'clases' => 'py-2 small',
@@ -43,7 +42,7 @@ $e = static fn (mixed $texto): string => htmlspecialchars((string) $texto, ENT_Q
 
                 <div class="col-md-4">
                     <?= AyudaCampo::etiqueta('categoriaLote', 'Categoría', 'categoria') ?>
-                    <select name="categoria_id" id="categoriaLote" class="form-select selector-buscable">
+                    <select name="categoria_id" id="categoriaLote" class="form-select selector-buscable<?= clase_invalido('categoria_id') ?>">
                         <option value="">-- Selecciona --</option>
                         <?php foreach ($categorias as $c): ?>
                             <option value="<?= $c['id'] ?>" <?= (int) $v('categoria_id', 0) === (int) $c['id'] ? 'selected' : '' ?>>
@@ -51,24 +50,29 @@ $e = static fn (mixed $texto): string => htmlspecialchars((string) $texto, ENT_Q
                             </option>
                         <?php endforeach; ?>
                     </select>
+                    <?= error_campo('categoria_id') ?>
                 </div>
                 <div class="col-md-4">
                     <?= AyudaCampo::etiqueta('campo-lote', 'Código de lote', 'lote_codigo', true) ?>
-                    <input id="campo-lote" type="text" name="lote" class="form-control" required
+                    <input id="campo-lote" type="text" name="lote" class="form-control<?= clase_invalido('lote') ?>" required
+                           pattern="[A-Za-z0-9\-]+" data-error-formato="El código solo puede tener letras, números y guiones, sin espacios."
                            placeholder="Ej. SILLAS-2026"
                            value="<?= $e($v('lote')) ?>">
+                    <?= error_campo('lote') ?>
                 </div>
                 <div class="col-md-4">
                     <?= AyudaCampo::etiqueta('campo-cantidad', 'Cantidad', 'lote_cantidad', true) ?>
-                    <input id="campo-cantidad" type="number" inputmode="numeric" name="cantidad" class="form-control" min="2" max="500" required
+                    <input id="campo-cantidad" type="number" inputmode="numeric" name="cantidad" class="form-control<?= clase_invalido('cantidad') ?>" min="2" max="500" required
                            value="<?= $e($v('cantidad', '2')) ?>">
+                    <?= error_campo('cantidad') ?>
                 </div>
 
                 <div class="col-md-8">
                     <?= AyudaCampo::etiqueta('campo-descripcion', 'Descripción', 'descripcion', true) ?>
-                    <input id="campo-descripcion" type="text" name="descripcion" data-descripcion-segun-categoria="categoriaLote" class="form-control" required
+                    <input id="campo-descripcion" type="text" name="descripcion" data-descripcion-segun-categoria="categoriaLote" class="form-control<?= clase_invalido('descripcion') ?>" required
                            placeholder="Ej. Silla metálica con espaldar en polipropileno"
                            value="<?= $e($v('descripcion')) ?>">
+                    <?= error_campo('descripcion') ?>
                 </div>
                 <div class="col-md-4">
                     <?= AyudaCampo::etiqueta('campo-marca', 'Marca', 'marca') ?>
@@ -77,11 +81,13 @@ $e = static fn (mixed $texto): string => htmlspecialchars((string) $texto, ENT_Q
 
                 <div class="col-md-4">
                     <?= AyudaCampo::etiqueta('campo-fecha-ingreso', 'Fecha de ingreso', 'fecha_ingreso', true) ?>
-                    <input id="campo-fecha-ingreso" type="date" name="fecha_ingreso" class="form-control" required value="<?= $e($v('fecha_ingreso', date('Y-m-d'))) ?>">
+                    <input id="campo-fecha-ingreso" type="date" name="fecha_ingreso" class="form-control<?= clase_invalido('fecha_ingreso') ?>" required value="<?= $e($v('fecha_ingreso', date('Y-m-d'))) ?>">
+                    <?= error_campo('fecha_ingreso') ?>
                 </div>
                 <div class="col-md-4">
                     <?= AyudaCampo::etiqueta('campo-valor', 'Valor unitario', 'lote_valor') ?>
-                    <input id="campo-valor" type="number" inputmode="decimal" step="0.01" min="0" max="9999999999" name="valor" class="form-control" value="<?= $e($v('valor', '0')) ?>">
+                    <input id="campo-valor" type="number" inputmode="decimal" step="0.01" min="0" max="9999999999" name="valor" class="form-control<?= clase_invalido('valor') ?>" value="<?= $e($v('valor', '0')) ?>">
+                    <?= error_campo('valor') ?>
                 </div>
 
                 <div class="col-12">
@@ -119,8 +125,12 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!institucionId) { return; }
 
         fetch(<?= json_encode(Url::to('/categorias/por-institucion')) ?> + '?institucion_id=' + encodeURIComponent(institucionId))
-            .then(function (respuesta) { return respuesta.json(); })
+            .then(function (respuesta) {
+                if (!respuesta.ok) { throw new Error('HTTP ' + respuesta.status); }
+                return respuesta.json();
+            })
             .then(function (datos) {
+                MIA.quitarAviso(categoriaSelect.parentElement);
                 (datos.categorias || []).forEach(function (c) {
                     tomCategoria.addOption({ value: String(c.id), text: c.nombre });
                 });
@@ -129,6 +139,14 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (categoriaIdPrevio && (datos.categorias || []).some(function (c) { return String(c.id) === categoriaIdPrevio; })) {
                     tomCategoria.setValue(categoriaIdPrevio);
                 }
+            })
+            .catch(function () {
+                MIA.avisar(categoriaSelect.parentElement, {
+                    titulo: 'No se pudieron cargar las categorías',
+                    detalle: 'MIA no recibió respuesta del servidor.',
+                    solucion: 'Revisa tu conexión a internet y pulsa Reintentar.',
+                    boton: { texto: 'Reintentar', alPulsar: function () { actualizarCategorias(institucionSelect.value); } }
+                });
             });
     }
 

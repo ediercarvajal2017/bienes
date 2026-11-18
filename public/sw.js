@@ -7,7 +7,7 @@
 //
 // Al cambiar CACHE, activate borra las versiones anteriores (incluida 'sigebi-v1', que
 // sí guardaba el panel autenticado).
-const CACHE = 'sigebi-v8'; // v8: estado vacío que explica (ui/estado_vacio)
+const CACHE = 'sigebi-v9'; // v9: avisos guiados en el verde MIA y validación en español
 const PRECARGA = ['./offline.html', './assets/css/tokens.css', './assets/css/app.css'];
 
 self.addEventListener('install', (event) => {

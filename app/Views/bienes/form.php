@@ -21,18 +21,17 @@ $bienEsSinCartera = $esEdicion && ($bien['categoria_nombre'] ?? null) === Catego
 $viejo ??= [];
 $verificacionId ??= null;
 $hallazgo ??= null;
-$errorCampo ??= null;
 $acciones ??= [];
+$noDisponibles ??= [];
 $espaciosInstitucion ??= [];
 $urlVolver ??= Url::to('/bienes');
 $v = static fn (string $campo, mixed $porDefecto = '') => $viejo[$campo] ?? $bien[$campo] ?? $porDefecto;
-$invalido = static fn (string $campo) => $errorCampo === $campo ? ' is-invalid' : '';
+// Campo marcado por el aviso de error de la acción anterior (App\Core\Aviso): en rojo y con
+// su mensaje debajo; el aviso de arriba (lo pinta el encabezado) dice qué pasó y qué hacer.
+$invalido = static fn (string $campo): string => clase_invalido($campo);
 $e = static fn (mixed $texto): string => htmlspecialchars((string) $texto, ENT_QUOTES);
 $deshabilitado = $puedeEditar ? '' : ' disabled';
-// El error de un campo se muestra debajo de ese campo; el aviso de arriba queda para los
-// errores generales (así el mismo mensaje no aparece dos veces).
-$errorDe = static fn (string $campo): string => $errorCampo === $campo && !empty($error)
-    ? '<div class="invalid-feedback d-block">' . htmlspecialchars((string) $error, ENT_QUOTES) . '</div>' : '';
+$errorDe = static fn (string $campo): string => error_campo($campo);
 $etiquetasEstado = ['activo' => 'Activo', 'reintegrado' => 'Reintegrado', 'en_reparacion' => 'En reparación', 'dado_de_baja' => 'Dado de baja'];
 ?>
 <div class="contenedor-md">
@@ -80,14 +79,8 @@ $etiquetasEstado = ['activo' => 'Activo', 'reintegrado' => 'Reintegrado', 'en_re
     </div>
 <?php endif; ?>
 
-<?php if (!empty($mensaje)): ?>
-    <?= ui('alerta', ['tipo' => 'exito', 'mensaje' => (string) $mensaje, 'clases' => 'py-2 small contenedor-md']) ?>
-<?php endif; ?>
 <?php if (!empty($verificacionId)): ?>
     <?= ui('alerta', ['tipo' => 'info', 'mensaje' => 'Corrigiendo la ubicación a partir de una discrepancia de la verificación física: elija el nuevo espacio y guarde.', 'cerrable' => false, 'clases' => 'py-2 small contenedor-md']) ?>
-<?php endif; ?>
-<?php if (!empty($error) && $errorCampo === null): ?>
-    <?= ui('alerta', ['tipo' => 'peligro', 'mensaje' => (string) $error, 'clases' => 'py-2 small contenedor-md']) ?>
 <?php endif; ?>
 
 <?php if (!$esEdicion && $hallazgo !== null): ?>
@@ -126,7 +119,7 @@ $etiquetasEstado = ['activo' => 'Activo', 'reintegrado' => 'Reintegrado', 'en_re
             <div class="card-body">
                 <fieldset id="seccionAccion" aria-labelledby="tituloAccion">
                     <legend class="titulo-seccion float-none w-auto d-flex align-items-center gap-1">
-                        <span id="tituloAccion">¿Qué desea hacer con este bien?</span><?= AyudaCampo::boton('accion') ?>
+                        <span id="tituloAccion">¿Qué deseas hacer con este bien?</span><?= AyudaCampo::boton('accion') ?>
                     </legend>
                     <?php if ($verificacionId !== null): ?>
                         <input type="hidden" name="verificacion_id" value="<?= (int) $verificacionId ?>">
@@ -176,8 +169,9 @@ $etiquetasEstado = ['activo' => 'Activo', 'reintegrado' => 'Reintegrado', 'en_re
                     <?php if (isset($acciones['reintegrar'])): ?>
                         <div data-campos-accion="reintegrar" class="mb-2" hidden>
                             <label class="form-label small requerido" for="accionDestino">Destino del reintegro</label>
-                            <input id="accionDestino" type="text" name="accion_destino" class="form-control form-control-sm" required disabled
+                            <input id="accionDestino" type="text" name="accion_destino" class="form-control form-control-sm<?= $invalido('accion_destino') ?>" required disabled
                                    placeholder="Ej. Almacén institucional" value="<?= $e($va('accion_destino')) ?>">
+                            <?= $errorDe('accion_destino') ?>
                         </div>
                     <?php endif; ?>
 
@@ -199,8 +193,9 @@ $etiquetasEstado = ['activo' => 'Activo', 'reintegrado' => 'Reintegrado', 'en_re
                     <?php if (isset($acciones['reactivar'])): ?>
                         <div data-campos-accion="reactivar" class="mb-2" hidden>
                             <label class="form-label small requerido" for="accionMotivo">Motivo</label>
-                            <textarea id="accionMotivo" name="accion_motivo" class="form-control form-control-sm" rows="2" required disabled
+                            <textarea id="accionMotivo" name="accion_motivo" class="form-control form-control-sm<?= $invalido('accion_motivo') ?>" rows="2" required disabled
                                       placeholder="Ej. La Alcaldía devolvió el bien"><?= $e($va('accion_motivo')) ?></textarea>
+                            <?= $errorDe('accion_motivo') ?>
                         </div>
                     <?php endif; ?>
 
@@ -221,6 +216,24 @@ $etiquetasEstado = ['activo' => 'Activo', 'reintegrado' => 'Reintegrado', 'en_re
                 </fieldset>
             </div>
         </div>
+    <?php endif; ?>
+
+    <?php if ($esEdicion && $puedeEditar && $noDisponibles !== []): ?>
+        <?php // Lo que el usuario esperaría hacer y no aparece, con el porqué (CicloVidaBien::accionesNoDisponibles). ?>
+        <details class="por-que-no mb-3" id="porQueNoAcciones">
+            <summary>¿Por qué no aparecen otras acciones?</summary>
+            <ul class="por-que-no-lista">
+                <?php foreach ($noDisponibles as $clave => $no): ?>
+                    <li data-no-disponible="<?= $e($clave) ?>">
+                        <strong><?= $e($no['titulo']) ?>:</strong> <?= $e($no['porQue']) ?>
+                        <span class="por-que-no-hacer"><strong>Qué hacer:</strong> <?= $e($no['queHacer']) ?></span>
+                        <?php if ($no['accion'] !== null): ?>
+                            <?= ui('boton', ['texto' => $no['accion']['texto'], 'url' => $no['accion']['url'], 'tipo' => 'enlace', 'tamano' => 'sm', 'clases' => 'p-0 align-baseline']) ?>
+                        <?php endif; ?>
+                    </li>
+                <?php endforeach; ?>
+            </ul>
+        </details>
     <?php endif; ?>
 
     <div class="card mb-3">
@@ -400,7 +413,7 @@ $etiquetasEstado = ['activo' => 'Activo', 'reintegrado' => 'Reintegrado', 'en_re
 
 <?php if ($esEdicion && $puedeEditar && $acciones !== []): ?>
 <script>
-// Menú "¿Qué desea hacer con este bien?": muestra solo los campos de la acción elegida
+// Menú "¿Qué deseas hacer con este bien?": muestra solo los campos de la acción elegida
 // (los ocultos quedan deshabilitados: ni se validan ni se envían), cambia el texto del
 // botón y pide confirmación en las acciones que sacan el bien de su espacio.
 (function () {
@@ -501,8 +514,12 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!institucionId) { return; }
 
         fetch(<?= json_encode(Url::to('/categorias/por-institucion')) ?> + '?institucion_id=' + encodeURIComponent(institucionId))
-            .then(function (respuesta) { return respuesta.json(); })
+            .then(function (respuesta) {
+                if (!respuesta.ok) { throw new Error('HTTP ' + respuesta.status); }
+                return respuesta.json();
+            })
             .then(function (datos) {
+                MIA.quitarAviso(categoriaSelect.parentElement);
                 (datos.categorias || []).forEach(function (c) {
                     tomCategoria.addOption({ value: String(c.id), text: c.nombre });
                 });
@@ -511,6 +528,14 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (categoriaIdPrevio && (datos.categorias || []).some(function (c) { return String(c.id) === categoriaIdPrevio; })) {
                     tomCategoria.setValue(categoriaIdPrevio);
                 }
+            })
+            .catch(function () {
+                MIA.avisar(categoriaSelect.parentElement, {
+                    titulo: 'No se pudieron cargar las categorías',
+                    detalle: 'MIA no recibió respuesta del servidor.',
+                    solucion: 'Revisa tu conexión a internet y pulsa Reintentar.',
+                    boton: { texto: 'Reintentar', alPulsar: function () { actualizarCategorias(institucionSelect.value); } }
+                });
             });
     }
 
@@ -544,19 +569,32 @@ document.addEventListener('DOMContentLoaded', function () {
         editadoPorUsuario = true;
     });
 
-    categoriaSelect.addEventListener('change', function () {
+    function sugerirCodigo() {
         const tomCategoria = categoriaSelect.tomselect;
         const categoriaId = tomCategoria ? tomCategoria.getValue() : categoriaSelect.value;
         if (!categoriaId || editadoPorUsuario) { return; }
 
         fetch(<?= json_encode(Url::to('/bienes/siguiente-codigo-sin-cartera')) ?> + '?categoria_id=' + encodeURIComponent(categoriaId))
-            .then(function (respuesta) { return respuesta.json(); })
+            .then(function (respuesta) {
+                if (!respuesta.ok) { throw new Error('HTTP ' + respuesta.status); }
+                return respuesta.json();
+            })
             .then(function (datos) {
+                MIA.quitarAviso(codigoInput.parentElement);
                 if (datos.codigo && !editadoPorUsuario) {
                     codigoInput.value = datos.codigo;
                 }
+            })
+            .catch(function () {
+                MIA.avisar(codigoInput.parentElement, {
+                    titulo: 'No se pudo revisar la categoría elegida',
+                    detalle: 'MIA no recibió respuesta del servidor.' + ' Si la categoría es «Sin cartera», el código se sugiere solo.',
+                    solucion: 'Revisa tu conexión y pulsa Reintentar, o escribe el código a mano (10 números si es «Sin cartera»).',
+                    boton: { texto: 'Reintentar', alPulsar: sugerirCodigo }
+                });
             });
-    });
+    }
+    categoriaSelect.addEventListener('change', sugerirCodigo);
 });
 <?php endif; ?>
 
@@ -587,9 +625,13 @@ document.addEventListener('DOMContentLoaded', function () {
         idEnProceso = categoriaId;
 
         fetch(<?= json_encode(Url::to('/bienes/siguiente-codigo-sin-cartera')) ?> + '?categoria_id=' + encodeURIComponent(categoriaId))
-            .then(function (respuesta) { return respuesta.json(); })
+            .then(function (respuesta) {
+                if (!respuesta.ok) { throw new Error('HTTP ' + respuesta.status); }
+                return respuesta.json();
+            })
             .then(function (datos) {
                 idEnProceso = null;
+                MIA.quitarAviso(codigoInput.parentElement);
 
                 if (!datos.codigo) {
                     // No es "Sin cartera": no hay nada que confirmar.
@@ -617,6 +659,14 @@ document.addEventListener('DOMContentLoaded', function () {
                     } else {
                         categoriaSelect.value = categoriaAnterior;
                     }
+                });
+            })
+            .catch(function () {
+                idEnProceso = null;
+                MIA.avisar(codigoInput.parentElement, {
+                    titulo: 'No se pudo revisar la categoría elegida',
+                    detalle: 'MIA no recibió respuesta del servidor.' + ' Si la nueva categoría es «Sin cartera», el código debe cambiar a uno de 10 números.',
+                    solucion: 'Revisa tu conexión y vuelve a elegir la categoría antes de guardar.'
                 });
             });
     });

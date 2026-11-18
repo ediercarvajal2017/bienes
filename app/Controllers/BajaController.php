@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Core\Auth;
+use App\Core\Aviso;
+use App\Core\ErrorGuiado;
 use App\Core\Csrf;
 use App\Core\Database;
 use App\Core\Request;
@@ -36,7 +38,6 @@ final class BajaController
             'asignacion' => Asignacion::activaDe((int) $bien['id']),
             'verificacionId' => $verificacion['id'] ?? null,
             'descripcionSugerida' => $verificacion['observaciones'] ?? '',
-            'error' => Session::pullFlash('error'),
         ]);
     }
 
@@ -48,7 +49,23 @@ final class BajaController
         $request = new Request();
 
         if (!Csrf::verify((string) $request->input('_csrf'))) {
-            Session::flash('error', 'Tu sesión expiró, intenta de nuevo.');
+            Aviso::enviar(\App\Helpers\Mensajes::sesionVencida(false));
+            header('Location: ' . Url::to("/qr/{$token}/baja"));
+            exit;
+        }
+
+        // Datos incompletos: se vuelve al formulario con los campos marcados (las demás reglas
+        // de CicloVidaBien::reportarBaja vuelven a la ficha del QR).
+        $faltan = [];
+        if (trim((string) $request->input('estado_reportado')) === '') {
+            $faltan['estado_reportado'] = 'Escribe en qué estado está.';
+        }
+        if (trim((string) $request->input('descripcion')) === '') {
+            $faltan['descripcion'] = 'Cuenta qué pasó.';
+        }
+        if ($faltan !== []) {
+            Aviso::enviar(Aviso::error('No se envió el reporte de baja', 'Faltan el estado del bien o el motivo de la baja.',
+                'Escribe en qué estado está (por ejemplo «Dañado») y qué pasó; luego vuelve a enviar.', null, $faltan));
             header('Location: ' . Url::to("/qr/{$token}/baja"));
             exit;
         }
@@ -63,7 +80,7 @@ final class BajaController
             if ($archivo = $request->file('foto')) {
                 $fotoPath = Uploader::storeImage($archivo, 'bajas');
             }
-            $mensaje = CicloVidaBien::reportarBaja(
+            CicloVidaBien::reportarBaja(
                 $bien,
                 (string) $request->input('estado_reportado'),
                 trim((string) $request->input('ubicacion')) ?: null,
@@ -72,19 +89,18 @@ final class BajaController
                 $verificacionId
             );
         } catch (\DomainException $e) {
-            // Ya dado de baja o con un reporte pendiente: se vuelve a la ficha; datos
-            // incompletos: se vuelve al formulario.
-            Session::flash('error', $e->getMessage());
-            $volverA = str_starts_with($e->getMessage(), 'Describe') ? "/qr/{$token}/baja" : "/qr/{$token}";
-            header('Location: ' . Url::to($volverA));
+            // Ya dado de baja o con un reporte pendiente: se vuelve a la ficha del QR.
+            Aviso::enviar(Aviso::desdeExcepcion($e, 'No se envió el reporte de baja', 'Revisa el estado del bien en su ficha.'));
+            header('Location: ' . Url::to("/qr/{$token}"));
             exit;
         } catch (\RuntimeException $e) {
-            Session::flash('error', $e->getMessage());
+            Aviso::enviar(Aviso::error('No se envió el reporte de baja', 'La foto no se pudo guardar: ' . $e->getMessage(),
+                'Elige otra foto que cumpla esa condición y vuelve a enviar.', null, ['foto' => 'Elige otra foto.']));
             header('Location: ' . Url::to("/qr/{$token}/baja"));
             exit;
         }
 
-        Session::flash('ok', $mensaje);
+        Aviso::enviar(Aviso::exito('Reporte de baja enviado.', 'Queda pendiente hasta que el rector lo apruebe en «Bajas».'));
         header('Location: ' . Url::to("/qr/{$token}"));
         exit;
     }
@@ -125,8 +141,6 @@ final class BajaController
             'opcionesPorPagina' => self::OPCIONES_POR_PAGINA,
             'total' => $total,
             'totalPaginas' => Paginador::totalPaginas($total, $porPagina),
-            'mensaje' => Session::pullFlash('ok'),
-            'error' => Session::pullFlash('error'),
         ]);
     }
 
@@ -144,7 +158,7 @@ final class BajaController
             Database::transaccion(static function () use ($id, $baja, $bien): void {
                 // La condición "sigue pendiente" va en el UPDATE: una baja no se aprueba dos veces.
                 if (!Baja::aprobarSiPendiente((int) $id, (int) Auth::id())) {
-                    throw new \DomainException('Esta baja ya había sido resuelta.');
+                    throw new ErrorGuiado('Otra persona ya resolvió este reporte de baja.', 'Recarga la lista para ver cómo quedó.');
                 }
 
                 $bienId = (int) $baja['bien_id'];
@@ -158,12 +172,12 @@ final class BajaController
                     ['estado' => 'aprobada', 'estado_bien' => 'dado_de_baja', 'bien_id' => $bienId]);
             });
         } catch (\DomainException $e) {
-            Session::flash('error', $e->getMessage());
+            Aviso::enviar(Aviso::desdeExcepcion($e, 'No se aprobó la baja', 'Recarga la lista y vuelve a intentarlo.'));
             header('Location: ' . Url::to('/bajas'));
             exit;
         }
 
-        Session::flash('ok', 'Baja aprobada. El bien quedó dado de baja y sin asignación.');
+        Aviso::enviar(Aviso::exito('Baja aprobada.', 'El bien quedó dado de baja, sin espacio ni responsable; su historial queda en la ficha.'));
         header('Location: ' . Url::to('/bajas'));
         exit;
     }
@@ -179,13 +193,13 @@ final class BajaController
 
         $motivo = trim((string) (new Request())->input('motivo_rechazo'));
         if ($motivo === '') {
-            Session::flash('error', 'Indique el motivo del rechazo.');
+            Aviso::enviar(Aviso::error('No se rechazó el reporte de baja', 'Falta el motivo del rechazo.', 'Escribe por qué se rechaza: quien lo reportó lo verá.'));
             header('Location: ' . Url::to('/bajas'));
             exit;
         }
 
         if (!Baja::rechazarSiPendiente((int) $id, (int) Auth::id(), mb_substr($motivo, 0, 500))) {
-            Session::flash('error', 'Esta baja ya había sido resuelta.');
+            Aviso::enviar(Aviso::error('No se rechazó el reporte de baja', 'Otra persona ya resolvió este reporte.', 'Recarga la lista para ver cómo quedó.'));
             header('Location: ' . Url::to('/bajas'));
             exit;
         }
@@ -193,7 +207,7 @@ final class BajaController
         Auditoria::registrar(Auth::id(), (int) $baja['institucion_id'], 'rechazar', 'baja', (int) $id,
             ['estado' => 'pendiente'], ['estado' => 'rechazada', 'motivo' => $motivo]);
 
-        Session::flash('ok', 'Reporte de baja rechazado. El bien continúa en su estado actual.');
+        Aviso::enviar(Aviso::exito('Reporte de baja rechazado.', 'El bien sigue en su estado actual y quien lo reportó verá el motivo.'));
         header('Location: ' . Url::to('/bajas'));
         exit;
     }
@@ -216,11 +230,10 @@ final class BajaController
             return;
         }
 
-        $mensaje = 'Este bien no admite baja directa — solo bienes en la categoría "'
-            . Categoria::NOMBRE_CATEGORIA_PROTEGIDA
-            . '" pueden darse de baja. Use Traslado, Reintegro o marque "En reparación".';
-
-        Session::flash('error', $mensaje);
+        Aviso::enviar(Aviso::error('No se puede dar de baja', 'El bien está en la cartera de la Alcaldía, y solo los bienes «'
+            . Categoria::NOMBRE_CATEGORIA_PROTEGIDA . '» se dan de baja.',
+            'Si ya no se usa, reintégralo; si está dañado, cambia su estado a «En reparación» en su ficha.',
+            Auth::esSuperusuario() || Auth::tienePermiso('bienes.editar') ? Aviso::accion('Abrir el bien', '/bienes/' . (int) $bien['id'] . '/editar') : null));
         header('Location: ' . Url::to($redirigirA !== '' ? $redirigirA : "/qr/{$bien['qr_token']}"));
         exit;
     }

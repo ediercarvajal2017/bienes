@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Core\Auth;
+use App\Core\Aviso;
 use App\Core\Csrf;
 use App\Core\Request;
-use App\Core\Session;
 use App\Core\Url;
 use App\Core\View;
 use App\Models\Institucion;
@@ -24,7 +24,7 @@ final class FiltroInstitucionController
         $volverA = $this->volverSeguro((string) $request->input('volver', '/dashboard'));
 
         if (!Csrf::verify((string) $request->input('_csrf'))) {
-            Session::flash('error', 'Tu sesión expiró, intenta de nuevo.');
+            Aviso::enviar(\App\Helpers\Mensajes::sesionVencida(false));
             header('Location: ' . Url::to($volverA));
             exit;
         }
@@ -37,10 +37,14 @@ final class FiltroInstitucionController
 
         $institucionId = (int) $request->input('institucion_id');
 
-        if ($institucionId <= 0 || !Institucion::find($institucionId)) {
+        $institucion = $institucionId > 0 ? Institucion::find($institucionId) : null;
+        if ($institucion === null) {
             Auth::establecerFiltroInstitucion(null);
+            Aviso::enviar(Aviso::exito('Ves de nuevo todas las instituciones.'));
         } else {
             Auth::establecerFiltroInstitucion($institucionId);
+            Aviso::enviar(Aviso::exito('Los listados muestran solo ' . $institucion['nombre'] . '.',
+                'Para ver todas, elige «Ver todas las instituciones» en la lista de arriba.'));
         }
 
         header('Location: ' . Url::to($volverA));

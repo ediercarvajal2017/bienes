@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Core\Auth;
+use App\Core\Aviso;
 use App\Core\Csrf;
 use App\Core\Database;
-use App\Core\ErrorHandler;
 use App\Core\Request;
 use App\Core\Session;
 use App\Core\Url;
@@ -70,8 +70,6 @@ final class LoteReintegroController
             'total' => $total,
             'totalPaginas' => Paginador::totalPaginas($total, $porPagina),
             'pendientesDeLote' => Movimiento::contarPendientesDeLote($institucionId),
-            'mensaje' => Session::pullFlash('ok'),
-            'error' => Session::pullFlash('error'),
         ]);
     }
 
@@ -92,8 +90,6 @@ final class LoteReintegroController
             'origenes' => LoteReintegro::origenesDe((int) $id),
             'destinos' => LoteReintegro::destinosDe((int) $id),
             'puedeReabrir' => self::puedeReabrir(),
-            'mensaje' => Session::pullFlash('ok'),
-            'error' => Session::pullFlash('error'),
         ]);
     }
 
@@ -108,7 +104,7 @@ final class LoteReintegroController
         try {
             $previa = LoteReintegroService::previsualizarUnificacion($loteIds);
         } catch (\DomainException $e) {
-            Session::flash('error', $e->getMessage());
+            Aviso::enviar(Aviso::desdeExcepcion($e, 'No se pudo preparar la unificación', 'Marca de nuevo los lotes en la lista y vuelve a intentarlo.'));
             header('Location: ' . Url::to('/reintegros/lotes'));
             exit;
         }
@@ -120,7 +116,6 @@ final class LoteReintegroController
             'grupos' => $previa['grupos'],
             'bienesPorLote' => $previa['bienesPorLote'],
             'descripcionSugerida' => LoteReintegroService::descripcionUnificacion($loteIds),
-            'error' => Session::pullFlash('error'),
             'viejo' => Session::pullOld(),
         ]);
     }
@@ -137,27 +132,27 @@ final class LoteReintegroController
 
         try {
             $creados = LoteReintegroService::unificar($loteIds, $descripcion, $observaciones);
-        } catch (\DomainException $e) {
-            $this->volverAUnificar($volverA, $e->getMessage(), $descripcion, $observaciones);
         } catch (\Throwable $e) {
-            $incidente = ErrorHandler::reportar($e, __METHOD__);
-            $this->volverAUnificar($volverA, 'Ocurrió un error al unificar los lotes. No se aplicó ningún cambio.' . self::textoIncidente($incidente), $descripcion, $observaciones);
+            $this->volverAUnificar($volverA, Aviso::desdeExcepcion($e, 'No se unificaron los lotes', 'Revisa los lotes marcados y vuelve a intentarlo.'), $descripcion, $observaciones);
         }
 
         if (count($creados) === 1) {
-            Session::flash('ok', 'Lotes unificados en el lote ' . LoteReintegroService::resumenLotes($creados) . '. Ya puedes descargar su comprobante en Excel.');
+            Aviso::enviar(Aviso::exito('Lotes unificados en el lote ' . LoteReintegroService::resumenLotes($creados) . '.',
+                'Siguiente paso: descarga su comprobante en Excel para entregarlo.'));
             header('Location: ' . Url::to('/reintegros/lotes/' . $creados[0]['id']));
             exit;
         }
 
-        Session::flash('ok', 'Listo: ' . count($creados) . ' lotes nuevos, uno por categoría: ' . LoteReintegroService::resumenLotes($creados) . '.');
+        Aviso::enviar(Aviso::exito(count($creados) . ' lotes nuevos, uno por categoría: ' . LoteReintegroService::resumenLotes($creados) . '.',
+            'Siguiente paso: abre cada lote y descarga su comprobante en Excel.'));
         header('Location: ' . Url::to('/reintegros/lotes?estado=pendiente'));
         exit;
     }
 
-    private function volverAUnificar(string $volverA, string $error, string $descripcion, string $observaciones): never
+    /** @param array{tipo: string, titulo: string, detalle: string, solucion: string, accion: array{texto: string, url: string}|null, campos: array<string, string>} $aviso */
+    private function volverAUnificar(string $volverA, array $aviso, string $descripcion, string $observaciones): never
     {
-        Session::flash('error', $error);
+        Aviso::enviar($aviso);
         Session::flashOld(['descripcion' => $descripcion, 'observaciones' => $observaciones]);
         header('Location: ' . Url::to($volverA));
         exit;
@@ -169,14 +164,17 @@ final class LoteReintegroController
         $this->verificarAccesoLote($lote);
 
         if ($lote['estado'] === 'unificado') {
-            Session::flash('error', 'Este lote se unificó: sus bienes están ahora en los lotes nuevos. Descarga el comprobante de esos lotes.');
+            Aviso::enviar(Aviso::error('No se descargó el comprobante', 'Este lote se unificó: sus bienes están ahora en los lotes nuevos.',
+                'Abre los lotes nuevos (aparecen en este detalle) y descarga el comprobante de cada uno.'));
             header('Location: ' . Url::to('/reintegros/lotes/' . $id));
             exit;
         }
 
         $rector = Usuario::rectorDe((int) $lote['institucion_id']);
         if ($rector === null) {
-            Session::flash('error', 'Esta institución no tiene un rector activo registrado; no se puede generar el comprobante oficial. Registra o activa un usuario con rol Rector antes de descargarlo.');
+            Aviso::enviar(Aviso::error('No se descargó el comprobante', 'El comprobante oficial lleva la firma del rector, y la institución no tiene un rector activo.',
+                'Registra o activa en Usuarios un usuario con rol Rector y vuelve a descargarlo.',
+                Auth::esSuperusuario() || Auth::tienePermiso('usuarios.ver') ? Aviso::accion('Ir a Usuarios', '/usuarios') : null));
             header('Location: ' . Url::to('/reintegros/lotes/' . $id));
             exit;
         }
@@ -204,14 +202,10 @@ final class LoteReintegroController
 
         try {
             $marcados = LoteReintegroService::marcarReintegrados($loteIds, $fecha, $nota);
-            Session::flash('ok', $marcados === 1
-                ? 'Lote marcado como reintegrado. Ya no aparece entre los pendientes.'
-                : "{$marcados} lotes marcados como reintegrados. Ya no aparecen entre los pendientes.");
-        } catch (\DomainException $e) {
-            Session::flash('error', $e->getMessage());
+            Aviso::enviar(Aviso::exito($marcados === 1 ? 'Lote marcado como reintegrado.' : "{$marcados} lotes marcados como reintegrados.",
+                'Ya no aparecen entre los pendientes; los encuentras en la pestaña «Reintegrados».'));
         } catch (\Throwable $e) {
-            $incidente = ErrorHandler::reportar($e, __METHOD__);
-            Session::flash('error', 'Ocurrió un error al marcar los lotes. No se aplicó ningún cambio.' . self::textoIncidente($incidente));
+            Aviso::enviar(Aviso::desdeExcepcion($e, 'No se marcaron los lotes', 'Revisa los lotes marcados y la fecha de entrega y vuelve a intentarlo.'));
         }
 
         header('Location: ' . Url::to($volverA));
@@ -237,12 +231,9 @@ final class LoteReintegroController
 
         try {
             LoteReintegroService::reabrir((int) $id, (string) $request->input('motivo'));
-            Session::flash('ok', 'El lote volvió a quedar pendiente.');
-        } catch (\DomainException $e) {
-            Session::flash('error', $e->getMessage());
+            Aviso::enviar(Aviso::exito('El lote volvió a quedar pendiente.', 'Corrige lo que haga falta y vuelve a marcarlo como reintegrado cuando lo entregues.'));
         } catch (\Throwable $e) {
-            $incidente = ErrorHandler::reportar($e, __METHOD__);
-            Session::flash('error', 'Ocurrió un error al reabrir el lote. No se aplicó ningún cambio.' . self::textoIncidente($incidente));
+            Aviso::enviar(Aviso::desdeExcepcion($e, 'No se reabrió el lote', 'Revisa el motivo y vuelve a intentarlo.'));
         }
 
         header('Location: ' . Url::to($volverA));
@@ -267,8 +258,6 @@ final class LoteReintegroController
             'opcionesPorPagina' => self::OPCIONES_POR_PAGINA,
             'total' => $total,
             'totalPaginas' => Paginador::totalPaginas($total, $porPagina),
-            'mensaje' => Session::pullFlash('ok'),
-            'error' => Session::pullFlash('error'),
             'viejo' => Session::pullOld(),
         ]);
     }
@@ -290,27 +279,27 @@ final class LoteReintegroController
 
         try {
             $creados = LoteReintegroService::generarPorCategoria($this->institucionAListar(), $movimientoIds, $descripcion, $observaciones);
-        } catch (\DomainException $e) {
-            $this->volverAGenerar($e->getMessage(), $viejo);
         } catch (\Throwable $e) {
-            $incidente = ErrorHandler::reportar($e, __METHOD__);
-            $this->volverAGenerar('Ocurrió un error al generar el lote. No se aplicó ningún cambio.' . self::textoIncidente($incidente), $viejo);
+            $this->volverAGenerar(Aviso::desdeExcepcion($e, 'No se generó el lote', 'Revisa los reintegros marcados y vuelve a pulsar «Generar lote».'), $viejo);
         }
 
         if (count($creados) === 1) {
-            Session::flash('ok', 'Lote ' . LoteReintegroService::resumenLotes($creados) . ' generado. Ya puedes descargar el comprobante en Excel.');
+            Aviso::enviar(Aviso::exito('Lote ' . LoteReintegroService::resumenLotes($creados) . ' generado.',
+                'Siguiente paso: descarga el comprobante en Excel y, cuando entregues los bienes, márcalo como reintegrado.'));
             header('Location: ' . Url::to('/reintegros/lotes/' . $creados[0]['id']));
             exit;
         }
 
-        Session::flash('ok', 'Se generaron ' . count($creados) . ' lotes, uno por categoría: ' . LoteReintegroService::resumenLotes($creados) . '.');
+        Aviso::enviar(Aviso::exito('Se generaron ' . count($creados) . ' lotes, uno por categoría: ' . LoteReintegroService::resumenLotes($creados) . '.',
+            'Siguiente paso: abre cada lote y descarga su comprobante en Excel.'));
         header('Location: ' . Url::to('/reintegros/lotes?estado=pendiente'));
         exit;
     }
 
-    private function volverAGenerar(string $error, array $viejo): never
+    /** @param array{tipo: string, titulo: string, detalle: string, solucion: string, accion: array{texto: string, url: string}|null, campos: array<string, string>} $aviso */
+    private function volverAGenerar(array $aviso, array $viejo): never
     {
-        Session::flash('error', $error);
+        Aviso::enviar($aviso);
         Session::flashOld($viejo);
         header('Location: ' . Url::to('/reintegros/lotes/generar'));
         exit;
@@ -361,8 +350,4 @@ final class LoteReintegroController
         return preg_match('#^/reintegros/lotes(/\d+)?(\?[A-Za-z0-9_=&%+\-.\[\]]*)?$#', $volver) === 1 ? $volver : '/reintegros/lotes';
     }
 
-    private static function textoIncidente(string $incidente): string
-    {
-        return " (código de incidente: {$incidente})";
-    }
 }
