@@ -7,17 +7,20 @@
  *
  * Variables:
  *  - $avisos (list<array{tipo: string, titulo: string, detalle: string, solucion: string, accion: array{texto: string, url: string}|null, campos: array<string, string>}>)
+ *  - $enfocar (bool, por defecto true): false en las pantallas de ingreso, donde el foco debe
+ *    quedar en el campo (contraseña, código); el lector de pantalla lo anuncia igual (role="alert").
  */
 
 $avisos ??= [];
+$enfocar ??= true;
 $errorEnfocado = false;
 ?>
 <?php if ($avisos !== []): ?>
     <div class="avisos-pagina">
         <?php foreach ($avisos as $aviso): ?>
-            <?php $enfocar = $aviso['tipo'] === 'peligro' && !$errorEnfocado; $errorEnfocado = $errorEnfocado || $enfocar; ?>
+            <?php $enfocarEste = $enfocar && $aviso['tipo'] === 'peligro' && !$errorEnfocado; $errorEnfocado = $errorEnfocado || $enfocarEste; ?>
             <?= ui('alerta', ['tipo' => $aviso['tipo'], 'titulo' => $aviso['titulo'], 'detalle' => $aviso['detalle'],
-                'solucion' => $aviso['solucion'], 'accion' => $aviso['accion'], 'enfocar' => $enfocar]) ?>
+                'solucion' => $aviso['solucion'], 'accion' => $aviso['accion'], 'enfocar' => $enfocarEste]) ?>
         <?php endforeach; ?>
     </div>
 <?php endif; ?>

@@ -46,7 +46,7 @@ test('al intentar eliminar un espacio en uso, el aviso dice qué bienes lo usan'
     await confirmar(pagina, () => pagina.locator(`form[action$="/espacios/${aula}/eliminar"] button`).click());
 
     const aviso = pagina.getByRole('alert');
-    await expect(aviso).toContainText('No se puede eliminar el espacio');
+    await expect(aviso).toContainText('No se eliminó el espacio');
     await expect(aviso).toContainText(asignados === 1 ? '1 bien asignado' : `${asignados} bienes asignados`);
     // Cada bien, con enlace a su ficha.
     const primerCodigo = bd(`SELECT b.codigo_identificacion FROM asignaciones a JOIN bienes b ON b.id = a.bien_id

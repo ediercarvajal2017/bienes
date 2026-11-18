@@ -42,7 +42,7 @@
         <?php endif; ?>
 
         <?php $avisosIngreso = \App\Core\Aviso::paraMostrar(); ?>
-        <?= ui('avisos', ['avisos' => $avisosIngreso]) ?>
+        <?= ui('avisos', ['avisos' => $avisosIngreso, 'enfocar' => false]) ?>
         <?php if ($avisosIngreso !== [] && $intentosRestantes < 5): ?>
             <p class="small text-muted">Intentos restantes: <?= (int) $intentosRestantes ?>.</p>
         <?php endif; ?>

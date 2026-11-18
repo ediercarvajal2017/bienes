@@ -29,7 +29,7 @@
         </div>
         <div class="brand-sub text-center">Recuperar contraseña</div>
 
-        <?= ui('avisos', ['avisos' => \App\Core\Aviso::paraMostrar()]) ?>
+        <?= ui('avisos', ['avisos' => \App\Core\Aviso::paraMostrar(), 'enfocar' => false]) ?>
 
         <p class="small text-muted">Escribe el correo con el que inicias sesión y te enviaremos un enlace para crear una nueva contraseña.</p>
 

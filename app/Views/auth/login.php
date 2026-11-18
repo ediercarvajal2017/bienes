@@ -29,7 +29,7 @@
         </div>
         <div class="brand-sub text-center">Manejo de Inventario de Activos</div>
 
-        <?= ui('avisos', ['avisos' => \App\Core\Aviso::paraMostrar()]) ?>
+        <?= ui('avisos', ['avisos' => \App\Core\Aviso::paraMostrar(), 'enfocar' => false]) ?>
 
         <form method="post" action="<?= Url::to('/login') ?>">
             <?= \App\Core\Csrf::field() ?>

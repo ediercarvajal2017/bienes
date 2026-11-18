@@ -34,7 +34,7 @@
                 Tu correo registrado es: <strong><?= htmlspecialchars($resultado, ENT_QUOTES) ?></strong>
             </div>
         <?php endif; ?>
-        <?= ui('avisos', ['avisos' => \App\Core\Aviso::paraMostrar()]) ?>
+        <?= ui('avisos', ['avisos' => \App\Core\Aviso::paraMostrar(), 'enfocar' => false]) ?>
 
         <p class="small text-muted">Indica tu número de documento y tu institución; te mostramos una versión parcialmente oculta del correo con el que inicias sesión.</p>
 
