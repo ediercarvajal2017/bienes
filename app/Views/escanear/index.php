@@ -65,9 +65,12 @@ use App\Core\Url;
     function irA(texto) {
         const destino = destinoSeguro(texto);
         if (destino === null) {
-            mensaje.classList.remove('text-success');
-            mensaje.classList.add('text-danger');
-            mensaje.textContent = 'Este código QR no es una etiqueta de MIA.';
+            mensaje.textContent = '';
+            MIA.avisar(mensaje, {
+                titulo: 'Ese código QR no es una etiqueta de MIA',
+                detalle: 'El código leído no corresponde a ningún bien de MIA (puede ser de otro sistema o de un producto).',
+                solucion: 'Escanea la etiqueta de MIA pegada en el bien, o escribe su placa en «Buscar por código», más abajo.'
+            });
             escaneando = true;
             iniciar(camaras[indiceCamara] ? camaras[indiceCamara].id : { facingMode: 'environment' });
             return;
@@ -79,6 +82,7 @@ use App\Core\Url;
         if (!escaneando) { return; }
         escaneando = false;
         if (navigator.vibrate) { navigator.vibrate(100); }
+        MIA.quitarAviso(mensaje);
         mensaje.classList.remove('text-danger');
         mensaje.classList.add('text-success');
         mensaje.textContent = 'Código detectado, abriendo…';
@@ -112,11 +116,22 @@ use App\Core\Url;
             mensaje.textContent = '';
             actualizarLinterna();
         } catch (e) {
-            mensaje.textContent = 'No se pudo acceder a la cámara: ' + (e.message || e);
+            // La cámara no es la única vía: el aviso es informativo y guía a la búsqueda por código.
+            const motivo = MIA.motivoCamara(e);
+            mensaje.textContent = '';
+            MIA.avisar(mensaje, {
+                tipo: 'info',
+                titulo: 'No se pudo abrir la cámara',
+                detalle: motivo.porQue,
+                solucion: motivo.queHacer.replace('elige una foto guardada', 'escribe la placa en «Buscar por código»')
+                    .replace('Elige una foto guardada', 'Escribe la placa en «Buscar por código»')
+            });
         }
     }
 
-    (async function () {
+    // Se abre al terminar de cargar la página: así ya existe MIA.avisar (alertas.js) para
+    // explicar un fallo de la cámara.
+    document.addEventListener('DOMContentLoaded', async function () {
         // Primero se abre la cámara trasera por defecto (misma convención que el resto
         // del proyecto); recién después de tener permiso concedido se consulta la lista
         // de cámaras disponibles, porque el navegador solo entrega sus nombres una vez
@@ -129,7 +144,7 @@ use App\Core\Url;
             camaras = [];
         }
         btnCambiar.classList.toggle('d-none', camaras.length < 2);
-    })();
+    });
 
     btnCambiar.addEventListener('click', async function () {
         if (camaras.length < 2) { return; }
@@ -150,7 +165,12 @@ use App\Core\Url;
             btnLinterna.classList.toggle('btn-outline-secondary', !linternaEncendida);
         } catch (e) {
             linternaEncendida = !linternaEncendida;
-            mensaje.textContent = 'No se pudo controlar la linterna en este dispositivo.';
+            MIA.avisar(mensaje, {
+                tipo: 'info',
+                titulo: 'No se pudo encender la linterna',
+                detalle: 'Este dispositivo no deja controlar la linterna desde el navegador.',
+                solucion: 'Usa la luz del lugar o enciende la linterna desde los ajustes rápidos del teléfono.'
+            });
         }
     });
 })();

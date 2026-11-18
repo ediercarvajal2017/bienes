@@ -45,6 +45,7 @@ use App\Core\View;
         const urlPendientes = <?= json_encode(Url::to('/bienes/buscar-por-foto/pendientes')) ?>;
         const urlGuardarVector = <?= json_encode(Url::to('/bienes/buscar-por-foto/vector')) ?>;
         const urlBuscar = <?= json_encode(Url::to('/bienes/buscar-por-foto/buscar')) ?>;
+        const urlEscanear = <?= json_encode(Url::to('/escanear')) ?>;
 
         const inputFoto = document.getElementById('inputFotoBusqueda');
         const estado = document.getElementById('estadoBusqueda');
@@ -148,10 +149,37 @@ use App\Core\View;
             }
         }
 
+        function elemento(etiqueta, clase, texto) {
+            const el = document.createElement(etiqueta);
+            el.className = clase;
+            if (texto !== undefined) { el.textContent = texto; }
+            return el;
+        }
+
+        // Sin parecidos: qué pudo pasar y cómo seguir (mismo diseño que ui('estado_vacio')).
+        function sinResultados() {
+            const col = elemento('div', 'col-12');
+            const caja = elemento('div', 'estado-vacio-explicado');
+            caja.setAttribute('role', 'status');
+            caja.appendChild(elemento('p', 'estado-vacio-titulo', 'Ningún bien se parece a esta foto.'));
+            caja.appendChild(elemento('p', 'estado-vacio-detalle',
+                'Puede que el bien no tenga foto en MIA, o que la foto se tomara con otro ángulo o poca luz. Prueba con otra foto, o búscalo por su placa.'));
+            const acciones = elemento('div', 'estado-vacio-acciones');
+            const porCodigo = elemento('a', 'btn btn-primary btn-sm', 'Buscar por código');
+            porCodigo.href = urlEscanear;
+            const enBienes = elemento('a', 'btn btn-outline-secondary btn-sm', 'Buscar en Bienes');
+            enBienes.href = bienesBase;
+            acciones.appendChild(porCodigo);
+            acciones.appendChild(enBienes);
+            caja.appendChild(acciones);
+            col.appendChild(caja);
+            return col;
+        }
+
         function mostrarResultados(lista) {
             if (!lista || lista.length === 0) {
-                estado.textContent = 'Sin resultados todavía -- puede que ninguna foto guardada se parezca, o que falten fotos por indexar.';
-                resultados.innerHTML = '';
+                estado.textContent = '';
+                resultados.replaceChildren(sinResultados());
                 return;
             }
 
@@ -176,33 +204,68 @@ use App\Core\View;
             }).join('');
         }
 
+        // Tres fallos distintos, cada uno con su porqué y qué hacer (MIA.avisar, alertas.js):
+        // el navegador no pudo analizar la foto, no hubo respuesta del servidor, o el
+        // servidor rechazó la búsqueda (trae su error y su queHacer).
         async function buscar(file) {
-            resultados.innerHTML = '';
-            estado.classList.remove('text-danger');
+            resultados.replaceChildren();
+            MIA.quitarAviso(estado);
             estado.textContent = 'Analizando la foto…';
 
+            let vector;
             try {
                 const m = await cargarModelo();
-                const dataUrl = await leerComoDataUrl(file);
-                const img = await cargarImagen(dataUrl);
-                const vector = calcularVector(m, img);
+                const img = await cargarImagen(await leerComoDataUrl(file));
+                vector = calcularVector(m, img);
+            } catch (e) {
+                estado.textContent = '';
+                MIA.avisar(estado, {
+                    titulo: 'No se pudo analizar la foto',
+                    detalle: 'Este navegador no pudo leer la foto o preparar la búsqueda por parecido.',
+                    solucion: 'Prueba con otra foto (JPG o PNG) o con Chrome o Edge actualizados. También puedes buscar el bien por su placa en «Escanear QR».'
+                });
+                return;
+            }
 
-                estado.textContent = 'Buscando bienes parecidos…';
+            estado.textContent = 'Buscando bienes parecidos…';
+            let resp;
+            let datos;
+            try {
                 const body = new URLSearchParams({ _csrf: csrfToken, vector: JSON.stringify(vector) });
-                const resp = await fetch(urlBuscar, { method: 'POST', body });
-                const datos = await resp.json();
-
-                if (!resp.ok) {
-                    estado.classList.add('text-danger');
-                    estado.textContent = datos.error || 'No se pudo completar la búsqueda.';
+                resp = await fetch(urlBuscar, { method: 'POST', body });
+                if ((resp.headers.get('Content-Type') || '').indexOf('application/json') === -1) {
+                    // El servidor respondió con otra página: la sesión se cerró.
+                    estado.textContent = '';
+                    MIA.avisar(estado, {
+                        titulo: 'No se pudo buscar',
+                        detalle: 'Tu sesión se cerró mientras tenías la página abierta.',
+                        solucion: 'Recarga la página, ingresa de nuevo y vuelve a tomar la foto.'
+                    });
                     return;
                 }
-
-                mostrarResultados(datos.resultados);
+                datos = await resp.json();
             } catch (e) {
-                estado.classList.add('text-danger');
-                estado.textContent = 'No se pudo procesar la foto en este navegador.';
+                estado.textContent = '';
+                MIA.avisar(estado, {
+                    titulo: 'No se pudo buscar',
+                    detalle: 'MIA no recibió respuesta del servidor.',
+                    solucion: 'Revisa tu conexión a internet y pulsa Reintentar.',
+                    boton: { texto: 'Reintentar', alPulsar: function () { buscar(file); } }
+                });
+                return;
             }
+
+            if (!resp.ok) {
+                estado.textContent = '';
+                MIA.avisar(estado, {
+                    titulo: 'No se pudo buscar',
+                    detalle: datos.error || 'El servidor no aceptó la búsqueda.',
+                    solucion: datos.queHacer || 'Recarga la página y vuelve a tomar la foto.'
+                });
+                return;
+            }
+
+            mostrarResultados(datos.resultados);
         }
 
         inputFoto.addEventListener('change', function () {

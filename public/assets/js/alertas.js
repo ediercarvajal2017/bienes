@@ -13,7 +13,10 @@
  *          detalle: 'No hubo respuesta del servidor.', solucion: 'Revisa tu conexión y pulsa Reintentar.',
  *          boton: { texto: 'Reintentar', alPulsar: cargarCategorias } });
  *    Se pone justo después de "ancla" y reemplaza el aviso anterior de esa misma ancla.
+ *    Con tipo: 'info' es un aviso que no es error (franja verde MIA e ícono de información).
  *    MIA.quitarAviso(ancla) lo quita (p. ej. cuando el reintento sale bien).
+ *  - MIA.motivoCamara(error): { porQue, queHacer } en español para un fallo de la cámara
+ *    (getUserMedia), en lugar del texto del navegador, que a veces sale en inglés.
  */
 (function () {
     function agregarCerrar(alerta) {
@@ -54,12 +57,13 @@
     function avisar(ancla, aviso) {
         quitarAviso(ancla);
 
+        var esInfo = aviso.tipo === 'info';
         var alerta = document.createElement('div');
-        alerta.className = 'alert alert-danger aviso mt-2';
-        alerta.setAttribute('role', 'alert');
+        alerta.className = 'alert ' + (esInfo ? 'alert-info' : 'alert-danger') + ' aviso mt-2';
+        alerta.setAttribute('role', esInfo ? 'status' : 'alert');
 
         var icono = document.createElement('i');
-        icono.className = 'bi bi-x-circle aviso-icono';
+        icono.className = 'bi ' + (esInfo ? 'bi-info-circle' : 'bi-x-circle') + ' aviso-icono';
         icono.setAttribute('aria-hidden', 'true');
         alerta.appendChild(icono);
 
@@ -97,9 +101,32 @@
         return alerta;
     }
 
+    function motivoCamara(error) {
+        // getUserMedia entrega un DOMException con su nombre; html5-qrcode a veces lo
+        // convierte en texto ("NotAllowedError: Permission denied").
+        var texto = String((error && (error.name || error.message)) || error || '');
+        var hallado = /(NotAllowed|Security|NotFound|Overconstrained|NotReadable|Abort)Error/.exec(texto + ' ' + String(error || ''));
+        var nombre = hallado ? hallado[0] : (/permission|denied/i.test(texto) ? 'NotAllowedError' : '');
+        if (!window.isSecureContext) {
+            return { porQue: 'La cámara solo funciona con conexión segura (https).', queHacer: 'Entra a MIA con https://.' };
+        }
+        if (nombre === 'NotAllowedError' || nombre === 'SecurityError') {
+            return { porQue: 'No diste permiso para usar la cámara.',
+                queHacer: 'Permite la cámara en el candado de la barra de direcciones y vuelve a intentarlo, o elige una foto guardada.' };
+        }
+        if (nombre === 'NotFoundError' || nombre === 'OverconstrainedError') {
+            return { porQue: 'Este dispositivo no tiene una cámara disponible.', queHacer: 'Elige una foto guardada, o usa un teléfono con cámara.' };
+        }
+        if (nombre === 'NotReadableError' || nombre === 'AbortError') {
+            return { porQue: 'Otra aplicación está usando la cámara.', queHacer: 'Ciérrala y vuelve a intentarlo.' };
+        }
+        return { porQue: 'El navegador no dejó usar la cámara.', queHacer: 'Recarga la página y vuelve a intentarlo, o elige una foto guardada.' };
+    }
+
     window.MIA = window.MIA || {};
     window.MIA.avisar = avisar;
     window.MIA.quitarAviso = quitarAviso;
+    window.MIA.motivoCamara = motivoCamara;
 
     document.addEventListener('DOMContentLoaded', function () {
         document.querySelectorAll('.alert').forEach(agregarCerrar);
