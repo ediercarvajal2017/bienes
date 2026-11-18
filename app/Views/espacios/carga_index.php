@@ -11,11 +11,17 @@ use App\Core\View;
 
 <div class="card mb-4 contenedor-md">
     <div class="card-body">
-        <p class="small text-muted">
-            Sube un archivo <strong>.xlsx</strong> con las columnas: Número, Nombre, Documentos_Responsables
-            (uno o varios documentos separados por coma).
-            <a href="<?= Url::to('/espacios/carga-masiva/plantilla.xlsx') ?>">Descargar plantilla</a>.
+        <p class="small text-muted mb-2">
+            Sube un archivo <strong>.xlsx</strong> con las columnas de la
+            <a href="<?= Url::to('/espacios/carga-masiva/plantilla.xlsx') ?>">plantilla</a>. Primero se analiza y ves qué
+            cambiaría en cada fila; nada se guarda hasta que pulses «Confirmar importación».
         </p>
+        <ul class="small text-muted mb-3 ps-3">
+            <li><strong>Obligatorias:</strong> Número y Nombre. Documentos_Responsables (uno o varios documentos de usuarios
+                activos, separados por coma) es obligatorio solo para un espacio nuevo.</li>
+            <li><strong>No se borra nada:</strong> los espacios que no están en el archivo no se tocan, y si un espacio que ya
+                existe viene sin responsables, conserva los que tiene. Si trae documentos, esa lista reemplaza a la actual.</li>
+        </ul>
         <form method="post" action="<?= Url::to('/espacios/carga-masiva/subir') ?>" enctype="multipart/form-data" class="d-flex gap-2">
             <?= Csrf::field() ?>
             <input type="file" name="archivo" accept=".xlsx" aria-label="Archivo Excel de espacios" class="form-control form-control-sm" required>

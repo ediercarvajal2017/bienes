@@ -163,11 +163,22 @@ final class UsuarioCargaMasivaController
             exit;
         }
 
-        $nota = 'Siguiente paso: los usuarios nuevos entran por primera vez con «¿Olvidaste tu contraseña?» y su correo registrado.';
-        Aviso::enviar($omitidas > 0
-            ? Aviso::advertencia('Carga masiva aplicada.', ($omitidas === 1 ? '1 fila se omitió' : "{$omitidas} filas se omitieron")
-                . ' porque su documento o correo ya estaba en uso al guardar.', 'Revisa esas filas, corrígelas en el Excel y súbelo de nuevo. ' . $nota)
-            : Aviso::exito('Carga masiva aplicada correctamente.', $nota));
+        // Igual que bienes y espacios: si una parte del archivo no entró (filas inválidas o
+        // chocadas al guardar), el aviso lo dice; antes decía "aplicada correctamente".
+        $nota = 'Los usuarios nuevos entran por primera vez con «¿Olvidaste tu contraseña?» y su correo registrado.';
+        $invalidas = count(array_filter($filas, static fn (array $f): bool => $f['tipo'] === 'invalido'));
+        $partes = [];
+        if ($invalidas > 0) {
+            $partes[] = $invalidas === 1 ? '1 fila no se cargó por tener un error (revisa el detalle abajo)'
+                : "{$invalidas} filas no se cargaron por tener errores (revisa el detalle abajo)";
+        }
+        if ($omitidas > 0) {
+            $partes[] = ($omitidas === 1 ? '1 fila se omitió' : "{$omitidas} filas se omitieron") . ' porque su documento o correo ya estaba en uso al guardar';
+        }
+        Aviso::enviar($partes !== []
+            ? Aviso::error('Parte del archivo no se cargó', 'La carga quedó aplicada parcialmente: ' . implode('; ', $partes) . '.',
+                'Corrige esas filas en el Excel y súbelo de nuevo: las que ya entraron no se duplican. ' . $nota)
+            : Aviso::exito('Carga masiva aplicada correctamente.', 'Siguiente paso: ' . lcfirst($nota)));
         header('Location: ' . Url::to("/usuarios/carga-masiva/{$id}"));
         exit;
     }
