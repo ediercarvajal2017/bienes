@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Core\Auth;
+use App\Core\Aviso;
 use App\Core\Csrf;
 use App\Core\Request;
 use App\Core\Session;
@@ -48,8 +49,6 @@ final class UsuarioController
             'opcionesPorPagina' => self::OPCIONES_POR_PAGINA,
             'total' => $total,
             'totalPaginas' => Paginador::totalPaginas($total, $porPagina),
-            'mensaje' => Session::pullFlash('ok'),
-            'error' => Session::pullFlash('error'),
         ]);
     }
 
@@ -62,8 +61,6 @@ final class UsuarioController
             'roles' => Usuario::rolesParaSelect(Auth::esSuperusuario()),
             'instituciones' => Auth::esSuperusuario() ? Institucion::listadoParaSelect(true) : [],
             'familiaSedes' => $this->familiaSedesDelRector(),
-            'error' => Session::pullFlash('error'),
-            'errorCampo' => Session::pullFlash('error_campo'),
             'viejo' => Session::pullOld(),
         ]);
     }
@@ -76,11 +73,8 @@ final class UsuarioController
 
         $password = (string) $request->input('password');
 
-        if ($resultado = $this->validar($datos, $password, null, false)) {
-            Session::flash('error', $resultado['mensaje']);
-            if ($resultado['campo'] !== null) {
-                Session::flash('error_campo', $resultado['campo']);
-            }
+        if ($falla = $this->validar($datos, $password, null, false)) {
+            Aviso::enviar(Aviso::error('No se creó el usuario', $falla['porQue'], $falla['queHacer'], $falla['accion'] ?? null, [$falla['campo'] => $falla['enCampo']]));
             Session::flashOld($datos);
             header('Location: ' . Url::to('/usuarios/crear'));
             exit;
@@ -95,7 +89,8 @@ final class UsuarioController
             $this->subirFoto($id, $archivo);
         }
 
-        Session::flash('ok', 'Usuario creado correctamente.');
+        Aviso::enviar(Aviso::exito("Usuario {$datos['nombres']} {$datos['apellidos']} creado.",
+            'Siguiente paso: la persona entra a MIA con su correo y la contraseña que le asignaste; puede cambiarla en «Mi cuenta».'));
         header('Location: ' . Url::to('/usuarios'));
         exit;
     }
@@ -113,9 +108,6 @@ final class UsuarioController
             'instituciones' => Auth::esSuperusuario() ? $this->institucionesParaFormulario($usuario) : [],
             'familiaSedes' => $this->familiaSedesDelRector(),
             'dosFactoresActiva' => DosFactoresService::tieneActiva($usuario),
-            'error' => Session::pullFlash('error'),
-            'errorCampo' => Session::pullFlash('error_campo'),
-            'mensaje' => Session::pullFlash('ok'),
             'viejo' => Session::pullOld(),
         ]);
     }
@@ -135,23 +127,20 @@ final class UsuarioController
         $request = new Request();
         $this->verificarCsrf($request, "/usuarios/{$id}/editar");
 
-        $volver = static function (string $tipo, string $mensaje) use ($id): never {
-            Session::flash($tipo, $mensaje);
-            header('Location: ' . Url::to("/usuarios/{$id}/editar"));
-            exit;
-        };
-
         if ($id === Auth::id()) {
-            $volver('error', 'Tu propia verificación en dos pasos se administra desde «Mi cuenta».');
+            $this->volverAlUsuario($id, Aviso::error('No se restableció la verificación en dos pasos', 'Tu propia verificación en dos pasos no se restablece desde aquí.',
+                'Adminístrala desde «Mi cuenta».', Aviso::accion('Ir a Mi cuenta', '/mi-cuenta')));
         }
 
         $administrador = Usuario::findParaAcceso((int) Auth::id());
         if ($administrador === null || !password_verify((string) $request->input('password_confirmacion'), (string) $administrador['password_hash'])) {
-            $volver('error', 'Tu contraseña no es correcta: no se restableció la verificación en dos pasos.');
+            $this->volverAlUsuario($id, Aviso::error('No se restableció la verificación en dos pasos', 'Tu contraseña no es correcta.',
+                'Escribe tu propia contraseña (la de tu cuenta, no la del usuario) y vuelve a intentarlo.'));
         }
 
         if (!DosFactoresService::tieneActiva($usuario)) {
-            $volver('error', 'Este usuario no tiene la verificación en dos pasos activa.');
+            $this->volverAlUsuario($id, Aviso::error('No se restableció la verificación en dos pasos', 'Este usuario no tiene la verificación en dos pasos activa.',
+                'No hace falta hacer nada: ya entra solo con su contraseña.'));
         }
 
         Usuario::desactivarTotp($id);
@@ -163,7 +152,16 @@ final class UsuarioController
         DosFactoresService::avisarPorCorreo($usuario, 'verificación en dos pasos restablecida',
             'Un administrador restableció la verificación en dos pasos de tu cuenta de MIA. En tu próximo ingreso podrás configurarla de nuevo.');
 
-        $volver('ok', 'Verificación en dos pasos restablecida. Sus sesiones abiertas se cerrarán en menos de un minuto.');
+        $this->volverAlUsuario($id, Aviso::exito('Verificación en dos pasos restablecida.',
+            'Sus sesiones abiertas se cerrarán en menos de un minuto; en su próximo ingreso podrá configurarla de nuevo.'));
+    }
+
+    /** @param array{tipo: string, titulo: string, detalle: string, solucion: string, accion: array{texto: string, url: string}|null, campos: array<string, string>} $aviso */
+    private function volverAlUsuario(int $id, array $aviso): never
+    {
+        Aviso::enviar($aviso);
+        header('Location: ' . Url::to("/usuarios/{$id}/editar"));
+        exit;
     }
 
     public function actualizar(string $id): void
@@ -178,11 +176,9 @@ final class UsuarioController
 
         $password = (string) $request->input('password');
 
-        if ($resultado = $this->validar($datos, $password, $id, true)) {
-            Session::flash('error', $resultado['mensaje']);
-            if ($resultado['campo'] !== null) {
-                Session::flash('error_campo', $resultado['campo']);
-            }
+        if ($falla = $this->validar($datos, $password, $id, true)) {
+            Aviso::enviar(Aviso::error('No se guardaron los cambios del usuario', $falla['porQue'], $falla['queHacer'], $falla['accion'] ?? null,
+                [$falla['campo'] => $falla['enCampo']]));
             Session::flashOld($datos);
             header('Location: ' . Url::to("/usuarios/{$id}/editar"));
             exit;
@@ -214,7 +210,7 @@ final class UsuarioController
             $this->subirFoto($id, $archivo);
         }
 
-        Session::flash('ok', 'Usuario actualizado.');
+        Aviso::enviar(Aviso::exito("Cambios de {$datos['nombres']} {$datos['apellidos']} guardados."));
         header('Location: ' . Url::to('/usuarios'));
         exit;
     }
@@ -226,7 +222,8 @@ final class UsuarioController
         $this->verificarAcceso($usuario);
 
         if ($id === Auth::id()) {
-            Session::flash('error', 'No puedes cambiar el estado de tu propia cuenta.');
+            Aviso::enviar(Aviso::error('No se cambió el estado', 'No puedes desactivar tu propia cuenta: te quedarías sin acceso.',
+                'Si de verdad hace falta, pídele a otro administrador que lo haga.'));
             header('Location: ' . Url::to('/usuarios'));
             exit;
         }
@@ -249,7 +246,10 @@ final class UsuarioController
             ['activo' => (int) $activar]
         );
 
-        Session::flash('ok', $activar ? 'Usuario activado.' : 'Usuario desactivado. Si tenía una sesión abierta, se cerrará en menos de un minuto.');
+        $nombre = trim($usuario['nombres'] . ' ' . $usuario['apellidos']);
+        Aviso::enviar($activar
+            ? Aviso::exito("Usuario {$nombre} activado.", 'Ya puede entrar a MIA con su correo y contraseña.')
+            : Aviso::exito("Usuario {$nombre} desactivado.", 'Si tenía una sesión abierta, se cerrará en menos de un minuto. Sus registros se conservan.'));
         header('Location: ' . Url::to('/usuarios'));
         exit;
     }
@@ -261,7 +261,8 @@ final class UsuarioController
         $this->verificarAcceso($usuario);
 
         if ($id === Auth::id()) {
-            Session::flash('error', 'No puedes eliminar tu propia cuenta.');
+            Aviso::enviar(Aviso::error('No se eliminó el usuario', 'No puedes eliminar tu propia cuenta.',
+                'Si de verdad hace falta, pídele a otro administrador que lo haga.'));
             header('Location: ' . Url::to('/usuarios'));
             exit;
         }
@@ -270,14 +271,16 @@ final class UsuarioController
         $this->verificarCsrf($request, '/usuarios');
 
         if (Usuario::estaEnUso($id)) {
-            Session::flash('error', 'No se puede eliminar: el usuario tiene movimientos o registros asociados. Desactívalo en su lugar.');
+            Aviso::enviar(Aviso::error('No se eliminó el usuario', 'El usuario tiene movimientos o registros asociados que deben conservarse.',
+                'Desactívalo en su lugar: no podrá entrar y su historial queda intacto.'));
         } else {
             $snapshot = $usuario;
             unset($snapshot['password_hash']);
             Usuario::eliminar($id, (int) Auth::id());
             Usuario::invalidarSesiones($id);
             Auditoria::registrar(Auth::id(), (int) $usuario['institucion_id'], 'eliminar', 'usuario', $id, $snapshot);
-            Session::flash('ok', 'Usuario enviado a la papelera. Un superusuario puede restaurarlo si fue un error.');
+            Aviso::enviar(Aviso::exito('Usuario ' . trim($usuario['nombres'] . ' ' . $usuario['apellidos']) . ' enviado a la papelera.',
+                'Si fue un error, un superusuario puede restaurarlo desde la Papelera.'));
         }
 
         header('Location: ' . Url::to('/usuarios'));
@@ -292,7 +295,9 @@ final class UsuarioController
                 Usuario::updateFoto($usuarioId, $path);
             }
         } catch (\RuntimeException $e) {
-            Session::flash('error', $e->getMessage());
+            // Los datos ya se guardaron: solo faltó la foto.
+            Aviso::enviar(Aviso::advertencia('La foto no se guardó', $e->getMessage(),
+                'Abre el usuario y vuelve a subir la foto (JPG o PNG).', Aviso::accion('Abrir el usuario', "/usuarios/{$usuarioId}/editar")));
         }
     }
 
@@ -351,30 +356,36 @@ final class UsuarioController
     }
 
     /**
-     * @return array{campo: ?string, mensaje: string}|null "campo" es el name del input a
-     * resaltar en el formulario (ver UsuarioController::guardar()/actualizar() y
-     * usuarios/form.php) — null cuando el error no corresponde a un campo puntual.
+     * Primera regla del formulario que no se cumple: el porqué, qué hacer, el campo a marcar
+     * (name del control) y el mensaje corto debajo de él.
+     *
+     * @return array{campo: string, porQue: string, queHacer: string, enCampo: string, accion?: array{texto: string, url: string}}|null
      */
     private function validar(array $datos, string $password, ?int $exceptId, bool $esEdicion): ?array
     {
         if ($datos['documento'] === '') {
-            return ['campo' => 'documento', 'mensaje' => 'El documento es obligatorio.'];
+            return ['campo' => 'documento', 'porQue' => 'Falta el número de documento.', 'enCampo' => 'Escribe el documento.',
+                'queHacer' => 'Escribe el documento sin puntos ni espacios y vuelve a guardar.'];
         }
 
         if ($datos['nombres'] === '') {
-            return ['campo' => 'nombres', 'mensaje' => 'Los nombres son obligatorios.'];
+            return ['campo' => 'nombres', 'porQue' => 'Faltan los nombres.', 'enCampo' => 'Escribe los nombres.',
+                'queHacer' => 'Escribe los nombres de la persona y vuelve a guardar.'];
         }
 
         if ($datos['apellidos'] === '') {
-            return ['campo' => 'apellidos', 'mensaje' => 'Los apellidos son obligatorios.'];
+            return ['campo' => 'apellidos', 'porQue' => 'Faltan los apellidos.', 'enCampo' => 'Escribe los apellidos.',
+                'queHacer' => 'Escribe los apellidos de la persona y vuelve a guardar.'];
         }
 
         if ($datos['email'] === '') {
-            return ['campo' => 'email', 'mensaje' => 'El correo es obligatorio.'];
+            return ['campo' => 'email', 'porQue' => 'Falta el correo.', 'enCampo' => 'Escribe el correo.',
+                'queHacer' => 'Escribe el correo con el que la persona entrará a MIA y vuelve a guardar.'];
         }
 
         if (!filter_var($datos['email'], FILTER_VALIDATE_EMAIL)) {
-            return ['campo' => 'email', 'mensaje' => 'El correo electrónico no es válido.'];
+            return ['campo' => 'email', 'porQue' => 'El correo electrónico no es válido.', 'enCampo' => 'Revisa el correo.',
+                'queHacer' => 'Escríbelo completo, por ejemplo nombre@colegio.edu.co, y vuelve a guardar.'];
         }
 
         // Al crear es obligatoria; al editar solo se valida si se escribió una nueva.
@@ -384,20 +395,26 @@ final class UsuarioController
                 [$datos['email'], $datos['documento'], $datos['nombres'], $datos['apellidos']]
             );
             if ($errorContrasena !== null) {
-                return ['campo' => 'password', 'mensaje' => $errorContrasena];
+                return ['campo' => 'password', 'porQue' => $errorContrasena, 'enCampo' => 'Revisa la contraseña.',
+                    'queHacer' => 'Escribe una contraseña que cumpla esa condición y vuelve a guardar.'];
             }
         }
 
         if (!$this->rolPermitido($datos['rol_id'])) {
-            return ['campo' => 'rol_id', 'mensaje' => 'No tienes permiso para asignar ese rol.'];
+            return ['campo' => 'rol_id', 'porQue' => 'Tu usuario no puede asignar ese rol.', 'enCampo' => 'Elige otro rol.',
+                'queHacer' => 'Elige otro rol de la lista y vuelve a guardar.'];
         }
 
         if (Usuario::existeDocumento($datos['documento'], $exceptId)) {
-            return ['campo' => 'documento', 'mensaje' => 'Ya existe un usuario con ese número de documento.'];
+            return ['campo' => 'documento', 'porQue' => "Ya existe un usuario con el documento {$datos['documento']}.", 'enCampo' => 'Este documento ya existe.',
+                'queHacer' => 'Revisa el número; si es la misma persona, edita el usuario que ya existe.',
+                'accion' => Aviso::accion('Buscar en Usuarios', '/usuarios?' . http_build_query(['q' => $datos['documento']]))];
         }
 
         if (Usuario::existeEmail($datos['email'], $exceptId)) {
-            return ['campo' => 'email', 'mensaje' => 'Ya existe un usuario con ese correo electrónico.'];
+            return ['campo' => 'email', 'porQue' => "Ya existe un usuario con el correo {$datos['email']}.", 'enCampo' => 'Este correo ya existe.',
+                'queHacer' => 'Usa otro correo; si es la misma persona, edita el usuario que ya existe.',
+                'accion' => Aviso::accion('Buscar en Usuarios', '/usuarios?' . http_build_query(['q' => $datos['email']]))];
         }
 
         return null;

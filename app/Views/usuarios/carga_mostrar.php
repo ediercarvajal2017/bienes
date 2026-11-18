@@ -15,10 +15,6 @@ $clases = [
     <a href="<?= Url::to('/usuarios/carga-masiva') ?>" class="btn btn-sm btn-outline-secondary">Volver</a>
 <?= ui('encabezado_pagina', ['titulo' => 'Resultado de la carga', 'icono' => 'usuarios', 'acciones' => (string) ob_get_clean()]) ?>
 
-<?php if (!empty($mensaje)): ?>
-    <?= ui('alerta', ['tipo' => 'exito', 'mensaje' => (string) $mensaje, 'clases' => 'py-2 small']) ?>
-<?php endif; ?>
-
 <p class="text-muted small">
     <?= (int) $carga['total_filas'] ?> filas ·
     <?= (int) $carga['nuevos'] ?> nuevas ·

@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Core\Auth;
+use App\Core\Aviso;
 use App\Core\Csrf;
 use App\Core\Database;
 use App\Core\Request;
-use App\Core\Session;
 use App\Core\Url;
 use App\Core\View;
 use App\Helpers\Paginador;
@@ -48,7 +48,6 @@ final class QrMasivoController
             'opcionesPorPagina' => self::OPCIONES_POR_PAGINA,
             'total' => $total,
             'totalPaginas' => Paginador::totalPaginas($total, $porPagina),
-            'error' => Session::pullFlash('error'),
             'totalSolicitados' => $institucionId !== null ? Bien::contarSolicitadosQr($institucionId) : 0,
         ]);
     }
@@ -82,8 +81,6 @@ final class QrMasivoController
             'porImprimir' => $porImprimir,
             'porPegar' => $porPegar,
             'pestana' => $pestana,
-            'mensaje' => Session::pullFlash('ok'),
-            'error' => Session::pullFlash('error'),
         ]);
     }
 
@@ -99,13 +96,13 @@ final class QrMasivoController
         );
 
         if (!Csrf::verify((string) $request->input('_csrf'))) {
-            Session::flash('error', 'Tu sesión expiró, intenta de nuevo.');
+            Aviso::enviar(\App\Helpers\Mensajes::sesionVencida(false));
             header('Location: ' . $volver);
             exit;
         }
 
         if ($institucionId === null) {
-            Session::flash('error', 'Selecciona una institución.');
+            Aviso::enviar(\App\Helpers\Mensajes::eligeInstitucion('No se confirmaron los stickers'));
             header('Location: ' . Url::to('/bienes/qr-masivo/bodega'));
             exit;
         }
@@ -123,12 +120,12 @@ final class QrMasivoController
         });
 
         if ($confirmados === []) {
-            Session::flash('error', 'Selecciona al menos un sticker impreso para confirmarlo como pegado.');
+            Aviso::enviar(\App\Helpers\Mensajes::seleccionaAlMenosUno('No se confirmó ningún sticker', 'sticker impreso', 'Confirmar pegados'));
         } else {
             $n = count($confirmados);
-            Session::flash('ok', $n === 1
+            Aviso::enviar(Aviso::exito($n === 1
                 ? '1 sticker confirmado como pegado: salió de la bodega.'
-                : "{$n} stickers confirmados como pegados: salieron de la bodega.");
+                : "{$n} stickers confirmados como pegados: salieron de la bodega.", 'Ya no aparecen en la bodega de impresión.'));
         }
 
         header('Location: ' . $volver);
@@ -142,14 +139,14 @@ final class QrMasivoController
         $request = new Request();
 
         if (!Csrf::verify((string) $request->input('_csrf'))) {
-            Session::flash('error', 'Tu sesión expiró, intenta de nuevo.');
+            Aviso::enviar(\App\Helpers\Mensajes::sesionVencida(false));
             header('Location: ' . Url::to('/bienes/qr-masivo'));
             exit;
         }
 
         $institucionId = $this->institucionSeleccionada();
         if ($institucionId === null) {
-            Session::flash('error', 'Selecciona una institución.');
+            Aviso::enviar(\App\Helpers\Mensajes::eligeInstitucion('No se generaron los códigos QR'));
             header('Location: ' . Url::to('/bienes/qr-masivo'));
             exit;
         }
@@ -163,7 +160,7 @@ final class QrMasivoController
         }
 
         if (empty($bienes)) {
-            Session::flash('error', 'Selecciona al menos un bien para generar sus códigos QR.');
+            Aviso::enviar(\App\Helpers\Mensajes::seleccionaAlMenosUno('No se generaron los códigos QR', 'bien', 'Generar QR'));
             header('Location: ' . Url::to('/bienes/qr-masivo'));
             exit;
         }

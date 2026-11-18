@@ -41,13 +41,10 @@
             </div>
         <?php endif; ?>
 
-        <?php if (!empty($error)): ?>
-            <div class="alert alert-danger py-2 small" role="alert">
-                <?= htmlspecialchars($error, ENT_QUOTES) ?>
-                <?php if ($intentosRestantes < 5): ?>
-                    <div class="mt-1">Intentos restantes: <?= (int) $intentosRestantes ?>.</div>
-                <?php endif; ?>
-            </div>
+        <?php $avisosIngreso = \App\Core\Aviso::paraMostrar(); ?>
+        <?= ui('avisos', ['avisos' => $avisosIngreso]) ?>
+        <?php if ($avisosIngreso !== [] && $intentosRestantes < 5): ?>
+            <p class="small text-muted">Intentos restantes: <?= (int) $intentosRestantes ?>.</p>
         <?php endif; ?>
 
         <form method="post" action="<?= Url::to('/2fa/verificar') ?>" id="formCodigo">

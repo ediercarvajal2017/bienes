@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Core\Auth;
+use App\Core\Aviso;
 use App\Core\Csrf;
 use App\Core\Request;
 use App\Core\Session;
@@ -38,7 +39,6 @@ final class PoliticaController
         View::render('legal/aceptar', [
             'nombre' => (string) Auth::nombreCompleto(),
             'institucion' => Auth::esSuperusuario() ? null : Auth::institucionNombre(),
-            'error' => Session::pullFlash('error'),
         ]);
     }
 
@@ -48,7 +48,8 @@ final class PoliticaController
         Csrf::verificarORedirigir($request, '/politica/aceptar');
 
         if ($request->input('acepto') !== '1') {
-            Session::flash('error', 'Para continuar debes marcar la casilla de aceptación.');
+            Aviso::enviar(Aviso::error('No se registró la aceptación', 'Falta marcar la casilla de aceptación.',
+                'Lee la política, marca «He leído y acepto…» y pulsa «Aceptar y continuar».'));
             header('Location: ' . Url::to('/politica/aceptar'));
             exit;
         }

@@ -19,9 +19,6 @@ use App\Core\View;
     <?php endif; ?>
 <?= ui('encabezado_pagina', ['titulo' => 'Verificación física de bienes', 'icono' => 'verificacion', 'subtitulo' => 'Compara el inventario del sistema contra la existencia física de cada bien.', 'acciones' => (string) ob_get_clean()]) ?>
 
-<?php if (!empty($mensaje)): ?><?= ui('alerta', ['tipo' => 'exito', 'mensaje' => (string) $mensaje, 'clases' => 'py-2 small']) ?><?php endif; ?>
-<?php if (!empty($error)): ?><?= ui('alerta', ['tipo' => 'peligro', 'mensaje' => (string) $error, 'clases' => 'py-2 small']) ?><?php endif; ?>
-
 <?php if (empty($jornadas)): ?>
     <p class="text-muted">Todavía no se ha iniciado ninguna jornada de verificación.</p>
 <?php else: ?>

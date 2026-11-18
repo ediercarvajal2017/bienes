@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Core\Auth;
+use App\Core\Aviso;
 use App\Core\Csrf;
 use App\Core\Request;
-use App\Core\Session;
 use App\Core\Url;
 use App\Core\View;
 use App\Models\Auditoria;
@@ -25,8 +25,6 @@ final class CategoriaController
             'instituciones' => Auth::esSuperusuario() ? Institucion::listadoParaSelect(true) : [],
             'institucionId' => $institucionId,
             'categorias' => $institucionId !== null ? Categoria::all($institucionId) : [],
-            'mensaje' => Session::pullFlash('ok'),
-            'error' => Session::pullFlash('error'),
         ]);
     }
 
@@ -37,7 +35,7 @@ final class CategoriaController
 
         $institucionId = $this->institucionSeleccionada();
         if ($institucionId === null) {
-            Session::flash('error', 'Selecciona una institución.');
+            Aviso::enviar(\App\Helpers\Mensajes::eligeInstitucion('No se creó la categoría'));
             header('Location: ' . Url::to('/categorias'));
             exit;
         }
@@ -45,13 +43,14 @@ final class CategoriaController
         $nombre = trim((string) $request->input('nombre'));
 
         if ($nombre === '') {
-            Session::flash('error', 'El nombre de la categoría es obligatorio.');
+            Aviso::enviar(Aviso::error('No se creó la categoría', 'Falta el nombre de la categoría.', 'Escribe el nombre (por ejemplo «Muebles») y vuelve a intentarlo.'));
         } elseif (Categoria::existeNombre($institucionId, $nombre)) {
-            Session::flash('error', 'Esa categoría ya existe en esta institución.');
+            Aviso::enviar(Aviso::error('No se creó la categoría', "La categoría «{$nombre}» ya existe en esta institución.",
+                'Búscala en la lista; si está inactiva, actívala en lugar de crearla otra vez.'));
         } else {
             $id = Categoria::create($institucionId, $nombre);
             Auditoria::registrar(Auth::id(), $institucionId, 'crear', 'categoria', $id, null, ['nombre' => $nombre]);
-            Session::flash('ok', 'Categoría creada correctamente.');
+            Aviso::enviar(Aviso::exito("Categoría «{$nombre}» creada.", 'Ya se puede elegir al registrar un bien.'));
         }
 
         header('Location: ' . Url::to($this->volverA($institucionId)));
@@ -72,13 +71,14 @@ final class CategoriaController
         $institucionId = (int) $categoria['institucion_id'];
 
         if ($nombre === '') {
-            Session::flash('error', 'El nombre de la categoría es obligatorio.');
+            Aviso::enviar(Aviso::error('No se guardó la categoría', 'El nombre quedó vacío.', 'Escribe el nombre de la categoría y vuelve a guardar.'));
         } elseif (Categoria::existeNombre($institucionId, $nombre, $id)) {
-            Session::flash('error', 'Ya existe otra categoría con ese nombre en esta institución.');
+            Aviso::enviar(Aviso::error('No se guardó la categoría', "Ya existe otra categoría llamada «{$nombre}» en esta institución.",
+                'Usa un nombre distinto, o usa la categoría que ya existe.'));
         } else {
             Categoria::renombrar($id, $nombre);
             Auditoria::registrar(Auth::id(), $institucionId, 'editar', 'categoria', $id, $categoria, ['nombre' => $nombre]);
-            Session::flash('ok', 'Categoría actualizada.');
+            Aviso::enviar(Aviso::exito("Categoría renombrada a «{$nombre}».", 'Los bienes de esta categoría muestran el nombre nuevo.'));
         }
 
         header('Location: ' . Url::to($this->volverA($institucionId)));
@@ -95,8 +95,11 @@ final class CategoriaController
         $request = new Request();
         $this->verificarCsrf($request, (int) $categoria['institucion_id']);
 
-        Categoria::setActivo($id, !((bool) $categoria['activo']));
-        Session::flash('ok', 'Estado de la categoría actualizado.');
+        $activa = !((bool) $categoria['activo']);
+        Categoria::setActivo($id, $activa);
+        Aviso::enviar($activa
+            ? Aviso::exito("Categoría «{$categoria['nombre']}» activada.", 'Se puede elegir de nuevo al registrar bienes.')
+            : Aviso::exito("Categoría «{$categoria['nombre']}» desactivada.", 'Ya no se ofrece al registrar bienes; los que la tienen la conservan.'));
 
         header('Location: ' . Url::to($this->volverA((int) $categoria['institucion_id'])));
         exit;
@@ -115,11 +118,12 @@ final class CategoriaController
         $institucionId = (int) $categoria['institucion_id'];
 
         if (Categoria::estaEnUso($id)) {
-            Session::flash('error', 'No se puede eliminar: hay bienes registrados en esta categoría. Desactívala en su lugar.');
+            Aviso::enviar(Aviso::error('No se eliminó la categoría', "Hay bienes registrados en la categoría «{$categoria['nombre']}».",
+                'Desactívala en su lugar: deja de ofrecerse al registrar bienes sin afectar a los que ya la tienen.'));
         } else {
             Categoria::eliminar($id, (int) Auth::id());
             Auditoria::registrar(Auth::id(), $institucionId, 'eliminar', 'categoria', $id, $categoria);
-            Session::flash('ok', 'Categoría enviada a la papelera. Un superusuario puede restaurarla si fue un error.');
+            Aviso::enviar(Aviso::exito("Categoría «{$categoria['nombre']}» enviada a la papelera.", 'Si fue un error, un superusuario puede restaurarla desde la Papelera.'));
         }
 
         header('Location: ' . Url::to($this->volverA($institucionId)));
@@ -177,7 +181,7 @@ final class CategoriaController
     private function verificarPertenencia(?array $categoria): void
     {
         if (!$categoria) {
-            Session::flash('error', 'Esa categoría ya no existe.');
+            Aviso::enviar(\App\Helpers\Mensajes::yaNoExiste('No se hizo el cambio', 'La categoría', '/categorias', 'Ver las categorías'));
             header('Location: ' . Url::to('/categorias'));
             exit;
         }
@@ -200,7 +204,9 @@ final class CategoriaController
     private function verificarNoProtegida(array $categoria): void
     {
         if (Categoria::esProtegida($categoria)) {
-            Session::flash('error', 'La categoría "' . Categoria::NOMBRE_CATEGORIA_PROTEGIDA . '" no se puede modificar ni eliminar.');
+            Aviso::enviar(Aviso::error('No se hizo el cambio', 'La categoría «' . Categoria::NOMBRE_CATEGORIA_PROTEGIDA
+                . '» no se puede renombrar, desactivar ni eliminar: de ella depende el código automático de los bienes que no están en la cartera.',
+                'Si necesitas otra categoría, créala con otro nombre.'));
             header('Location: ' . Url::to($this->volverA((int) $categoria['institucion_id'])));
             exit;
         }

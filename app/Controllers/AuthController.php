@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Core\Auth;
+use App\Core\Aviso;
 use App\Core\Csrf;
 use App\Core\Request;
 use App\Core\Session;
@@ -27,7 +28,6 @@ final class AuthController
         }
 
         View::render('auth/login', [
-            'error' => Session::pullFlash('error'),
             // Tras un intento fallido, el correo vuelve escrito (solo hay que corregir la clave).
             'email' => (string) (Session::pullOld()['email'] ?? ''),
         ]);
@@ -38,7 +38,8 @@ final class AuthController
         $request = new Request();
 
         if (!Csrf::verify((string) $request->input('_csrf'))) {
-            Session::flash('error', 'Tu sesión expiró, intenta de nuevo.');
+            Aviso::enviar(Aviso::error('No se pudo ingresar', 'La página de ingreso estuvo abierta mucho tiempo y venció por seguridad.',
+                'Escribe de nuevo tu correo y contraseña.'));
             header('Location: ' . Url::to('/login'));
             exit;
         }
@@ -61,9 +62,14 @@ final class AuthController
         }
 
         Session::flashOld(['email' => $email]);
-        Session::flash('error', Auth::motivoFallo() === 'bloqueado'
-            ? 'Demasiados intentos fallidos. Espera ' . Auth::VENTANA_MINUTOS . ' minutos antes de volver a intentarlo.'
-            : 'Correo o contraseña incorrectos.');
+        Aviso::enviar(Auth::motivoFallo() === 'bloqueado'
+            ? Aviso::error('No se pudo ingresar', 'Demasiados intentos fallidos con esta cuenta.',
+                'Espera ' . Auth::VENTANA_MINUTOS . ' minutos y vuelve a intentarlo. Si no recuerdas la contraseña, usa «¿Olvidaste tu contraseña?».',
+                Aviso::accion('¿Olvidaste tu contraseña?', '/olvide-contrasena'))
+            // No se dice cuál de los dos falló: no se revela qué correos tienen cuenta.
+            : Aviso::error('No se pudo ingresar', 'Correo o contraseña incorrectos.',
+                'Revisa que el correo esté bien escrito y que la contraseña respete mayúsculas. Si no la recuerdas, usa «¿Olvidaste tu contraseña?».',
+                Aviso::accion('¿Olvidaste tu contraseña?', '/olvide-contrasena')));
         header('Location: ' . Url::to('/login'));
         exit;
     }

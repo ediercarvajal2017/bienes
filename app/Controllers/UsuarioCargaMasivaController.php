@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Core\Auth;
+use App\Core\Aviso;
 use App\Core\Csrf;
 use App\Core\ErrorHandler;
 use App\Core\Request;
-use App\Core\Session;
 use App\Core\Url;
 use App\Core\View;
 use App\Helpers\Paginador;
@@ -40,8 +40,6 @@ final class UsuarioCargaMasivaController
             'opcionesPorPagina' => self::OPCIONES_POR_PAGINA,
             'total' => $total,
             'totalPaginas' => Paginador::totalPaginas($total, $porPagina),
-            'mensaje' => Session::pullFlash('ok'),
-            'error' => Session::pullFlash('error'),
         ]);
     }
 
@@ -55,7 +53,7 @@ final class UsuarioCargaMasivaController
         $request = new Request();
 
         if (!Csrf::verify((string) $request->input('_csrf'))) {
-            Session::flash('error', 'Tu sesión expiró, intenta de nuevo.');
+            Aviso::enviar(\App\Helpers\Mensajes::sesionVencida(false));
             header('Location: ' . Url::to('/usuarios/carga-masiva'));
             exit;
         }
@@ -63,7 +61,7 @@ final class UsuarioCargaMasivaController
         $archivo = $request->file('archivo');
 
         if (!$archivo || $archivo['error'] !== UPLOAD_ERR_OK) {
-            Session::flash('error', 'Selecciona un archivo .xlsx válido.');
+            Aviso::enviar(\App\Helpers\Mensajes::excelNoValido('/usuarios/carga-masiva/plantilla.xlsx'));
             header('Location: ' . Url::to('/usuarios/carga-masiva'));
             exit;
         }
@@ -73,7 +71,7 @@ final class UsuarioCargaMasivaController
         try {
             $rutaRelativa = Uploader::storeExcel($archivo, 'cargas');
             if ($rutaRelativa === null) {
-                Session::flash('error', 'Selecciona un archivo .xlsx válido.');
+                Aviso::enviar(\App\Helpers\Mensajes::excelNoValido('/usuarios/carga-masiva/plantilla.xlsx'));
                 header('Location: ' . Url::to('/usuarios/carga-masiva'));
                 exit;
             }
@@ -84,12 +82,12 @@ final class UsuarioCargaMasivaController
                 Auth::esSuperusuario()
             );
         } catch (\RuntimeException $e) {
-            Session::flash('error', $e->getMessage());
+            Aviso::enviar(\App\Helpers\Mensajes::excelConProblema($e->getMessage(), '/usuarios/carga-masiva/plantilla.xlsx'));
             header('Location: ' . Url::to('/usuarios/carga-masiva'));
             exit;
         } catch (\Throwable $e) {
             $incidente = ErrorHandler::reportar($e, __METHOD__);
-            Session::flash('error', 'No se pudo leer el archivo. Verifique que sea la plantilla de Excel (.xlsx) descargada del sistema. (Código: ' . $incidente . ')');
+            Aviso::enviar(\App\Helpers\Mensajes::excelIlegible($incidente, '/usuarios/carga-masiva/plantilla.xlsx'));
             header('Location: ' . Url::to('/usuarios/carga-masiva'));
             exit;
         }
@@ -123,7 +121,6 @@ final class UsuarioCargaMasivaController
             'title' => 'Resultado de la carga',
             'carga' => $carga,
             'filas' => json_decode($carga['resultado_diff_json'], true) ?? [],
-            'mensaje' => Session::pullFlash('ok'),
         ]);
     }
 
@@ -134,13 +131,14 @@ final class UsuarioCargaMasivaController
 
         $request = new Request();
         if (!Csrf::verify((string) $request->input('_csrf'))) {
-            Session::flash('error', 'Tu sesión expiró, intenta de nuevo.');
+            Aviso::enviar(\App\Helpers\Mensajes::sesionVencida(false));
             header('Location: ' . Url::to("/usuarios/carga-masiva/{$id}"));
             exit;
         }
 
         if ((int) $carga['aplicada'] === 1) {
-            Session::flash('error', 'Esta carga ya fue aplicada anteriormente.');
+            Aviso::enviar(Aviso::error('No se aplicó la carga', 'Esta carga ya se había aplicado, así que sus cambios ya están en MIA.',
+                'Revisa el resultado más abajo. Para cargar más datos, sube un archivo nuevo.'));
             header('Location: ' . Url::to("/usuarios/carga-masiva/{$id}"));
             exit;
         }
@@ -160,15 +158,16 @@ final class UsuarioCargaMasivaController
                 return $omitidas;
             });
         } catch (\DomainException $e) {
-            Session::flash('error', $e->getMessage());
+            Aviso::enviar(Aviso::desdeExcepcion($e, 'No se aplicó la carga', 'Recarga la página para ver el estado de la carga.'));
             header('Location: ' . Url::to("/usuarios/carga-masiva/{$id}"));
             exit;
         }
 
-        $nota = ' Los usuarios nuevos deben entrar a "¿Olvidaste tu contraseña?" con su correo registrado para activarse la primera vez.';
-        Session::flash('ok', $omitidas > 0
-            ? "Carga masiva aplicada. {$omitidas} fila(s) se omitieron por un choque de documento o correo detectado al guardar.{$nota}"
-            : 'Carga masiva aplicada correctamente.' . $nota);
+        $nota = 'Siguiente paso: los usuarios nuevos entran por primera vez con «¿Olvidaste tu contraseña?» y su correo registrado.';
+        Aviso::enviar($omitidas > 0
+            ? Aviso::advertencia('Carga masiva aplicada.', ($omitidas === 1 ? '1 fila se omitió' : "{$omitidas} filas se omitieron")
+                . ' porque su documento o correo ya estaba en uso al guardar.', 'Revisa esas filas, corrígelas en el Excel y súbelo de nuevo. ' . $nota)
+            : Aviso::exito('Carga masiva aplicada correctamente.', $nota));
         header('Location: ' . Url::to("/usuarios/carga-masiva/{$id}"));
         exit;
     }

@@ -29,9 +29,7 @@
         </div>
         <div class="brand-sub text-center">Manejo de Inventario de Activos</div>
 
-        <?php if (!empty($error)): ?>
-            <?= ui('alerta', ['tipo' => 'peligro', 'mensaje' => (string) $error, 'clases' => 'py-2 small']) ?>
-        <?php endif; ?>
+        <?= ui('avisos', ['avisos' => \App\Core\Aviso::paraMostrar()]) ?>
 
         <form method="post" action="<?= Url::to('/login') ?>">
             <?= \App\Core\Csrf::field() ?>

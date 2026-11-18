@@ -25,6 +25,14 @@ final class MensajesGuiadosTest extends TestCase
             'Un archivo ya mejoró: actualiza la lista con php database/herramientas/verificar_mensajes.php --actualizar');
     }
 
+    /** Fase 2 (v1.2.37): todo MIA migrado; la lista de pendientes queda vacía y no vuelve a crecer. */
+    public function testNoQuedanMensajesAntiguosEnTodoMia(): void
+    {
+        self::assertSame([], RevisionMensajes::pendientes(),
+            'Ningún archivo puede volver a la lista de pendientes: usa Aviso y ErrorGuiado.');
+        self::assertSame([], RevisionMensajes::conteo());
+    }
+
     public function testLosModulosMigradosNoTienenMensajesAntiguos(): void
     {
         $conteo = RevisionMensajes::conteo();

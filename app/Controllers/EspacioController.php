@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Core\Auth;
+use App\Core\Aviso;
 use App\Core\Csrf;
 use App\Core\Request;
 use App\Core\Session;
@@ -42,9 +43,8 @@ final class EspacioController
             'opcionesPorPagina' => self::OPCIONES_POR_PAGINA,
             'total' => $total,
             'totalPaginas' => Paginador::totalPaginas($total, $porPagina),
-            'mensaje' => Session::pullFlash('ok'),
-            'error' => Session::pullFlash('error'),
-            'errorDetalle' => json_decode((string) Session::pullFlash('error_detalle'), true) ?: null,
+            // Por qué no se pudo eliminar un espacio, con los bienes que lo usan (explicarPorQueNoSeElimina).
+            'espacioEnUso' => json_decode((string) Session::pullFlash('espacio_en_uso'), true) ?: null,
         ]);
     }
 
@@ -59,7 +59,6 @@ final class EspacioController
             'usuarios' => Auth::esSuperusuario() ? Usuario::listarTodos(null) : Usuario::listarTodos($institucionId),
             'responsablesSeleccionados' => $viejo['responsables'] ?? [],
             'instituciones' => Auth::esSuperusuario() ? Institucion::listadoParaSelect() : [],
-            'error' => Session::pullFlash('error'),
             'viejo' => $viejo,
         ]);
     }
@@ -70,8 +69,8 @@ final class EspacioController
         $datos = $this->datosDesdeFormulario($request);
         $this->verificarCsrf($request, '/espacios/crear', $datos);
 
-        if ($error = $this->validar($datos, null)) {
-            Session::flash('error', $error);
+        if ($falla = $this->validar($datos, null)) {
+            Aviso::enviar(Aviso::error('No se creó el espacio', $falla['porQue'], $falla['queHacer'], null, [$falla['campo'] => $falla['enCampo']]));
             Session::flashOld($datos);
             header('Location: ' . Url::to('/espacios/crear'));
             exit;
@@ -81,7 +80,7 @@ final class EspacioController
         Espacio::sincronizarResponsables($id, $datos['responsables']);
         Auditoria::registrar(Auth::id(), (int) $datos['institucion_id'], 'crear', 'espacio', $id, null, $datos);
 
-        Session::flash('ok', 'Espacio creado correctamente.');
+        Aviso::enviar(Aviso::exito("Espacio {$datos['codigo']} {$datos['nombre']} creado.", 'Siguiente paso: asígnale bienes desde Bienes o desde Asignar bienes.'));
         header('Location: ' . Url::to('/espacios'));
         exit;
     }
@@ -97,7 +96,6 @@ final class EspacioController
             'espacio' => $espacio,
             'usuarios' => Usuario::listarTodos($espacio['institucion_id']),
             'responsablesSeleccionados' => $viejo['responsables'] ?? array_column(Espacio::responsablesDe((int) $id), 'id'),
-            'error' => Session::pullFlash('error'),
             'viejo' => $viejo,
         ]);
     }
@@ -112,8 +110,8 @@ final class EspacioController
         $datos = $this->datosDesdeFormulario($request, (int) $espacio['institucion_id']);
         $this->verificarCsrf($request, "/espacios/{$id}/editar", $datos);
 
-        if ($error = $this->validar($datos, $id)) {
-            Session::flash('error', $error);
+        if ($falla = $this->validar($datos, $id)) {
+            Aviso::enviar(Aviso::error('No se guardó el espacio', $falla['porQue'], $falla['queHacer'], null, [$falla['campo'] => $falla['enCampo']]));
             Session::flashOld($datos);
             header('Location: ' . Url::to("/espacios/{$id}/editar"));
             exit;
@@ -123,7 +121,7 @@ final class EspacioController
         Espacio::sincronizarResponsables($id, $datos['responsables']);
         Auditoria::registrar(Auth::id(), (int) $espacio['institucion_id'], 'editar', 'espacio', $id, $espacio, $datos);
 
-        Session::flash('ok', 'Espacio actualizado.');
+        Aviso::enviar(Aviso::exito("Cambios del espacio {$datos['codigo']} {$datos['nombre']} guardados."));
         header('Location: ' . Url::to('/espacios'));
         exit;
     }
@@ -137,9 +135,12 @@ final class EspacioController
         $request = new Request();
         $this->verificarCsrf($request, '/espacios');
 
-        Espacio::setActivo($id, !((bool) $espacio['activo']));
+        $activo = !((bool) $espacio['activo']);
+        Espacio::setActivo($id, $activo);
 
-        Session::flash('ok', 'Estado del espacio actualizado.');
+        Aviso::enviar($activo
+            ? Aviso::exito("Espacio «{$espacio['nombre']}» activado.", 'Se puede elegir de nuevo al asignar bienes.')
+            : Aviso::exito("Espacio «{$espacio['nombre']}» desactivado.", 'Ya no se ofrece al asignar bienes; su historial queda intacto.'));
         header('Location: ' . Url::to('/espacios'));
         exit;
     }
@@ -158,7 +159,7 @@ final class EspacioController
         } else {
             Espacio::eliminar($id, (int) Auth::id());
             Auditoria::registrar(Auth::id(), (int) $espacio['institucion_id'], 'eliminar', 'espacio', $id, $espacio);
-            Session::flash('ok', 'Espacio enviado a la papelera. Un superusuario puede restaurarlo si fue un error.');
+            Aviso::enviar(Aviso::exito("Espacio «{$espacio['nombre']}» enviado a la papelera.", 'Si fue un error, un superusuario puede restaurarlo desde la Papelera.'));
         }
 
         header('Location: ' . Url::to('/espacios'));
@@ -175,24 +176,24 @@ final class EspacioController
         $plural = static fn (int $n, string $uno, string $varios): string => $n === 1 ? "1 {$uno}" : "{$n} {$varios}";
 
         if ($uso['actuales'] > 0) {
-            $mensaje = "No se puede eliminar el espacio «{$nombre}»: tiene "
+            $mensaje = "El espacio «{$nombre}» tiene "
                 . $plural($uso['actuales'], 'bien asignado', 'bienes asignados') . ' en este momento.';
             $consejo = 'Traslada o reintegra esos bienes, o desactiva el espacio para que no se use más.';
             $total = $uso['actuales'];
         } elseif ($uso['historial'] > 0) {
-            $mensaje = "No se puede eliminar el espacio «{$nombre}»: ya no tiene bienes asignados, pero aparece en el historial de "
+            $mensaje = "El espacio «{$nombre}» ya no tiene bienes asignados, pero aparece en el historial de "
                 . $plural($uso['historial'], 'bien', 'bienes') . ' (asignaciones y movimientos anteriores) que debe conservarse.';
             $consejo = 'Desactiva el espacio para que no se use más; su historial queda intacto.';
             $total = $uso['historial'];
         } else {
-            $mensaje = "No se puede eliminar el espacio «{$nombre}»: tiene "
+            $mensaje = "El espacio «{$nombre}» tiene "
                 . $plural($uso['hallazgos'], 'hallazgo', 'hallazgos') . ' de verificación física registrados en él.';
             $consejo = 'Desactiva el espacio para que no se use más.';
             $total = 0;
         }
 
-        Session::flash('error', $mensaje);
-        Session::flash('error_detalle', (string) json_encode([
+        Session::flash('espacio_en_uso', (string) json_encode([
+            'porQue' => $mensaje,
             'bienes' => $uso['bienes'],
             'mas' => max(0, $total - count($uso['bienes'])),
             'consejo' => $consejo,
@@ -212,18 +213,26 @@ final class EspacioController
         ];
     }
 
-    private function validar(array $datos, ?int $exceptId): ?string
+    /** @return array{campo: string, porQue: string, queHacer: string, enCampo: string}|null */
+    private function validar(array $datos, ?int $exceptId): ?array
     {
-        if ($datos['nombre'] === '' || $datos['codigo'] === '') {
-            return 'El número y el nombre del espacio son obligatorios.';
+        if ($datos['codigo'] === '') {
+            return ['campo' => 'codigo', 'porQue' => 'Falta el número del espacio.', 'enCampo' => 'Escribe el número.',
+                'queHacer' => 'Escribe el número o código del espacio (por ejemplo «A-101») y vuelve a guardar.'];
+        }
+        if ($datos['nombre'] === '') {
+            return ['campo' => 'nombre', 'porQue' => 'Falta el nombre del espacio.', 'enCampo' => 'Escribe el nombre.',
+                'queHacer' => 'Escribe el nombre (por ejemplo «Aula 101») y vuelve a guardar.'];
         }
 
         if (empty($datos['responsables'])) {
-            return 'Cada espacio debe tener al menos un responsable.';
+            return ['campo' => 'responsables[]', 'porQue' => 'El espacio no tiene responsable: cada espacio necesita al menos uno.',
+                'enCampo' => 'Elige al menos un responsable.', 'queHacer' => 'Elige en «Responsables» a la persona (o personas) que responde por los bienes del espacio.'];
         }
 
         if (Espacio::existeCodigo($datos['institucion_id'], $datos['codigo'], $exceptId)) {
-            return 'Ya existe un espacio con ese número en la institución.';
+            return ['campo' => 'codigo', 'porQue' => "Ya existe un espacio con el número {$datos['codigo']} en la institución.",
+                'enCampo' => 'Este número ya existe.', 'queHacer' => 'Usa otro número, o edita el espacio que ya existe.'];
         }
 
         return null;

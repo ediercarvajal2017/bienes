@@ -27,9 +27,7 @@
         <div class="text-center"><img src="<?= Url::asset('/assets/img/logo.webp') ?>" width="400" height="400" alt="MIA" class="auth-logo-72"></div>
         <div class="brand-sub">Restablecer contraseña</div>
 
-        <?php if (!empty($error)): ?>
-            <?= ui('alerta', ['tipo' => 'peligro', 'mensaje' => (string) $error, 'clases' => 'py-2 small']) ?>
-        <?php endif; ?>
+        <?= ui('avisos', ['avisos' => \App\Core\Aviso::paraMostrar()]) ?>
 
         <?php if (!$valido): ?>
             <p class="small text-muted">Este enlace ya no es válido — puede que haya expirado (dura 60 minutos) o que ya se haya usado.</p>

@@ -20,13 +20,6 @@ use App\Core\View;
     <?php endif; ?>
 </div>
 
-<?php if (!empty($mensaje)): ?>
-    <?= ui('alerta', ['tipo' => 'exito', 'mensaje' => (string) $mensaje, 'clases' => 'py-2 small']) ?>
-<?php endif; ?>
-<?php if (!empty($error)): ?>
-    <?= ui('alerta', ['tipo' => 'peligro', 'mensaje' => (string) $error, 'clases' => 'py-2 small']) ?>
-<?php endif; ?>
-
 <div class="mb-3 contenedor-sm">
     <input type="search" id="buscador" data-buscar="q" class="form-control form-control-sm"
            placeholder="Buscar por nombre, documento, correo o cargo..."

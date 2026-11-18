@@ -115,7 +115,8 @@ final class CargaMasiva
             $stmt = $pdo->prepare('UPDATE cargas_masivas SET aplicada = 1 WHERE id = ? AND aplicada = 0');
             $stmt->execute([$id]);
             if ($stmt->rowCount() !== 1) {
-                throw new \DomainException('Esta carga ya fue aplicada anteriormente.');
+                throw new \App\Core\ErrorGuiado('Esta carga ya se había aplicado, así que sus cambios ya están en MIA.',
+                    'Revisa el resultado más abajo. Para cargar más datos, sube un archivo nuevo.');
             }
 
             return $aplicar();

@@ -11,14 +11,6 @@ use App\Core\View;
     </a>
 <?= ui('encabezado_pagina', ['titulo' => 'Instituciones', 'icono' => 'institucion', 'acciones' => (string) ob_get_clean()]) ?>
 
-<?php if (!empty($mensaje)): ?>
-    <?= ui('alerta', ['tipo' => 'exito', 'mensaje' => (string) $mensaje, 'clases' => 'py-2 small']) ?>
-<?php endif; ?>
-
-<?php if (!empty($error)): ?>
-    <?= ui('alerta', ['tipo' => 'peligro', 'mensaje' => (string) $error, 'clases' => 'py-2 small']) ?>
-<?php endif; ?>
-
 <div class="table-responsive">
     <table class="table table-sm table-hover align-middle bg-white tabla-cards">
         <thead>

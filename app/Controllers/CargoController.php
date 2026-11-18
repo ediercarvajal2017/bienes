@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Core\Auth;
+use App\Core\Aviso;
 use App\Core\Csrf;
 use App\Core\Request;
-use App\Core\Session;
 use App\Core\Url;
 use App\Core\View;
 use App\Models\Auditoria;
@@ -22,8 +22,6 @@ final class CargoController
         View::layout('partials/layout', 'cargos/index', [
             'title' => 'Cargos',
             'cargos' => Cargo::all(),
-            'mensaje' => Session::pullFlash('ok'),
-            'error' => Session::pullFlash('error'),
         ]);
     }
 
@@ -37,13 +35,14 @@ final class CargoController
         $nombre = trim((string) $request->input('nombre'));
 
         if ($nombre === '') {
-            Session::flash('error', 'El nombre del cargo es obligatorio.');
+            Aviso::enviar(Aviso::error('No se creó el cargo', 'Falta el nombre del cargo.', 'Escribe el nombre (por ejemplo «Docente») y vuelve a intentarlo.'));
         } elseif (Cargo::existeNombre($nombre)) {
-            Session::flash('error', 'Ese cargo ya existe.');
+            Aviso::enviar(Aviso::error('No se creó el cargo', "El cargo «{$nombre}» ya existe.",
+                'Búscalo en la lista; si está inactivo, actívalo en lugar de crearlo otra vez.'));
         } else {
             $id = Cargo::create($nombre);
             Auditoria::registrar(Auth::id(), Auth::institucionId(), 'crear', 'cargo', $id, null, ['nombre' => $nombre]);
-            Session::flash('ok', 'Cargo creado correctamente.');
+            Aviso::enviar(Aviso::exito("Cargo «{$nombre}» creado.", 'Ya se puede elegir al registrar o editar un usuario.'));
         }
 
         header('Location: ' . Url::to('/cargos'));
@@ -62,15 +61,16 @@ final class CargoController
         $nombre = trim((string) $request->input('nombre'));
 
         if (!$cargo) {
-            Session::flash('error', 'Ese cargo ya no existe.');
+            Aviso::enviar(\App\Helpers\Mensajes::yaNoExiste('No se guardó el cargo', 'El cargo', '/cargos', 'Ver los cargos'));
         } elseif ($nombre === '') {
-            Session::flash('error', 'El nombre del cargo es obligatorio.');
+            Aviso::enviar(Aviso::error('No se guardó el cargo', 'El nombre quedó vacío.', 'Escribe el nombre del cargo y vuelve a guardar.'));
         } elseif (Cargo::existeNombre($nombre, $id)) {
-            Session::flash('error', 'Ya existe otro cargo con ese nombre.');
+            Aviso::enviar(Aviso::error('No se guardó el cargo', "Ya existe otro cargo llamado «{$nombre}».",
+                'Usa un nombre distinto, o usa el cargo que ya existe.'));
         } else {
             Cargo::renombrar($id, $nombre);
             Auditoria::registrar(Auth::id(), Auth::institucionId(), 'editar', 'cargo', $id, $cargo, ['nombre' => $nombre]);
-            Session::flash('ok', 'Cargo actualizado.');
+            Aviso::enviar(Aviso::exito("Cargo renombrado a «{$nombre}».", 'Los usuarios con este cargo muestran el nombre nuevo.'));
         }
 
         header('Location: ' . Url::to('/cargos'));
@@ -87,8 +87,13 @@ final class CargoController
         $cargo = Cargo::find((int) $id);
 
         if ($cargo) {
-            Cargo::setActivo((int) $id, !((bool) $cargo['activo']));
-            Session::flash('ok', 'Estado del cargo actualizado.');
+            $activo = !((bool) $cargo['activo']);
+            Cargo::setActivo((int) $id, $activo);
+            Aviso::enviar($activo
+                ? Aviso::exito("Cargo «{$cargo['nombre']}» activado.", 'Se puede elegir de nuevo al registrar o editar un usuario.')
+                : Aviso::exito("Cargo «{$cargo['nombre']}» desactivado.", 'Ya no se ofrece al registrar usuarios; quienes lo tienen lo conservan.'));
+        } else {
+            Aviso::enviar(\App\Helpers\Mensajes::yaNoExiste('No se cambió el estado del cargo', 'El cargo', '/cargos', 'Ver los cargos'));
         }
 
         header('Location: ' . Url::to('/cargos'));
@@ -106,13 +111,14 @@ final class CargoController
         $cargo = Cargo::find($id);
 
         if (!$cargo) {
-            Session::flash('error', 'Ese cargo ya no existe.');
+            Aviso::enviar(\App\Helpers\Mensajes::yaNoExiste('No se eliminó el cargo', 'El cargo', '/cargos', 'Ver los cargos'));
         } elseif (Cargo::estaEnUso($id)) {
-            Session::flash('error', 'No se puede eliminar: hay usuarios con este cargo asignado. Desactívalo en su lugar.');
+            Aviso::enviar(Aviso::error('No se eliminó el cargo', "Hay usuarios con el cargo «{$cargo['nombre']}» asignado.",
+                'Desactívalo en su lugar: deja de ofrecerse sin afectar a esos usuarios.'));
         } else {
             Cargo::eliminar($id, (int) Auth::id());
             Auditoria::registrar(Auth::id(), Auth::institucionId(), 'eliminar', 'cargo', $id, $cargo);
-            Session::flash('ok', 'Cargo enviado a la papelera. Un superusuario puede restaurarlo si fue un error.');
+            Aviso::enviar(Aviso::exito("Cargo «{$cargo['nombre']}» enviado a la papelera.", 'Si fue un error, puedes restaurarlo desde la Papelera.'));
         }
 
         header('Location: ' . Url::to('/cargos'));

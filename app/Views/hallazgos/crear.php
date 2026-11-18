@@ -22,10 +22,6 @@ $v = static fn (string $campo, mixed $porDefecto = '') => $viejo[$campo] ?? $por
     Búscalo antes de reportarlo</a>, para no duplicarlo.
 </p>
 
-<?php if (!empty($error)): ?>
-    <?= ui('alerta', ['tipo' => 'peligro', 'mensaje' => (string) $error, 'clases' => 'py-2 small contenedor-md']) ?>
-<?php endif; ?>
-
 <p class="text-muted small mb-2">Los campos marcados con <span class="text-danger">*</span> son obligatorios.</p>
 
 <form method="post" action="<?= Url::to('/hallazgos') ?>" enctype="multipart/form-data" class="row g-3 contenedor-md">

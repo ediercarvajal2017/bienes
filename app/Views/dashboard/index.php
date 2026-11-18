@@ -46,13 +46,6 @@ $puedeVer = static function (array $item): bool {
 ?>
 <?= ui('encabezado_pagina', ['titulo' => 'Hola, ' . (Auth::nombreCompleto() ?? ''), 'icono' => 'panel', 'subtitulo' => 'Rol: ' . ucfirst(Auth::rol() ?? '')]) ?>
 
-<?php if (!empty($mensaje)): ?>
-    <?= ui('alerta', ['tipo' => 'exito', 'mensaje' => (string) $mensaje, 'clases' => 'py-2 small']) ?>
-<?php endif; ?>
-<?php if (!empty($error)): ?>
-    <?= ui('alerta', ['tipo' => 'peligro', 'mensaje' => (string) $error, 'clases' => 'py-2 small']) ?>
-<?php endif; ?>
-
 <?php if (!empty($indicadores)): ?>
     <h2 class="h6 text-muted mb-2">Requiere atención</h2>
     <div class="row g-3 mb-4">

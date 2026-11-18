@@ -7,9 +7,6 @@ use App\Core\View;
 ?>
 <?= ui('encabezado_pagina', ['titulo' => 'Cargos', 'icono' => 'cargo', 'subtitulo' => 'Catálogo global de cargos disponible al registrar usuarios en cualquier institución.']) ?>
 
-<?php if (!empty($mensaje)): ?><?= ui('alerta', ['tipo' => 'exito', 'mensaje' => (string) $mensaje, 'clases' => 'py-2 small']) ?><?php endif; ?>
-<?php if (!empty($error)): ?><?= ui('alerta', ['tipo' => 'peligro', 'mensaje' => (string) $error, 'clases' => 'py-2 small']) ?><?php endif; ?>
-
 <form method="post" action="<?= Url::to('/cargos') ?>" class="mb-4 contenedor-md">
     <?= Csrf::field() ?>
     <label class="form-label small requerido" for="nombreCargo">Nombre del cargo</label>

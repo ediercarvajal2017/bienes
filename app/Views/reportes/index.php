@@ -8,10 +8,6 @@ $instituciones = Auth::esSuperusuario() ? Institucion::listadoParaSelect() : [];
 ?>
 <?= ui('encabezado_pagina', ['titulo' => 'Reportes', 'icono' => 'reporte']) ?>
 
-<?php if (!empty($error)): ?>
-    <?= ui('alerta', ['tipo' => 'peligro', 'mensaje' => (string) $error, 'clases' => 'py-2 small contenedor-md']) ?>
-<?php endif; ?>
-
 <?php if (Auth::esSuperusuario()): ?>
     <div class="mb-3 contenedor-sm">
         <label for="selectorInstitucion" class="form-label small">Institución a exportar</label>

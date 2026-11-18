@@ -17,9 +17,6 @@ $fecha = static fn (?string $f): string => $f ? date('d/m/Y H:i', strtotime($f))
     'acciones' => ui('boton', ['texto' => 'Buscar bienes para imprimir', 'icono' => 'buscar', 'tamano' => 'sm', 'url' => Url::to('/bienes/qr-masivo')]),
 ]) ?>
 
-<?php if (!empty($mensaje)): ?><?= ui('alerta', ['tipo' => 'exito', 'mensaje' => (string) $mensaje, 'clases' => 'py-2 small']) ?><?php endif; ?>
-<?php if (!empty($error)): ?><?= ui('alerta', ['tipo' => 'peligro', 'mensaje' => (string) $error, 'clases' => 'py-2 small']) ?><?php endif; ?>
-
 <?php if (Auth::esSuperusuario()): ?>
     <div class="mb-3 contenedor-sm">
         <label for="selectorInstitucion" class="form-label small">Institución</label>

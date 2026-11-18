@@ -48,9 +48,6 @@ $tabPorDefecto = !empty($hallazgos) ? 'hallazgos' : 'discrepancia';
         . ui('boton', ['texto' => 'Exportar a Excel', 'icono' => 'exportar_excel', 'tamano' => 'sm', 'url' => Url::to('/verificaciones/' . $jornada['id'] . '/exportar.xlsx')]),
 ]) ?>
 
-<?php if (!empty($mensaje)): ?><?= ui('alerta', ['tipo' => 'exito', 'mensaje' => (string) $mensaje, 'clases' => 'py-2 small']) ?><?php endif; ?>
-<?php if (!empty($error)): ?><?= ui('alerta', ['tipo' => 'peligro', 'mensaje' => (string) $error, 'clases' => 'py-2 small']) ?><?php endif; ?>
-
 <?php if ($jornada['estado'] === 'en_progreso'): ?>
     <?php
     // Una sola confirmación: si hay hallazgos sin resolver, el mismo mensaje lo dice y

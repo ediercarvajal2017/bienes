@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Core\Auth;
+use App\Core\Aviso;
 use App\Core\Database;
-use App\Core\Session;
 use App\Core\Url;
 use App\Core\View;
 use App\Helpers\FiltrosBienes;
@@ -28,7 +28,6 @@ final class ReporteController
             'puedeExportarTodo' => $this->puedeExportarTodo(),
             'funcionarios' => $this->puedeExportarTodo() ? $this->funcionariosDelAlcance() : [],
             'funcionariosActa' => $this->funcionariosDelAlcance(),
-            'error' => Session::pullFlash('error'),
         ]);
     }
 
@@ -55,7 +54,8 @@ final class ReporteController
         if ($usuarioId !== null) {
             $usuario = Usuario::find($usuarioId);
             if ($usuario === null || ($ids !== null && !in_array((int) $usuario['institucion_id'], $ids, true))) {
-                Session::flash('error', 'Ese funcionario no pertenece a la institución elegida.');
+                Aviso::enviar(Aviso::error('No se generó el reporte', 'El funcionario elegido no pertenece a la institución elegida.',
+                    'Elige primero la institución y luego uno de sus funcionarios.'));
                 header('Location: ' . Url::to('/reportes'));
                 exit;
             }
@@ -85,7 +85,8 @@ final class ReporteController
 
         $tipo = (string) ($_GET['tipo'] ?? '');
         if (!isset(ReportesControl::TIPOS_CONTROL[$tipo])) {
-            Session::flash('error', 'Elige uno de los reportes de control del inventario.');
+            Aviso::enviar(Aviso::error('No se generó el reporte', 'No elegiste cuál de los reportes de control quieres.',
+                'Elige uno de los reportes de control del inventario en la lista y vuelve a descargarlo.'));
             header('Location: ' . Url::to('/reportes'));
             exit;
         }
@@ -110,7 +111,8 @@ final class ReporteController
         $alcance = Auth::esSuperusuario() ? null
             : array_map(static fn (array $i): int => (int) $i['id'], Institucion::familiaDe((int) Auth::institucionId()));
         if ($persona === null || ($alcance !== null && !in_array((int) $persona['institucion_id'], $alcance, true))) {
-            Session::flash('error', 'Elige un funcionario de tu institución para generar el acta.');
+            Aviso::enviar(Aviso::error('No se generó el acta', 'No elegiste el funcionario del acta.',
+                'Elige un funcionario de tu institución para generar el acta.'));
             header('Location: ' . Url::to('/reportes'));
             exit;
         }
@@ -160,7 +162,7 @@ final class ReporteController
 
         $institucionId = $this->institucionAExportar();
         if ($institucionId === null || Institucion::find($institucionId) === null) {
-            Session::flash('error', 'Elige la institución que quieres descargar.');
+            Aviso::enviar(Aviso::error('No se descargó la información', 'No elegiste la institución.', 'Elige la institución que quieres descargar.'));
             header('Location: ' . Url::to('/reportes'));
             exit;
         }
@@ -168,7 +170,8 @@ final class ReporteController
         // Con fotos puede pesar cientos de MB: máximo MAX_EXPORTACIONES_POR_HORA por usuario.
         $clave = 'usuario-' . (int) Auth::id();
         if (LimiteIntentos::sobreClave('exportacion', $clave, 60) >= self::MAX_EXPORTACIONES_POR_HORA) {
-            Session::flash('error', 'Ya descargaste la información varias veces en la última hora. Intenta más tarde.');
+            Aviso::enviar(Aviso::error('No se descargó la información', 'Ya descargaste la información varias veces en la última hora.',
+                'Espera una hora y vuelve a intentarlo; la descarga anterior sigue en tu carpeta de descargas.'));
             header('Location: ' . Url::to('/reportes'));
             exit;
         }

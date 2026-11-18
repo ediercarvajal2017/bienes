@@ -4,12 +4,16 @@
  * independiente del layout principal a propósito: no toca la sesión ni la base de datos,
  * para poder mostrarse aunque el error venga justamente de ahí.
  *
- * Variables: $codigo, $titulo, $mensaje, $enlace (ruta), $textoEnlace, $incidente (opcional).
+ * Variables: $codigo, $titulo (qué pasó), $mensaje (por qué), $causas (list<string>, por qué
+ * puede pasar), $queHacer, $enlace (ruta), $textoEnlace, $incidente (opcional). Misma
+ * redacción que los avisos (docs/guia-estilo-ui.md, "Mensajes").
  */
 
 use App\Core\Url;
 
 $incidente ??= null;
+$causas ??= [];
+$queHacer ??= '';
 $enlace ??= '/dashboard';
 $textoEnlace ??= 'Volver al panel';
 ?>
@@ -37,10 +41,21 @@ $textoEnlace ??= 'Volver al panel';
         <p class="display-6 fw-semibold mb-1"><?= htmlspecialchars((string) $codigo, ENT_QUOTES) ?></p>
         <h1 class="h5 mb-2"><?= htmlspecialchars($titulo, ENT_QUOTES) ?></h1>
         <p class="text-body-secondary mb-3"><?= htmlspecialchars($mensaje, ENT_QUOTES) ?></p>
+        <?php if ($causas !== []): ?>
+            <div class="text-start small mb-3">
+                <p class="mb-1 fw-semibold">Puede pasar porque:</p>
+                <ul class="mb-0 ps-3">
+                    <?php foreach ($causas as $causa): ?><li><?= htmlspecialchars($causa, ENT_QUOTES) ?></li><?php endforeach; ?>
+                </ul>
+            </div>
+        <?php endif; ?>
+        <?php if ($queHacer !== ''): ?>
+            <p class="small text-start mb-3"><strong>Qué hacer:</strong> <?= htmlspecialchars($queHacer, ENT_QUOTES) ?></p>
+        <?php endif; ?>
         <?php if ($incidente): ?>
             <p class="small mb-3">
                 Código de incidente: <code class="user-select-all"><?= htmlspecialchars($incidente, ENT_QUOTES) ?></code><br>
-                <span class="text-body-secondary">Compártalo con soporte para ubicar el problema.</span>
+                <span class="text-body-secondary">Compártelo con soporte para ubicar el problema.</span>
             </p>
         <?php endif; ?>
         <?php if ($enlace !== ''): ?>

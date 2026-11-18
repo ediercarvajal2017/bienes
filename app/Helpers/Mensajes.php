@@ -62,6 +62,42 @@ final class Mensajes
     }
 
     /**
+     * Carga masiva sin archivo o con un archivo que no es Excel.
+     *
+     * @return DatosAviso
+     */
+    public static function excelNoValido(string $rutaPlantilla): array
+    {
+        return Aviso::error('No se leyó el archivo', 'No elegiste un archivo, o el que elegiste no es un Excel (.xlsx).',
+            'Descarga la plantilla, llénala sin cambiarle las columnas y súbela con «Analizar archivo».',
+            Aviso::accion('Descargar la plantilla', $rutaPlantilla));
+    }
+
+    /**
+     * El archivo de una carga masiva tiene un problema que el lector explica ($porQue).
+     *
+     * @return DatosAviso
+     */
+    public static function excelConProblema(string $porQue, string $rutaPlantilla): array
+    {
+        return Aviso::error('No se leyó el archivo', $porQue,
+            'Corrige el archivo y vuelve a subirlo. Si dudas del formato, descarga la plantilla de nuevo.',
+            Aviso::accion('Descargar la plantilla', $rutaPlantilla));
+    }
+
+    /**
+     * El lector de Excel falló (archivo dañado o que no es la plantilla).
+     *
+     * @return DatosAviso
+     */
+    public static function excelIlegible(string $incidente, string $rutaPlantilla): array
+    {
+        return Aviso::error('No se leyó el archivo', 'MIA no pudo leer el archivo: puede que no sea la plantilla o que esté dañado.',
+            "Descarga la plantilla, copia allí tus datos y vuelve a subirla. Si se repite, comparte el código {$incidente} con soporte.",
+            Aviso::accion('Descargar la plantilla', $rutaPlantilla));
+    }
+
+    /**
      * Fallo técnico: nada se aplicó y el usuario recibe el código del incidente para soporte.
      *
      * @return DatosAviso

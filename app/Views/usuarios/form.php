@@ -7,20 +7,13 @@ use App\Core\View;
 
 $esEdicion = $usuario !== null;
 $viejo ??= [];
-$errorCampo ??= null;
 $v = static fn (string $campo, mixed $porDefecto = '') => $viejo[$campo] ?? $usuario[$campo] ?? $porDefecto;
-$invalido = static fn (string $campo) => $errorCampo === $campo ? ' is-invalid' : '';
+// Campo marcado por el aviso de error de la acción anterior (App\Core\Aviso).
+$invalido = static fn (string $campo): string => clase_invalido($campo);
 ?>
 <?php ob_start(); ?>
     <a href="<?= Url::to('/usuarios') ?>" class="btn btn-sm btn-outline-secondary">Volver</a>
 <?= ui('encabezado_pagina', ['titulo' => (string) ($esEdicion ? 'Editar usuario' : 'Nuevo usuario'), 'icono' => 'usuarios', 'acciones' => (string) ob_get_clean()]) ?>
-
-<?php if (!empty($error)): ?>
-    <?= ui('alerta', ['tipo' => 'peligro', 'mensaje' => (string) $error, 'clases' => 'py-2 small']) ?>
-<?php endif; ?>
-<?php if (!empty($mensaje)): ?>
-    <?= ui('alerta', ['tipo' => 'exito', 'mensaje' => (string) $mensaje, 'clases' => 'py-2 small']) ?>
-<?php endif; ?>
 
 <p class="text-muted small mb-2">Los campos marcados con <span class="text-danger">*</span> son obligatorios.</p>
 
@@ -33,34 +26,26 @@ $invalido = static fn (string $campo) => $errorCampo === $campo ? ' is-invalid' 
         <label for="campo-documento" class="form-label small requerido">Documento</label>
         <input id="campo-documento" type="text" name="documento" class="form-control<?= $invalido('documento') ?>" required
                value="<?= htmlspecialchars($v('documento'), ENT_QUOTES) ?>">
-        <?php if ($errorCampo === 'documento'): ?>
-            <div class="invalid-feedback d-block"><?= htmlspecialchars($error, ENT_QUOTES) ?></div>
-        <?php endif; ?>
+        <?= error_campo('documento') ?>
     </div>
     <div class="col-md-6">
         <label for="campo-email" class="form-label small requerido">Correo</label>
         <input id="campo-email" type="email" name="email" class="form-control<?= $invalido('email') ?>" required
                value="<?= htmlspecialchars($v('email'), ENT_QUOTES) ?>">
-        <?php if ($errorCampo === 'email'): ?>
-            <div class="invalid-feedback d-block"><?= htmlspecialchars($error, ENT_QUOTES) ?></div>
-        <?php endif; ?>
+        <?= error_campo('email') ?>
     </div>
 
     <div class="col-md-6">
         <label for="campo-nombres" class="form-label small requerido">Nombres</label>
         <input id="campo-nombres" type="text" name="nombres" class="form-control<?= $invalido('nombres') ?>" required
                value="<?= htmlspecialchars($v('nombres'), ENT_QUOTES) ?>">
-        <?php if ($errorCampo === 'nombres'): ?>
-            <div class="invalid-feedback d-block"><?= htmlspecialchars($error, ENT_QUOTES) ?></div>
-        <?php endif; ?>
+        <?= error_campo('nombres') ?>
     </div>
     <div class="col-md-6">
         <label for="campo-apellidos" class="form-label small requerido">Apellidos</label>
         <input id="campo-apellidos" type="text" name="apellidos" class="form-control<?= $invalido('apellidos') ?>" required
                value="<?= htmlspecialchars($v('apellidos'), ENT_QUOTES) ?>">
-        <?php if ($errorCampo === 'apellidos'): ?>
-            <div class="invalid-feedback d-block"><?= htmlspecialchars($error, ENT_QUOTES) ?></div>
-        <?php endif; ?>
+        <?= error_campo('apellidos') ?>
     </div>
 
     <div class="col-md-6">
@@ -83,9 +68,7 @@ $invalido = static fn (string $campo) => $errorCampo === $campo ? ' is-invalid' 
                 </option>
             <?php endforeach; ?>
         </select>
-        <?php if ($errorCampo === 'rol_id'): ?>
-            <div class="invalid-feedback d-block"><?= htmlspecialchars($error, ENT_QUOTES) ?></div>
-        <?php endif; ?>
+        <?= error_campo('rol_id') ?>
     </div>
 
     <?php if (Auth::esSuperusuario()): ?>
@@ -115,8 +98,8 @@ $invalido = static fn (string $campo) => $errorCampo === $campo ? ' is-invalid' 
     <div class="col-md-6">
         <label for="password" class="form-label small<?= $esEdicion ? '' : ' requerido' ?>" for="password"><?= $esEdicion ? 'Nueva contraseña (opcional)' : 'Contraseña' ?></label>
         <input type="password" name="password" id="password" class="form-control<?= $invalido('password') ?>" <?= $esEdicion ? '' : 'required' ?> minlength="10" autocomplete="new-password">
-        <?php if ($errorCampo === 'password'): ?>
-            <div class="invalid-feedback d-block"><?= htmlspecialchars($error, ENT_QUOTES) ?></div>
+        <?php if (\App\Core\Aviso::errorDeCampo('password') !== null): ?>
+            <?= error_campo('password') ?>
         <?php else: ?>
             <div class="form-text">Mínimo 10 caracteres, con letras y números. No use su nombre, documento ni correo.</div>
         <?php endif; ?>

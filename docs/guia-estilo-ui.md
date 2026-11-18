@@ -234,8 +234,8 @@ Patrón del listado de Bienes:
   - `docs/capturas/antes/`: estado antes de la estandarización (v1.2.22).
   - `docs/capturas/despues/`: estado al cerrarla (v1.2.26).
 - **Mensajes:** `php database/herramientas/verificar_mensajes.php` (también corre en PHPUnit) falla si un archivo suma un mensaje de una sola línea (`Session::flash` con `ok` o `error`) o una regla sin guía (`new \DomainException`).
-  - La lista de pendientes (`tests/Unit/datos/mensajes_pendientes.php`) solo puede bajar.
-  - Los módulos ya migrados (`RevisionMensajes::MIGRADOS`) deben quedar en cero.
+  - La lista de pendientes (`tests/Unit/datos/mensajes_pendientes.php`) sirvió para migrar por fases. Desde la v1.2.37 está **vacía**: todo MIA usa `Aviso` y `ErrorGuiado`, y cualquier mensaje de una sola línea nuevo hace fallar las pruebas.
+  - **Páginas de error** (`errors/_pagina.php`): también dicen qué pasó, por qué puede pasar (`causas`) y qué hacer (`queHacer`).
 - **Caché de la PWA:** al cambiar los estilos, sube la versión `CACHE` de `public/sw.js`.
 
 **Excepciones documentadas:**

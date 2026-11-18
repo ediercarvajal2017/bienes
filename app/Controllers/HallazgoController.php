@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Core\Auth;
+use App\Core\Aviso;
 use App\Core\Csrf;
 use App\Core\Request;
 use App\Core\Session;
@@ -23,7 +24,8 @@ final class HallazgoController
         $institucionId = Auth::institucionId();
 
         if ($institucionId === null || !JornadaVerificacion::activaPara($institucionId)) {
-            Session::flash('error', 'No hay una jornada de verificación en progreso para tu institución.');
+            Aviso::enviar(Aviso::error('No se puede reportar el hallazgo', 'No hay una jornada de verificación en progreso para tu institución.',
+                'Los hallazgos se reportan durante una jornada: pídele al rector o al secretario que la inicie.'));
             header('Location: ' . Url::to('/escanear'));
             exit;
         }
@@ -31,7 +33,8 @@ final class HallazgoController
         $espacios = $this->espaciosPermitidos($institucionId);
 
         if (empty($espacios)) {
-            Session::flash('error', 'No tienes espacios asignados donde reportar un hallazgo.');
+            Aviso::enviar(Aviso::error('No se puede reportar el hallazgo', 'No eres responsable de ningún espacio, y el hallazgo se reporta en uno de tus espacios.',
+                'Pídele al rector o al secretario que te asigne como responsable del espacio donde está el bien.'));
             header('Location: ' . Url::to('/escanear'));
             exit;
         }
@@ -39,7 +42,6 @@ final class HallazgoController
         View::layout('partials/layout', 'hallazgos/crear', [
             'title' => 'Reportar bien no registrado',
             'espacios' => $espacios,
-            'error' => Session::pullFlash('error'),
             'viejo' => Session::pullOld(),
         ]);
     }
@@ -55,7 +57,7 @@ final class HallazgoController
         ];
 
         if (!Csrf::verify((string) $request->input('_csrf'))) {
-            Session::flash('error', 'Tu sesión expiró, intenta de nuevo.');
+            Aviso::enviar(\App\Helpers\Mensajes::sesionVencida(true));
             Session::flashOld($datos);
             header('Location: ' . Url::to('/hallazgos/crear'));
             exit;
@@ -69,21 +71,24 @@ final class HallazgoController
 
         $jornada = JornadaVerificacion::activaPara($institucionId);
         if (!$jornada) {
-            Session::flash('error', 'No hay una jornada de verificación en progreso para tu institución.');
+            Aviso::enviar(Aviso::error('No se puede reportar el hallazgo', 'No hay una jornada de verificación en progreso para tu institución.',
+                'Los hallazgos se reportan durante una jornada: pídele al rector o al secretario que la inicie.'));
             header('Location: ' . Url::to('/escanear'));
             exit;
         }
 
         $espaciosPermitidos = array_column($this->espaciosPermitidos($institucionId), 'id');
         if (!in_array($datos['espacio_id'], $espaciosPermitidos, true)) {
-            Session::flash('error', 'Selecciona un espacio válido de la lista.');
+            Aviso::enviar(Aviso::error('No se reportó el hallazgo', 'No elegiste un espacio de la lista.',
+                'Elige el espacio donde encontraste el bien y vuelve a enviar.', null, ['espacio_id' => 'Elige el espacio.']));
             Session::flashOld($datos);
             header('Location: ' . Url::to('/hallazgos/crear'));
             exit;
         }
 
         if ($datos['descripcion'] === '') {
-            Session::flash('error', 'Describe brevemente el bien encontrado.');
+            Aviso::enviar(Aviso::error('No se reportó el hallazgo', 'Falta describir el bien encontrado.',
+                'Escribe qué es (por ejemplo «Silla plástica azul sin placa») y vuelve a enviar.', null, ['descripcion' => 'Describe el bien.']));
             Session::flashOld($datos);
             header('Location: ' . Url::to('/hallazgos/crear'));
             exit;
@@ -95,7 +100,8 @@ final class HallazgoController
                 $fotoPath = Uploader::storeImage($archivo, 'hallazgos');
             }
         } catch (\RuntimeException $e) {
-            Session::flash('error', $e->getMessage());
+            Aviso::enviar(Aviso::error('No se reportó el hallazgo', 'La foto no se pudo guardar: ' . $e->getMessage(),
+                'Toma o elige otra foto y vuelve a enviar; la foto es opcional.', null, ['foto' => 'Elige otra foto.']));
             Session::flashOld($datos);
             header('Location: ' . Url::to('/hallazgos/crear'));
             exit;
@@ -110,7 +116,7 @@ final class HallazgoController
             'reportado_por' => Auth::id(),
         ]);
 
-        Session::flash('ok', 'Hallazgo reportado. Quien administre la verificación lo revisará.');
+        Aviso::enviar(Aviso::exito('Hallazgo reportado.', 'Quien administra la verificación lo revisará y decidirá si se registra como bien.'));
         header('Location: ' . Url::to('/escanear'));
         exit;
     }
@@ -128,7 +134,7 @@ final class HallazgoController
         }
 
         if (!Csrf::verify((string) $request->input('_csrf'))) {
-            Session::flash('error', 'Tu sesión expiró, intenta de nuevo.');
+            Aviso::enviar(\App\Helpers\Mensajes::sesionVencida(false));
             header('Location: ' . Url::to('/verificaciones/' . $hallazgo['jornada_id']) . '#seccion-hallazgos');
             exit;
         }
@@ -138,7 +144,7 @@ final class HallazgoController
         Auditoria::registrar(Auth::id(), (int) $hallazgo['institucion_id'], 'descartar', 'hallazgo', (int) $hallazgo['id'],
             ['estado' => 'pendiente'], ['estado' => 'descartado', 'observaciones' => $observaciones]);
 
-        Session::flash('ok', 'Hallazgo descartado.');
+        Aviso::enviar(Aviso::exito('Hallazgo descartado.', 'Queda en la lista como descartado, con tu observación.'));
         header('Location: ' . Url::to('/verificaciones/' . $hallazgo['jornada_id']) . '#seccion-hallazgos');
         exit;
     }

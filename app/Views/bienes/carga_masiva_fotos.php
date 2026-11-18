@@ -27,8 +27,6 @@ $listar = static function (array $items, int $limite = 40): string {
     'acciones' => ui('boton', ['texto' => 'Volver', 'icono' => 'volver', 'tamano' => 'sm', 'url' => Url::to('/cargas-masivas')]),
 ]) ?>
 
-<?php if (!empty($error)): ?><?= ui('alerta', ['tipo' => 'peligro', 'mensaje' => (string) $error, 'clases' => 'py-2 small contenedor-md']) ?><?php endif; ?>
-
 <div class="card mb-4 contenedor-md">
     <div class="card-body">
         <p class="small text-muted mb-2">

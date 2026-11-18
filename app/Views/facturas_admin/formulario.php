@@ -16,9 +16,6 @@ $v = static fn (string $campo): string => htmlspecialchars((string) ($valores[$c
 ?>
 <?= ui('encabezado_pagina', ['titulo' => 'Facturas', 'icono' => 'factura', 'subtitulo' => 'Registra y conserva las facturas de procesos administrativos.']) ?>
 
-<?php if (!empty($mensaje)): ?><?= ui('alerta', ['tipo' => 'exito', 'mensaje' => (string) $mensaje, 'clases' => 'py-2 small']) ?><?php endif; ?>
-<?php if (!empty($error)): ?><?= ui('alerta', ['tipo' => 'peligro', 'mensaje' => (string) $error, 'clases' => 'py-2 small']) ?><?php endif; ?>
-
 <?php View::render('partials/evidencia_institucion', ['instituciones' => $instituciones, 'institucionId' => $institucionId, 'ventana' => $ventana]); ?>
 
 <?php if ($institucionId === 0): ?>

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Core\Auth;
+use App\Core\Aviso;
 use App\Core\Csrf;
 use App\Core\Request;
 use App\Core\Session;
@@ -52,8 +53,6 @@ final class FormatoPlaqueteoController
             'opcionesPorPagina' => Evidencia::OPCIONES_POR_PAGINA,
             'total' => $total,
             'totalPaginas' => Paginador::totalPaginas($total, $porPagina),
-            'error' => Session::pullFlash('error'),
-            'mensaje' => Session::pullFlash('ok'),
         ]);
     }
 
@@ -82,7 +81,7 @@ final class FormatoPlaqueteoController
             $id = FormatoPlaqueteo::create($datos);
             Auditoria::registrar(Auth::id(), $institucionId, 'crear', 'formato_plaqueteo', $id, null, $datos);
 
-            Session::flash('ok', 'Formato de plaqueteo guardado en la biblioteca de evidencia.');
+            Aviso::enviar(Aviso::exito('Formato de plaqueteo guardado en la biblioteca de evidencia.', 'Aparece en la lista de abajo; desde allí puedes descargar el archivo o editarlo.'));
         } catch (\RuntimeException $e) {
             $this->volverConError($ventana, $e->getMessage(), $request);
         }
@@ -130,7 +129,7 @@ final class FormatoPlaqueteoController
             FormatoPlaqueteo::actualizar($id, $datosNuevos);
             Auditoria::registrar(Auth::id(), $institucionId, 'editar', 'formato_plaqueteo', $id, $registro, $datosNuevos);
 
-            Session::flash('ok', 'Registro actualizado.');
+            Aviso::enviar(Aviso::exito('Registro actualizado.'));
         } catch (\RuntimeException $e) {
             $this->volverConError($editar, $e->getMessage(), $request);
         }
@@ -150,7 +149,7 @@ final class FormatoPlaqueteoController
         FormatoPlaqueteo::eliminar($id, (int) Auth::id());
         Auditoria::registrar(Auth::id(), (int) $registro['institucion_id'], 'eliminar', 'formato_plaqueteo', $id, $registro);
 
-        Session::flash('ok', 'Registro enviado a la papelera. Un superusuario puede restaurarlo si fue un error.');
+        Aviso::enviar(Aviso::exito('Registro enviado a la papelera.', 'Si fue un error, un superusuario puede restaurarlo desde la Papelera.'));
         Evidencia::redirigir(Evidencia::ruta(self::VENTANA, (int) $registro['institucion_id']));
     }
 
@@ -168,9 +167,10 @@ final class FormatoPlaqueteoController
         return [$error, $datos];
     }
 
+    /** $mensaje: el dato que falta o está mal; el formulario conserva lo escrito. */
     private function volverConError(string $ruta, string $mensaje, Request $request): never
     {
-        Session::flash('error', $mensaje);
+        Aviso::enviar(Aviso::error('No se guardó el formato de plaqueteo', $mensaje, 'Corrige ese dato y vuelve a guardar: lo demás que escribiste sigue en el formulario.'));
         Session::flashOld([
             'fecha_plaqueteo' => (string) $request->input('fecha_plaqueteo'),
             'funcionario_asistio' => (string) $request->input('funcionario_asistio'),

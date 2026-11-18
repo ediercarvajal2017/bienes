@@ -29,12 +29,7 @@
         </div>
         <div class="brand-sub text-center">Recuperar contraseña</div>
 
-        <?php if (!empty($mensaje)): ?>
-            <?= ui('alerta', ['tipo' => 'exito', 'mensaje' => (string) $mensaje, 'clases' => 'py-2 small']) ?>
-        <?php endif; ?>
-        <?php if (!empty($error)): ?>
-            <?= ui('alerta', ['tipo' => 'peligro', 'mensaje' => (string) $error, 'clases' => 'py-2 small']) ?>
-        <?php endif; ?>
+        <?= ui('avisos', ['avisos' => \App\Core\Aviso::paraMostrar()]) ?>
 
         <p class="small text-muted">Escribe el correo con el que inicias sesión y te enviaremos un enlace para crear una nueva contraseña.</p>
 
