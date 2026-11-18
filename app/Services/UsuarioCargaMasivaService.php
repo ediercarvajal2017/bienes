@@ -22,6 +22,11 @@ final class UsuarioCargaMasivaService
      * quien sube el archivo ya es superusuario), igual que la validación del formulario
      * individual.
      *
+     * Documento es obligatorio siempre (identifica al usuario). Para un usuario NUEVO también
+     * lo son Nombres, Apellidos, Correo y Cargo; Rol en blanco es "docente". Para uno que YA
+     * EXISTE, cualquier columna en blanco CONSERVA lo que tiene (antes Rol en blanco lo
+     * pasaba a docente): la carga nunca borra ni cambia un dato porque la celda venga vacía.
+     *
      * @return array<int, array<string, mixed>>
      */
     public static function analizar(string $rutaArchivo, int $institucionId, bool $permiteSuperusuario): array
@@ -50,10 +55,38 @@ final class UsuarioCargaMasivaService
                 continue;
             }
 
-            if ($documento === '' || $nombres === '' || $apellidos === '' || $email === '') {
+            if ($documento === '') {
                 $filas[] = [
                     'fila' => $numeroFila, 'tipo' => 'invalido',
-                    'motivo' => 'Falta documento, nombres, apellidos o correo',
+                    'motivo' => 'Falta el documento: es el que identifica al usuario',
+                    'documento' => $documento, 'nombres' => $nombres, 'apellidos' => $apellidos,
+                ];
+                continue;
+            }
+
+            // Un usuario que ya existe conserva lo que la fila deja en blanco.
+            $existenteEnInstitucion = Usuario::findByDocumento($documento, $institucionId);
+
+            // Una cuenta de superusuario solo la administra otro superusuario, igual que en el
+            // formulario (UsuarioController::verificarAcceso). Sin esto, un rector que comparta
+            // institución con él podía cambiarle el correo (y recuperar su contraseña) o el rol.
+            if (!$permiteSuperusuario && ($existenteEnInstitucion['rol_nombre'] ?? '') === 'superusuario') {
+                $filas[] = [
+                    'fila' => $numeroFila, 'tipo' => 'invalido',
+                    'motivo' => 'Es una cuenta de superusuario: solo otro superusuario puede modificarla',
+                    'documento' => $documento, 'nombres' => $nombres, 'apellidos' => $apellidos,
+                ];
+                continue;
+            }
+
+            if ($existenteEnInstitucion !== null) {
+                $nombres = $nombres !== '' ? $nombres : (string) $existenteEnInstitucion['nombres'];
+                $apellidos = $apellidos !== '' ? $apellidos : (string) $existenteEnInstitucion['apellidos'];
+                $email = $email !== '' ? $email : (string) $existenteEnInstitucion['email'];
+            } elseif ($nombres === '' || $apellidos === '' || $email === '') {
+                $filas[] = [
+                    'fila' => $numeroFila, 'tipo' => 'invalido',
+                    'motivo' => 'Un usuario nuevo necesita nombres, apellidos y correo',
                     'documento' => $documento, 'nombres' => $nombres, 'apellidos' => $apellidos,
                 ];
                 continue;
@@ -89,15 +122,17 @@ final class UsuarioCargaMasivaService
             $documentosVistos[$documento] = $numeroFila;
             $correosVistos[$emailNormalizado] = $numeroFila;
 
-            if ($cargoTexto === '') {
+            if ($cargoTexto === '' && $existenteEnInstitucion === null) {
                 $filas[] = [
                     'fila' => $numeroFila, 'tipo' => 'invalido',
-                    'motivo' => 'Falta el cargo', 'documento' => $documento, 'nombres' => $nombres, 'apellidos' => $apellidos,
+                    'motivo' => 'Un usuario nuevo necesita el cargo', 'documento' => $documento, 'nombres' => $nombres, 'apellidos' => $apellidos,
                 ];
                 continue;
             }
 
-            $cargo = Cargo::findByNombre($cargoTexto);
+            $cargo = $cargoTexto === ''
+                ? ['id' => $existenteEnInstitucion['cargo_id'], 'nombre' => $existenteEnInstitucion['cargo_nombre']]
+                : Cargo::findByNombre($cargoTexto);
             if (!$cargo) {
                 $filas[] = [
                     'fila' => $numeroFila, 'tipo' => 'invalido',
@@ -107,18 +142,21 @@ final class UsuarioCargaMasivaService
                 continue;
             }
 
-            $nombreRol = mb_strtolower($rolTexto !== '' ? $rolTexto : self::ROL_DEFECTO);
-            if (!isset($rolesPorNombre[$nombreRol])) {
-                $filas[] = [
-                    'fila' => $numeroFila, 'tipo' => 'invalido',
-                    'motivo' => $rolTexto !== '' ? "El rol \"{$rolTexto}\" no es válido" : 'No se pudo asignar el rol por defecto',
-                    'documento' => $documento, 'nombres' => $nombres, 'apellidos' => $apellidos,
-                ];
-                continue;
+            if ($rolTexto === '' && $existenteEnInstitucion !== null) {
+                // Rol en blanco: el usuario que ya existe conserva el suyo.
+                $rol = ['id' => $existenteEnInstitucion['rol_id'], 'nombre' => $existenteEnInstitucion['rol_nombre']];
+            } else {
+                $nombreRol = mb_strtolower($rolTexto !== '' ? $rolTexto : self::ROL_DEFECTO);
+                if (!isset($rolesPorNombre[$nombreRol])) {
+                    $filas[] = [
+                        'fila' => $numeroFila, 'tipo' => 'invalido',
+                        'motivo' => $rolTexto !== '' ? "El rol \"{$rolTexto}\" no es válido" : 'No se pudo asignar el rol por defecto',
+                        'documento' => $documento, 'nombres' => $nombres, 'apellidos' => $apellidos,
+                    ];
+                    continue;
+                }
+                $rol = $rolesPorNombre[$nombreRol];
             }
-            $rol = $rolesPorNombre[$nombreRol];
-
-            $existenteEnInstitucion = Usuario::findByDocumento($documento, $institucionId);
 
             if (!$existenteEnInstitucion && Usuario::existeDocumento($documento)) {
                 $filas[] = [
@@ -175,13 +213,23 @@ final class UsuarioCargaMasivaService
      *
      * Devuelve cuántas filas se omitieron por un choque de documento/correo detectado justo
      * al escribir (p. ej. si alguien registró ese mismo documento por otra vía entre que se
-     * analizó el archivo y se confirmó la carga).
+     * analizó el archivo y se confirmó la carga), o porque quien confirma no es superusuario
+     * y la fila crea o toca una cuenta de superusuario (se vuelve a comprobar aquí: quien
+     * confirma puede no ser quien analizó, y el rol pudo cambiar entre tanto).
      */
-    public static function aplicar(array $filas, int $institucionId): int
+    public static function aplicar(array $filas, int $institucionId, bool $permiteSuperusuario): int
     {
         $omitidas = 0;
 
         foreach ($filas as $fila) {
+            if (!$permiteSuperusuario && in_array($fila['tipo'], ['nuevo', 'modificado'], true)) {
+                $actual = $fila['tipo'] === 'modificado' ? Usuario::find((int) $fila['usuario_id']) : null;
+                if (($fila['datos']['rol_nombre'] ?? '') === 'superusuario' || ($actual['rol_nombre'] ?? '') === 'superusuario') {
+                    $omitidas++;
+                    continue;
+                }
+            }
+
             try {
                 if ($fila['tipo'] === 'nuevo') {
                     Usuario::create([

@@ -57,7 +57,7 @@
             <ol class="mb-0 ps-3">
                 <li>Entra a <strong>Espacios</strong> para crear aulas, oficinas o bodegas, y asignarles un
                     responsable.</li>
-                <li>Puedes activar o desactivar un espacio, y cargar varios de una vez con la carga masiva.</li>
+                <li>Puedes activar o desactivar un espacio, y cargar varios de una vez con la carga masiva. Si un espacio que ya existe viene sin responsables en el archivo, conserva los que tiene.</li>
             </ol>
         </div>
     </details>

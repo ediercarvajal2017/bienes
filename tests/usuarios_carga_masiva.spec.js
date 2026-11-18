@@ -32,7 +32,8 @@ test('carga masiva de usuarios: la fila inválida no se crea, la válida sí', a
 
     await confirmar(page, () => page.getByRole('button', { name: 'Confirmar importación' }).click());
 
-    await expect(page.locator('.alert-success')).toContainText('Carga masiva aplicada correctamente.');
+    // La fila con el correo inválido no entró: el aviso lo dice (antes decía "aplicada correctamente").
+    await expect(page.locator('.avisos-pagina .alert-danger')).toContainText('aplicada parcialmente');
 
     await page.goto('usuarios');
     await expect(page.locator('tr', { hasText: emailValido })).toBeVisible();

@@ -174,21 +174,17 @@ final class Espacio
      */
     public static function sincronizarResponsables(int $espacioId, array $usuarioIds): void
     {
-        $pdo = Database::connection();
-        $pdo->beginTransaction();
-        try {
+        // Database::transaccion se une a la transacción que ya esté abierta (p. ej. la de la
+        // carga masiva). Antes abría la suya con beginTransaction() y, dentro de otra,
+        // fallaba: la carga masiva de espacios con filas válidas no se podía aplicar.
+        Database::transaccion(static function (\PDO $pdo) use ($espacioId, $usuarioIds): void {
             $pdo->prepare('DELETE FROM espacio_responsables WHERE espacio_id = ?')->execute([$espacioId]);
 
             $stmt = $pdo->prepare('INSERT INTO espacio_responsables (espacio_id, usuario_id) VALUES (?, ?)');
             foreach (array_unique($usuarioIds) as $usuarioId) {
                 $stmt->execute([$espacioId, $usuarioId]);
             }
-
-            $pdo->commit();
-        } catch (\Throwable $e) {
-            $pdo->rollBack();
-            throw $e;
-        }
+        });
     }
 
     public static function setActivo(int $id, bool $activo): void

@@ -17,6 +17,11 @@ final class EspacioCargaMasivaService
      * coma) y compara cada fila contra la base de datos de la institución. No escribe nada
      * todavía.
      *
+     * Número y Nombre son obligatorios. Responsables es obligatorio para un espacio nuevo
+     * (todo espacio necesita al menos uno); en un espacio que ya existe, en blanco CONSERVA
+     * sus responsables: la carga nunca borra un dato porque la celda venga vacía. Si trae
+     * documentos, esa lista pasa a ser la de responsables (la vista previa lo muestra).
+     *
      * @return array<int, array<string, mixed>>
      */
     public static function analizar(string $rutaArchivo, int $institucionId): array
@@ -54,33 +59,51 @@ final class EspacioCargaMasivaService
             }
             $codigosVistos[$codigo] = $numeroFila;
 
-            $documentos = array_filter(array_map('trim', explode(',', $documentosTexto)), fn ($d) => $d !== '');
-            if (empty($documentos)) {
+            $existente = Espacio::buscarPorCodigoInstitucion($institucionId, $codigo);
+            if ($existente !== null && $existente['eliminado_en'] !== null) {
                 $filas[] = [
                     'fila' => $numeroFila, 'tipo' => 'invalido',
-                    'motivo' => 'Debe indicar al menos un documento de responsable', 'codigo' => $codigo, 'nombre' => $nombre,
-                ];
-                continue;
-            }
-
-            $responsables = [];
-            $documentosNoEncontrados = [];
-            foreach ($documentos as $documento) {
-                $usuario = Usuario::findByDocumento($documento, $institucionId);
-                if (!$usuario) {
-                    $documentosNoEncontrados[] = $documento;
-                    continue;
-                }
-                $responsables[] = $usuario;
-            }
-
-            if (!empty($documentosNoEncontrados)) {
-                $filas[] = [
-                    'fila' => $numeroFila, 'tipo' => 'invalido',
-                    'motivo' => 'Documento(s) no encontrado(s) en la institución: ' . implode(', ', $documentosNoEncontrados),
+                    'motivo' => "El espacio {$codigo} está en la papelera: un superusuario debe restaurarlo antes de cargarlo",
                     'codigo' => $codigo, 'nombre' => $nombre,
                 ];
                 continue;
+            }
+
+            $documentos = array_values(array_unique(array_filter(array_map('trim', explode(',', $documentosTexto)), fn ($d) => $d !== '')));
+            if (empty($documentos) && $existente === null) {
+                $filas[] = [
+                    'fila' => $numeroFila, 'tipo' => 'invalido',
+                    'motivo' => 'Un espacio nuevo necesita al menos un documento de responsable', 'codigo' => $codigo, 'nombre' => $nombre,
+                ];
+                continue;
+            }
+
+            // null: la celda vino vacía y el espacio existente conserva sus responsables.
+            $responsables = null;
+            if (!empty($documentos)) {
+                $responsables = [];
+                $problemas = [];
+                foreach ($documentos as $documento) {
+                    $usuario = Usuario::findByDocumento($documento, $institucionId);
+                    if (!$usuario) {
+                        $problemas[] = "{$documento} (no existe en la institución)";
+                        continue;
+                    }
+                    if ((int) $usuario['activo'] !== 1) {
+                        $problemas[] = "{$documento} (usuario inactivo)";
+                        continue;
+                    }
+                    $responsables[] = $usuario;
+                }
+
+                if ($problemas !== []) {
+                    $filas[] = [
+                        'fila' => $numeroFila, 'tipo' => 'invalido',
+                        'motivo' => 'Responsable(s) que no se pueden asignar: ' . implode(', ', $problemas),
+                        'codigo' => $codigo, 'nombre' => $nombre,
+                    ];
+                    continue;
+                }
             }
 
             $datos = [
@@ -88,8 +111,6 @@ final class EspacioCargaMasivaService
                 'nombre' => $nombre,
                 'responsables' => $responsables,
             ];
-
-            $existente = Espacio::buscarPorCodigoInstitucion($institucionId, $codigo);
 
             if (!$existente) {
                 $filas[] = ['fila' => $numeroFila, 'tipo' => 'nuevo', 'datos' => $datos];
@@ -133,7 +154,10 @@ final class EspacioCargaMasivaService
                         'nombre' => $fila['datos']['nombre'],
                         'codigo' => $fila['datos']['codigo'],
                     ]);
-                    Espacio::sincronizarResponsables($fila['espacio_id'], array_column($fila['datos']['responsables'], 'id'));
+                    // Responsables en blanco: se conservan los que tiene.
+                    if ($fila['datos']['responsables'] !== null) {
+                        Espacio::sincronizarResponsables($fila['espacio_id'], array_column($fila['datos']['responsables'], 'id'));
+                    }
                 }
             } catch (\PDOException $e) {
                 if ($e->getCode() !== '23000') {
@@ -169,6 +193,10 @@ final class EspacioCargaMasivaService
 
         if (trim((string) $existente['nombre']) !== trim($nuevo['nombre'])) {
             $cambios['Nombre'] = ['antes' => $existente['nombre'], 'despues' => $nuevo['nombre']];
+        }
+
+        if ($nuevo['responsables'] === null) {
+            return $cambios; // en blanco: se conservan
         }
 
         $responsablesActuales = array_column(Espacio::responsablesDe((int) $existente['id']), 'id');
