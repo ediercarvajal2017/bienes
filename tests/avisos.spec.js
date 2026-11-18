@@ -151,6 +151,7 @@ test('los avisos usan el verde MIA; solo el error lleva la franja roja de MIA', 
     await page.locator('#campo-descripcion').fill('PW-AVISO colores');
     await page.locator('#botonGuardarBien').click();
     await expect(page.locator('.avisos-pagina .alert-danger')).toBeVisible();
+    await page.waitForLoadState('load');
 
     const colores = await page.evaluate(() => {
         const raiz = getComputedStyle(document.documentElement);
