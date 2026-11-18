@@ -17,9 +17,6 @@ $etiquetasTipo = [
 <?= ui('encabezado_pagina', ['titulo' => 'Papelera de reciclaje', 'icono' => 'papelera',
     'subtitulo' => 'Todo lo eliminado en cualquier institución, de cualquier tipo. Se conserva aquí hasta que lo restaures o hasta que la limpieza automática lo borre después del periodo de retención.']) ?>
 
-<?php if (!empty($mensaje)): ?><?= ui('alerta', ['tipo' => 'exito', 'mensaje' => (string) $mensaje, 'clases' => 'py-2 small']) ?><?php endif; ?>
-<?php if (!empty($error)): ?><?= ui('alerta', ['tipo' => 'peligro', 'mensaje' => (string) $error, 'clases' => 'py-2 small']) ?><?php endif; ?>
-
 <?php if (empty($elementos)): ?>
     <p class="text-muted">La papelera está vacía.</p>
 <?php else: ?>

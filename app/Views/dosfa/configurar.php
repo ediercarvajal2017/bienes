@@ -12,10 +12,6 @@ use App\Core\Url;
         desactivarla cuando quieras desde «Mi cuenta».
     </p>
 
-    <?php if (!empty($error)): ?>
-        <?= ui('alerta', ['tipo' => 'peligro', 'mensaje' => (string) $error, 'clases' => 'py-2 small']) ?>
-    <?php endif; ?>
-
     <ol class="list-unstyled pasos-2fa">
         <li class="card mb-3">
             <div class="card-body">

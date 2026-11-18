@@ -9,13 +9,6 @@ $fecha = static fn (?string $valor): string => $valor ? date('d/m/Y', strtotime(
 <?= ui('encabezado_pagina', ['titulo' => 'Mi cuenta', 'icono' => 'cuenta',
     'subtitulo' => trim($usuario['nombres'] . ' ' . $usuario['apellidos']) . ' · ' . $usuario['email'] . ' · ' . ucfirst((string) $usuario['rol_nombre'])]) ?>
 
-<?php if (!empty($mensaje)): ?>
-    <?= ui('alerta', ['tipo' => 'exito', 'mensaje' => (string) $mensaje, 'clases' => 'py-2 small contenedor-cuenta']) ?>
-<?php endif; ?>
-<?php if (!empty($error)): ?>
-    <?= ui('alerta', ['tipo' => 'peligro', 'mensaje' => (string) $error, 'clases' => 'py-2 small contenedor-cuenta']) ?>
-<?php endif; ?>
-
 <div class="contenedor-cuenta">
     <section class="card mb-3" aria-labelledby="tituloDosPasos">
         <div class="card-body">

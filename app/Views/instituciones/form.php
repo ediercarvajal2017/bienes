@@ -16,10 +16,6 @@ $v = static fn (string $campo, mixed $porDefecto = '') => $viejo[$campo] ?? $ins
     <a href="<?= Url::to('/instituciones') ?>" class="btn btn-sm btn-outline-secondary">Volver</a>
 <?= ui('encabezado_pagina', ['titulo' => (string) ($esEdicion ? 'Editar institución' : 'Nueva institución'), 'icono' => 'institucion', 'acciones' => (string) ob_get_clean()]) ?>
 
-<?php if (!empty($error)): ?>
-    <?= ui('alerta', ['tipo' => 'peligro', 'mensaje' => (string) $error, 'clases' => 'py-2 small']) ?>
-<?php endif; ?>
-
 <?php if ($puedeEditar): ?>
     <p class="text-muted small mb-2">Los campos marcados con <span class="text-danger">*</span> son obligatorios.</p>
 <?php endif; ?>
@@ -31,8 +27,9 @@ $v = static fn (string $campo, mixed $porDefecto = '') => $viejo[$campo] ?? $ins
 
     <div class="col-md-6">
         <label class="form-label small requerido" for="codigoDane">Código DANE</label>
-        <input type="text" name="codigo_dane" id="codigoDane" class="form-control" inputmode="numeric" pattern="[0-9]*" required <?= $puedeEditarEstructura ? '' : 'disabled' ?>
+        <input type="text" name="codigo_dane" id="codigoDane" class="form-control<?= clase_invalido('codigo_dane') ?>" inputmode="numeric" pattern="[0-9]*" required <?= $puedeEditarEstructura ? '' : 'disabled' ?>
                value="<?= htmlspecialchars($v('codigo_dane'), ENT_QUOTES) ?>">
+        <?= error_campo('codigo_dane') ?>
     </div>
 
     <div class="col-md-6">
@@ -53,13 +50,14 @@ $v = static fn (string $campo, mixed $porDefecto = '') => $viejo[$campo] ?? $ins
 
     <div class="col-12">
         <label for="campo-nombre" class="form-label small requerido">Nombre</label>
-        <input id="campo-nombre" type="text" name="nombre" class="form-control" required <?= $puedeEditar ? '' : 'disabled' ?>
+        <input id="campo-nombre" type="text" name="nombre" class="form-control<?= clase_invalido('nombre') ?>" required <?= $puedeEditar ? '' : 'disabled' ?>
                value="<?= htmlspecialchars($v('nombre'), ENT_QUOTES) ?>">
+        <?= error_campo('nombre') ?>
     </div>
 
     <div class="col-12" id="campoPadre"<?= $v('tipo_sede') === 'seccion' ? '' : ' hidden' ?>>
         <label class="form-label small" for="institucionPadre">Institución principal</label>
-        <select name="institucion_padre_id" id="institucionPadre" class="form-select selector-buscable" <?= $puedeEditarEstructura ? '' : 'disabled' ?>>
+        <select name="institucion_padre_id" id="institucionPadre" class="form-select selector-buscable<?= clase_invalido('institucion_padre_id') ?>" <?= $puedeEditarEstructura ? '' : 'disabled' ?>>
             <option value="">-- Selecciona --</option>
             <?php foreach ($instituciones as $opt): ?>
                 <?php if ($esEdicion && (int) $opt['id'] === (int) $institucion['id']) { continue; } ?>
@@ -68,6 +66,7 @@ $v = static fn (string $campo, mixed $porDefecto = '') => $viejo[$campo] ?? $ins
                 </option>
             <?php endforeach; ?>
         </select>
+        <?= error_campo('institucion_padre_id') ?>
     </div>
 
     <div class="col-12">

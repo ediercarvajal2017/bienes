@@ -8,9 +8,6 @@ use App\Models\Categoria;
 ?>
 <?= ui('encabezado_pagina', ['titulo' => 'Categorías de bienes', 'icono' => 'categoria', 'subtitulo' => 'Catálogo usado al registrar bienes (sillas, mesas, tableros, proyectores...) — propio de cada institución.']) ?>
 
-<?php if (!empty($mensaje)): ?><?= ui('alerta', ['tipo' => 'exito', 'mensaje' => (string) $mensaje, 'clases' => 'py-2 small']) ?><?php endif; ?>
-<?php if (!empty($error)): ?><?= ui('alerta', ['tipo' => 'peligro', 'mensaje' => (string) $error, 'clases' => 'py-2 small']) ?><?php endif; ?>
-
 <?php if (Auth::esSuperusuario()): ?>
     <div class="mb-3 contenedor-sm">
         <label for="selectorInstitucion" class="form-label small">Institución</label>

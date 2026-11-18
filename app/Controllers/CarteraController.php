@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Core\Auth;
+use App\Core\Aviso;
 use App\Core\Csrf;
 use App\Core\Request;
 use App\Core\Session;
@@ -61,8 +62,6 @@ final class CarteraController
             'opcionesPorPagina' => Evidencia::OPCIONES_POR_PAGINA,
             'total' => $total,
             'totalPaginas' => Paginador::totalPaginas($total, $porPagina),
-            'error' => Session::pullFlash('error'),
-            'mensaje' => Session::pullFlash('ok'),
         ]);
     }
 
@@ -126,7 +125,7 @@ final class CarteraController
         $volverA = Evidencia::ruta(self::VENTANA, $institucionId);
 
         if ($institucionId === 0) {
-            Session::flash('error', 'Selecciona una institución.');
+            Aviso::enviar(\App\Helpers\Mensajes::eligeInstitucion('No se guardó la cartera recibida'));
             Evidencia::redirigir(self::VENTANA);
         }
 
@@ -149,7 +148,7 @@ final class CarteraController
             $id = CarteraEnvio::create($datos);
             Auditoria::registrar(Auth::id(), $institucionId, 'crear', 'cartera_envio', $id, null, $datos);
 
-            Session::flash('ok', 'Cartera recibida registrada en la biblioteca de evidencia.');
+            Aviso::enviar(Aviso::exito('Cartera recibida registrada en la biblioteca de evidencia.', 'Aparece en la lista de abajo; desde allí puedes descargar el archivo o editarlo.'));
         } catch (\RuntimeException $e) {
             $this->volverConError($volverA, $e->getMessage(), $request);
         }
@@ -196,7 +195,7 @@ final class CarteraController
             CarteraEnvio::actualizar($id, $datosNuevos);
             Auditoria::registrar(Auth::id(), (int) $registro['institucion_id'], 'editar', 'cartera_envio', $id, $registro, $datosNuevos);
 
-            Session::flash('ok', 'Registro actualizado.');
+            Aviso::enviar(Aviso::exito('Registro actualizado.'));
         } catch (\RuntimeException $e) {
             $this->volverConError($volverA, $e->getMessage(), $request);
         }
@@ -216,7 +215,7 @@ final class CarteraController
         CarteraEnvio::eliminar($id, (int) Auth::id());
         Auditoria::registrar(Auth::id(), (int) $registro['institucion_id'], 'eliminar', 'cartera_envio', $id, $registro);
 
-        Session::flash('ok', 'Registro enviado a la papelera. Un superusuario puede restaurarlo si fue un error.');
+        Aviso::enviar(Aviso::exito('Registro enviado a la papelera.', 'Si fue un error, un superusuario puede restaurarlo desde la Papelera.'));
         Evidencia::redirigir(Evidencia::ruta(self::VENTANA, (int) $registro['institucion_id']));
     }
 
@@ -281,9 +280,10 @@ final class CarteraController
         return $funcionarios;
     }
 
+    /** $mensaje: el dato que falta o está mal; el formulario conserva lo escrito. */
     private function volverConError(string $volverA, string $mensaje, Request $request): never
     {
-        Session::flash('error', $mensaje);
+        Aviso::enviar(Aviso::error('No se guardó la cartera recibida', $mensaje, 'Corrige ese dato y vuelve a guardar: lo demás que escribiste sigue en el formulario.'));
         Session::flashOld([
             'funcionario_id' => (string) $request->input('funcionario_id'),
             'correo_solicitante' => (string) $request->input('correo_solicitante'),

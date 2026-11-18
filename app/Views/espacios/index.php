@@ -22,28 +22,30 @@ $puedeCrearEspacio = Auth::esSuperusuario() || Auth::tienePermiso('espacios.crea
     <?php endif; ?>
 </div>
 
-<?php if (!empty($mensaje)): ?>
-    <?= ui('alerta', ['tipo' => 'exito', 'mensaje' => (string) $mensaje, 'clases' => 'py-2 small']) ?>
-<?php endif; ?>
-<?php if (!empty($error)): ?>
-    <div class="alert alert-danger py-2 small contenedor-md" role="alert">
-        <?= htmlspecialchars($error, ENT_QUOTES) ?>
-        <?php if (!empty($errorDetalle['bienes'])): ?>
+<?php if (!empty($espacioEnUso)): ?>
+    <?php // Mismo diseño que los avisos (partials/ui/alerta.php), con la lista de bienes que usan el espacio. ?>
+    <div class="alert alert-danger aviso contenedor-md" role="alert" tabindex="-1" data-aviso-enfocar>
+        <?= icono('error', 'aviso-icono') ?>
+        <div class="aviso-cuerpo">
+        <p class="aviso-titulo">No se eliminó el espacio</p>
+        <p class="aviso-detalle"><?= htmlspecialchars((string) ($espacioEnUso['porQue'] ?? ''), ENT_QUOTES) ?></p>
+        <?php if (!empty($espacioEnUso['bienes'])): ?>
             <ul class="mb-1 mt-2 ps-3">
-                <?php foreach ($errorDetalle['bienes'] as $b): ?>
+                <?php foreach ($espacioEnUso['bienes'] as $b): ?>
                     <li>
                         <a href="<?= Url::to('/bienes/' . (int) $b['id'] . '/editar') ?>" class="alert-link mono"><?= htmlspecialchars((string) $b['codigo'], ENT_QUOTES) ?></a>
                         · <?= htmlspecialchars((string) $b['descripcion'], ENT_QUOTES) ?>
                     </li>
                 <?php endforeach; ?>
-                <?php if ((int) ($errorDetalle['mas'] ?? 0) > 0): ?>
-                    <li class="list-unstyled text-body-secondary">y <?= (int) $errorDetalle['mas'] ?> más.</li>
+                <?php if ((int) ($espacioEnUso['mas'] ?? 0) > 0): ?>
+                    <li class="list-unstyled text-body-secondary">y <?= (int) $espacioEnUso['mas'] ?> más.</li>
                 <?php endif; ?>
             </ul>
         <?php endif; ?>
-        <?php if (!empty($errorDetalle['consejo'])): ?>
-            <div class="mt-1"><?= htmlspecialchars((string) $errorDetalle['consejo'], ENT_QUOTES) ?></div>
+        <?php if (!empty($espacioEnUso['consejo'])): ?>
+            <p class="aviso-solucion"><strong>Qué hacer:</strong> <?= htmlspecialchars((string) $espacioEnUso['consejo'], ENT_QUOTES) ?></p>
         <?php endif; ?>
+        </div>
     </div>
 <?php endif; ?>
 

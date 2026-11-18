@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Core\Auth;
+use App\Core\Aviso;
 use App\Core\Csrf;
 use App\Core\Request;
 use App\Core\Session;
@@ -51,8 +52,6 @@ final class FormatoReintegroController
             'opcionesPorPagina' => Evidencia::OPCIONES_POR_PAGINA,
             'total' => $total,
             'totalPaginas' => Paginador::totalPaginas($total, $porPagina),
-            'error' => Session::pullFlash('error'),
-            'mensaje' => Session::pullFlash('ok'),
         ]);
     }
 
@@ -81,7 +80,7 @@ final class FormatoReintegroController
             $id = FormatoReintegro::create($datos);
             Auditoria::registrar(Auth::id(), $institucionId, 'crear', 'formato_reintegro', $id, null, $datos);
 
-            Session::flash('ok', 'Formato de reintegro guardado en la biblioteca de evidencia.');
+            Aviso::enviar(Aviso::exito('Formato de reintegro guardado en la biblioteca de evidencia.', 'Aparece en la lista de abajo; desde allí puedes descargar el archivo o editarlo.'));
         } catch (\RuntimeException $e) {
             $this->volverConError($ventana, $e->getMessage(), $request);
         }
@@ -129,7 +128,7 @@ final class FormatoReintegroController
             FormatoReintegro::actualizar($id, $datosNuevos);
             Auditoria::registrar(Auth::id(), $institucionId, 'editar', 'formato_reintegro', $id, $registro, $datosNuevos);
 
-            Session::flash('ok', 'Registro actualizado.');
+            Aviso::enviar(Aviso::exito('Registro actualizado.'));
         } catch (\RuntimeException $e) {
             $this->volverConError($editar, $e->getMessage(), $request);
         }
@@ -149,7 +148,7 @@ final class FormatoReintegroController
         FormatoReintegro::eliminar($id, (int) Auth::id());
         Auditoria::registrar(Auth::id(), (int) $registro['institucion_id'], 'eliminar', 'formato_reintegro', $id, $registro);
 
-        Session::flash('ok', 'Registro enviado a la papelera. Un superusuario puede restaurarlo si fue un error.');
+        Aviso::enviar(Aviso::exito('Registro enviado a la papelera.', 'Si fue un error, un superusuario puede restaurarlo desde la Papelera.'));
         Evidencia::redirigir(Evidencia::ruta(self::VENTANA, (int) $registro['institucion_id']));
     }
 
@@ -165,9 +164,10 @@ final class FormatoReintegroController
         return [$error, $datos];
     }
 
+    /** $mensaje: el dato que falta o está mal; el formulario conserva lo escrito. */
     private function volverConError(string $ruta, string $mensaje, Request $request): never
     {
-        Session::flash('error', $mensaje);
+        Aviso::enviar(Aviso::error('No se guardó el formato de reintegro', $mensaje, 'Corrige ese dato y vuelve a guardar: lo demás que escribiste sigue en el formulario.'));
         Session::flashOld([
             'fecha_reintegro' => (string) $request->input('fecha_reintegro'),
             'descripcion' => (string) $request->input('descripcion'),

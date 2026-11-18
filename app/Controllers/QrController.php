@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Core\Auth;
+use App\Core\Aviso;
 use App\Core\Csrf;
 use App\Core\Database;
 use App\Core\Request;
-use App\Core\Session;
 use App\Core\Url;
 use App\Core\View;
 use App\Models\Asignacion;
@@ -57,8 +57,6 @@ final class QrController
             'jornadaActiva' => $jornadaActiva,
             'puedeVerificar' => $puedeVerificar,
             'verificacionActual' => $verificacionActual,
-            'mensaje' => Session::pullFlash('ok'),
-            'error' => Session::pullFlash('error'),
         ]);
     }
 
@@ -109,13 +107,14 @@ final class QrController
         $request = new Request();
 
         if (!Csrf::verify((string) $request->input('_csrf'))) {
-            Session::flash('error', 'Tu sesión expiró, intenta de nuevo.');
+            Aviso::enviar(\App\Helpers\Mensajes::sesionVencida(false));
             header('Location: ' . Url::to("/qr/{$token}"));
             exit;
         }
 
         if ($bien['qr_impreso_en'] === null) {
-            Session::flash('error', 'Todavía no se ha generado la etiqueta de este bien — imprímela primero desde "Generar QR masivo".');
+            Aviso::enviar(Aviso::error('No se confirmó la etiqueta', 'Todavía no se ha generado la etiqueta de este bien.',
+                'Imprímela primero desde «Generar QR masivo», pégala en el bien y luego confírmala aquí.'));
             header('Location: ' . Url::to("/qr/{$token}"));
             exit;
         }
@@ -127,7 +126,7 @@ final class QrController
             ]);
         }
 
-        Session::flash('ok', 'Etiqueta confirmada: coincide con este bien.');
+        Aviso::enviar(Aviso::exito('Etiqueta confirmada: coincide con este bien.'));
         header('Location: ' . Url::to("/qr/{$token}"));
         exit;
     }

@@ -204,7 +204,7 @@ final class Auth
         $ultimoAcceso = (int) Session::get('ultimo_acceso', $ahora);
 
         if (!Session::get('recordarme') && $ahora - $ultimoAcceso > $limiteInactividad) {
-            self::cerrarPorSeguridad('Tu sesión se cerró por inactividad. Ingresa de nuevo.');
+            self::cerrarPorSeguridad('Pasó mucho tiempo sin actividad y, por seguridad, MIA cerró tu sesión.');
 
             return false;
         }
@@ -219,7 +219,7 @@ final class Auth
                 && (int) $estado['sesion_version'] === (int) Session::get('sesion_version', 0);
 
             if (!$valida) {
-                self::cerrarPorSeguridad('Tu sesión se cerró porque tu cuenta cambió o fue desactivada. Ingresa de nuevo.');
+                self::cerrarPorSeguridad('Tu cuenta cambió (contraseña, rol o permisos) o fue desactivada.');
 
                 return false;
             }
@@ -252,7 +252,7 @@ final class Auth
         self::$permisosCache = null;
         $_SESSION = [];
         Session::regenerate();
-        Session::flash('error', $mensaje);
+        Aviso::enviar(Aviso::error('Tu sesión se cerró', $mensaje, 'Ingresa de nuevo con tu correo y contraseña.'));
     }
 
     public static function id(): ?int

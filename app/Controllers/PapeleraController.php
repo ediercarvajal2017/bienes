@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Core\Auth;
+use App\Core\Aviso;
 use App\Core\Csrf;
 use App\Core\Request;
-use App\Core\Session;
 use App\Core\Url;
 use App\Core\View;
 use App\Models\Auditoria;
@@ -33,8 +33,6 @@ final class PapeleraController
         View::layout('partials/layout', 'papelera/index', [
             'title' => 'Papelera de reciclaje',
             'elementos' => Papelera::listar(),
-            'mensaje' => Session::pullFlash('ok'),
-            'error' => Session::pullFlash('error'),
         ]);
     }
 
@@ -44,13 +42,14 @@ final class PapeleraController
         $request = new Request();
 
         if (!Csrf::verify((string) $request->input('_csrf'))) {
-            Session::flash('error', 'Tu sesión expiró, intenta de nuevo.');
+            Aviso::enviar(\App\Helpers\Mensajes::sesionVencida(false));
             header('Location: ' . Url::to('/papelera'));
             exit;
         }
 
         if (Papelera::tabla($tipo) === null) {
-            Session::flash('error', 'Tipo de elemento no reconocido.');
+            Aviso::enviar(Aviso::error('No se restauró el elemento', 'El enlace no corresponde a ningún tipo de elemento de la papelera.',
+                'Vuelve a la lista de la Papelera y pulsa «Restaurar» en la fila del elemento.'));
             header('Location: ' . Url::to('/papelera'));
             exit;
         }
@@ -69,7 +68,10 @@ final class PapeleraController
 
         Auditoria::registrar(Auth::id(), Auth::institucionId(), 'restaurar', $tipo, $id);
 
-        Session::flash('ok', 'Elemento restaurado.');
+        $donde = ['usuario' => 'Usuarios', 'espacio' => 'Espacios', 'categoria' => 'Categorías', 'cargo' => 'Cargos',
+            'factura_administrativa' => 'Facturas', 'formato_reintegro' => 'Formatos de reintegro',
+            'formato_plaqueteo' => 'Formatos de plaqueteo', 'cartera_envio' => 'Cartera'][$tipo];
+        Aviso::enviar(Aviso::exito('Elemento restaurado.', "Vuelve a aparecer en «{$donde}», como estaba antes de eliminarlo."));
         header('Location: ' . Url::to('/papelera'));
         exit;
     }

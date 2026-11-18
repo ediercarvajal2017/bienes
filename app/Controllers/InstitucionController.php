@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Core\Auth;
+use App\Core\Aviso;
 use App\Core\Csrf;
 use App\Core\Request;
 use App\Core\Session;
@@ -27,8 +28,6 @@ final class InstitucionController
         View::layout('partials/layout', 'instituciones/index', [
             'title' => 'Instituciones',
             'instituciones' => Institucion::all(),
-            'mensaje' => Session::pullFlash('ok'),
-            'error' => Session::pullFlash('error'),
         ]);
     }
 
@@ -44,7 +43,6 @@ final class InstitucionController
             'title' => 'Nueva institución',
             'institucion' => null,
             'instituciones' => Institucion::listadoParaSelect(true),
-            'error' => Session::pullFlash('error'),
             'viejo' => Session::pullOld(),
         ]);
     }
@@ -55,8 +53,8 @@ final class InstitucionController
         $datos = $this->datosDesdeFormulario($request);
         $this->verificarCsrf($request, '/instituciones/crear', $datos);
 
-        if ($error = $this->validar($datos, null)) {
-            Session::flash('error', $error);
+        if ($falla = $this->validar($datos, null)) {
+            Aviso::enviar(Aviso::error('No se creó la institución', $falla['porQue'], $falla['queHacer'], null, [$falla['campo'] => $falla['enCampo']]));
             Session::flashOld($datos);
             header('Location: ' . Url::to('/instituciones/crear'));
             exit;
@@ -73,7 +71,8 @@ final class InstitucionController
             $this->subirLogo($id, $archivo);
         }
 
-        Session::flash('ok', 'Institución creada correctamente.');
+        Aviso::enviar(Aviso::exito("Institución {$datos['nombre']} creada, con sus categorías base.",
+            'Siguiente paso: registra a su rector en Usuarios para que pueda entrar a MIA.', Aviso::accion('Ir a Usuarios', '/usuarios')));
         header('Location: ' . Url::to('/instituciones'));
         exit;
     }
@@ -94,7 +93,6 @@ final class InstitucionController
             'title' => 'Editar institución',
             'institucion' => $institucion,
             'instituciones' => $this->institucionesParaFormulario($institucion),
-            'error' => Session::pullFlash('error'),
             'viejo' => Session::pullOld(),
         ]);
     }
@@ -129,8 +127,8 @@ final class InstitucionController
 
         $this->verificarCsrf($request, "/instituciones/{$id}/editar", $datos);
 
-        if ($error = $this->validar($datos, $id, $antes)) {
-            Session::flash('error', $error);
+        if ($falla = $this->validar($datos, $id, $antes)) {
+            Aviso::enviar(Aviso::error('No se guardó la institución', $falla['porQue'], $falla['queHacer'], null, [$falla['campo'] => $falla['enCampo']]));
             Session::flashOld($datos);
             header('Location: ' . Url::to("/instituciones/{$id}/editar"));
             exit;
@@ -143,7 +141,7 @@ final class InstitucionController
             $this->subirLogo($id, $archivo);
         }
 
-        Session::flash('ok', 'Institución actualizada.');
+        Aviso::enviar(Aviso::exito("Institución {$datos['nombre']} actualizada."));
         header('Location: ' . Url::to(Auth::esSuperusuario() ? '/instituciones' : "/instituciones/{$id}/editar"));
         exit;
     }
@@ -160,7 +158,9 @@ final class InstitucionController
             $nuevoEstado = !((bool) $institucion['activo']);
             Institucion::setActivo($id, $nuevoEstado);
             Auditoria::registrar(Auth::id(), $id, $nuevoEstado ? 'activar' : 'desactivar', 'institucion', $id, $institucion, null);
-            Session::flash('ok', 'Estado de la institución actualizado.');
+            Aviso::enviar($nuevoEstado
+                ? Aviso::exito("Institución {$institucion['nombre']} activada.", 'Sus usuarios pueden volver a entrar a MIA.')
+                : Aviso::exito("Institución {$institucion['nombre']} desactivada.", 'Sus usuarios ya no pueden entrar; sus datos se conservan.'));
         }
 
         header('Location: ' . Url::to('/instituciones'));
@@ -175,7 +175,9 @@ final class InstitucionController
                 Institucion::updateLogo($institucionId, $path);
             }
         } catch (\RuntimeException $e) {
-            Session::flash('error', $e->getMessage());
+            // Los datos ya se guardaron: solo faltó el logo.
+            Aviso::enviar(Aviso::advertencia('El logo no se guardó', $e->getMessage(),
+                'Abre la institución y vuelve a subir el logo (JPG o PNG).', Aviso::accion('Abrir la institución', "/instituciones/{$institucionId}/editar")));
         }
     }
 
@@ -199,14 +201,21 @@ final class InstitucionController
      * se valida únicamente si cambió, para no impedir editar el nombre o la dirección de
      * una sección ya existente cuya principal fue desactivada después.
      */
-    private function validar(array $datos, ?int $exceptId, ?array $antes = null): ?string
+    /** @return array{campo: string, porQue: string, queHacer: string, enCampo: string}|null */
+    private function validar(array $datos, ?int $exceptId, ?array $antes = null): ?array
     {
-        if ($datos['codigo_dane'] === '' || $datos['nombre'] === '') {
-            return 'El código DANE y el nombre son obligatorios.';
+        if ($datos['codigo_dane'] === '') {
+            return ['campo' => 'codigo_dane', 'porQue' => 'Falta el código DANE.', 'enCampo' => 'Escribe el código DANE.',
+                'queHacer' => 'Escribe el código DANE de la institución (solo números) y vuelve a guardar.'];
+        }
+        if ($datos['nombre'] === '') {
+            return ['campo' => 'nombre', 'porQue' => 'Falta el nombre de la institución.', 'enCampo' => 'Escribe el nombre.',
+                'queHacer' => 'Escribe el nombre completo de la institución y vuelve a guardar.'];
         }
 
         if (Institucion::existeCodigoDane($datos['codigo_dane'], $exceptId)) {
-            return 'Ya existe una institución con ese código DANE.';
+            return ['campo' => 'codigo_dane', 'porQue' => "Ya existe una institución con el código DANE {$datos['codigo_dane']}.",
+                'enCampo' => 'Este código DANE ya existe.', 'queHacer' => 'Revisa el número; si es la misma institución, edita la que ya existe.'];
         }
 
         $estructuraSinCambios = $antes !== null
@@ -226,23 +235,29 @@ final class InstitucionController
      * otra (dejaría a sus secciones colgando de una sección, algo que familiaDe() no
      * contempla).
      */
-    private function validarPadre(?int $padreId, ?int $exceptId): ?string
+    /** @return array{campo: string, porQue: string, queHacer: string, enCampo: string}|null */
+    private function validarPadre(?int $padreId, ?int $exceptId): ?array
     {
+        $campo = 'institucion_padre_id';
         if ($padreId === null) {
-            return 'Seleccione la institución principal a la que pertenece esta sección.';
+            return ['campo' => $campo, 'porQue' => 'Falta la institución principal de esta sección.', 'enCampo' => 'Elige la institución principal.',
+                'queHacer' => 'Elige en «Institución principal» la sede a la que pertenece esta sección.'];
         }
 
         if ($exceptId !== null && $padreId === $exceptId) {
-            return 'Una institución no puede ser sección de sí misma.';
+            return ['campo' => $campo, 'porQue' => 'Una institución no puede ser sección de sí misma.', 'enCampo' => 'Elige otra institución.',
+                'queHacer' => 'Elige otra institución principal, o cambia el tipo a «Principal».'];
         }
 
         $padre = Institucion::find($padreId);
         if (!$padre || !(int) $padre['activo'] || $padre['tipo_sede'] !== 'principal') {
-            return 'La institución principal seleccionada no es válida (debe existir, estar activa y ser sede principal).';
+            return ['campo' => $campo, 'porQue' => 'La institución principal elegida está inactiva o también es una sección.',
+                'enCampo' => 'Elige una sede principal activa.', 'queHacer' => 'Elige una institución principal que esté activa.'];
         }
 
         if ($exceptId !== null && Institucion::tieneSecciones($exceptId)) {
-            return 'Esta institución tiene secciones a su cargo, así que no puede convertirse en sección de otra.';
+            return ['campo' => 'tipo_sede', 'porQue' => 'Esta institución tiene secciones a su cargo, así que no puede convertirse en sección de otra.',
+                'enCampo' => 'Tiene secciones a su cargo.', 'queHacer' => 'Déjala como «Principal», o pasa antes sus secciones a otra institución.'];
         }
 
         return null;

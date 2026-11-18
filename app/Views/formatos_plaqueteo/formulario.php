@@ -16,9 +16,6 @@ $v = static fn (string $campo): string => htmlspecialchars((string) ($valores[$c
 ?>
 <?= ui('encabezado_pagina', ['titulo' => 'Formatos de plaqueteo', 'icono' => 'formato_plaqueteo', 'subtitulo' => 'Registra la evidencia de cada plaqueteo realizado por la Alcaldía.']) ?>
 
-<?php if (!empty($mensaje)): ?><?= ui('alerta', ['tipo' => 'exito', 'mensaje' => (string) $mensaje, 'clases' => 'py-2 small']) ?><?php endif; ?>
-<?php if (!empty($error)): ?><?= ui('alerta', ['tipo' => 'peligro', 'mensaje' => (string) $error, 'clases' => 'py-2 small']) ?><?php endif; ?>
-
 <?php View::render('partials/evidencia_institucion', ['instituciones' => $instituciones, 'institucionId' => $institucionId, 'ventana' => $ventana]); ?>
 
 <?php if ($institucionId === 0): ?>

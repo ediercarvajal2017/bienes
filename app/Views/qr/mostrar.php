@@ -33,12 +33,6 @@ $qrImpreso = !empty($bien['qr_impreso_en']);
         </button>
         <div class="text-center mb-3"><img src="<?= Url::asset('/assets/img/logo.webp') ?>" width="400" height="400" alt="MIA" class="auth-logo-72"></div>
 
-        <?php if (!empty($mensaje)): ?>
-            <?= ui('alerta', ['tipo' => 'exito', 'mensaje' => (string) $mensaje, 'clases' => 'py-2 small']) ?>
-        <?php endif; ?>
-        <?php if (!empty($error)): ?>
-            <?= ui('alerta', ['tipo' => 'peligro', 'mensaje' => (string) $error, 'clases' => 'py-2 small']) ?>
-        <?php endif; ?>
         <?= ui('avisos', ['avisos' => \App\Core\Aviso::paraMostrar()]) ?>
 
         <?php if (!empty($bien['foto_path'])): ?>

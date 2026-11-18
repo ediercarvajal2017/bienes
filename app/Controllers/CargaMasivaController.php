@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Core\Auth;
+use App\Core\Aviso;
 use App\Core\Csrf;
 use App\Core\ErrorHandler;
 use App\Core\Request;
-use App\Core\Session;
 use App\Core\Url;
 use App\Core\View;
 use App\Helpers\Paginador;
@@ -44,8 +44,6 @@ final class CargaMasivaController
             'opcionesPorPagina' => self::OPCIONES_POR_PAGINA,
             'total' => $total,
             'totalPaginas' => Paginador::totalPaginas($total, $porPagina),
-            'mensaje' => Session::pullFlash('ok'),
-            'error' => Session::pullFlash('error'),
         ]);
     }
 
@@ -59,7 +57,7 @@ final class CargaMasivaController
         $request = new Request();
 
         if (!Csrf::verify((string) $request->input('_csrf'))) {
-            Session::flash('error', 'Tu sesión expiró, intenta de nuevo.');
+            Aviso::enviar(\App\Helpers\Mensajes::sesionVencida(false));
             header('Location: ' . Url::to('/cargas-masivas'));
             exit;
         }
@@ -67,7 +65,7 @@ final class CargaMasivaController
         $archivo = $request->file('archivo');
 
         if (!$archivo || $archivo['error'] !== UPLOAD_ERR_OK) {
-            Session::flash('error', 'Selecciona un archivo .xlsx válido.');
+            Aviso::enviar(\App\Helpers\Mensajes::excelNoValido('/cargas-masivas/plantilla.xlsx'));
             header('Location: ' . Url::to('/cargas-masivas'));
             exit;
         }
@@ -84,14 +82,14 @@ final class CargaMasivaController
             $config = require dirname(__DIR__, 2) . '/config/app.php';
             $filas = CargaMasivaService::analizar($config['storage_path'] . '/uploads/' . $rutaRelativa, $institucionId);
         } catch (\RuntimeException $e) {
-            Session::flash('error', $e->getMessage());
+            Aviso::enviar(\App\Helpers\Mensajes::excelConProblema($e->getMessage(), '/cargas-masivas/plantilla.xlsx'));
             header('Location: ' . Url::to('/cargas-masivas'));
             exit;
         } catch (\Throwable $e) {
             // Errores internos del lector de Excel: al usuario, un mensaje claro; el detalle
             // técnico queda en el log con su código de incidente.
             $incidente = ErrorHandler::reportar($e, __METHOD__);
-            Session::flash('error', 'No se pudo leer el archivo. Verifique que sea la plantilla de Excel (.xlsx) descargada del sistema. (Código: ' . $incidente . ')');
+            Aviso::enviar(\App\Helpers\Mensajes::excelIlegible($incidente, '/cargas-masivas/plantilla.xlsx'));
             header('Location: ' . Url::to('/cargas-masivas'));
             exit;
         }
@@ -124,8 +122,6 @@ final class CargaMasivaController
             'title' => 'Resultado de la carga',
             'carga' => $carga,
             'filas' => json_decode($carga['resultado_diff_json'], true) ?? [],
-            'mensaje' => Session::pullFlash('ok'),
-            'error' => Session::pullFlash('error'),
         ]);
     }
 
@@ -136,13 +132,14 @@ final class CargaMasivaController
 
         $request = new Request();
         if (!Csrf::verify((string) $request->input('_csrf'))) {
-            Session::flash('error', 'Tu sesión expiró, intenta de nuevo.');
+            Aviso::enviar(\App\Helpers\Mensajes::sesionVencida(false));
             header('Location: ' . Url::to("/cargas-masivas/{$id}"));
             exit;
         }
 
         if ((int) $carga['aplicada'] === 1) {
-            Session::flash('error', 'Esta carga ya fue aplicada anteriormente.');
+            Aviso::enviar(Aviso::error('No se aplicó la carga', 'Esta carga ya se había aplicado, así que sus cambios ya están en MIA.',
+                'Revisa el resultado más abajo. Para cargar más datos, sube un archivo nuevo.'));
             header('Location: ' . Url::to("/cargas-masivas/{$id}"));
             exit;
         }
@@ -162,7 +159,7 @@ final class CargaMasivaController
                 return $omitidas;
             });
         } catch (\DomainException $e) {
-            Session::flash('error', $e->getMessage());
+            Aviso::enviar(Aviso::desdeExcepcion($e, 'No se aplicó la carga', 'Recarga la página para ver el estado de la carga.'));
             header('Location: ' . Url::to("/cargas-masivas/{$id}"));
             exit;
         }
@@ -184,7 +181,7 @@ final class CargaMasivaController
     private function flashResultado(int $invalidas, int $omitidas, string $sustantivoChoque): void
     {
         if ($invalidas === 0 && $omitidas === 0) {
-            Session::flash('ok', 'Carga masiva aplicada correctamente.');
+            Aviso::enviar(Aviso::exito('Carga masiva aplicada correctamente.', 'Se guardaron todas las filas del archivo.'));
 
             return;
         }
@@ -201,7 +198,8 @@ final class CargaMasivaController
                 : "{$omitidas} filas se omitieron por un choque de {$sustantivoChoque} detectado al guardar";
         }
 
-        Session::flash('error', 'Carga masiva aplicada parcialmente: ' . implode('; ', $partes) . '.');
+        Aviso::enviar(Aviso::error('Parte del archivo no se cargó', 'La carga quedó aplicada parcialmente: ' . implode('; ', $partes) . '.',
+            'Corrige esas filas en el Excel y súbelo de nuevo: las que ya entraron no se duplican.'));
     }
 
     private function cargaAccesible(int $id): array

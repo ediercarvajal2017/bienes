@@ -34,9 +34,7 @@
                 Tu correo registrado es: <strong><?= htmlspecialchars($resultado, ENT_QUOTES) ?></strong>
             </div>
         <?php endif; ?>
-        <?php if (!empty($error)): ?>
-            <?= ui('alerta', ['tipo' => 'peligro', 'mensaje' => (string) $error, 'clases' => 'py-2 small']) ?>
-        <?php endif; ?>
+        <?= ui('avisos', ['avisos' => \App\Core\Aviso::paraMostrar(), 'enfocar' => false]) ?>
 
         <p class="small text-muted">Indica tu número de documento y tu institución; te mostramos una versión parcialmente oculta del correo con el que inicias sesión.</p>
 

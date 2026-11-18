@@ -8,8 +8,6 @@ use App\Core\Url;
     <a href="<?= Url::to('/verificaciones') ?>" class="btn btn-sm btn-outline-secondary">Volver</a>
 <?= ui('encabezado_pagina', ['titulo' => 'Nueva jornada de verificación', 'icono' => 'verificacion', 'acciones' => (string) ob_get_clean()]) ?>
 
-<?php if (!empty($error)): ?><?= ui('alerta', ['tipo' => 'peligro', 'mensaje' => (string) $error, 'clases' => 'py-2 small contenedor-md']) ?><?php endif; ?>
-
 <p class="text-muted small contenedor-md">
     Al iniciar la jornada, cualquier persona con acceso a un bien podrá escanear su QR y confirmar si existe físicamente
     o reportar una discrepancia. Un docente solo puede verificar los bienes de los espacios donde es responsable.
@@ -22,11 +20,11 @@ use App\Core\Url;
         <?= Csrf::field() ?>
         <div class="mb-3">
             <label for="campo-nombre" class="form-label small requerido">Nombre de la jornada</label>
-            <input id="campo-nombre" type="text" name="nombre" class="form-control" placeholder="Ej. Verificación semestre 1 - 2026" required>
+            <input id="campo-nombre" type="text" name="nombre" class="form-control<?= clase_invalido('nombre') ?>" placeholder="Ej. Verificación semestre 1 - 2026" required>
         </div>
         <div class="mb-3">
             <label for="campo-fecha-inicio" class="form-label small requerido">Fecha de inicio</label>
-            <input id="campo-fecha-inicio" type="date" name="fecha_inicio" class="form-control" value="<?= date('Y-m-d') ?>" required>
+            <input id="campo-fecha-inicio" type="date" name="fecha_inicio" class="form-control<?= clase_invalido('fecha_inicio') ?>" value="<?= date('Y-m-d') ?>" required>
         </div>
         <button type="submit" class="btn btn-primary btn-sm">
             <?= icono('verificacion', 'me-1') ?>Iniciar jornada

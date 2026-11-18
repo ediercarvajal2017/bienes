@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Core\Auth;
+use App\Core\Aviso;
 use App\Core\Csrf;
 use App\Core\Request;
 use App\Core\Session;
@@ -51,8 +52,6 @@ final class FacturaAdministrativaController
             'opcionesPorPagina' => Evidencia::OPCIONES_POR_PAGINA,
             'total' => $total,
             'totalPaginas' => Paginador::totalPaginas($total, $porPagina),
-            'error' => Session::pullFlash('error'),
-            'mensaje' => Session::pullFlash('ok'),
         ]);
     }
 
@@ -81,7 +80,7 @@ final class FacturaAdministrativaController
             $id = FacturaAdministrativa::create($datos);
             Auditoria::registrar(Auth::id(), $institucionId, 'crear', 'factura_administrativa', $id, null, $datos);
 
-            Session::flash('ok', 'Factura guardada en la biblioteca de evidencia.');
+            Aviso::enviar(Aviso::exito('Factura guardada en la biblioteca de evidencia.', 'Aparece en la lista de abajo; desde allí puedes descargar el archivo o editarlo.'));
         } catch (\RuntimeException $e) {
             $this->volverConError($ventana, $e->getMessage(), $request);
         }
@@ -129,7 +128,7 @@ final class FacturaAdministrativaController
             FacturaAdministrativa::actualizar($id, $datosNuevos);
             Auditoria::registrar(Auth::id(), $institucionId, 'editar', 'factura_administrativa', $id, $registro, $datosNuevos);
 
-            Session::flash('ok', 'Registro actualizado.');
+            Aviso::enviar(Aviso::exito('Registro actualizado.'));
         } catch (\RuntimeException $e) {
             $this->volverConError($editar, $e->getMessage(), $request);
         }
@@ -149,7 +148,7 @@ final class FacturaAdministrativaController
         FacturaAdministrativa::eliminar($id, (int) Auth::id());
         Auditoria::registrar(Auth::id(), (int) $registro['institucion_id'], 'eliminar', 'factura_administrativa', $id, $registro);
 
-        Session::flash('ok', 'Registro enviado a la papelera. Un superusuario puede restaurarlo si fue un error.');
+        Aviso::enviar(Aviso::exito('Registro enviado a la papelera.', 'Si fue un error, un superusuario puede restaurarlo desde la Papelera.'));
         Evidencia::redirigir(Evidencia::ruta(self::VENTANA, (int) $registro['institucion_id']));
     }
 
@@ -166,9 +165,10 @@ final class FacturaAdministrativaController
         return [$error, $datos];
     }
 
+    /** $mensaje: el dato que falta o está mal; el formulario conserva lo escrito. */
     private function volverConError(string $ruta, string $mensaje, Request $request): never
     {
-        Session::flash('error', $mensaje);
+        Aviso::enviar(Aviso::error('No se guardó la factura', $mensaje, 'Corrige ese dato y vuelve a guardar: lo demás que escribiste sigue en el formulario.'));
         Session::flashOld([
             'fecha_factura' => (string) $request->input('fecha_factura'),
             'descripcion' => (string) $request->input('descripcion'),

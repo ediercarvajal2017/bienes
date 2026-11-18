@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Core\Auth;
+use App\Core\Aviso;
 use App\Core\Csrf;
 use App\Core\Request;
 use App\Core\Session;
@@ -32,13 +33,13 @@ final class DosFactoresController
     {
         $pendiente = Auth::ingresoPendiente();
         if ($pendiente === null) {
-            $this->volverAlLogin('El tiempo para escribir el código venció. Ingresa de nuevo.');
+            $this->volverAlLogin(Aviso::error('No se completó el ingreso', 'Pasó demasiado tiempo sin escribir el código de verificación.',
+                'Ingresa de nuevo con tu correo y contraseña y escribe el código enseguida.'));
         }
 
         $usuario = Usuario::findParaAcceso((int) $pendiente['usuario_id']);
 
         View::render('auth/2fa_verificar', [
-            'error' => Session::pullFlash('error'),
             // Si APP_KEY cambió, la clave del autenticador ya no se puede leer: solo sirven
             // los códigos de recuperación (o que un administrador la restablezca).
             'appDisponible' => $usuario !== null && DosFactoresService::secretoDe($usuario) !== null,
@@ -50,21 +51,24 @@ final class DosFactoresController
     {
         $request = new Request();
         if (!Csrf::verify((string) $request->input('_csrf'))) {
-            $this->volverAlLogin('Tu sesión expiró, ingresa de nuevo.');
+            $this->volverAlLogin(Aviso::error('No se completó el ingreso', 'La página estuvo abierta mucho tiempo y venció por seguridad.',
+                'Ingresa de nuevo con tu correo y contraseña.'));
         }
 
         $pendiente = Auth::ingresoPendiente();
         $usuario = $pendiente !== null ? Usuario::findParaAcceso((int) $pendiente['usuario_id']) : null;
         if ($pendiente === null || $usuario === null || !Auth::puedeIngresar($usuario)) {
             Auth::descartarIngresoPendiente();
-            $this->volverAlLogin('El tiempo para escribir el código venció. Ingresa de nuevo.');
+            $this->volverAlLogin(Aviso::error('No se completó el ingreso', 'Pasó demasiado tiempo sin escribir el código de verificación.',
+                'Ingresa de nuevo con tu correo y contraseña y escribe el código enseguida.'));
         }
 
         $email = (string) $usuario['email'];
         $ventana = DosFactoresService::VENTANA_MINUTOS;
         if (LimiteIntentos::sobreClave('2fa', $email, $ventana) >= DosFactoresService::MAX_FALLOS_CUENTA) {
             Auth::descartarIngresoPendiente();
-            $this->volverAlLogin("Demasiados códigos incorrectos. Espera {$ventana} minutos antes de volver a intentarlo.");
+            $this->volverAlLogin(Aviso::error('No se completó el ingreso', 'Se escribieron demasiados códigos incorrectos.',
+                "Espera {$ventana} minutos y vuelve a ingresar. Revisa que la hora de tu teléfono esté en automático."));
         }
 
         $codigo = trim((string) $request->input('codigo'));
@@ -85,11 +89,13 @@ final class DosFactoresController
             $pendiente['intentos'] = (int) $pendiente['intentos'] + 1;
             if ($pendiente['intentos'] >= DosFactoresService::MAX_INTENTOS_POR_INGRESO) {
                 Auth::descartarIngresoPendiente();
-                $this->volverAlLogin('Demasiados códigos incorrectos. Ingresa de nuevo con tu contraseña.');
+                $this->volverAlLogin(Aviso::error('No se completó el ingreso', 'Se escribieron demasiados códigos incorrectos.',
+                    'Ingresa de nuevo con tu contraseña y escribe el código que muestra ahora la aplicación.'));
             }
 
             Auth::actualizarIngresoPendiente($pendiente);
-            Session::flash('error', 'Código incorrecto o vencido. Verifica que la hora de tu teléfono esté en automático.');
+            Aviso::enviar(Aviso::error('No se pudo ingresar', 'Código incorrecto o vencido: cambia cada 30 segundos.',
+                'Escribe el código que muestra ahora la aplicación y verifica que la hora de tu teléfono esté en automático.'));
             header('Location: ' . Url::to('/2fa/verificar'));
             exit;
         }
@@ -107,9 +113,10 @@ final class DosFactoresController
                 'usuario', (int) $usuario['id'], null, ['codigos_restantes' => $quedan]);
             DosFactoresService::avisarPorCorreo($usuario, 'se usó un código de recuperación',
                 "Se ingresó a tu cuenta con un código de recuperación. Te quedan {$quedan}.");
-            Session::flash('ok', $quedan <= 3
-                ? "Ingresaste con un código de recuperación. Te quedan {$quedan}: genera códigos nuevos en «Mi cuenta»."
-                : "Ingresaste con un código de recuperación. Te quedan {$quedan}.");
+            Aviso::enviar($quedan <= 3
+                ? Aviso::advertencia('Ingresaste con un código de recuperación.', "Te quedan {$quedan} códigos de recuperación.",
+                    'Genera códigos nuevos en «Mi cuenta» antes de que se acaben.', Aviso::accion('Ir a Mi cuenta', '/mi-cuenta'))
+                : Aviso::exito('Ingresaste con un código de recuperación.', "Te quedan {$quedan}. Cada código sirve una sola vez."));
         }
 
         header('Location: ' . Url::to('/dashboard'));
@@ -145,7 +152,6 @@ final class DosFactoresController
             'title' => 'Verificación en dos pasos',
             'qr' => DosFactoresService::qrDataUri($secreto, (string) $usuario['email']),
             'claveManual' => Totp::formatearParaMostrar($secreto),
-            'error' => Session::pullFlash('error'),
         ]);
     }
 
@@ -164,7 +170,8 @@ final class DosFactoresController
 
         $paso = Totp::pasoValido($secreto, (string) $request->input('codigo'));
         if ($paso === null) {
-            Session::flash('error', 'El código no coincide. Escribe el que muestra ahora la aplicación (cambia cada 30 segundos) y verifica que la hora del teléfono esté en automático.');
+            Aviso::enviar(Aviso::error('No se activó la verificación en dos pasos', 'El código no coincide con el de la aplicación.',
+                'Escribe el que muestra ahora la aplicación (cambia cada 30 segundos) y verifica que la hora del teléfono esté en automático.'));
             header('Location: ' . Url::to('/2fa/configurar'));
             exit;
         }
@@ -243,7 +250,8 @@ final class DosFactoresController
             ? CodigoRecuperacion::usar($id, $codigo)
             : DosFactoresService::validarCodigoApp($usuario, $codigo);
         if (!$codigoValido) {
-            $this->volverAMiCuenta('error', 'El código de verificación no es válido.');
+            $this->volverAMiCuenta(Aviso::error('No se desactivó la verificación en dos pasos', 'El código de verificación no es válido.',
+                'Escribe el código que muestra ahora tu aplicación, o uno de tus códigos de recuperación.'));
         }
 
         Usuario::desactivarTotp($id);
@@ -255,7 +263,7 @@ final class DosFactoresController
         DosFactoresService::avisarPorCorreo($usuario, 'verificación en dos pasos desactivada',
             'Se desactivó la verificación en dos pasos en tu cuenta de MIA.');
 
-        $this->volverAMiCuenta('ok', 'Verificación en dos pasos desactivada.');
+        $this->volverAMiCuenta(Aviso::exito('Verificación en dos pasos desactivada.', 'Desde ahora entras solo con tu contraseña. Puedes activarla de nuevo cuando quieras.'));
     }
 
     public function revocarDispositivo(string $id): void
@@ -267,10 +275,10 @@ final class DosFactoresController
         if (DispositivoConfiable::revocar((int) $id, (int) $usuario['id'])) {
             Auditoria::registrar((int) $usuario['id'], (int) $usuario['institucion_id'], 'dispositivo_revocado',
                 'usuario', (int) $usuario['id'], null, ['dispositivo_id' => (int) $id]);
-            $this->volverAMiCuenta('ok', 'Dispositivo quitado: la próxima vez te pedirá el código.');
+            $this->volverAMiCuenta(Aviso::exito('Dispositivo quitado.', 'La próxima vez que entres desde él, MIA te pedirá el código.'));
         }
 
-        $this->volverAMiCuenta('error', 'Ese dispositivo ya no estaba en la lista.');
+        $this->volverAMiCuenta(Aviso::error('No se quitó el dispositivo', 'Ese dispositivo ya no estaba en la lista.', 'Recarga la página para ver la lista actual.'));
     }
 
     // ───────────────────────── Apoyo ─────────────────────────
@@ -279,7 +287,7 @@ final class DosFactoresController
     {
         $usuario = Usuario::findParaAcceso((int) Auth::id());
         if ($usuario === null) {
-            $this->volverAlLogin('Ingresa de nuevo.');
+            $this->volverAlLogin(Aviso::error('Tu sesión se cerró', 'No se encontró tu cuenta activa.', 'Ingresa de nuevo con tu correo y contraseña.'));
         }
 
         return $usuario;
@@ -288,20 +296,23 @@ final class DosFactoresController
     private function exigirContrasena(array $usuario, string $password): void
     {
         if (!password_verify($password, (string) $usuario['password_hash'])) {
-            $this->volverAMiCuenta('error', 'La contraseña actual no es correcta.');
+            $this->volverAMiCuenta(Aviso::error('No se hizo el cambio', 'La contraseña actual no es correcta.',
+                'Escribe la contraseña con la que entraste hoy (respeta mayúsculas) y vuelve a intentarlo.'));
         }
     }
 
-    private function volverAMiCuenta(string $tipo, string $mensaje): never
+    /** @param array{tipo: string, titulo: string, detalle: string, solucion: string, accion: array{texto: string, url: string}|null, campos: array<string, string>} $aviso */
+    private function volverAMiCuenta(array $aviso): never
     {
-        Session::flash($tipo, $mensaje);
+        Aviso::enviar($aviso);
         header('Location: ' . Url::to('/mi-cuenta'));
         exit;
     }
 
-    private function volverAlLogin(string $mensaje): never
+    /** @param array{tipo: string, titulo: string, detalle: string, solucion: string, accion: array{texto: string, url: string}|null, campos: array<string, string>} $aviso */
+    private function volverAlLogin(array $aviso): never
     {
-        Session::flash('error', $mensaje);
+        Aviso::enviar($aviso);
         header('Location: ' . Url::to('/login'));
         exit;
     }

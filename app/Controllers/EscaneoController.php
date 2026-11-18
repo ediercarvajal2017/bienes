@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Core\Auth;
-use App\Core\Session;
+use App\Core\Aviso;
 use App\Core\Url;
 use App\Core\View;
 use App\Models\Bien;
@@ -19,8 +19,6 @@ final class EscaneoController
 
         View::layout('partials/layout', 'escanear/index', [
             'title' => 'Escanear código QR',
-            'mensaje' => Session::pullFlash('ok'),
-            'error' => Session::pullFlash('error'),
             'jornadaActiva' => $institucionId !== null && JornadaVerificacion::activaPara($institucionId) !== null,
         ]);
     }
@@ -42,10 +40,11 @@ final class EscaneoController
         }
 
         if ($institucionId === null) {
-            $mensaje = Auth::esSuperusuario()
-                ? 'Selecciona una institución en el filtro del encabezado para buscar por código.'
-                : 'Tu usuario no tiene una institución asignada para buscar por código.';
-            Session::flash('error', $mensaje);
+            Aviso::enviar(Auth::esSuperusuario()
+                ? Aviso::error('No se buscó el bien', 'La búsqueda por código es dentro de una institución, y no hay ninguna elegida.',
+                    'Selecciona una institución en el filtro del encabezado para buscar por código.')
+                : Aviso::error('No se buscó el bien', 'Tu usuario no tiene una institución asignada.',
+                    'Pídele al administrador de MIA que te asigne a tu institución.'));
             header('Location: ' . Url::to('/escanear'));
             exit;
         }
@@ -53,7 +52,9 @@ final class EscaneoController
         $bien = Bien::buscarPorCodigoInstitucion($institucionId, $codigo);
 
         if (!$bien) {
-            Session::flash('error', 'No se encontró ningún bien con el código "' . $codigo . '".');
+            Aviso::enviar(Aviso::error('El código no corresponde a ningún bien', "No se encontró ningún bien con el código «{$codigo}» en esta institución.",
+                'Revisa cómo está escrita la placa (sin espacios), o búscalo por parte de la descripción en Bienes.',
+                Aviso::accion('Buscar en Bienes', '/bienes?' . http_build_query(['q' => $codigo]))));
             header('Location: ' . Url::to('/escanear'));
             exit;
         }

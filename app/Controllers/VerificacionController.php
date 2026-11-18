@@ -5,10 +5,11 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Core\Auth;
+use App\Core\Aviso;
 use App\Core\Csrf;
 use App\Core\Database;
+use App\Core\ErrorGuiado;
 use App\Core\Request;
-use App\Core\Session;
 use App\Core\Url;
 use App\Core\View;
 use App\Helpers\Paginador;
@@ -44,22 +45,20 @@ final class VerificacionController
             'opcionesPorPagina' => self::OPCIONES_POR_PAGINA,
             'total' => $total,
             'totalPaginas' => Paginador::totalPaginas($total, $porPagina),
-            'mensaje' => Session::pullFlash('ok'),
-            'error' => Session::pullFlash('error'),
         ]);
     }
 
     public function crear(): void
     {
         if (Auth::institucionId() !== null && JornadaVerificacion::activaPara(Auth::institucionId())) {
-            Session::flash('error', 'Ya hay una jornada de verificación en progreso. Ciérrala antes de iniciar otra.');
+            Aviso::enviar(Aviso::error('No se inició la jornada', 'Ya hay una jornada de verificación en progreso, y solo puede haber una a la vez.',
+                'Termina de verificar en la jornada abierta y ciérrala con «Cerrar jornada»; después podrás iniciar otra.'));
             header('Location: ' . Url::to('/verificaciones'));
             exit;
         }
 
         View::layout('partials/layout', 'verificaciones/crear', [
             'title' => 'Nueva jornada de verificación',
-            'error' => Session::pullFlash('error'),
         ]);
     }
 
@@ -70,13 +69,15 @@ final class VerificacionController
 
         $institucionId = Auth::institucionId();
         if ($institucionId === null) {
-            Session::flash('error', 'Tu usuario no tiene una institución asignada.');
+            Aviso::enviar(Aviso::error('No se inició la jornada', 'Tu usuario no tiene una institución asignada.',
+                'Pídele al administrador de MIA que te asigne a tu institución.'));
             header('Location: ' . Url::to('/verificaciones'));
             exit;
         }
 
         if (JornadaVerificacion::activaPara($institucionId)) {
-            Session::flash('error', 'Ya hay una jornada de verificación en progreso. Ciérrala antes de iniciar otra.');
+            Aviso::enviar(Aviso::error('No se inició la jornada', 'Ya hay una jornada de verificación en progreso, y solo puede haber una a la vez.',
+                'Termina de verificar en la jornada abierta y ciérrala con «Cerrar jornada»; después podrás iniciar otra.'));
             header('Location: ' . Url::to('/verificaciones'));
             exit;
         }
@@ -85,7 +86,9 @@ final class VerificacionController
         $fechaInicio = (string) $request->input('fecha_inicio');
 
         if ($nombre === '' || $fechaInicio === '' || !strtotime($fechaInicio)) {
-            Session::flash('error', 'Indica un nombre y una fecha de inicio válidos.');
+            Aviso::enviar(Aviso::error('No se inició la jornada', 'Faltan el nombre o una fecha de inicio válida.',
+                'Escribe un nombre (por ejemplo «Verificación semestre 1») y elige la fecha de inicio.',
+                null, array_filter(['nombre' => $nombre === '' ? 'Escribe el nombre.' : null, 'fecha_inicio' => $nombre !== '' ? 'Elige una fecha válida.' : null])));
             header('Location: ' . Url::to('/verificaciones/crear'));
             exit;
         }
@@ -97,7 +100,8 @@ final class VerificacionController
             $id = Database::transaccion(static function (\PDO $pdo) use ($institucionId, $nombre, $fechaInicio): int {
                 $pdo->prepare('SELECT id FROM instituciones WHERE id = ? FOR UPDATE')->execute([$institucionId]);
                 if (JornadaVerificacion::activaPara($institucionId)) {
-                    throw new \DomainException('Ya hay una jornada de verificación en progreso. Ciérrala antes de iniciar otra.');
+                    throw new ErrorGuiado('Ya hay una jornada de verificación en progreso, y solo puede haber una a la vez.',
+                        'Termina de verificar en la jornada abierta y ciérrala con «Cerrar jornada»; después podrás iniciar otra.');
                 }
 
                 $id = JornadaVerificacion::crear([
@@ -112,12 +116,13 @@ final class VerificacionController
                 return $id;
             });
         } catch (\DomainException $e) {
-            Session::flash('error', $e->getMessage());
+            Aviso::enviar(Aviso::desdeExcepcion($e, 'No se inició la jornada', 'Recarga la página y vuelve a intentarlo.'));
             header('Location: ' . Url::to('/verificaciones'));
             exit;
         }
 
-        Session::flash('ok', 'Jornada de verificación iniciada. Ya puedes escanear los QR de los bienes para verificarlos.');
+        Aviso::enviar(Aviso::exito('Jornada de verificación iniciada.', 'Siguiente paso: escanea el código QR de cada bien con «Escanear QR» y marca si coincide.',
+            Aviso::accion('Escanear QR', '/escanear')));
         header('Location: ' . Url::to("/verificaciones/{$id}"));
         exit;
     }
@@ -194,8 +199,6 @@ final class VerificacionController
 
             'hallazgos' => Hallazgo::pendientesDeJornada($jornadaId),
 
-            'mensaje' => Session::pullFlash('ok'),
-            'error' => Session::pullFlash('error'),
         ]);
     }
 
@@ -234,7 +237,7 @@ final class VerificacionController
         $this->verificarCsrf($request, "/verificaciones/{$id}");
 
         if ($jornada['estado'] === 'cerrada') {
-            Session::flash('error', 'Esta jornada ya estaba cerrada.');
+            Aviso::enviar(Aviso::error('No se cerró la jornada', 'La jornada ya estaba cerrada.', 'No hace falta hacer nada: su resultado queda en esta página.'));
             header('Location: ' . Url::to("/verificaciones/{$id}"));
             exit;
         }
@@ -243,7 +246,9 @@ final class VerificacionController
         // forma explícita para que no queden pendientes por descuido.
         $hallazgosPendientes = count(Hallazgo::pendientesDeJornada($id));
         if ($hallazgosPendientes > 0 && $request->input('confirmar_hallazgos') !== '1') {
-            Session::flash('error', "Hay {$hallazgosPendientes} hallazgo(s) sin registrar ni descartar. Resuélvalos o confirme el cierre de todos modos.");
+            Aviso::enviar(Aviso::error('No se cerró la jornada', ($hallazgosPendientes === 1 ? 'Hay 1 hallazgo' : "Hay {$hallazgosPendientes} hallazgos")
+                . ' sin registrar ni descartar.',
+                'Regístralos como bienes o descártalos en «Hallazgos», más abajo; o confirma el cierre de todos modos.'));
             header('Location: ' . Url::to("/verificaciones/{$id}#seccion-hallazgos"));
             exit;
         }
@@ -254,7 +259,7 @@ final class VerificacionController
             ['estado' => 'en_progreso'],
             ['estado' => 'cerrada', 'observaciones' => $observaciones, 'hallazgos_pendientes' => $hallazgosPendientes]);
 
-        Session::flash('ok', 'Jornada de verificación cerrada.');
+        Aviso::enviar(Aviso::exito('Jornada de verificación cerrada.', 'Puedes descargar su resultado en Excel desde esta página.'));
         header('Location: ' . Url::to("/verificaciones/{$id}"));
         exit;
     }
@@ -281,7 +286,7 @@ final class VerificacionController
 
         Verificacion::marcarRevisada((int) $verificacionId, (int) Auth::id());
 
-        Session::flash('ok', 'Discrepancia marcada como revisada.');
+        Aviso::enviar(Aviso::exito('Discrepancia marcada como revisada.'));
         header('Location: ' . Url::to("/verificaciones/{$jornadaId}#seccion-discrepancia"));
         exit;
     }
@@ -322,21 +327,24 @@ final class VerificacionController
         // Dados de baja y reintegrados ya salieron físicamente de la institución: no forman
         // parte del inventario que la jornada debe verificar.
         if (in_array($bien['estado'], ['dado_de_baja', 'reintegrado'], true)) {
-            Session::flash('error', 'Este bien está "' . Bien::etiquetaEstado($bien['estado']) . '": no forma parte de la verificación física.');
+            Aviso::enviar(Aviso::error('No se verificó el bien', 'El bien está «' . Bien::etiquetaEstado($bien['estado'])
+                . '»: ya no está en la institución, así que no forma parte de la verificación física.', 'Sigue con el siguiente bien.'));
             header('Location: ' . Url::to("/qr/{$token}"));
             exit;
         }
 
         $jornada = JornadaVerificacion::activaPara($institucionId);
         if (!$jornada) {
-            Session::flash('error', 'No hay una jornada de verificación en progreso para esta institución.');
+            Aviso::enviar(Aviso::error('No se verificó el bien', 'No hay una jornada de verificación en progreso para esta institución.',
+                'Pídele al rector o al secretario que inicie la jornada en «Verificación física».'));
             header('Location: ' . Url::to("/qr/{$token}"));
             exit;
         }
 
         $resultado = (string) $request->input('resultado');
         if (!in_array($resultado, ['ok', 'discrepancia'], true)) {
-            Session::flash('error', 'Resultado de verificación no válido.');
+            Aviso::enviar(Aviso::error('No se verificó el bien', 'No se eligió si el bien coincide o no.',
+                'Pulsa «Coincide» o «No coincide» en la ficha del bien.'));
             header('Location: ' . Url::to("/qr/{$token}"));
             exit;
         }
@@ -347,13 +355,15 @@ final class VerificacionController
         if ($resultado === 'discrepancia') {
             $motivo = (string) $request->input('motivo');
             if (!in_array($motivo, Verificacion::MOTIVOS, true)) {
-                Session::flash('error', 'Selecciona el motivo de la discrepancia.');
+                Aviso::enviar(Aviso::error('No se registró la discrepancia', 'Falta el motivo de la discrepancia.',
+                    'Elige el motivo (por ejemplo «Está en otro espacio») y vuelve a enviar.'));
                 header('Location: ' . Url::to("/qr/{$token}"));
                 exit;
             }
 
             if ($motivo === 'otro' && $observaciones === null) {
-                Session::flash('error', 'Describe brevemente la discrepancia encontrada.');
+                Aviso::enviar(Aviso::error('No se registró la discrepancia', 'Falta describir lo que encontraste.',
+                    'Escribe en pocas palabras qué no coincide (por ejemplo «La silla está en el Aula 102») y vuelve a enviar.'));
                 header('Location: ' . Url::to("/qr/{$token}"));
                 exit;
             }
@@ -370,7 +380,8 @@ final class VerificacionController
                     }
                 }
             } catch (\RuntimeException $e) {
-                Session::flash('error', $e->getMessage());
+                Aviso::enviar(Aviso::error('No se verificó el bien', 'La foto no se pudo guardar: ' . $e->getMessage(),
+                    'Toma o elige otra foto y vuelve a enviar; también puedes verificarlo sin foto.'));
                 header('Location: ' . Url::to("/qr/{$token}"));
                 exit;
             }
@@ -378,9 +389,10 @@ final class VerificacionController
 
         Verificacion::registrar((int) $jornada['id'], (int) $bien['id'], (int) Auth::id(), $resultado, $motivo, $observaciones);
 
-        Session::flash('ok', $resultado === 'ok'
-            ? 'Bien verificado: coincide con el sistema.'
-            : 'Discrepancia registrada para este bien.');
+        Aviso::enviar($resultado === 'ok'
+            ? Aviso::exito('Bien verificado: coincide con el sistema.', 'Siguiente paso: escanea el próximo bien.', Aviso::accion('Escanear otro QR', '/escanear'))
+            : Aviso::exito('Discrepancia registrada para este bien.', 'Quien administra la verificación la revisará. Sigue con el próximo bien.',
+                Aviso::accion('Escanear otro QR', '/escanear')));
         header('Location: ' . Url::to("/qr/{$token}"));
         exit;
     }

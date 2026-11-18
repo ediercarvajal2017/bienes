@@ -15,9 +15,6 @@ $ventana = '/cartera/enviar';
 ?>
 <?= ui('encabezado_pagina', ['titulo' => 'Cartera recibida de la Alcaldía', 'icono' => 'cartera', 'subtitulo' => 'Registra la evidencia de cada cartera que la institución solicitó por correo (fuera del sistema).']) ?>
 
-<?php if (!empty($mensaje)): ?><?= ui('alerta', ['tipo' => 'exito', 'mensaje' => (string) $mensaje, 'clases' => 'py-2 small']) ?><?php endif; ?>
-<?php if (!empty($error)): ?><?= ui('alerta', ['tipo' => 'peligro', 'mensaje' => (string) $error, 'clases' => 'py-2 small']) ?><?php endif; ?>
-
 <?php View::render('partials/evidencia_institucion', ['instituciones' => $instituciones, 'institucionId' => $institucionId, 'ventana' => $ventana]); ?>
 
 <?php if ($institucionId === 0): ?>

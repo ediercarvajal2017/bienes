@@ -14,8 +14,6 @@ use App\Core\View;
             'url' => Url::to('/bienes/qr-masivo/bodega') . ($institucionId !== null ? '?' . http_build_query(['institucion' => $institucionId]) : '')]) : ''),
 ]) ?>
 
-<?php if (!empty($error)): ?><?= ui('alerta', ['tipo' => 'peligro', 'mensaje' => (string) $error, 'clases' => 'py-2 small']) ?><?php endif; ?>
-
 <?php if (Auth::esSuperusuario()): ?>
     <div class="mb-3 contenedor-sm">
         <label for="selectorInstitucion" class="form-label small">Institución</label>

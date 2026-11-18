@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Core\Auth;
+use App\Core\Aviso;
 use App\Core\Csrf;
 use App\Core\Request;
-use App\Core\Session;
 use App\Core\Url;
 use App\Core\View;
 use App\Helpers\PoliticaContrasena;
@@ -41,8 +41,6 @@ final class CuentaController
             'dosFactoresActiva' => $activa,
             'codigosDisponibles' => $activa ? CodigoRecuperacion::disponibles($id) : 0,
             'dispositivos' => $activa ? DispositivoConfiable::listarDe($id) : [],
-            'mensaje' => Session::pullFlash('ok'),
-            'error' => Session::pullFlash('error'),
         ]);
     }
 
@@ -61,17 +59,23 @@ final class CuentaController
         $nueva = (string) $request->input('password_nueva');
         $confirmacion = (string) $request->input('password_confirmacion');
 
+        $titulo = 'No se cambió la contraseña';
+        $politica = PoliticaContrasena::validar($nueva, [
+            $usuario['nombres'] ?? '', $usuario['apellidos'] ?? '', $usuario['documento'] ?? '', $usuario['email'] ?? '',
+        ]);
         $error = match (true) {
-            !password_verify($actual, (string) $usuario['password_hash']) => 'La contraseña actual no es correcta.',
-            $nueva !== $confirmacion => 'La confirmación no coincide con la contraseña nueva.',
-            password_verify($nueva, (string) $usuario['password_hash']) => 'La contraseña nueva debe ser distinta de la actual.',
-            default => PoliticaContrasena::validar($nueva, [
-                $usuario['nombres'] ?? '', $usuario['apellidos'] ?? '', $usuario['documento'] ?? '', $usuario['email'] ?? '',
-            ]),
+            !password_verify($actual, (string) $usuario['password_hash']) => Aviso::error($titulo, 'La contraseña actual no es correcta.',
+                'Escribe la contraseña con la que entraste hoy (respeta mayúsculas) y vuelve a intentarlo.', null, ['password_actual' => 'No es la contraseña actual.']),
+            $nueva !== $confirmacion => Aviso::error($titulo, 'La confirmación no coincide con la contraseña nueva.',
+                'Escribe la misma contraseña nueva en los dos campos.', null, ['password_confirmacion' => 'No coincide.']),
+            password_verify($nueva, (string) $usuario['password_hash']) => Aviso::error($titulo, 'La contraseña nueva es igual a la actual.',
+                'Escribe una contraseña distinta de la que usas ahora.', null, ['password_nueva' => 'Debe ser distinta de la actual.']),
+            $politica !== null => Aviso::error($titulo, $politica, 'Escribe una contraseña nueva que cumpla esa condición.', null, ['password_nueva' => 'Revisa la contraseña nueva.']),
+            default => null,
         };
 
         if ($error !== null) {
-            Session::flash('error', $error);
+            Aviso::enviar($error);
             header('Location: ' . Url::to('/mi-cuenta') . '#contrasena');
             exit;
         }
@@ -83,7 +87,7 @@ final class CuentaController
         Auditoria::registrar($id, (int) $usuario['institucion_id'], 'cambiar_contrasena', 'usuario', $id);
         DosFactoresService::avisarPorCorreo($usuario, 'contraseña cambiada', 'Se cambió la contraseña de tu cuenta de MIA.');
 
-        Session::flash('ok', 'Contraseña cambiada. Las demás sesiones abiertas con tu cuenta se cerraron.');
+        Aviso::enviar(Aviso::exito('Contraseña cambiada.', 'Las demás sesiones abiertas con tu cuenta se cerraron; esta sigue abierta.'));
         header('Location: ' . Url::to('/mi-cuenta'));
         exit;
     }

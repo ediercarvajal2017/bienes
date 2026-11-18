@@ -5,9 +5,6 @@ use App\Core\Url;
 ?>
 <?= ui('encabezado_pagina', ['titulo' => 'Escanear código QR', 'icono' => 'escanear', 'subtitulo' => 'Apunta la cámara del celular al código QR pegado sobre el bien.']) ?>
 
-<?php if (!empty($mensaje)): ?><?= ui('alerta', ['tipo' => 'exito', 'mensaje' => (string) $mensaje, 'clases' => 'py-2 small contenedor-escaner']) ?><?php endif; ?>
-<?php if (!empty($error)): ?><?= ui('alerta', ['tipo' => 'peligro', 'mensaje' => (string) $error, 'clases' => 'py-2 small contenedor-escaner']) ?><?php endif; ?>
-
 <div class="contenedor-escaner">
     <div id="lector-qr" class="rounded border overflow-hidden bg-dark"></div>
     <div class="d-flex gap-2 mt-2">

@@ -669,7 +669,8 @@ final class Bien
             static fn (array $destinos): bool => in_array($nuevo, $destinos, true)
         ));
         if ($origenes === []) {
-            throw new \DomainException("Estado de destino no válido: {$nuevo}.");
+            throw new \App\Core\ErrorGuiado("MIA intentó pasar el bien a un estado que no existe ({$nuevo}).",
+                'Recarga la ficha del bien e inténtalo de nuevo; si se repite, avisa a soporte.');
         }
 
         $marcadores = implode(', ', array_fill(0, count($origenes), '?'));

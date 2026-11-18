@@ -13,10 +13,6 @@ $v = static fn (string $campo, mixed $porDefecto = '') => $viejo[$campo] ?? $esp
     <a href="<?= Url::to('/espacios') ?>" class="btn btn-sm btn-outline-secondary">Volver</a>
 <?= ui('encabezado_pagina', ['titulo' => (string) ($esEdicion ? 'Editar espacio' : 'Nuevo espacio'), 'icono' => 'espacio', 'acciones' => (string) ob_get_clean()]) ?>
 
-<?php if (!empty($error)): ?>
-    <?= ui('alerta', ['tipo' => 'peligro', 'mensaje' => (string) $error, 'clases' => 'py-2 small']) ?>
-<?php endif; ?>
-
 <?php if ($puedeEditar): ?>
     <p class="text-muted small mb-2">Los campos marcados con <span class="text-danger">*</span> son obligatorios.</p>
 <?php endif; ?>
@@ -39,27 +35,30 @@ $v = static fn (string $campo, mixed $porDefecto = '') => $viejo[$campo] ?? $esp
 
     <div class="col-md-4">
         <label for="campo-codigo" class="form-label small requerido">Número de espacio</label>
-        <input id="campo-codigo" type="text" name="codigo" class="form-control" required
+        <input id="campo-codigo" type="text" name="codigo" class="form-control<?= clase_invalido('codigo') ?>" required
                <?= $puedeEditar ? '' : 'disabled' ?>
                placeholder="Ej. 101 o A-101"
                value="<?= htmlspecialchars($v('codigo'), ENT_QUOTES) ?>">
+        <?= error_campo('codigo') ?>
     </div>
     <div class="col-md-8">
         <label for="campo-nombre" class="form-label small requerido">Nombre del espacio</label>
-        <input id="campo-nombre" type="text" name="nombre" class="form-control" required <?= $puedeEditar ? '' : 'disabled' ?>
+        <input id="campo-nombre" type="text" name="nombre" class="form-control<?= clase_invalido('nombre') ?>" required <?= $puedeEditar ? '' : 'disabled' ?>
                placeholder="Ej. Sala de sistemas 1"
                value="<?= htmlspecialchars($v('nombre'), ENT_QUOTES) ?>">
+        <?= error_campo('nombre') ?>
     </div>
 
     <div class="col-12">
         <label class="form-label small requerido" for="responsables">Responsable(s) del espacio</label>
-        <select name="responsables[]" id="responsables" class="form-select selector-buscable" multiple size="8" <?= $puedeEditar ? '' : 'disabled' ?>>
+        <select name="responsables[]" id="responsables" class="form-select selector-buscable<?= clase_invalido('responsables[]') ?>" multiple size="8" <?= $puedeEditar ? '' : 'disabled' ?>>
             <?php foreach ($usuarios as $u): ?>
                 <option value="<?= $u['id'] ?>" <?= in_array((int) $u['id'], $responsablesSeleccionados, true) ? 'selected' : '' ?>>
                     <?= htmlspecialchars($u['nombres'] . ' ' . $u['apellidos'], ENT_QUOTES) ?>
                 </option>
             <?php endforeach; ?>
         </select>
+        <?= error_campo('responsables[]') ?>
         <?php if (empty($usuarios)): ?>
             <div class="form-text text-danger">
                 No hay usuarios disponibles en esta institución. Crea uno en

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Core\Aviso;
 use App\Core\Csrf;
 use App\Core\Request;
 use App\Core\Session;
@@ -25,8 +26,6 @@ final class PasswordController
     public function formularioOlvideContrasena(): void
     {
         View::render('auth/olvide_contrasena', [
-            'mensaje' => Session::pullFlash('ok'),
-            'error' => Session::pullFlash('error'),
         ]);
     }
 
@@ -35,7 +34,7 @@ final class PasswordController
         $request = new Request();
 
         if (!Csrf::verify((string) $request->input('_csrf'))) {
-            Session::flash('error', 'Tu sesión expiró, intenta de nuevo.');
+            Aviso::enviar(\App\Helpers\Mensajes::sesionVencida(false));
             header('Location: ' . Url::to('/olvide-contrasena'));
             exit;
         }
@@ -47,7 +46,8 @@ final class PasswordController
         if (LimiteIntentos::desdeEstaIp('olvide_contrasena', 15) >= 5
             || ($email !== '' && LimiteIntentos::sobreClave('olvide_contrasena', $email, 15) >= 3)
         ) {
-            Session::flash('error', 'Demasiadas solicitudes. Espera 15 minutos antes de volver a intentarlo.');
+            Aviso::enviar(Aviso::error('No se envió el enlace', 'Demasiadas solicitudes en poco tiempo.',
+                'Espera 15 minutos y vuelve a intentarlo. Mientras tanto, revisa tu correo (también la carpeta de spam): puede que ya te haya llegado.'));
             header('Location: ' . Url::to('/olvide-contrasena'));
             exit;
         }
@@ -72,7 +72,8 @@ final class PasswordController
             }
         }
 
-        Session::flash('ok', self::MENSAJE_GENERICO_ENVIO);
+        Aviso::enviar(Aviso::exito(self::MENSAJE_GENERICO_ENVIO,
+            'Revisa tu correo, también la carpeta de spam; el enlace dura 60 minutos. Si no llega, verifica que sea el correo con el que entras a MIA.'));
         header('Location: ' . Url::to('/olvide-contrasena'));
         exit;
     }
@@ -84,7 +85,6 @@ final class PasswordController
         View::render('auth/restablecer_contrasena', [
             'token' => $token,
             'valido' => $reset !== null,
-            'error' => Session::pullFlash('error'),
         ]);
     }
 
@@ -93,14 +93,15 @@ final class PasswordController
         $request = new Request();
 
         if (!Csrf::verify((string) $request->input('_csrf'))) {
-            Session::flash('error', 'Tu sesión expiró, intenta de nuevo.');
+            Aviso::enviar(\App\Helpers\Mensajes::sesionVencida(false));
             header('Location: ' . Url::to("/restablecer-contrasena/{$token}"));
             exit;
         }
 
         $reset = PasswordReset::validar($token);
         if (!$reset) {
-            Session::flash('error', 'Este enlace ya no es válido. Solicita uno nuevo.');
+            Aviso::enviar(Aviso::error('No se cambió la contraseña', 'El enlace ya no es válido: venció (dura 60 minutos) o ya se usó.',
+                'Pide un enlace nuevo en esta página y usa el último que te llegue.'));
             header('Location: ' . Url::to('/olvide-contrasena'));
             exit;
         }
@@ -113,13 +114,15 @@ final class PasswordController
             [$reset['email'], $reset['nombres'], $reset['apellidos']]
         );
         if ($errorContrasena !== null) {
-            Session::flash('error', $errorContrasena);
+            Aviso::enviar(Aviso::error('No se cambió la contraseña', $errorContrasena, 'Escribe otra contraseña que cumpla esa condición.',
+                null, ['password' => 'Revisa la contraseña.']));
             header('Location: ' . Url::to("/restablecer-contrasena/{$token}"));
             exit;
         }
 
         if ($password !== $confirmacion) {
-            Session::flash('error', 'Las contraseñas no coinciden.');
+            Aviso::enviar(Aviso::error('No se cambió la contraseña', 'Las contraseñas no coinciden.', 'Escribe la misma contraseña en los dos campos.',
+                null, ['password_confirmacion' => 'No coincide.']));
             header('Location: ' . Url::to("/restablecer-contrasena/{$token}"));
             exit;
         }
@@ -134,7 +137,7 @@ final class PasswordController
         Usuario::invalidarSesiones($usuarioId);
         Auditoria::registrar($usuarioId, null, 'restablecer_contrasena', 'usuario', $usuarioId);
 
-        Session::flash('ok', 'Contraseña actualizada. Ya puedes iniciar sesión.');
+        Aviso::enviar(Aviso::exito('Contraseña actualizada.', 'Ya puedes ingresar con tu correo y la contraseña nueva.'));
         header('Location: ' . Url::to('/login'));
         exit;
     }
@@ -144,7 +147,6 @@ final class PasswordController
         View::render('auth/olvide_correo', [
             'instituciones' => Institucion::listadoParaSelect(true),
             'resultado' => Session::pullFlash('resultado_correo'),
-            'error' => Session::pullFlash('error'),
         ]);
     }
 
@@ -153,7 +155,7 @@ final class PasswordController
         $request = new Request();
 
         if (!Csrf::verify((string) $request->input('_csrf'))) {
-            Session::flash('error', 'Tu sesión expiró, intenta de nuevo.');
+            Aviso::enviar(\App\Helpers\Mensajes::sesionVencida(false));
             header('Location: ' . Url::to('/olvide-correo'));
             exit;
         }
@@ -161,7 +163,7 @@ final class PasswordController
         // Límite en el servidor por conexión (antes vivía en la sesión y bastaba con borrar
         // la cookie para saltarlo): 10 búsquedas fallidas cada 15 minutos.
         if (LimiteIntentos::desdeEstaIp('olvide_correo', 15) >= 10) {
-            Session::flash('error', 'Demasiados intentos. Espera unos minutos antes de volver a intentarlo.');
+            Aviso::enviar(Aviso::error('No se buscó el correo', 'Demasiados intentos sin resultado en poco tiempo.', 'Espera 15 minutos y vuelve a intentarlo.'));
             header('Location: ' . Url::to('/olvide-correo'));
             exit;
         }
@@ -170,7 +172,8 @@ final class PasswordController
         $institucionId = (int) $request->input('institucion_id');
 
         if ($documento === '' || $institucionId === 0) {
-            Session::flash('error', 'Indica tu número de documento y selecciona tu institución.');
+            Aviso::enviar(Aviso::error('No se buscó el correo', 'Faltan el número de documento o la institución.',
+                'Escribe tu documento sin puntos y elige tu institución en la lista.'));
             header('Location: ' . Url::to('/olvide-correo'));
             exit;
         }
@@ -179,7 +182,8 @@ final class PasswordController
 
         if (!$usuario || (int) $usuario['activo'] !== 1) {
             LimiteIntentos::registrar('olvide_correo', $institucionId . ':' . $documento);
-            Session::flash('error', 'No encontramos una cuenta activa con ese documento en esa institución.');
+            Aviso::enviar(Aviso::error('No se encontró tu correo', 'No encontramos una cuenta activa con ese documento en esa institución.',
+                'Revisa el número (sin puntos ni espacios) y la institución. Si sigue sin aparecer, pídele al rector o al secretario que revise tu cuenta.'));
             header('Location: ' . Url::to('/olvide-correo'));
             exit;
         }
