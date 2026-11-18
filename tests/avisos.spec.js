@@ -151,6 +151,7 @@ test('los avisos usan el verde MIA; solo el error lleva la franja roja de MIA', 
     await page.locator('#campo-descripcion').fill('PW-AVISO colores');
     await page.locator('#botonGuardarBien').click();
     await expect(page.locator('.avisos-pagina .alert-danger')).toBeVisible();
+    await page.waitForLoadState('load');
 
     const colores = await page.evaluate(() => {
         const raiz = getComputedStyle(document.documentElement);
@@ -187,7 +188,8 @@ for (const tema of ['light', 'dark']) {
         await page.locator('#campo-descripcion').fill('PW-AVISO accesibilidad');
         await page.locator('#botonGuardarBien').click();
         await expect(page.locator('.avisos-pagina .alert-danger')).toBeVisible();
-        // Además, el resumen de la validación del navegador.
+        // Además, el resumen de la validación del navegador (cuando validacion.js ya cargó).
+        await page.waitForLoadState('load');
         await page.locator('#campo-descripcion').fill('');
         await page.locator('#botonGuardarBien').click();
         await expect(page.locator('.resumen-validacion')).toBeVisible();
