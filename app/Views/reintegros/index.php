@@ -313,7 +313,7 @@ $viejo ??= [];
                     const ids = Object.keys(seleccion);
                     if (ids.length === 0) {
                         verSoloSeleccionados.checked = false;
-                        window.miaConfirmar({ titulo: 'Sin selección', mensaje: 'No tienes ningún bien seleccionado todavía.', boton: 'Entendido', soloAceptar: true });
+                        window.miaConfirmar({ titulo: 'Sin selección', mensaje: 'No tienes ningún bien seleccionado todavía.\nQué hacer: marca la casilla de cada bien en la lista o escanea su QR, y vuelve a marcar «Ver solo seleccionados».', boton: 'Entendido', soloAceptar: true });
                         return;
                     }
                     url.searchParams.set('seleccionados', ids.join(','));

@@ -169,7 +169,9 @@ Aviso::enviar(Aviso::exito('3 bienes reintegrados.', 'Siguiente paso: agrúpalos
 - **En el navegador:**
   - `validacion.js` reemplaza los globos del navegador. No envía un formulario incompleto, marca cada campo con su mensaje en español, pone arriba un resumen ("No se envió: hay 2 datos por corregir") y lleva el foco al primero.
   - Para personalizarlo: `data-error-requerido` y `data-error-formato`.
-  - Para lo que falla sin recargar (una petición sin conexión): `MIA.avisar(ancla, { titulo, detalle, solucion, boton })`.
+  - Para lo que falla sin recargar (una petición sin conexión): `MIA.avisar(ancla, { titulo, detalle, solucion, boton })`. Con `tipo: 'info'` es un aviso que no es error (por ejemplo, "No se pudo abrir la cámara", cuando hay otra vía).
+  - Para un fallo de la cámara: `MIA.motivoCamara(error)` da el porqué y qué hacer en español según el error del navegador (permiso negado, sin cámara, cámara ocupada, sin https). Nunca se muestra el texto del navegador, que a veces sale en inglés.
+  - Los mensajes que arma la página (búsqueda por foto, escáner, cámara) siguen la misma regla de tres partes, aunque el guardián no los vea.
 
 ### Barra de proporciones
 ```php

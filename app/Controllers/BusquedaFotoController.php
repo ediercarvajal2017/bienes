@@ -74,7 +74,7 @@ final class BusquedaFotoController
 
         if (!Csrf::verify((string) $request->input('_csrf'))) {
             http_response_code(403);
-            echo json_encode(['error' => 'Tu sesión expiró, recarga la página.']);
+            echo json_encode(['error' => 'La página estuvo abierta mucho tiempo y venció por seguridad.', 'queHacer' => 'Recarga la página y vuelve a tomar la foto.']);
             exit;
         }
 
@@ -84,7 +84,7 @@ final class BusquedaFotoController
 
         if ($institucionId === null || $id <= 0 || $vector === null) {
             http_response_code(422);
-            echo json_encode(['error' => 'Datos inválidos.']);
+            echo json_encode(['error' => 'La huella de la foto llegó incompleta.', 'queHacer' => 'Recarga la página para que se vuelva a preparar.']);
             exit;
         }
 
@@ -106,7 +106,7 @@ final class BusquedaFotoController
 
         if (!Csrf::verify((string) $request->input('_csrf'))) {
             http_response_code(403);
-            echo json_encode(['error' => 'Tu sesión expiró, recarga la página.']);
+            echo json_encode(['error' => 'La página estuvo abierta mucho tiempo y venció por seguridad.', 'queHacer' => 'Recarga la página y vuelve a tomar la foto.']);
             exit;
         }
 
@@ -115,13 +115,13 @@ final class BusquedaFotoController
 
         if ($institucionId === null) {
             http_response_code(422);
-            echo json_encode(['error' => 'Selecciona una institución en el filtro del encabezado para buscar.']);
+            echo json_encode(['error' => 'La búsqueda es dentro de una institución, y no hay ninguna elegida.', 'queHacer' => 'Elige una institución en el filtro del encabezado y vuelve a tomar la foto.']);
             exit;
         }
 
         if ($vector === null) {
             http_response_code(422);
-            echo json_encode(['error' => 'No se pudo procesar la foto.']);
+            echo json_encode(['error' => 'No se pudo leer la foto que enviaste.', 'queHacer' => 'Toma la foto de nuevo, con buena luz y el bien completo en el cuadro.']);
             exit;
         }
 
