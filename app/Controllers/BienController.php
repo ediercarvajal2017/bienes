@@ -37,7 +37,7 @@ final class BienController
     // Tope de 10 dígitos para el valor de un bien -- suficiente para cualquier bien real
     // y evita que un número desproporcionado (por error de tecleo o intencional) se cuele
     // sin control del lado del servidor, más allá del min="0" del HTML, que es trivial de saltarse.
-    private const VALOR_MAXIMO = 10_000_000_000;
+    private const VALOR_MAXIMO = Bien::VALOR_MAXIMO;
 
     private const POR_PAGINA_DEFECTO = 50;
     private const OPCIONES_POR_PAGINA = [10, 25, 50, 100, 0];

@@ -9,6 +9,12 @@ use App\Core\Database;
 final class Bien
 {
     /**
+     * Tope del valor de un bien (10 dígitos): suficiente para cualquier bien real; lo usan el
+     * formulario (BienController) y la carga masiva (CargaMasivaService).
+     */
+    public const VALOR_MAXIMO = 10_000_000_000;
+
+    /**
      * $excluirLotes: no incluye bienes que pertenecen a un lote (bienes.lote no nulo,
      * ver crearLoteIdentico()) — usado por /bienes para no saturar la cartera con
      * decenas de filas casi idénticas (ej. 250 sillas); esas se muestran agrupadas por

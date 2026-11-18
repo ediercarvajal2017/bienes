@@ -25,6 +25,11 @@ final class CargaMasivaService
      * institución: el bien queda a su cargo (responsabilidad individual) y la Ubicación, si
      * se indica, es donde está guardado. En blanco no cambia la persona del bien.
      *
+     * Una columna opcional en blanco CONSERVA lo que ya tiene un bien existente (Marca, Valor,
+     * Fecha_Ingreso, Ubicación, Categoría, Responsable): la carga nunca borra un dato porque
+     * la celda venga vacía. En un bien nuevo, Marca queda vacía, Valor en 0 y Fecha_Ingreso
+     * en la de hoy.
+     *
      * Fecha_Ingreso es opcional: si se deja en blanco, se usa la fecha de hoy para un bien
      * nuevo, o se conserva la que ya tenía el bien si es una actualización. Ubicación (opcional)
      * es el código de un espacio ya existente en la institución; si se indica y no existe, la
@@ -101,7 +106,30 @@ final class CargaMasivaService
                 }
             }
 
+            $existente = $existentesPorCodigo[$codigo] ?? null;
+
+            // Valor: en blanco conserva el del bien existente (0 si es nuevo); ilegible, negativo
+            // o de más de 10 dígitos, la fila es inválida (antes quedaba en 0 sin avisar, o
+            // un número enorme tumbaba toda la carga).
             $valor = self::leerValor($sheet->getCell("E{$numeroFila}"));
+            if ($valor === false) {
+                $filas[] = [
+                    'fila' => $numeroFila, 'tipo' => 'invalido',
+                    'motivo' => 'El valor «' . trim((string) $sheet->getCell("E{$numeroFila}")->getValue()) . '» no se pudo leer: escribe solo números, por ejemplo 350000',
+                    'codigo' => $codigo, 'descripcion' => $descripcion,
+                ];
+                continue;
+            }
+            if ($valor === null) {
+                $valor = $existente !== null ? (float) $existente['valor'] : 0.0;
+            } elseif ($valor < 0 || $valor >= Bien::VALOR_MAXIMO) {
+                $filas[] = [
+                    'fila' => $numeroFila, 'tipo' => 'invalido',
+                    'motivo' => 'El valor no puede ser negativo ni tener más de 10 dígitos',
+                    'codigo' => $codigo, 'descripcion' => $descripcion,
+                ];
+                continue;
+            }
 
             $espacioId = null;
             if ($ubicacion !== '') {
@@ -147,8 +175,6 @@ final class CargaMasivaService
                 $personaNombre = trim($persona['nombres'] . ' ' . $persona['apellidos']);
             }
 
-            $existente = $existentesPorCodigo[$codigo] ?? null;
-
             if ($fecha === null) {
                 $fecha = $existente ? $existente['fecha_ingreso'] : date('Y-m-d');
             }
@@ -159,10 +185,26 @@ final class CargaMasivaService
                 $categoriaId = ($existente && $existente['categoria_id'] !== null) ? (int) $existente['categoria_id'] : null;
             }
 
+            // «Sin cartera»: la misma regla del formulario (código de 10 números) cuando el bien
+            // entra a esa categoría (nuevo o cambiado a ella). Un bien que ya estaba en ella no
+            // se bloquea por un código antiguo.
+            $entraASinCartera = $categoriaId !== null
+                && ($categoriasPorId[$categoriaId] ?? null) === Categoria::NOMBRE_CATEGORIA_PROTEGIDA
+                && ($existente === null || (int) ($existente['categoria_id'] ?? 0) !== $categoriaId);
+            if ($entraASinCartera && preg_match('/^[0-9]{10}$/', $codigo) !== 1) {
+                $filas[] = [
+                    'fila' => $numeroFila, 'tipo' => 'invalido',
+                    'motivo' => 'Los bienes de la categoría «' . Categoria::NOMBRE_CATEGORIA_PROTEGIDA . '» llevan un código de exactamente 10 números',
+                    'codigo' => $codigo, 'descripcion' => $descripcion,
+                ];
+                continue;
+            }
+
             $datos = [
                 'codigo_identificacion' => $codigo,
                 'descripcion' => $descripcion,
-                'marca' => $marca !== '' ? $marca : null,
+                // Marca en blanco: un bien existente conserva la suya (antes se borraba).
+                'marca' => $marca !== '' ? $marca : ($existente['marca'] ?? null),
                 'fecha_ingreso' => $fecha,
                 'valor' => $valor,
                 'espacio_id' => $espacioId,
@@ -444,9 +486,17 @@ final class CargaMasivaService
         return $marca !== false ? date('Y-m-d', $marca) : null;
     }
 
-    private static function leerValor(\PhpOffice\PhpSpreadsheet\Cell\Cell $celda): float
+    /**
+     * Valor de la celda: null si está vacía (se conserva el del bien), false si no se puede
+     * leer como número. Acepta el formato colombiano "1.500.000,50" y "$ 350.000".
+     */
+    private static function leerValor(\PhpOffice\PhpSpreadsheet\Cell\Cell $celda): float|false|null
     {
         $valor = $celda->getValue();
+
+        if ($valor === null || trim((string) $valor) === '') {
+            return null;
+        }
 
         if (is_numeric($valor)) {
             return (float) $valor;
@@ -462,6 +512,6 @@ final class CargaMasivaService
             $limpio = str_replace(',', '', $limpio);
         }
 
-        return is_numeric($limpio) ? (float) $limpio : 0.0;
+        return is_numeric($limpio) ? (float) $limpio : false;
     }
 }
