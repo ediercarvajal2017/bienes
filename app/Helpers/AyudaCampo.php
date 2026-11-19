@@ -19,7 +19,12 @@ namespace App\Helpers;
  */
 final class AyudaCampo
 {
-    /** @var array<string, array{titulo: string, texto: string}> */
+    /**
+     * «enlace» (opcional) agrega al final del globo un botón, p. ej. para descargar una
+     * plantilla: el globo sigue abierto mientras el cursor esté encima, así que se puede pulsar.
+     *
+     * @var array<string, array{titulo: string, texto: string, enlace?: array{texto: string, ruta: string, icono: string}}>
+     */
     public const TEXTOS = [
         'institucion' => [
             'titulo' => 'Institución',
@@ -113,6 +118,14 @@ final class AyudaCampo
             'titulo' => 'Valor unitario',
             'texto' => 'Lo que vale UNA unidad, en pesos. Escribe 0 si no lo conoces. El valor del lote es este valor por la cantidad.',
         ],
+        'carga_masiva_bienes' => [
+            'titulo' => 'Carga masiva de bienes',
+            'texto' => "Descarga la plantilla, llénala y súbela con «Analizar archivo». Primero ves qué cambiaría en cada fila; nada se guarda hasta que pulses «Confirmar importación».\n\n"
+                . "**Obligatorias** (en rojo claro en la plantilla): Código (la placa) y Descripción.\n\n"
+                . "**Opcionales:** Marca, Fecha de ingreso, Valor (solo números, sin negativos, máximo 10 dígitos), Ubicación y Categoría (se eligen de una lista en la misma plantilla) y Responsable individual (documento de un usuario activo: el bien queda a su cargo).\n\n"
+                . '**No se borra nada:** los bienes que no están en el archivo no se tocan, y una columna opcional en blanco conserva lo que el bien ya tiene en MIA.',
+            'enlace' => ['texto' => 'Descargar plantilla (.xlsx)', 'ruta' => '/cargas-masivas/plantilla.xlsx', 'icono' => 'descargar'],
+        ],
         'lote_imprimir_qr' => [
             'titulo' => 'Imprimir QR de todo el lote',
             'texto' => 'Agrega todas las unidades a la Bodega de impresión de QR (en "Generar QR masivo") para imprimir sus stickers. Márcala solo si necesitas los stickers.',
@@ -143,10 +156,19 @@ final class AyudaCampo
         $ayuda = self::TEXTOS[$clave] ?? throw new \InvalidArgumentException("No hay texto de ayuda para \"{$clave}\".");
         $id = 'ayuda-' . preg_replace('/[^a-z0-9_-]/', '', $clave) . '-' . ++self::$contador;
 
+        $enlace = '';
+        if (isset($ayuda['enlace'])) {
+            $enlace = '<p><a class="btn btn-sm btn-primary" href="' . self::e(\App\Core\Url::to($ayuda['enlace']['ruta'])) . '">'
+                . Icono::html($ayuda['enlace']['icono'], 'me-1') . self::e($ayuda['enlace']['texto']) . '</a></p>';
+        }
+
+        // Con un botón dentro ya no es solo un texto emergente (role="tooltip" no admite
+        // controles): queda como el contenido que el ícono despliega (aria-controls).
         return '<button type="button" class="ayuda-campo" data-ayuda-campo aria-expanded="false" aria-controls="' . $id . '"'
             . ' aria-label="Ayuda: ' . self::e($ayuda['titulo']) . '">'
             . Icono::html('ayuda') . '</button>'
-            . '<div class="ayuda-campo-globo" id="' . $id . '" role="tooltip" hidden>' . self::parrafos($ayuda['texto']) . '</div>';
+            . '<div class="ayuda-campo-globo" id="' . $id . '"' . ($enlace === '' ? ' role="tooltip"' : '') . ' hidden>'
+            . self::parrafos($ayuda['texto']) . $enlace . '</div>';
     }
 
     /** Texto de ayuda a HTML: párrafos separados por una línea en blanco y **negrita**. */

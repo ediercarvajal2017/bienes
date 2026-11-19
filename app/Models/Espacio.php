@@ -108,12 +108,6 @@ final class Espacio
     }
 
     /**
-     * Todos los espacios de la institución (activos e inactivos, igual alcance que
-     * buscarPorCodigoInstitucion) con solo id+codigo — pensado para armar en memoria un
-     * mapa código→id una sola vez, en vez de una consulta por cada fila de un archivo
-     * de carga masiva.
-     */
-    /**
      * Espacios donde $usuarioId es responsable — usado para el docente al reportar un
      * hallazgo (bien físico no registrado): solo puede reportarlo en su(s) propio(s)
      * espacio(s), igual que solo ve "sus" bienes en Bien::listarPropios().
@@ -132,10 +126,15 @@ final class Espacio
         return $stmt->fetchAll();
     }
 
+    /**
+     * Todos los espacios de la institución (también los inactivos y los de la papelera, con
+     * su estado) con id y código: la carga masiva de bienes arma con esto un mapa código→espacio
+     * una sola vez, en vez de una consulta por fila, y puede decir por qué un espacio no sirve.
+     */
     public static function listadoCodigos(int $institucionId): array
     {
         $stmt = Database::connection()->prepare(
-            'SELECT id, codigo FROM espacios WHERE institucion_id = ?'
+            'SELECT id, codigo, activo, eliminado_en FROM espacios WHERE institucion_id = ?'
         );
         $stmt->execute([$institucionId]);
 

@@ -9,23 +9,14 @@ $urlBasePaginacion = Url::to('/cargas-masivas') . ($busqueda !== '' ? '?' . http
 <?php ob_start(); ?>
     <a href="<?= Url::to('/bienes') ?>" class="btn btn-sm btn-outline-secondary">Volver</a>
     <?= ui('menu_acciones', ['opciones' => \App\Helpers\AccionesBienes::opciones(), 'actual' => 'carga_masiva']) ?>
-<?= ui('encabezado_pagina', ['titulo' => 'Carga masiva de bienes', 'icono' => 'subir', 'acciones' => (string) ob_get_clean()]) ?>
+<?= ui('encabezado_pagina', ['titulo' => 'Carga masiva de bienes', 'icono' => 'subir', 'ayuda' => \App\Helpers\AyudaCampo::boton('carga_masiva_bienes'), 'acciones' => (string) ob_get_clean()]) ?>
 
 <div class="card mb-4 contenedor-md">
     <div class="card-body">
-        <p class="small text-muted mb-2">
-            Sube un archivo <strong>.xlsx</strong> con las columnas de la
-            <a href="<?= Url::to('/cargas-masivas/plantilla.xlsx') ?>">plantilla</a>. Primero se analiza y ves qué
-            cambiaría en cada fila; nada se guarda hasta que pulses «Confirmar importación».
+        <p class="small text-muted mb-3">
+            Sube la plantilla diligenciada (<strong>.xlsx</strong>). La descargas en el ícono <?= icono('ayuda') ?> junto
+            al título: trae las instrucciones, las listas de Ubicación y Categoría, y las columnas obligatorias en rojo claro.
         </p>
-        <ul class="small text-muted mb-3 ps-3">
-            <li><strong>Obligatorias:</strong> Código (la placa) y Descripción.</li>
-            <li><strong>Opcionales:</strong> Marca, Fecha de ingreso, Valor (solo números, sin negativos, máximo 10 dígitos),
-                Ubicación (código de un espacio que ya existe), Categoría (nombre de una categoría activa) y
-                Responsable individual (documento de un usuario activo: el bien queda a su cargo).</li>
-            <li><strong>No se borra nada:</strong> los bienes que no están en el archivo no se tocan, y una columna opcional
-                en blanco conserva lo que el bien ya tiene en MIA.</li>
-        </ul>
         <form method="post" action="<?= Url::to('/cargas-masivas') ?>" enctype="multipart/form-data" class="d-flex gap-2">
             <?= Csrf::field() ?>
             <input type="file" name="archivo" accept=".xlsx" aria-label="Archivo Excel de bienes" class="form-control form-control-sm" required>

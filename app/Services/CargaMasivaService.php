@@ -11,8 +11,6 @@ use App\Models\Categoria;
 use App\Models\Espacio;
 use App\Models\Usuario;
 use PhpOffice\PhpSpreadsheet\Shared\Date as FechaExcel;
-use PhpOffice\PhpSpreadsheet\Spreadsheet;
-use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 final class CargaMasivaService
 {
@@ -20,6 +18,10 @@ final class CargaMasivaService
      * Lee un .xlsx (columnas A-H: Código, Descripción, Marca, Fecha_Ingreso, Valor, Ubicación,
      * Categoría, Responsable individual) y compara cada fila contra la base de datos de la
      * institución. No escribe nada todavía.
+     *
+     * Los datos empiezan debajo de la fila de títulos (Código, Descripción…), que se busca en
+     * las primeras filas: la plantilla trae instrucciones arriba (PlantillaCargaBienes) y los
+     * archivos de la plantilla anterior la tienen en la fila 1.
      *
      * Responsable individual (opcional) es el documento de un usuario activo de la
      * institución: el bien queda a su cargo (responsabilidad individual) y la Ubicación, si
@@ -41,7 +43,7 @@ final class CargaMasivaService
      */
     public static function analizar(string $rutaArchivo, int $institucionId): array
     {
-        $sheet = LectorExcel::hojaActiva($rutaArchivo);
+        $sheet = LectorExcel::hojaActiva($rutaArchivo, PlantillaCargaBienes::HOJA);
         $filas = [];
         $codigosVistos = [];
         $espaciosPorCodigo = self::mapaEspaciosPorCodigo($institucionId);
@@ -49,12 +51,13 @@ final class CargaMasivaService
         $categoriasPorId = array_column(Categoria::all($institucionId), 'nombre', 'id');
 
         $ultimaFila = $sheet->getHighestDataRow();
+        $primeraFila = self::filaDeTitulos($sheet, $ultimaFila) + 1;
 
         // Una sola consulta con todos los códigos del archivo, en vez de una por fila --
         // con archivos de cientos/miles de filas, esto evita esa misma cantidad de
         // viajes a la base de datos solo para saber si cada código ya existe.
         $codigosDelArchivo = [];
-        for ($numeroFila = 2; $numeroFila <= $ultimaFila; $numeroFila++) {
+        for ($numeroFila = $primeraFila; $numeroFila <= $ultimaFila; $numeroFila++) {
             $codigo = trim((string) $sheet->getCell("A{$numeroFila}")->getValue());
             if ($codigo !== '') {
                 $codigosDelArchivo[] = $codigo;
@@ -62,7 +65,7 @@ final class CargaMasivaService
         }
         $existentesPorCodigo = Bien::buscarPorCodigosInstitucion($institucionId, $codigosDelArchivo);
 
-        for ($numeroFila = 2; $numeroFila <= $ultimaFila; $numeroFila++) {
+        for ($numeroFila = $primeraFila; $numeroFila <= $ultimaFila; $numeroFila++) {
             $codigo = trim((string) $sheet->getCell("A{$numeroFila}")->getValue());
             $descripcion = trim((string) $sheet->getCell("B{$numeroFila}")->getValue());
             $marca = trim((string) $sheet->getCell("C{$numeroFila}")->getValue());
@@ -92,6 +95,19 @@ final class CargaMasivaService
             }
             $codigosVistos[$codigo] = $numeroFila;
 
+            // Los mismos límites de la base de datos: antes un texto más largo tumbaba toda la
+            // carga al confirmarla.
+            $motivoLargo = match (true) {
+                mb_strlen($codigo) > 40 => 'El código tiene más de 40 caracteres',
+                mb_strlen($descripcion) > 200 => 'La descripción tiene más de 200 caracteres',
+                mb_strlen($marca) > 100 => 'La marca tiene más de 100 caracteres',
+                default => null,
+            };
+            if ($motivoLargo !== null) {
+                $filas[] = ['fila' => $numeroFila, 'tipo' => 'invalido', 'motivo' => $motivoLargo, 'codigo' => $codigo, 'descripcion' => $descripcion];
+                continue;
+            }
+
             $celdaFecha = $sheet->getCell("D{$numeroFila}");
             $fechaCruda = trim((string) $celdaFecha->getValue());
             $fecha = null;
@@ -101,6 +117,14 @@ final class CargaMasivaService
                     $filas[] = [
                         'fila' => $numeroFila, 'tipo' => 'invalido',
                         'motivo' => 'Fecha de ingreso inválida', 'codigo' => $codigo, 'descripcion' => $descripcion,
+                    ];
+                    continue;
+                }
+                // La misma regla del formulario del bien.
+                if ($fecha > date('Y-m-d')) {
+                    $filas[] = [
+                        'fila' => $numeroFila, 'tipo' => 'invalido',
+                        'motivo' => "La fecha de ingreso {$fecha} es futura", 'codigo' => $codigo, 'descripcion' => $descripcion,
                     ];
                     continue;
                 }
@@ -133,15 +157,24 @@ final class CargaMasivaService
 
             $espacioId = null;
             if ($ubicacion !== '') {
-                $espacioId = $espaciosPorCodigo[self::normalizarCodigoEspacio($ubicacion)] ?? null;
-                if ($espacioId === null) {
+                $espacio = self::buscarEspacio($ubicacion, $espaciosPorCodigo);
+                // Igual que el formulario del bien: solo un espacio activo y fuera de la papelera
+                // (antes la carga dejaba bienes en un espacio inactivo o borrado).
+                $motivo = match (true) {
+                    $espacio === null => "Ubicación no encontrada: no existe un espacio con código \"{$ubicacion}\"",
+                    $espacio['eliminado_en'] !== null => "El espacio \"{$espacio['codigo']}\" está en la papelera: restáuralo o elige otro",
+                    (int) $espacio['activo'] !== 1 => "El espacio \"{$espacio['codigo']}\" está inactivo: actívalo o elige otro",
+                    default => null,
+                };
+                if ($motivo !== null) {
                     $filas[] = [
                         'fila' => $numeroFila, 'tipo' => 'invalido',
-                        'motivo' => "Ubicación no encontrada: no existe un espacio con código \"{$ubicacion}\"",
+                        'motivo' => $motivo,
                         'codigo' => $codigo, 'descripcion' => $descripcion,
                     ];
                     continue;
                 }
+                $espacioId = (int) $espacio['id'];
             }
 
             $categoriaId = null;
@@ -329,26 +362,6 @@ final class CargaMasivaService
         return $omitidas;
     }
 
-    public static function enviarPlantilla(): void
-    {
-        $spreadsheet = new Spreadsheet();
-        $sheet = $spreadsheet->getActiveSheet();
-        $sheet->fromArray(['Codigo', 'Descripcion', 'Marca', 'Fecha_Ingreso', 'Valor', 'Ubicacion', 'Categoria', 'Responsable_individual'], null, 'A1');
-        $sheet->fromArray(['BIEN-0001', 'Silla plástica azul', 'Rimax', '2026-01-15', 85000, 'AULA-101', 'Sillas', ''], null, 'A2');
-        $sheet->fromArray(['BIEN-0002', 'Portátil HP', 'HP', '2026-01-15', 2500000, '', 'Tecnología', '1234567890'], null, 'A3');
-        $sheet->getStyle('H2:H3')->getNumberFormat()->setFormatCode('@');
-        $sheet->getCell('H3')->setValueExplicit('1234567890', \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
-        foreach (range('A', 'H') as $columna) {
-            $sheet->getColumnDimension($columna)->setAutoSize(true);
-        }
-
-        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        header('Content-Disposition: attachment; filename="plantilla_carga_bienes.xlsx"');
-        header('Cache-Control: max-age=0');
-        (new Xlsx($spreadsheet))->save('php://output');
-        exit;
-    }
-
     private static function detectarCambios(array $existente, array $nuevo, ?array $asignacionActiva, array $categoriasPorId): array
     {
         $cambios = [];
@@ -409,20 +422,61 @@ final class CargaMasivaService
     }
 
     /**
-     * Código de espacio -> id, para toda la institución, comparando por código
-     * normalizado (ver normalizarCodigoEspacio) en vez de una consulta exacta por fila.
-     * Evita hasta miles de consultas en un archivo grande y, de paso, hace que la
-     * ubicación coincida aunque el Excel traiga espacios de más o un carácter de
-     * espacio "no separable" (muy común al pegar datos desde Word/PDF).
+     * Código de espacio -> espacio (id, código, activo, eliminado_en), para toda la
+     * institución, comparando por código normalizado (ver normalizarCodigoEspacio) en vez de
+     * una consulta exacta por fila. Evita hasta miles de consultas en un archivo grande y, de
+     * paso, hace que la ubicación coincida aunque el Excel traiga espacios de más o un
+     * carácter de espacio "no separable" (muy común al pegar datos desde Word/PDF).
+     * Si dos espacios comparten código, gana el que se puede usar (activo y fuera de la papelera).
+     *
+     * @return array<string, array<string, mixed>>
      */
     private static function mapaEspaciosPorCodigo(int $institucionId): array
     {
         $mapa = [];
         foreach (Espacio::listadoCodigos($institucionId) as $espacio) {
-            $mapa[self::normalizarCodigoEspacio($espacio['codigo'])] = (int) $espacio['id'];
+            $clave = self::normalizarCodigoEspacio((string) $espacio['codigo']);
+            $actual = $mapa[$clave] ?? null;
+            if ($actual === null || $actual['eliminado_en'] !== null || (int) $actual['activo'] !== 1) {
+                $mapa[$clave] = $espacio;
+            }
         }
 
         return $mapa;
+    }
+
+    /**
+     * El espacio de la columna Ubicación: por su código, o por «código — nombre», como lo
+     * trae la lista desplegable de la plantilla.
+     *
+     * @param array<string, array<string, mixed>> $espaciosPorCodigo
+     * @return array<string, mixed>|null
+     */
+    private static function buscarEspacio(string $ubicacion, array $espaciosPorCodigo): ?array
+    {
+        $espacio = $espaciosPorCodigo[self::normalizarCodigoEspacio($ubicacion)] ?? null;
+        if ($espacio === null && str_contains($ubicacion, PlantillaCargaBienes::RAYA)) {
+            $espacio = $espaciosPorCodigo[self::normalizarCodigoEspacio(explode(PlantillaCargaBienes::RAYA, $ubicacion, 2)[0])] ?? null;
+        }
+
+        return $espacio;
+    }
+
+    /**
+     * La fila de títulos (la que empieza con «Código» y «Descripción», con o sin tilde),
+     * buscada en las primeras 30 filas. Si no está, la 1, como en la plantilla anterior.
+     */
+    private static function filaDeTitulos(\PhpOffice\PhpSpreadsheet\Worksheet\Worksheet $sheet, int $ultimaFila): int
+    {
+        $sinTildes = static fn (mixed $valor): string => strtr(mb_strtoupper(trim((string) $valor)), ['Á' => 'A', 'É' => 'E', 'Í' => 'I', 'Ó' => 'O', 'Ú' => 'U']);
+        for ($fila = 1; $fila <= min(30, $ultimaFila); $fila++) {
+            if (str_starts_with($sinTildes($sheet->getCell("A{$fila}")->getValue()), 'CODIGO')
+                && str_starts_with($sinTildes($sheet->getCell("B{$fila}")->getValue()), 'DESCRIPCION')) {
+                return $fila;
+            }
+        }
+
+        return 1;
     }
 
     private static function normalizarCodigoEspacio(string $texto): string

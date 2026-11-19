@@ -15,7 +15,11 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
  */
 final class LectorExcel
 {
-    public static function hojaActiva(string $ruta): Worksheet
+    /**
+     * La hoja con los datos: la llamada $preferida si el libro la tiene (la plantilla de bienes
+     * trae además una hoja oculta de listas), o si no la que estaba abierta al guardar.
+     */
+    public static function hojaActiva(string $ruta, ?string $preferida = null): Worksheet
     {
         $extension = strtolower(pathinfo($ruta, PATHINFO_EXTENSION));
         $tipo = match ($extension) {
@@ -26,6 +30,8 @@ final class LectorExcel
 
         // Sin setReadDataOnly(): CargaMasivaService::leerFecha() reconoce las fechas por el
         // formato de la celda, que se perdería.
-        return IOFactory::createReader($tipo)->load($ruta)->getActiveSheet();
+        $libro = IOFactory::createReader($tipo)->load($ruta);
+
+        return ($preferida !== null ? $libro->getSheetByName($preferida) : null) ?? $libro->getActiveSheet();
     }
 }
