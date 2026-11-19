@@ -59,3 +59,49 @@ if (!function_exists('ui')) {
         return (string) ob_get_clean();
     }
 }
+
+if (!function_exists('resaltar')) {
+    /**
+     * El texto escapado para HTML, con cada aparición de lo buscado marcada con
+     * <mark class="coincidencia">: así se ve por qué una fila salió en la búsqueda. Igual que
+     * la búsqueda de MySQL (utf8mb4_unicode_ci), no distingue mayúsculas ni tildes: «silla»
+     * marca «SILLA» y «Sílla». Sin búsqueda, solo escapa.
+     */
+    function resaltar(?string $texto, ?string $busqueda): string
+    {
+        $texto ??= '';
+        $busqueda = trim((string) $busqueda);
+        $escapar = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
+        if ($texto === '' || $busqueda === '') {
+            return $escapar($texto);
+        }
+
+        // Un carácter normalizado por cada carácter original, para ubicar las coincidencias
+        // en el texto tal como está.
+        $normalizar = static function (string $s): array {
+            $sinTildes = ['á' => 'a', 'à' => 'a', 'ä' => 'a', 'â' => 'a', 'ã' => 'a', 'é' => 'e', 'è' => 'e', 'ë' => 'e', 'ê' => 'e',
+                'í' => 'i', 'ì' => 'i', 'ï' => 'i', 'î' => 'i', 'ó' => 'o', 'ò' => 'o', 'ö' => 'o', 'ô' => 'o', 'õ' => 'o',
+                'ú' => 'u', 'ù' => 'u', 'ü' => 'u', 'û' => 'u', 'ñ' => 'n', 'ç' => 'c'];
+
+            return array_map(static function (string $c) use ($sinTildes): string {
+                $n = strtr(mb_strtolower($c), $sinTildes);
+
+                return mb_strlen($n) === 1 ? $n : $c;
+            }, mb_str_split($s));
+        };
+        $caracteres = mb_str_split($texto);
+        $pajar = implode('', $normalizar($texto));
+        $aguja = implode('', $normalizar($busqueda));
+        $largo = mb_strlen($aguja);
+
+        $html = '';
+        $desde = 0;
+        while (($pos = mb_strpos($pajar, $aguja, $desde)) !== false) {
+            $html .= $escapar(implode('', array_slice($caracteres, $desde, $pos - $desde)))
+                . '<mark class="coincidencia">' . $escapar(implode('', array_slice($caracteres, $pos, $largo))) . '</mark>';
+            $desde = $pos + $largo;
+        }
+
+        return $html . $escapar(implode('', array_slice($caracteres, $desde)));
+    }
+}

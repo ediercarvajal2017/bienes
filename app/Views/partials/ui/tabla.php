@@ -21,6 +21,11 @@
  *    Enter o el doble clic) y data-id (para volver a la misma fila al recargar).
  *  - $filaInicial (int): cuántas filas hay antes de esta página (para «fila 51 de 2.590»).
  *  - $totalFilas (?int): cuántas filas tiene el listado completo.
+ *  - Ordenar por columna: cada columna ordenable lleva 'orden' => clave y, si se quiere,
+ *    'ordenTextos' => [ascendente, descendente] («de menor a mayor», «de la A a la Z»…).
+ *    $ordenActual / $direccion ('asc'|'desc') dicen cómo está ordenada, y $urlOrden
+ *    (fn (string $clave, string $dir): string) arma el enlace. El título es un enlace
+ *    (funciona sin JavaScript) con aria-sort en la columna ordenada.
  */
 
 $leyenda ??= null;
@@ -29,6 +34,9 @@ $encabezadoFijo ??= true;
 $navegable ??= false;
 $filaInicial ??= 0;
 $totalFilas ??= null;
+$ordenActual ??= null;
+$direccion ??= 'asc';
+$urlOrden ??= null;
 $alineaciones = ['derecha' => 'text-end', 'centro' => 'text-center'];
 
 $columnasFijas = 0;
@@ -51,7 +59,22 @@ $clases = 'table-responsive tabla-datos' . ($encabezadoFijo ? ' tabla-encabezado
         <tr>
             <?php foreach ($columnas as $columna): ?>
                 <?php $clase = trim(($alineaciones[$columna['alineacion'] ?? ''] ?? '') . ' ' . ($columna['clase'] ?? '')); ?>
+                <?php if (isset($columna['orden']) && $urlOrden !== null): ?>
+                    <?php
+                    $ordenada = $ordenActual === $columna['orden'];
+                    $siguiente = $ordenada && $direccion === 'asc' ? 'desc' : 'asc';
+                    [$textoAsc, $textoDesc] = $columna['ordenTextos'] ?? ['de menor a mayor', 'de mayor a menor'];
+                    $icono = $ordenada ? ($direccion === 'asc' ? 'orden_ascendente' : 'orden_descendente') : 'ordenable';
+                    ?>
+                    <th scope="col"<?= $clase !== '' ? ' class="' . htmlspecialchars($clase, ENT_QUOTES) . '"' : '' ?><?= $ordenada ? ' aria-sort="' . ($direccion === 'asc' ? 'ascending' : 'descending') . '"' : '' ?>>
+                        <?php $accion = 'ordenar ' . ($siguiente === 'asc' ? $textoAsc : $textoDesc); ?>
+                        <a class="encabezado-orden<?= $ordenada ? ' activo' : '' ?>" href="<?= htmlspecialchars($urlOrden($columna['orden'], $siguiente), ENT_QUOTES) ?>"
+                           aria-label="<?= htmlspecialchars($columna['texto'] . ', ' . $accion, ENT_QUOTES) ?>"
+                           title="<?= htmlspecialchars(mb_strtoupper(mb_substr($accion, 0, 1)) . mb_substr($accion, 1), ENT_QUOTES) ?>"><?= htmlspecialchars($columna['texto'], ENT_QUOTES) ?><?= icono($icono, 'encabezado-orden-icono') ?></a>
+                    </th>
+                <?php else: ?>
                 <th scope="col"<?= $clase !== '' ? ' class="' . htmlspecialchars($clase, ENT_QUOTES) . '"' : '' ?>><?php if (!empty($columna['oculta'])): ?><span class="visually-hidden"><?= htmlspecialchars($columna['texto'], ENT_QUOTES) ?></span><?php else: ?><?= htmlspecialchars($columna['texto'], ENT_QUOTES) ?><?php endif; ?></th>
+                <?php endif; ?>
             <?php endforeach; ?>
         </tr>
         </thead>

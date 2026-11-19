@@ -11,7 +11,18 @@ $parametrosPaginacion = array_filter([
     'espacio' => $espacioId,
     'responsable' => $responsableId,
     'tipo' => $tipo,
+    'orden' => $orden,
+    'dir' => $orden !== null ? $dir : null,
 ], static fn ($valor) => $valor !== null);
+
+// Columnas que ordenan la tabla al hacer clic en su título, y cómo se dice cada sentido.
+$textosOrden = [
+    'descripcion' => ['de la A a la Z', 'de la Z a la A'],
+    'codigo' => ['de menor a mayor', 'de mayor a menor'],
+    'categoria' => ['de la A a la Z', 'de la Z a la A'],
+    'valor' => ['de menor a mayor', 'de mayor a menor'],
+    'estado' => ['de activos a dados de baja', 'de dados de baja a activos'],
+];
 $urlBasePaginacion = Url::to('/bienes') . (!empty($parametrosPaginacion) ? '?' . http_build_query($parametrosPaginacion) : '');
 
 $etiquetasEstado = [
@@ -66,6 +77,23 @@ $filtrosAplicados = array_map(static fn (array $f): array => [
     'etiqueta' => $f['etiqueta'], 'valor' => $f['valor'], 'urlQuitar' => $sinFiltro($f['clave']),
 ], $filtrosAplicados);
 $filtrosActivos = count($filtrosAplicados);
+
+// El orden elegido se ve como una etiqueta más (con ✕ para volver al orden de siempre), pero
+// no cuenta como filtro: no cambia qué bienes salen ni la descarga en Excel.
+$urlOrden = static function (string $clave, string $sentido) use ($consultaActual): string {
+    $consulta = array_diff_key($consultaActual, ['orden' => true, 'dir' => true]);
+
+    return Url::to('/bienes') . '?' . http_build_query($consulta + ['orden' => $clave, 'dir' => $sentido]);
+};
+if ($orden !== null) {
+    $nombresOrden = ['descripcion' => 'Descripción', 'codigo' => 'Código', 'categoria' => 'Categoría', 'valor' => 'Valor', 'estado' => 'Estado'];
+    $sinOrden = array_diff_key($consultaActual, ['orden' => true, 'dir' => true]);
+    $filtrosAplicados[] = [
+        'etiqueta' => 'Orden',
+        'valor' => $nombresOrden[$orden] . ', ' . $textosOrden[$orden][$dir === 'desc' ? 1 : 0],
+        'urlQuitar' => Url::to('/bienes') . ($sinOrden !== [] ? '?' . http_build_query($sinOrden) : ''),
+    ];
+}
 
 // La descarga en Excel dice qué toma de la lista, si toma algo.
 $alcanceDescarga = array_filter([
@@ -195,11 +223,18 @@ $alcanceDescarga = array_filter([
 
 <?php // Como una planilla: se recorre con el teclado, y Foto, Descripción y Código quedan
       // inmovilizadas al desplazarse a la derecha (public/assets/js/tabla-navegable.js). ?>
+<?php // Un clic en Descripción, Código, Categoría, Valor o Estado ordena todo el listado. ?>
 <?= ui('tabla', ['leyenda' => 'Bienes', 'navegable' => true,
     'filaInicial' => $porPagina > 0 ? ($pagina - 1) * $porPagina : 0, 'totalFilas' => $total + count($lotes),
+    'ordenActual' => $orden, 'direccion' => $dir, 'urlOrden' => $urlOrden,
     'columnas' => [
-        ['texto' => 'Foto', 'oculta' => true, 'fija' => true], ['texto' => 'Descripción', 'fija' => true], ['texto' => 'Código', 'fija' => true],
-        ['texto' => 'Categoría'], ['texto' => 'Responsable / ubicación'], ['texto' => 'Valor', 'alineacion' => 'derecha'], ['texto' => 'Estado'],
+        ['texto' => 'Foto', 'oculta' => true, 'fija' => true],
+        ['texto' => 'Descripción', 'fija' => true, 'orden' => 'descripcion', 'ordenTextos' => $textosOrden['descripcion']],
+        ['texto' => 'Código', 'fija' => true, 'orden' => 'codigo', 'ordenTextos' => $textosOrden['codigo']],
+        ['texto' => 'Categoría', 'orden' => 'categoria', 'ordenTextos' => $textosOrden['categoria']],
+        ['texto' => 'Responsable / ubicación'],
+        ['texto' => 'Valor', 'alineacion' => 'derecha', 'orden' => 'valor', 'ordenTextos' => $textosOrden['valor']],
+        ['texto' => 'Estado', 'orden' => 'estado', 'ordenTextos' => $textosOrden['estado']],
         ['texto' => 'QR'], ['texto' => 'Acciones', 'alineacion' => 'derecha', 'oculta' => true],
     ]]) ?>
         <?php if (empty($lotes) && empty($bienes) && !$algunFiltroActivo): ?>
@@ -241,12 +276,12 @@ $alcanceDescarga = array_filter([
                     <span class="miniatura-vacia" title="Código con varias unidades"><?= icono('bien') ?></span>
                 </td>
                 <td data-label="Descripción">
-                    <?= htmlspecialchars($l['descripcion'], ENT_QUOTES) ?>
+                    <?= resaltar($l['descripcion'], $busqueda) ?>
                     <?php // Lo que queda del código en la institución: baja al reintegrar o dar de baja unidades. ?>
                     <div class="small text-muted"><strong><?= (int) $l['en_cartera'] ?></strong> en cartera de <?= (int) $l['total'] ?> unidades</div>
                 </td>
-                <td class="text-muted mono" data-label="Código"><?= htmlspecialchars($l['lote'], ENT_QUOTES) ?></td>
-                <td class="text-muted" data-label="Categoría"><?= htmlspecialchars($l['categoria_nombre'] ?? '—', ENT_QUOTES) ?></td>
+                <td class="text-muted mono" data-label="Código"><?= resaltar($l['lote'], $busqueda) ?></td>
+                <td class="text-muted" data-label="Categoría"><?= resaltar($l['categoria_nombre'] ?? '—', $busqueda) ?></td>
                 <td class="small text-muted" data-label="Responsable / ubicación">—</td>
                 <td class="celda-numero" data-label="Valor" title="Valor de las unidades en cartera">$<?= number_format((float) $l['valor_en_cartera'], 0, ',', '.') ?></td>
                 <td class="small" data-label="Estado">
@@ -281,13 +316,13 @@ $alcanceDescarga = array_filter([
                     <?php endif; ?>
                 </td>
                 <td data-label="Descripción">
-                    <?= htmlspecialchars($b['descripcion'], ENT_QUOTES) ?>
-                    <?php if (!empty($b['marca'])): ?><div class="small text-muted"><?= htmlspecialchars($b['marca'], ENT_QUOTES) ?></div><?php endif; ?>
+                    <?= resaltar($b['descripcion'], $busqueda) ?>
+                    <?php if (!empty($b['marca'])): ?><div class="small text-muted"><?= resaltar($b['marca'], $busqueda) ?></div><?php endif; ?>
                 </td>
-                <td class="text-muted mono" data-label="Código"><?= htmlspecialchars($b['codigo_identificacion'], ENT_QUOTES) ?></td>
-                <td class="text-muted" data-label="Categoría"><?= htmlspecialchars($b['categoria_nombre'] ?? '—', ENT_QUOTES) ?></td>
+                <td class="text-muted mono" data-label="Código"><?= resaltar($b['codigo_identificacion'], $busqueda) ?></td>
+                <td class="text-muted" data-label="Categoría"><?= resaltar($b['categoria_nombre'] ?? '—', $busqueda) ?></td>
                 <td class="small" data-label="Responsable / ubicación">
-                    <?php View::render('partials/responsabilidad', ['fila' => $b]); ?>
+                    <?php View::render('partials/responsabilidad', ['fila' => $b, 'resaltar' => $busqueda]); ?>
                 </td>
                 <td class="celda-numero" data-label="Valor">$<?= number_format((float) $b['valor'], 0, ',', '.') ?></td>
                 <td data-label="Estado"><?= ui('insignia_estado', ['tipo' => 'bien', 'estado' => (string) $b['estado']]) ?></td>

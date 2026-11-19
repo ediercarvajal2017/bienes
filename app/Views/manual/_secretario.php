@@ -46,7 +46,8 @@
                 <li>En el computador, la lista de <strong>Bienes</strong> se recorre con el teclado como una planilla: haz clic
                     en una celda y muévete con las flechas; Enter abre el bien y Av Pág pasa a la página siguiente. Foto,
                     Descripción y Código quedan fijas al desplazarte a la derecha, y «Vista compacta» muestra más filas.
-                    El ícono (?) junto al título tiene todas las teclas.</li>
+                    Un clic en un título (Descripción, Código, Categoría, Valor o Estado) ordena toda la lista, y lo que
+                    buscas se marca en amarillo. El ícono (?) junto al título tiene todas las teclas.</li>
                 <li>Cada pantalla a la que lleva <strong>Acciones</strong> tiene el mismo botón, con la pantalla actual
                     resaltada: pasas de una acción a otra (por ejemplo, de Alta masiva a Generar QR masivo) sin volver a Bienes.</li>
                 <li>Después de cada acción, MIA te dice arriba de la página <strong>qué pasó</strong>. Si algo no se pudo hacer,

@@ -125,6 +125,7 @@ final class AyudaCampo
                 . "**Av Pág / Re Pág:** 10 filas; desde la última fila pasa a la página siguiente.\n\n"
                 . "**Enter o doble clic:** abre el bien. **Espacio** sobre la foto: la amplía. **Ctrl+C:** copia la celda.\n\n"
                 . "**/ (barra):** va al buscador; **Escape** vuelve a la tabla.\n\n"
+                . "**Clic en un título** (Descripción, Código, Categoría, Valor o Estado): ordena toda la lista; otro clic invierte el orden. Lo buscado se marca en amarillo.\n\n"
                 . 'Foto, Descripción y Código quedan fijas al desplazarte a la derecha, y «Vista compacta» muestra más filas. Al recargar, MIA te deja en la misma celda.',
         ],
         'carga_masiva_bienes' => [
