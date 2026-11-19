@@ -126,15 +126,25 @@
     // Teclado.
     document.addEventListener('focusin', function (e) {
         var boton = botonDe(e.target);
-        if (boton && e.target.matches(':focus-visible')) { abrir(boton, 'teclado'); }
+        if (boton && !volviendo && e.target.matches(':focus-visible')) { abrir(boton, 'teclado'); }
     });
     document.addEventListener('focusout', function (e) {
         // Solo el abierto con el teclado: el de un clic se cierra con otro clic o tocando fuera.
-        if (abierto && abierto.por === 'teclado' && botonDe(e.target) === abierto.boton) { cerrar(); }
+        if (!abierto || abierto.por !== 'teclado') { return; }
+        if (botonDe(e.target) !== abierto.boton && !dentroDelGlobo(e.target)) { return; }
+        // Con Tab del ícono al botón del globo (p. ej. «Descargar plantilla»), sigue abierto.
+        var hacia = e.relatedTarget;
+        if (hacia instanceof Node && (abierto.boton.contains(hacia) || abierto.globo.contains(hacia))) { return; }
+        cerrar();
     });
+    var volviendo = false;
     document.addEventListener('keydown', function (e) {
         if (e.key === 'Escape' && abierto) {
+            // Si el foco estaba en el botón del globo, vuelve al ícono (sin reabrirlo).
+            var boton = abierto.boton;
+            var desdeElGlobo = abierto.globo.contains(document.activeElement);
             cerrar();
+            if (desdeElGlobo) { volviendo = true; boton.focus(); volviendo = false; }
         }
     });
 

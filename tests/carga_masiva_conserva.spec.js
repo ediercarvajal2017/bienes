@@ -47,7 +47,7 @@ test('una columna en blanco conserva lo que el bien ya tiene; los valores imposi
     ]);
 
     await page.goto('cargas-masivas');
-    await expect(page.getByText('No se borra nada:')).toBeVisible();
+    await expect(page.getByText('Sube la plantilla diligenciada')).toBeVisible();
     await page.setInputFiles('input[name="archivo"]', archivo);
     await page.getByRole('button', { name: 'Analizar archivo' }).click();
     await expect(page).toHaveURL(/\/cargas-masivas\/\d+/);

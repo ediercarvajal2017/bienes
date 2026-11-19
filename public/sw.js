@@ -7,7 +7,7 @@
 //
 // Al cambiar CACHE, activate borra las versiones anteriores (incluida 'sigebi-v1', que
 // sí guardaba el panel autenticado).
-const CACHE = 'sigebi-v10'; // v10: avisos del navegador (cámara, búsqueda por foto) con qué hacer
+const CACHE = 'sigebi-v11'; // v11: ayuda junto al título (plantilla de la carga masiva de bienes)
 const PRECARGA = ['./offline.html', './assets/css/tokens.css', './assets/css/app.css'];
 
 self.addEventListener('install', (event) => {

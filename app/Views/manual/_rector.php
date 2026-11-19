@@ -38,7 +38,9 @@
                     idéntica, ya con sus datos.</li>
                 <li><strong>Dar de baja</strong> un bien, o aprobar/rechazar bajas que otros reporten (ver tema 6).</li>
                 <li>Para cargar muchos bienes o fotos de una vez, usa <strong>Bienes &gt; Acciones &gt; Carga
-                    masiva de bienes</strong>. Solo el Código y la Descripción son obligatorios. Primero ves qué cambiaría
+                    masiva de bienes</strong>. La plantilla se descarga en el ícono (?) junto al título: trae las instrucciones, las
+                    listas de Ubicación y Categoría para elegir, y las columnas obligatorias (Código y Descripción) en rojo
+                    claro. Primero ves qué cambiaría
                     en cada fila y nada se guarda hasta que confirmas. La carga no borra nada: los bienes que no están en el
                     archivo no se tocan, y una columna en blanco conserva lo que el bien ya tenía.</li>
                 <li>Cada pantalla a la que lleva <strong>Acciones</strong> tiene el mismo botón, con la pantalla actual

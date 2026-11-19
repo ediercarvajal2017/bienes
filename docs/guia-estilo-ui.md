@@ -72,6 +72,8 @@ Se usan con la función `ui('componente', [...])`, que devuelve el HTML. Las pie
 ```
 Las migas de pan no van aquí: las arma el layout a partir del menú (una sola fuente). Si el registro tiene un estado, va junto al título con `'insignia' => ui('insignia_estado', [...])`.
 
+La guía de una página va en el ícono (?) junto al título: `'ayuda' => AyudaCampo::boton('carga_masiva_bienes')`. Se abre con el cursor, el teclado o un toque, y queda fuera del `<h1>`. Si el texto de `AyudaCampo::TEXTOS` trae `enlace`, el globo termina con ese botón (por ejemplo «Descargar plantilla (.xlsx)»); con Tab se llega a él y Escape vuelve al ícono.
+
 ### Botón
 ```php
 <?= ui('boton', ['texto' => 'Guardar', 'tipo' => 'primario', 'icono' => 'guardar', 'tipoBoton' => 'submit']) ?>

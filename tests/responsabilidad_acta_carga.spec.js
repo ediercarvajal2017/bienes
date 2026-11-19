@@ -160,11 +160,4 @@ test('carga masiva: la columna "Responsable individual" deja los bienes a cargo 
     await pagina.context().close();
 });
 
-test('la plantilla de la carga masiva trae la columna del responsable', async ({ browser }) => {
-    const contexto = await comoRol(browser, 'rector');
-    const respuesta = await contexto.request.get('cargas-masivas/plantilla.xlsx');
-    expect(respuesta.status()).toBe(200);
-    const hoja = Object.values(leerXlsx(await respuesta.body()))[0];
-    expect(hoja[0]).toEqual(['Codigo', 'Descripcion', 'Marca', 'Fecha_Ingreso', 'Valor', 'Ubicacion', 'Categoria', 'Responsable_individual']);
-    await contexto.close();
-});
+// La plantilla (con la columna Responsable individual) se prueba en plantilla_carga_bienes.spec.js.

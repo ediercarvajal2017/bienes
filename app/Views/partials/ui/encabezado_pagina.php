@@ -9,6 +9,8 @@
  *  - $icono (?string): clave del diccionario; la del módulo (bien, espacio, reintegro…).
  *  - $subtitulo (?string): una línea de contexto, texto plano.
  *  - $insignia (string): HTML de ui('insignia_estado', …) junto al título (estado del registro).
+ *  - $ayuda (string): HTML de AyudaCampo::boton(…), el ícono (?) junto al título con la guía de
+ *    la página. Va fuera del <h1>: el nombre del título no cambia.
  *  - $acciones (string): HTML de los botones (ui('boton', …)): primero los secundarios,
  *    al final el primario.
  *
@@ -21,11 +23,18 @@
 $icono ??= null;
 $subtitulo ??= null;
 $insignia ??= '';
+$ayuda ??= '';
 $acciones ??= '';
+$h1 = '<h1 class="titulo-pagina">' . ($icono !== null ? icono($icono, 'titulo-pagina-icono') : '') . htmlspecialchars($titulo, ENT_QUOTES)
+    . ($insignia !== '' ? ' ' . $insignia : '') . '</h1>';
 ?>
 <div class="encabezado-pagina">
     <div class="encabezado-pagina-texto">
-        <h1 class="titulo-pagina"><?= $icono !== null ? icono($icono, 'titulo-pagina-icono') : '' ?><?= htmlspecialchars($titulo, ENT_QUOTES) ?><?= $insignia !== '' ? ' ' . $insignia : '' ?></h1>
+        <?php if ($ayuda !== ''): ?>
+            <div class="titulo-pagina-con-ayuda"><?= $h1 ?><?= $ayuda ?></div>
+        <?php else: ?>
+            <?= $h1 ?>
+        <?php endif; ?>
         <?php if ($subtitulo !== null && $subtitulo !== ''): ?>
             <p class="encabezado-pagina-subtitulo"><?= htmlspecialchars($subtitulo, ENT_QUOTES) ?></p>
         <?php endif; ?>

@@ -49,7 +49,9 @@ final class CargaMasivaController
 
     public function plantilla(): void
     {
-        CargaMasivaService::enviarPlantilla();
+        // Con las listas de Ubicación y Categoría de la institución donde quedará la carga
+        // (la de quien la sube, igual que en subir()).
+        \App\Services\PlantillaCargaBienes::enviar((int) Auth::institucionId());
     }
 
     public function subir(): void
