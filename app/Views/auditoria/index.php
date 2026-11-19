@@ -141,7 +141,7 @@ $etiquetasEntidad = [
     </div>
 </form>
 
-<?php View::render('partials/paginacion', [
+<?php View::render('partials/paginacion', ['densidad' => true,
     'pagina' => $pagina, 'porPagina' => $porPagina, 'total' => $total, 'totalPaginas' => $totalPaginas,
     'urlBase' => $urlBase,
 ]); ?>
@@ -149,7 +149,7 @@ $etiquetasEntidad = [
 <?php if (empty($registros)): ?>
     <p class="text-muted">No hay nada registrado con estos filtros.</p>
 <?php else: ?>
-    <div class="table-responsive">
+    <div data-navegable class="table-responsive">
         <table class="table table-sm bg-white align-middle tabla-cards">
             <thead>
             <tr>

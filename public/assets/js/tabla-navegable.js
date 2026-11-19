@@ -1,5 +1,6 @@
 /**
- * Tabla navegable como una planilla (ui('tabla', ['navegable' => true])): en pantallas
+ * Tabla navegable como una planilla (ui('tabla', ['navegable' => true]), o cualquier recuadro
+ * de tabla con el atributo data-navegable): en pantallas
  * grandes (desde 992 px, donde la tabla no se ve como tarjetas) se recorre con el teclado
  * celda por celda, como en Excel. En el celular no hace nada: siguen las tarjetas.
  *
@@ -7,9 +8,13 @@
  *    Ctrl+Fin: primera o última celda de la página.
  *  - Av Pág / Re Pág: 10 filas. En la última fila, Av Pág pasa a la página siguiente (y deja
  *    el cursor en su primera fila); en la primera, Re Pág pasa a la anterior.
- *  - Enter o doble clic: abre la fila (data-url del <tr>). En una celda con varios botones,
- *    Enter entra a ellos (flechas ← → para pasar de uno a otro, Escape para volver).
- *  - Espacio: en una celda con un solo botón o foto, lo pulsa (p. ej. amplía la foto).
+ *  - Enter o doble clic: abre la fila (data-url del <tr> o, si no tiene, su único enlace,
+ *    como «Editar» o «Ver»). En las tablas para marcar varios
+ *    (fila con casilla y sin data-url), Enter marca o desmarca la casilla. En una celda con
+ *    varios botones o campos, Enter entra a ellos (flechas ← → para pasar de uno a otro,
+ *    Escape para volver); dentro de un campo de texto las flechas mueven el cursor del texto.
+ *  - Espacio: en una celda con un solo botón o foto, lo pulsa (p. ej. amplía la foto); si no,
+ *    marca o desmarca la casilla de la fila.
  *  - Ctrl+C sin texto seleccionado: copia el contenido de la celda.
  *  - «/»: va al buscador de la página; Escape en el buscador vuelve a la tabla.
  *
@@ -29,7 +34,7 @@
     var SALTO = 10;
     var CLAVE_DENSIDAD = 'mia.tabla.densidad';
     var CLAVE_SALTO = 'mia.tabla.salto';
-    var CONTROLES = 'a[href], button, input, select, textarea, [data-lightbox-src]';
+    var CONTROLES = 'a[href], button, input:not([type="hidden"]), select, textarea, summary, [data-lightbox-src]';
 
     function leer(almacen, clave) { try { return window[almacen].getItem(clave); } catch (e) { return null; } }
     function guardar(almacen, clave, valor) {
@@ -38,18 +43,28 @@
     function escribiendo(elemento) {
         return elemento && (elemento.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(elemento.tagName));
     }
+    // Un campo donde se escribe o se elige (no una casilla ni un botón): sus flechas son suyas.
+    function campoDeTexto(elemento) {
+        if (elemento.tagName === 'TEXTAREA' || elemento.tagName === 'SELECT') { return true; }
+        return elemento.tagName === 'INPUT' && !/^(checkbox|radio|button|submit|reset|image|file)$/i.test(elemento.type);
+    }
+    function casillaDe(fila) { return fila.querySelector('input[type="checkbox"]:not(:disabled)'); }
 
-    function iniciar(contenedor) {
+    function iniciar(contenedor, indice) {
         var tabla = contenedor.querySelector('table');
         if (!tabla || !tabla.tBodies[0]) { return; }
         var cuerpo = tabla.tBodies[0];
-        var clavePosicion = 'mia.tabla.posicion.' + window.location.pathname;
+        // Una por tabla: una página puede tener varias (p. ej. una verificación física).
+        var clavePosicion = 'mia.tabla.posicion.' + window.location.pathname + (indice > 0 ? '#' + indice : '');
         var activa = null;
         var activado = false;
 
         function filas() {
-            // Las filas de datos: sin la del «no hay resultados» (una sola celda con colspan).
-            return Array.prototype.filter.call(cuerpo.rows, function (fila) { return fila.cells.length > 1; });
+            // Las filas de datos: sin la del «no hay resultados» (una sola celda con colspan) ni
+            // las que oculta un buscador de la misma página (p. ej. la Papelera).
+            return Array.prototype.filter.call(cuerpo.rows, function (fila) {
+                return fila.cells.length > 1 && !fila.hidden && fila.style.display !== 'none';
+            });
         }
         function controlesDe(celda) { return celda ? celda.querySelectorAll(CONTROLES) : []; }
 
@@ -118,9 +133,14 @@
             return true;
         }
 
+        // Lo que abre una fila: su data-url o, si no tiene, su único enlace (Editar, Ver…).
         function abrir(fila) {
-            var url = fila && fila.getAttribute('data-url');
-            if (url) { window.location = url; }
+            if (!fila) { return false; }
+            var url = fila.getAttribute('data-url');
+            if (url) { window.location = url; return true; }
+            var enlaces = fila.querySelectorAll('a[href]');
+            if (enlaces.length === 1) { enlaces[0].click(); return true; }
+            return false;
         }
 
         // Prepara la tabla en pantallas grandes (o la deja como estaba en el celular).
@@ -208,6 +228,11 @@
             var destino = null;
 
             // Dentro de un botón de la celda: ← → entre los botones, Escape vuelve a la celda.
+            // Dentro de un campo de texto, todas las teclas son del campo (menos Escape).
+            if (dentroDeControl && campoDeTexto(e.target)) {
+                if (e.key === 'Escape') { e.preventDefault(); enfocar(celda); }
+                return;
+            }
             if (dentroDeControl) {
                 var controles = Array.prototype.slice.call(controlesDe(celda));
                 var j = controles.indexOf(e.target);
@@ -239,12 +264,19 @@
                     e.preventDefault();
                     var varios = controlesDe(celda);
                     if (varios.length > 1) { varios[0].focus(); return; }
-                    if (fila.getAttribute('data-url')) { abrir(fila); } else if (varios.length === 1) { varios[0].click(); }
+                    if (varios.length === 1 && campoDeTexto(varios[0])) { varios[0].focus(); return; }
+                    if (fila.getAttribute('data-url')) { abrir(fila); return; }
+                    var casilla = casillaDe(fila);
+                    if (casilla) { casilla.click(); return; }
+                    if (varios.length === 1) { varios[0].click(); return; }
+                    abrir(fila);
                     return;
                 }
                 case ' ': {
                     var uno = controlesDe(celda);
-                    if (uno.length === 1) { e.preventDefault(); uno[0].click(); }
+                    if (uno.length === 1 && !campoDeTexto(uno[0])) { e.preventDefault(); uno[0].click(); return; }
+                    var marcar2 = casillaDe(fila);
+                    if (marcar2) { e.preventDefault(); marcar2.click(); }
                     return;
                 }
                 case 'c':
@@ -263,6 +295,9 @@
 
         cuerpo.addEventListener('click', function (e) {
             if (!activado) { return; }
+            // Solo los clics del ratón (detail ≥ 1): el que hace el propio script al marcar una
+            // casilla con Enter no debe mover el cursor (la celda activa perdería el foco).
+            if (e.detail === 0) { return; }
             var celda = e.target.closest('td, th');
             if (!celda || !cuerpo.contains(celda) || filas().indexOf(celda.parentElement) === -1) { return; }
             if (e.target.closest(CONTROLES)) { marcar(celda); return; } // el botón hace lo suyo
@@ -273,7 +308,7 @@
         cuerpo.addEventListener('dblclick', function (e) {
             if (!activado || e.target.closest(CONTROLES)) { return; }
             var fila = e.target.closest('tr');
-            if (fila && filas().indexOf(fila) !== -1) { abrir(fila); }
+            if (fila && filas().indexOf(fila) !== -1 && !casillaDe(fila)) { abrir(fila); }
         });
 
         // Si el foco llega a un botón de la celda por otra vía (p. ej. al cerrar la foto
@@ -311,7 +346,7 @@
 
     // Vista compacta: se aplica antes de medir las columnas (cambia los anchos).
     function aplicarDensidad(compacta) {
-        document.querySelectorAll('.tabla-datos[data-navegable]').forEach(function (contenedor) {
+        document.querySelectorAll('[data-navegable]').forEach(function (contenedor) {
             contenedor.classList.toggle('tabla-compacta', compacta);
             ubicarFijas(contenedor);
         });
@@ -322,11 +357,11 @@
 
     var tablas = [];
     function arrancar() {
-        var contenedores = document.querySelectorAll('.tabla-datos[data-navegable]');
+        var contenedores = document.querySelectorAll('[data-navegable]');
         if (contenedores.length === 0) { return; }
         aplicarDensidad(leer('localStorage', CLAVE_DENSIDAD) === 'compacta');
-        contenedores.forEach(function (contenedor) {
-            var tabla = iniciar(contenedor);
+        contenedores.forEach(function (contenedor, indice) {
+            var tabla = iniciar(contenedor, indice);
             if (tabla) { tablas.push(tabla); }
         });
 
@@ -339,7 +374,7 @@
         });
 
         // «/» lleva al buscador; Escape en el buscador vuelve a la celda activa.
-        var buscador = document.querySelector('input[data-buscar]');
+        var buscador = document.querySelector('input[data-buscar], input[data-buscar-local]');
         document.addEventListener('keydown', function (e) {
             if (!ESCRITORIO.matches) { return; }
             if (e.key === '/' && !e.ctrlKey && !e.metaKey && !e.altKey && buscador && !escribiendo(e.target)) {

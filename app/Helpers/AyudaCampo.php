@@ -118,6 +118,15 @@ final class AyudaCampo
             'titulo' => 'Valor unitario',
             'texto' => 'Lo que vale UNA unidad, en pesos. Escribe 0 si no lo conoces. El valor del lote es este valor por la cantidad.',
         ],
+        'tabla_navegable' => [
+            'titulo' => 'Moverse por la tabla con el teclado',
+            'texto' => "La tabla se recorre como una planilla de Excel. Haz clic en una celda y luego:\n\n"
+                . "**Flechas:** la celda vecina. **Inicio / Fin:** primera o última celda de la fila (con Ctrl, de la página).\n\n"
+                . "**Av Pág / Re Pág:** 10 filas; desde la última fila pasa a la página siguiente.\n\n"
+                . "**Enter o doble clic:** abre la fila. En las tablas para seleccionar, **Enter o Espacio** marca la casilla. En una celda con botones o campos, Enter entra a ellos y Escape vuelve.\n\n"
+                . "**Ctrl+C:** copia la celda. **/ (barra):** va al buscador; **Escape** vuelve a la tabla.\n\n"
+                . '«Vista compacta» muestra más filas. Al recargar, MIA te deja en la misma celda.',
+        ],
         'tabla_bienes' => [
             'titulo' => 'Moverse por la tabla',
             'texto' => "En el computador, la tabla se recorre con el teclado como una planilla de Excel. Haz clic en una celda y luego:\n\n"

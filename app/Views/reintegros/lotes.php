@@ -97,7 +97,7 @@ $e = static fn (?string $texto): string => htmlspecialchars((string) $texto, ENT
         } ?>
     </p>
 <?php else: ?>
-    <?php View::render('partials/paginacion', [
+    <?php View::render('partials/paginacion', ['densidad' => true,
         'pagina' => $pagina, 'porPagina' => $porPagina, 'total' => $total, 'totalPaginas' => $totalPaginas,
         'opcionesPorPagina' => $opcionesPorPagina,
         'urlBase' => $url(),
@@ -107,7 +107,7 @@ $e = static fn (?string $texto): string => htmlspecialchars((string) $texto, ENT
         <?= Csrf::field() ?>
         <input type="hidden" name="volver" value="<?= $e($urlRegreso) ?>">
 
-        <div class="table-responsive">
+        <div data-navegable data-columnas-fijas="2" class="table-responsive">
             <table class="table table-sm table-hover align-middle bg-white tabla-cards">
                 <thead>
                 <tr>
@@ -133,7 +133,7 @@ $e = static fn (?string $texto): string => htmlspecialchars((string) $texto, ENT
                     $desde = $l['reintegro_desde'];
                     $hasta = $l['reintegro_hasta'];
                     ?>
-                    <tr>
+                    <tr data-url="<?= Url::to('/reintegros/lotes/' . $l['id']) ?>">
                         <td data-label="Seleccionar">
                             <?php if ($l['estado'] === 'pendiente'): ?>
                                 <input type="checkbox" name="lotes[]" value="<?= (int) $l['id'] ?>" class="form-check-input casilla-lote"

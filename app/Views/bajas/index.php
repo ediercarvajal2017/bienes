@@ -10,13 +10,13 @@ use App\Models\Categoria;
 <?= ui('encabezado_pagina', ['titulo' => 'Bajas de bienes', 'icono' => 'baja', 'subtitulo' => 'Reportes enviados desde la ficha de cada bien, pendientes de aprobación.']) ?>
 
 
-<?php View::render('partials/paginacion', [
+<?php View::render('partials/paginacion', ['densidad' => true,
     'pagina' => $pagina, 'porPagina' => $porPagina, 'total' => $total, 'totalPaginas' => $totalPaginas,
     'opcionesPorPagina' => $opcionesPorPagina,
     'urlBase' => Url::to('/bajas'),
 ]); ?>
 
-<div class="table-responsive">
+<div data-navegable data-columnas-fijas="2" class="table-responsive">
     <table class="table table-sm table-hover align-middle bg-white tabla-cards">
         <thead>
         <tr>

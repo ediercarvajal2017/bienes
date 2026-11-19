@@ -25,7 +25,8 @@ $etiquetasTipo = [
                placeholder="Buscar por tipo, elemento, institución o quién lo eliminó...">
     </div>
     <p id="papeleraSinResultados" class="text-muted" hidden>Ningún elemento coincide con la búsqueda.</p>
-    <div class="table-responsive" id="envoltorioTablaPapelera">
+    <?= ui('herramientas_tabla', ['suelta' => true]) ?>
+    <div data-navegable class="table-responsive" id="envoltorioTablaPapelera">
         <table class="table table-sm bg-white align-middle tabla-cards" id="tablaPapelera">
             <thead>
             <tr>

@@ -56,13 +56,13 @@ $puedeCrearEspacio = Auth::esSuperusuario() || Auth::tienePermiso('espacios.crea
            value="<?= htmlspecialchars($busqueda, ENT_QUOTES) ?>">
 </div>
 
-<?php View::render('partials/paginacion', [
+<?php View::render('partials/paginacion', ['densidad' => true,
     'pagina' => $pagina, 'porPagina' => $porPagina, 'total' => $total, 'totalPaginas' => $totalPaginas,
     'opcionesPorPagina' => $opcionesPorPagina,
     'urlBase' => $urlBasePaginacion,
 ]); ?>
 
-<div class="table-responsive">
+<div data-navegable class="table-responsive">
     <table class="table table-sm table-hover align-middle bg-white tabla-cards">
         <thead>
         <tr>
@@ -87,10 +87,10 @@ $puedeCrearEspacio = Auth::esSuperusuario() || Auth::tienePermiso('espacios.crea
         <?php endif; ?>
         <?php foreach ($espacios as $e): ?>
             <tr>
-                <td class="text-muted mono" data-label="N.º"><?= htmlspecialchars($e['codigo'], ENT_QUOTES) ?></td>
-                <td data-label="Nombre"><?= htmlspecialchars($e['nombre'], ENT_QUOTES) ?></td>
+                <td class="text-muted mono" data-label="N.º"><?= resaltar($e['codigo'], $busqueda) ?></td>
+                <td data-label="Nombre"><?= resaltar($e['nombre'], $busqueda) ?></td>
                 <td class="text-muted small" data-label="Responsable(s)">
-                    <?= !empty($e['responsables_nombres']) ? htmlspecialchars($e['responsables_nombres'], ENT_QUOTES) : '—' ?>
+                    <?= !empty($e['responsables_nombres']) ? resaltar($e['responsables_nombres'], $busqueda) : '—' ?>
                 </td>
                 <td data-label="Estado">
                     <?php if ((int) $e['activo'] === 1): ?>

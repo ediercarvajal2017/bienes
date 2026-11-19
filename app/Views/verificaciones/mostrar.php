@@ -103,7 +103,7 @@ $tabPorDefecto = !empty($hallazgos) ? 'hallazgos' : 'discrepancia';
 <div data-tab-panel="hallazgos" id="seccion-hallazgos" class="<?= $tabPorDefecto === 'hallazgos' ? '' : 'd-none' ?>">
     <p class="text-muted small mb-2">Bienes físicos reportados por el personal durante la verificación, que no están en el sistema.</p>
 
-    <div class="table-responsive mb-2">
+    <div data-navegable class="table-responsive mb-2">
         <table class="table table-sm bg-white tabla-cards">
             <thead>
             <tr><th>Descripción</th><th>Espacio</th><th>Foto</th><th>Reportado por</th><th>Fecha</th><th>Acciones</th></tr>
@@ -189,7 +189,7 @@ $tabPorDefecto = !empty($hallazgos) ? 'hallazgos' : 'discrepancia';
             <?php endif; ?>
         </p>
     <?php else: ?>
-        <div class="table-responsive mb-2">
+        <div data-navegable class="table-responsive mb-2">
             <table class="table table-sm bg-white tabla-cards">
                 <thead>
                 <tr><th>Código</th><th>Descripción</th><th>Ubicación</th><th>Responsable(s)</th><th>Motivo</th><th>Observación</th><th>Reportado por</th><th>Fecha</th><th>Estado</th><th>Acciones</th></tr>
@@ -243,7 +243,7 @@ $tabPorDefecto = !empty($hallazgos) ? 'hallazgos' : 'discrepancia';
     <?php endif; ?>
 
     <?php if ($verificadosDiscrepancia > 0): ?>
-        <?php View::render('partials/paginacion', [
+        <?php View::render('partials/paginacion', ['densidad' => true,
             'pagina' => $paginaDiscrepancia, 'porPagina' => $porPaginaDiscrepancia, 'total' => $totalDiscrepanciaFiltrado, 'totalPaginas' => $totalPaginasDiscrepancia,
             'opcionesPorPagina' => $opcionesPorPagina,
             'urlBase' => $urlBaseDiscrepancia,
@@ -260,7 +260,7 @@ $tabPorDefecto = !empty($hallazgos) ? 'hallazgos' : 'discrepancia';
                value="<?= htmlspecialchars($busquedaPendientes, ENT_QUOTES) ?>">
     </div>
 
-    <div class="table-responsive">
+    <div data-navegable class="table-responsive">
         <table class="table table-sm bg-white tabla-cards">
             <thead>
             <tr><th>Código</th><th>Descripción</th><th>Ubicación</th></tr>
@@ -299,7 +299,7 @@ $tabPorDefecto = !empty($hallazgos) ? 'hallazgos' : 'discrepancia';
             <?= $busquedaOk !== '' ? 'Ningún resultado para esa búsqueda.' : 'Ninguno hasta ahora.' ?>
         </p>
     <?php else: ?>
-        <div class="table-responsive mb-2">
+        <div data-navegable class="table-responsive mb-2">
             <table class="table table-sm bg-white tabla-cards">
                 <thead>
                 <tr><th>Código</th><th>Descripción</th><th>Ubicación</th><th>Responsable(s)</th><th>Verificado por</th><th>Fecha</th></tr>

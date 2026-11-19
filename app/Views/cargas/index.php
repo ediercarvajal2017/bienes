@@ -38,13 +38,13 @@ $urlBasePaginacion = Url::to('/cargas-masivas') . ($busqueda !== '' ? '?' . http
            value="<?= htmlspecialchars($busqueda, ENT_QUOTES) ?>">
 </div>
 
-<?php View::render('partials/paginacion', [
+<?php View::render('partials/paginacion', ['densidad' => true,
     'pagina' => $pagina, 'porPagina' => $porPagina, 'total' => $total, 'totalPaginas' => $totalPaginas,
     'opcionesPorPagina' => $opcionesPorPagina,
     'urlBase' => $urlBasePaginacion,
 ]); ?>
 
-<div class="table-responsive contenedor-md">
+<div data-navegable class="table-responsive contenedor-md">
     <table class="table table-sm bg-white tabla-cards">
         <thead>
         <tr><th>Fecha</th><th>Subido por</th><th>Filas</th><th>Nuevos</th><th>Modificados</th><th>Sin cambios</th><th>Estado</th><th></th></tr>
@@ -64,7 +64,7 @@ $urlBasePaginacion = Url::to('/cargas-masivas') . ($busqueda !== '' ? '?' . http
         <?php foreach ($cargas as $c): ?>
             <tr>
                 <td class="mono small" data-label="Fecha"><?= htmlspecialchars(substr($c['created_at'], 0, 16), ENT_QUOTES) ?></td>
-                <td class="small text-muted" data-label="Subido por"><?= htmlspecialchars($c['nombres'] . ' ' . $c['apellidos'], ENT_QUOTES) ?></td>
+                <td class="small text-muted" data-label="Subido por"><?= resaltar($c['nombres'] . ' ' . $c['apellidos'], $busqueda) ?></td>
                 <td data-label="Filas"><?= (int) $c['total_filas'] ?></td>
                 <td data-label="Nuevos"><?= (int) $c['nuevos'] ?></td>
                 <td data-label="Modificados"><?= (int) $c['modificados'] ?></td>

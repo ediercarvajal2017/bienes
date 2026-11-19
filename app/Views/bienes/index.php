@@ -218,7 +218,7 @@ $alcanceDescarga = array_filter([
     'pagina' => $pagina, 'porPagina' => $porPagina, 'total' => $total, 'totalPaginas' => $totalPaginas,
     'opcionesPorPagina' => $opcionesPorPagina,
     'urlBase' => $urlBasePaginacion,
-    'densidad' => true,
+    'densidad' => true, 'atajos' => false, // las teclas están en el (?) junto al título
 ]); ?>
 
 <?php // Como una planilla: se recorre con el teclado, y Foto, Descripción y Código quedan

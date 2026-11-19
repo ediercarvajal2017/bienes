@@ -25,13 +25,13 @@ $etiquetas = [
 <?= ui('encabezado_pagina', ['titulo' => 'Solicitudes de reintegro', 'icono' => 'solicitud', 'subtitulo' => (string) ($puedeAprobar ? 'Pedidos de reintegro de los docentes: al aprobar uno, el bien se reintegra.' : 'Sus solicitudes de reintegro y su estado. Para pedir una nueva, abra la ficha del bien (escaneando su QR).'), 'acciones' => (string) ob_get_clean()]) ?>
 
 
-<?php View::render('partials/paginacion', [
+<?php View::render('partials/paginacion', ['densidad' => true,
     'pagina' => $pagina, 'porPagina' => $porPagina, 'total' => $total, 'totalPaginas' => $totalPaginas,
     'opcionesPorPagina' => $opcionesPorPagina,
     'urlBase' => Url::to('/reintegros/solicitudes') . ($estado !== null ? '?estado=' . $estado : ''),
 ]); ?>
 
-<div class="table-responsive">
+<div data-navegable class="table-responsive">
     <table class="table table-sm table-hover align-middle bg-white tabla-cards">
         <thead>
         <tr>

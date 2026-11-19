@@ -103,7 +103,13 @@ La guía de una página va en el ícono (?) junto al título: `'ayuda' => AyudaC
 - En el celular cada fila se ve como una tarjeta (`data-label`).
 - Los números van a la derecha, con separador de miles colombiano: `number_format($v, 0, ',', '.')`.
 
-**Tabla navegable como una planilla** (por ahora en Bienes):
+**Tabla navegable como una planilla** (todas las tablas de listado):
+- **Tabla hecha con `ui('tabla')`:** se activa con `'navegable' => true`.
+- **Tabla escrita a mano:** se activa con el atributo `data-navegable` en su recuadro (`<div data-navegable data-columnas-fijas="2" class="table-responsive">`).
+- **Herramientas:** «Vista compacta» y el ícono (?) de las teclas aparecen con `'densidad' => true` en `partials/paginacion`. Sin paginación, se usa `<?= ui('herramientas_tabla', ['suelta' => true]) ?>` encima de la tabla.
+- **Qué abre Enter:** el `data-url` de la fila o, si no tiene, su único enlace (Editar, Ver).
+- **Tablas para marcar varios:** en una fila con casilla y sin `data-url`, Enter y Espacio marcan la casilla.
+- **Celdas con campos de texto:** Enter entra al campo, las flechas son del texto y Escape vuelve a la celda.
 
 ```php
 <?= ui('tabla', ['leyenda' => 'Bienes', 'navegable' => true, 'filaInicial' => ($pagina - 1) * $porPagina, 'totalFilas' => $total,

@@ -64,7 +64,8 @@ $fecha = static fn (?string $f): string => $f ? date('d/m/Y H:i', strtotime($f))
                 <?= Csrf::field() ?>
                 <input type="hidden" name="institucion_id" value="<?= $institucionId ?>">
 
-                <div class="table-responsive">
+                <?= ui('herramientas_tabla', ['suelta' => true]) ?>
+                <div data-navegable class="table-responsive">
                     <table class="table table-sm table-hover align-middle bg-white tabla-cards">
                         <thead>
                         <tr>
@@ -113,7 +114,7 @@ $fecha = static fn (?string $f): string => $f ? date('d/m/Y H:i', strtotime($f))
                 <?= Csrf::field() ?>
                 <input type="hidden" name="institucion_id" value="<?= $institucionId ?>">
 
-                <div class="table-responsive">
+                <div data-navegable class="table-responsive">
                     <table class="table table-sm table-hover align-middle bg-white tabla-cards">
                         <thead>
                         <tr>

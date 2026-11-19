@@ -53,13 +53,13 @@ use App\Core\View;
         <?php if (empty($bienes)): ?>
             <p class="text-muted">No hay bienes que coincidan con la búsqueda.</p>
         <?php else: ?>
-            <?php View::render('partials/paginacion', [
+            <?php View::render('partials/paginacion', ['densidad' => true,
                 'pagina' => $pagina, 'porPagina' => $porPagina, 'total' => $total, 'totalPaginas' => $totalPaginas,
                 'opcionesPorPagina' => $opcionesPorPagina,
                 'urlBase' => $urlBasePaginacion,
             ]); ?>
 
-            <div class="table-responsive">
+            <div data-navegable class="table-responsive">
                 <table class="table table-sm table-hover align-middle bg-white tabla-cards">
                     <thead>
                     <tr>
@@ -73,9 +73,9 @@ use App\Core\View;
                     <?php foreach ($bienes as $b): ?>
                         <tr>
                             <td data-label="Seleccionar"><input type="checkbox" name="bienes[]" value="<?= $b['id'] ?>" class="form-check-input casilla-bien" aria-label="Seleccionar <?= htmlspecialchars((string) $b['codigo_identificacion'], ENT_QUOTES) ?>"></td>
-                            <td class="mono" data-label="Código"><?= htmlspecialchars($b['codigo_identificacion'], ENT_QUOTES) ?></td>
-                            <td data-label="Descripción"><?= htmlspecialchars($b['descripcion'], ENT_QUOTES) ?></td>
-                            <td class="small text-muted" data-label="Ubicación"><?= !empty($b['espacio_nombre']) ? htmlspecialchars($b['espacio_nombre'], ENT_QUOTES) : 'Sin asignar' ?></td>
+                            <td class="mono" data-label="Código"><?= resaltar($b['codigo_identificacion'], $busqueda) ?></td>
+                            <td data-label="Descripción"><?= resaltar($b['descripcion'], $busqueda) ?></td>
+                            <td class="small text-muted" data-label="Ubicación"><?= !empty($b['espacio_nombre']) ? resaltar($b['espacio_nombre'], $busqueda) : 'Sin asignar' ?></td>
                         </tr>
                     <?php endforeach; ?>
                     </tbody>

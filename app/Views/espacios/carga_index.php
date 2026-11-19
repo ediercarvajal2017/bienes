@@ -27,13 +27,13 @@ use App\Core\View;
 <?php if (empty($cargas)): ?>
     <p class="text-muted small">Todavía no se ha subido ningún archivo.</p>
 <?php else: ?>
-    <?php View::render('partials/paginacion', [
+    <?php View::render('partials/paginacion', ['densidad' => true,
         'pagina' => $pagina, 'porPagina' => $porPagina, 'total' => $total, 'totalPaginas' => $totalPaginas,
         'opcionesPorPagina' => $opcionesPorPagina,
         'urlBase' => Url::to('/espacios/carga-masiva'),
     ]); ?>
 
-    <div class="table-responsive contenedor-md">
+    <div data-navegable class="table-responsive contenedor-md">
         <table class="table table-sm bg-white tabla-cards">
             <thead>
             <tr><th>Fecha</th><th>Subido por</th><th>Filas</th><th>Nuevos</th><th>Modificados</th><th>Sin cambios</th><th>Estado</th><th></th></tr>

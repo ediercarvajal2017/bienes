@@ -26,13 +26,13 @@ use App\Core\View;
            value="<?= htmlspecialchars($busqueda, ENT_QUOTES) ?>">
 </div>
 
-<?php View::render('partials/paginacion', [
+<?php View::render('partials/paginacion', ['densidad' => true,
     'pagina' => $pagina, 'porPagina' => $porPagina, 'total' => $total, 'totalPaginas' => $totalPaginas,
     'opcionesPorPagina' => $opcionesPorPagina,
     'urlBase' => Url::to('/usuarios') . ($busqueda !== '' ? '?' . http_build_query(['q' => $busqueda]) : ''),
 ]); ?>
 
-<div class="table-responsive">
+<div data-navegable data-columnas-fijas="2" class="table-responsive">
     <table class="table table-sm table-hover align-middle bg-white tabla-cards">
         <thead>
         <tr>
@@ -65,10 +65,10 @@ use App\Core\View;
                     <?php endif; ?>
                 </td>
                 <td data-label="Nombre">
-                    <?= htmlspecialchars($u['nombres'] . ' ' . $u['apellidos'], ENT_QUOTES) ?>
-                    <div class="small text-muted"><?= htmlspecialchars($u['email'], ENT_QUOTES) ?></div>
+                    <?= resaltar($u['nombres'] . ' ' . $u['apellidos'], $busqueda) ?>
+                    <div class="small text-muted"><?= resaltar($u['email'], $busqueda) ?></div>
                 </td>
-                <td class="text-muted mono" data-label="Documento"><?= htmlspecialchars($u['documento'], ENT_QUOTES) ?></td>
+                <td class="text-muted mono" data-label="Documento"><?= resaltar($u['documento'], $busqueda) ?></td>
                 <td data-label="Cargo"><?= htmlspecialchars($u['cargo_nombre'], ENT_QUOTES) ?></td>
                 <td data-label="Rol"><span class="badge badge-neutro text-capitalize"><?= htmlspecialchars($u['rol_nombre'], ENT_QUOTES) ?></span></td>
                 <?php if (Auth::esSuperusuario()): ?><td class="text-muted small" data-label="Institución"><?= htmlspecialchars($u['institucion_nombre'], ENT_QUOTES) ?></td><?php endif; ?>

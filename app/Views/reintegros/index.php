@@ -129,7 +129,7 @@ $viejo ??= [];
             </button>
         </div>
 
-        <?php View::render('partials/paginacion', [
+        <?php View::render('partials/paginacion', ['densidad' => true,
             'pagina' => $pagina, 'porPagina' => $porPagina, 'total' => $total, 'totalPaginas' => $totalPaginas,
             'opcionesPorPagina' => $opcionesPorPagina,
             'urlBase' => $urlBasePaginacion,
@@ -139,7 +139,7 @@ $viejo ??= [];
             <?php // Por qué la búsqueda no encontró nada para reintegrar (ReintegroController::explicarSinResultados). ?>
             <?= ui('estado_vacio', $sinResultados + ['clases' => 'mb-3']) ?>
         <?php endif; ?>
-        <div class="table-responsive">
+        <div data-navegable data-columnas-fijas="3" class="table-responsive">
             <table class="table table-sm table-hover align-middle bg-white tabla-cards">
                 <thead>
                 <tr>
@@ -168,15 +168,15 @@ $viejo ??= [];
                                 </span>
                             <?php endif; ?>
                         </td>
-                        <td class="mono" data-label="Código"><?= htmlspecialchars($b['codigo_identificacion'], ENT_QUOTES) ?></td>
+                        <td class="mono" data-label="Código"><?= resaltar($b['codigo_identificacion'], $q) ?></td>
                         <td data-label="Descripción">
-                            <?= htmlspecialchars($b['descripcion'], ENT_QUOTES) ?>
+                            <?= resaltar($b['descripcion'], $q) ?>
                             <?php if (!empty($b['categoria_nombre'])): ?>
                                 <div class="text-muted small"><?= htmlspecialchars($b['categoria_nombre'], ENT_QUOTES) ?></div>
                             <?php endif; ?>
                         </td>
                         <td class="small" data-label="Responsable / ubicación">
-                            <?php \App\Core\View::render('partials/responsabilidad', ['fila' => $b]); ?>
+                            <?php \App\Core\View::render('partials/responsabilidad', ['fila' => $b, 'resaltar' => $q]); ?>
                         </td>
                         <td class="text-end" data-label="Valor"><?= number_format((float) $b['valor'], 2) ?></td>
                     </tr>

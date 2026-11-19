@@ -105,7 +105,8 @@ $estado = (string) $lote['estado'];
     <p class="text-muted"><?= $estado === 'unificado' ? 'Sus bienes están ahora en los lotes nuevos (enlaces arriba).' : 'Este lote no tiene bienes.' ?></p>
 <?php else: ?>
     <?php $renglones = \App\Services\ReporteService::renglonesPorPlaca($bienes); ?>
-    <div class="table-responsive contenedor-md">
+    <?= ui('herramientas_tabla', ['suelta' => true]) ?>
+    <div data-navegable class="table-responsive contenedor-md">
         <table class="table table-sm bg-white tabla-cards">
             <thead>
             <tr>
