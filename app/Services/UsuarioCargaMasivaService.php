@@ -7,8 +7,6 @@ namespace App\Services;
 use App\Helpers\LectorExcel;
 use App\Models\Cargo;
 use App\Models\Usuario;
-use PhpOffice\PhpSpreadsheet\Spreadsheet;
-use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 final class UsuarioCargaMasivaService
 {
@@ -17,6 +15,8 @@ final class UsuarioCargaMasivaService
     /**
      * Lee un .xlsx (columnas A-F: Documento, Nombres, Apellidos, Cargo, Correo, Rol) y
      * compara cada fila contra la base de datos de la institución. No escribe nada todavía.
+     * Los datos empiezan debajo de la fila de títulos (la plantilla trae instrucciones arriba:
+     * PlantillaCargaUsuarios).
      *
      * $permiteSuperusuario controla si la fila puede asignar el rol "superusuario" (solo si
      * quien sube el archivo ya es superusuario), igual que la validación del formulario
@@ -31,7 +31,7 @@ final class UsuarioCargaMasivaService
      */
     public static function analizar(string $rutaArchivo, int $institucionId, bool $permiteSuperusuario): array
     {
-        $sheet = LectorExcel::hojaActiva($rutaArchivo);
+        $sheet = LectorExcel::hojaActiva($rutaArchivo, PlantillaCargaUsuarios::HOJA);
         $filas = [];
         $documentosVistos = [];
         $correosVistos = [];
@@ -42,8 +42,9 @@ final class UsuarioCargaMasivaService
         }
 
         $ultimaFila = $sheet->getHighestDataRow();
+        $primeraFila = LectorExcel::filaDeTitulos($sheet, 'Documento', 'Nombres') + 1;
 
-        for ($numeroFila = 2; $numeroFila <= $ultimaFila; $numeroFila++) {
+        for ($numeroFila = $primeraFila; $numeroFila <= $ultimaFila; $numeroFila++) {
             $documento = trim((string) $sheet->getCell("A{$numeroFila}")->getValue());
             $nombres = trim((string) $sheet->getCell("B{$numeroFila}")->getValue());
             $apellidos = trim((string) $sheet->getCell("C{$numeroFila}")->getValue());
@@ -59,6 +60,23 @@ final class UsuarioCargaMasivaService
                 $filas[] = [
                     'fila' => $numeroFila, 'tipo' => 'invalido',
                     'motivo' => 'Falta el documento: es el que identifica al usuario',
+                    'documento' => $documento, 'nombres' => $nombres, 'apellidos' => $apellidos,
+                ];
+                continue;
+            }
+
+            // Los mismos límites de la base de datos: antes un texto más largo tumbaba toda la
+            // carga al confirmarla.
+            $motivoLargo = match (true) {
+                mb_strlen($documento) > 20 => 'El documento tiene más de 20 caracteres',
+                mb_strlen($nombres) > 100 => 'Los nombres tienen más de 100 caracteres',
+                mb_strlen($apellidos) > 100 => 'Los apellidos tienen más de 100 caracteres',
+                mb_strlen($email) > 150 => 'El correo tiene más de 150 caracteres',
+                default => null,
+            };
+            if ($motivoLargo !== null) {
+                $filas[] = [
+                    'fila' => $numeroFila, 'tipo' => 'invalido', 'motivo' => $motivoLargo,
                     'documento' => $documento, 'nombres' => $nombres, 'apellidos' => $apellidos,
                 ];
                 continue;
@@ -265,23 +283,6 @@ final class UsuarioCargaMasivaService
         }
 
         return $omitidas;
-    }
-
-    public static function enviarPlantilla(): void
-    {
-        $spreadsheet = new Spreadsheet();
-        $sheet = $spreadsheet->getActiveSheet();
-        $sheet->fromArray(['Documento', 'Nombres', 'Apellidos', 'Cargo', 'Correo', 'Rol'], null, 'A1');
-        $sheet->fromArray(['123456789', 'Juan', 'Pérez', 'Docente', 'juan.perez@correo.com', 'docente'], null, 'A2');
-        foreach (range('A', 'F') as $columna) {
-            $sheet->getColumnDimension($columna)->setAutoSize(true);
-        }
-
-        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        header('Content-Disposition: attachment; filename="plantilla_carga_usuarios.xlsx"');
-        header('Cache-Control: max-age=0');
-        (new Xlsx($spreadsheet))->save('php://output');
-        exit;
     }
 
     private static function detectarCambios(array $existente, array $nuevo): array

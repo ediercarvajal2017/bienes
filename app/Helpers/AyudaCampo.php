@@ -122,9 +122,26 @@ final class AyudaCampo
             'titulo' => 'Carga masiva de bienes',
             'texto' => "Descarga la plantilla, llénala y súbela con «Analizar archivo». Primero ves qué cambiaría en cada fila; nada se guarda hasta que pulses «Confirmar importación».\n\n"
                 . "**Obligatorias** (en rojo claro en la plantilla): Código (la placa) y Descripción.\n\n"
-                . "**Opcionales:** Marca, Fecha de ingreso, Valor (solo números, sin negativos, máximo 10 dígitos), Ubicación y Categoría (se eligen de una lista en la misma plantilla) y Responsable individual (documento de un usuario activo: el bien queda a su cargo).\n\n"
+                . "**Opcionales:** Marca, Fecha de ingreso, Valor (solo números, sin negativos, máximo 10 dígitos), Ubicación, Categoría y Responsable individual (el bien queda a su cargo). Estas tres se eligen de una lista en la misma plantilla.\n\n"
                 . '**No se borra nada:** los bienes que no están en el archivo no se tocan, y una columna opcional en blanco conserva lo que el bien ya tiene en MIA.',
             'enlace' => ['texto' => 'Descargar plantilla (.xlsx)', 'ruta' => '/cargas-masivas/plantilla.xlsx', 'icono' => 'descargar'],
+        ],
+        'carga_masiva_espacios' => [
+            'titulo' => 'Carga masiva de espacios',
+            'texto' => "Descarga la plantilla, llénala y súbela con «Analizar archivo». Primero ves qué cambiaría en cada fila; nada se guarda hasta que pulses «Confirmar importación».\n\n"
+                . "**Obligatorias** (en rojo claro en la plantilla): Número y Nombre.\n\n"
+                . "**Solo para un espacio nuevo** (en amarillo): Responsable 1. Los responsables se eligen de una lista de los usuarios activos; el 2 y el 3 son opcionales.\n\n"
+                . '**No se borra nada:** los espacios que no están en el archivo no se tocan, y si un espacio que ya existe viene sin responsables, conserva los que tiene. Si trae responsables, esa lista reemplaza a la actual.',
+            'enlace' => ['texto' => 'Descargar plantilla (.xlsx)', 'ruta' => '/espacios/carga-masiva/plantilla.xlsx', 'icono' => 'descargar'],
+        ],
+        'carga_masiva_usuarios' => [
+            'titulo' => 'Carga masiva de usuarios',
+            'texto' => "Descarga la plantilla, llénala y súbela con «Analizar archivo». Primero ves qué cambiaría en cada fila; nada se guarda hasta que pulses «Confirmar importación».\n\n"
+                . "**Obligatoria** (en rojo claro en la plantilla): Documento.\n\n"
+                . "**Solo para un usuario nuevo** (en amarillo): Nombres, Apellidos, Cargo y Correo. Cargo y Rol se eligen de una lista; si Rol va vacío, el usuario nuevo queda como «docente».\n\n"
+                . "**No se borra nada:** los usuarios que no están en el archivo no se tocan, y en uno que ya existe una columna en blanco conserva lo que tiene (incluido su rol).\n\n"
+                . 'El archivo nunca trae contraseñas: cada usuario nuevo entra la primera vez con «¿Olvidaste tu contraseña?» y su correo registrado.',
+            'enlace' => ['texto' => 'Descargar plantilla (.xlsx)', 'ruta' => '/usuarios/carga-masiva/plantilla.xlsx', 'icono' => 'descargar'],
         ],
         'lote_imprimir_qr' => [
             'titulo' => 'Imprimir QR de todo el lote',

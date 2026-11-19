@@ -45,7 +45,8 @@ final class UsuarioCargaMasivaController
 
     public function plantilla(): void
     {
-        UsuarioCargaMasivaService::enviarPlantilla();
+        // El rol «superusuario» solo aparece en la lista si quien la descarga lo es.
+        \App\Services\PlantillaCargaUsuarios::enviar((int) Auth::institucionId(), Auth::esSuperusuario());
     }
 
     public function subir(): void

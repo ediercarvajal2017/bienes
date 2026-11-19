@@ -34,4 +34,23 @@ final class LectorExcel
 
         return ($preferida !== null ? $libro->getSheetByName($preferida) : null) ?? $libro->getActiveSheet();
     }
+
+    /**
+     * La fila de títulos: la primera cuyas columnas A y B empiezan con esos títulos (sin
+     * importar tildes ni mayúsculas), buscada en las primeras 30 filas. Las plantillas traen
+     * instrucciones arriba (App\Services\PlantillaExcel); las anteriores tenían los títulos en
+     * la fila 1, que es la respuesta si no se encuentra.
+     */
+    public static function filaDeTitulos(Worksheet $hoja, string $tituloA, string $tituloB): int
+    {
+        $normal = static fn (mixed $valor): string => strtr(mb_strtoupper(trim((string) $valor)), ['Á' => 'A', 'É' => 'E', 'Í' => 'I', 'Ó' => 'O', 'Ú' => 'U']);
+        for ($fila = 1; $fila <= min(30, $hoja->getHighestDataRow()); $fila++) {
+            if (str_starts_with($normal($hoja->getCell("A{$fila}")->getValue()), $normal($tituloA))
+                && str_starts_with($normal($hoja->getCell("B{$fila}")->getValue()), $normal($tituloB))) {
+                return $fila;
+            }
+        }
+
+        return 1;
+    }
 }

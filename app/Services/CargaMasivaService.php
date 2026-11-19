@@ -51,7 +51,7 @@ final class CargaMasivaService
         $categoriasPorId = array_column(Categoria::all($institucionId), 'nombre', 'id');
 
         $ultimaFila = $sheet->getHighestDataRow();
-        $primeraFila = self::filaDeTitulos($sheet, $ultimaFila) + 1;
+        $primeraFila = LectorExcel::filaDeTitulos($sheet, 'Código', 'Descripción') + 1;
 
         // Una sola consulta con todos los códigos del archivo, en vez de una por fila --
         // con archivos de cientos/miles de filas, esto evita esa misma cantidad de
@@ -71,7 +71,8 @@ final class CargaMasivaService
             $marca = trim((string) $sheet->getCell("C{$numeroFila}")->getValue());
             $ubicacion = trim((string) $sheet->getCell("F{$numeroFila}")->getValue());
             $categoriaTexto = trim((string) $sheet->getCell("G{$numeroFila}")->getValue());
-            $responsableTexto = trim((string) $sheet->getCell("H{$numeroFila}")->getValue());
+            // De la lista de la plantilla llega «documento — nombre»: vale el documento.
+            $responsableTexto = PlantillaExcel::valorDeLista(trim((string) $sheet->getCell("H{$numeroFila}")->getValue()));
 
             if ($codigo === '' && $descripcion === '') {
                 continue;
@@ -460,23 +461,6 @@ final class CargaMasivaService
         }
 
         return $espacio;
-    }
-
-    /**
-     * La fila de títulos (la que empieza con «Código» y «Descripción», con o sin tilde),
-     * buscada en las primeras 30 filas. Si no está, la 1, como en la plantilla anterior.
-     */
-    private static function filaDeTitulos(\PhpOffice\PhpSpreadsheet\Worksheet\Worksheet $sheet, int $ultimaFila): int
-    {
-        $sinTildes = static fn (mixed $valor): string => strtr(mb_strtoupper(trim((string) $valor)), ['Á' => 'A', 'É' => 'E', 'Í' => 'I', 'Ó' => 'O', 'Ú' => 'U']);
-        for ($fila = 1; $fila <= min(30, $ultimaFila); $fila++) {
-            if (str_starts_with($sinTildes($sheet->getCell("A{$fila}")->getValue()), 'CODIGO')
-                && str_starts_with($sinTildes($sheet->getCell("B{$fila}")->getValue()), 'DESCRIPCION')) {
-                return $fila;
-            }
-        }
-
-        return 1;
     }
 
     private static function normalizarCodigoEspacio(string $texto): string

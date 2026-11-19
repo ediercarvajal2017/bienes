@@ -45,7 +45,9 @@ final class EspacioCargaMasivaController
 
     public function plantilla(): void
     {
-        EspacioCargaMasivaService::enviarPlantilla();
+        // Con la lista de responsables de la institución donde quedará la carga (la de quien
+        // la sube, igual que en subir()).
+        \App\Services\PlantillaCargaEspacios::enviar((int) Auth::institucionId());
     }
 
     public function subir(): void
