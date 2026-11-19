@@ -36,7 +36,8 @@ $clases = [
     <div class="alert alert-secondary py-2 small contenedor-sm">Esta carga ya fue aplicada.</div>
 <?php endif; ?>
 
-<div class="table-responsive">
+<?= ui('herramientas_tabla', ['suelta' => true]) ?>
+<div data-navegable class="table-responsive">
     <table class="table table-sm bg-white tabla-cards">
         <thead>
         <tr><th>Fila</th><th>Estado</th><th>Código</th><th>Descripción</th><th>Cambios</th></tr>

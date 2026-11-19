@@ -11,7 +11,8 @@ use App\Core\View;
     </a>
 <?= ui('encabezado_pagina', ['titulo' => 'Instituciones', 'icono' => 'institucion', 'acciones' => (string) ob_get_clean()]) ?>
 
-<div class="table-responsive">
+<?= ui('herramientas_tabla', ['suelta' => true]) ?>
+<div data-navegable class="table-responsive">
     <table class="table table-sm table-hover align-middle bg-white tabla-cards">
         <thead>
         <tr>

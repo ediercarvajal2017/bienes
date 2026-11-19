@@ -43,8 +43,10 @@
                     claro. Primero ves qué cambiaría
                     en cada fila y nada se guarda hasta que confirmas. La carga no borra nada: los bienes que no están en el
                     archivo no se tocan, y una columna en blanco conserva lo que el bien ya tenía.</li>
-                <li>En el computador, la lista de <strong>Bienes</strong> se recorre con el teclado como una planilla: haz clic
-                    en una celda y muévete con las flechas; Enter abre el bien y Av Pág pasa a la página siguiente. Foto,
+                <li>En el computador, las tablas de MIA (Bienes, Usuarios, Espacios, Reintegros, Asignar…) se recorren con el
+                    teclado como una planilla: haz clic
+                    en una celda y muévete con las flechas; Enter abre el bien (o marca la casilla en las tablas para
+                    seleccionar) y Av Pág pasa a la página siguiente. En Bienes, Foto,
                     Descripción y Código quedan fijas al desplazarte a la derecha, y «Vista compacta» muestra más filas.
                     Un clic en un título (Descripción, Código, Categoría, Valor o Estado) ordena toda la lista, y lo que
                     buscas se marca en amarillo. El ícono (?) junto al título tiene todas las teclas.</li>

@@ -13,8 +13,9 @@
  *   discrepancias y pendientes cada una con su propia paginación) — así cambiar de
  *   página en una tabla no pisa ni reinicia las otras dos.
  *
- * - $densidad (opcional, bool): muestra el botón «Vista compacta» de una tabla navegable
- *   (ui('tabla', ['navegable' => true])); en pantallas grandes, que es donde se ve la tabla.
+ * - $densidad (opcional, bool): muestra las herramientas de una tabla navegable
+ *   (ui('herramientas_tabla'): «Vista compacta» y el ícono (?) de las teclas); en pantallas
+ *   grandes, que es donde se ve la tabla. Con 'atajos' => false, sin el ícono (?).
  *
  * Se puede incluir varias veces en la misma vista (arriba y abajo de la tabla): el
  * selector usa una clase (no id) y el script queda protegido contra registrarse más
@@ -61,10 +62,7 @@ if ($totalPaginas > 1) {
 
     <div class="d-flex flex-wrap align-items-center gap-3">
         <?php if (!empty($densidad)): ?>
-            <button type="button" class="btn btn-sm btn-outline-secondary d-none d-lg-inline-flex align-items-center" data-densidad aria-pressed="false"
-                    title="Filas más bajas: más bienes en pantalla">
-                <?= icono('densidad', 'me-1') ?>Vista compacta
-            </button>
+            <?= ui('herramientas_tabla', ['atajos' => $atajos ?? true]) ?>
         <?php endif; ?>
         <?php if (!empty($opcionesPorPagina)): ?>
             <div class="d-flex align-items-center gap-2">

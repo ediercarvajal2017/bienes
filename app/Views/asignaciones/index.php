@@ -139,13 +139,13 @@ $bienesSeleccionados = $viejo['bienes'] ?? [];
             </button>
         </div>
 
-        <?php View::render('partials/paginacion', [
+        <?php View::render('partials/paginacion', ['densidad' => true,
             'pagina' => $pagina, 'porPagina' => $porPagina, 'total' => $total, 'totalPaginas' => $totalPaginas,
             'opcionesPorPagina' => $opcionesPorPagina,
             'urlBase' => $urlBasePaginacion,
         ]); ?>
 
-        <div class="table-responsive">
+        <div data-navegable data-columnas-fijas="2" class="table-responsive">
             <table class="table table-sm table-hover align-middle bg-white tabla-cards">
                 <thead>
                 <tr>
@@ -161,14 +161,14 @@ $bienesSeleccionados = $viejo['bienes'] ?? [];
                 <?php foreach ($bienes as $b): ?>
                     <tr>
                         <td data-label="Seleccionar"><input type="checkbox" name="bienes[]" value="<?= $b['id'] ?>" class="form-check-input casilla-bien" aria-label="Seleccionar <?= htmlspecialchars((string) $b['codigo_identificacion'], ENT_QUOTES) ?>" <?= in_array((int) $b['id'], $bienesSeleccionados, true) ? 'checked' : '' ?>></td>
-                        <td class="mono" data-label="Código"><?= htmlspecialchars($b['codigo_identificacion'], ENT_QUOTES) ?></td>
-                        <td data-label="Descripción"><?= htmlspecialchars($b['descripcion'], ENT_QUOTES) ?></td>
+                        <td class="mono" data-label="Código"><?= resaltar($b['codigo_identificacion'], $q) ?></td>
+                        <td data-label="Descripción"><?= resaltar($b['descripcion'], $q) ?></td>
                         <?php if (!$b['asignado']): ?>
                             <td class="text-muted small" data-label="Responsable / ubicación">— Sin asignar —</td>
                             <td data-label="Estado"><span class="badge badge-neutro">Sin asignar</span></td>
                         <?php else: ?>
                             <td class="small" data-label="Responsable / ubicación">
-                                <?php \App\Core\View::render('partials/responsabilidad', ['fila' => $b]); ?>
+                                <?php \App\Core\View::render('partials/responsabilidad', ['fila' => $b, 'resaltar' => $q]); ?>
                             </td>
                             <td data-label="Estado"><span class="badge badge-estado-activo">Asignado</span></td>
                         <?php endif; ?>

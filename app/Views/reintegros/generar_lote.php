@@ -35,13 +35,13 @@ $movimientosSeleccionados = $viejo['movimientos'] ?? [];
             </div>
         </div>
 
-        <?php View::render('partials/paginacion', [
+        <?php View::render('partials/paginacion', ['densidad' => true,
             'pagina' => $pagina, 'porPagina' => $porPagina, 'total' => $total, 'totalPaginas' => $totalPaginas,
             'opcionesPorPagina' => $opcionesPorPagina,
             'urlBase' => Url::to('/reintegros/lotes/generar'),
         ]); ?>
 
-        <div class="table-responsive">
+        <div data-navegable data-columnas-fijas="3" class="table-responsive">
             <table class="table table-sm table-hover align-middle bg-white tabla-cards">
                 <thead>
                 <tr>

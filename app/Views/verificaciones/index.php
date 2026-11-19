@@ -22,13 +22,13 @@ use App\Core\View;
 <?php if (empty($jornadas)): ?>
     <p class="text-muted">Todavía no se ha iniciado ninguna jornada de verificación.</p>
 <?php else: ?>
-    <?php View::render('partials/paginacion', [
+    <?php View::render('partials/paginacion', ['densidad' => true,
         'pagina' => $pagina, 'porPagina' => $porPagina, 'total' => $total, 'totalPaginas' => $totalPaginas,
         'opcionesPorPagina' => $opcionesPorPagina,
         'urlBase' => Url::to('/verificaciones'),
     ]); ?>
 
-    <div class="table-responsive">
+    <div data-navegable class="table-responsive">
         <table class="table table-sm table-hover align-middle bg-white tabla-cards">
             <thead>
             <tr><th>Nombre</th><th>Fecha de inicio</th><th>Creada por</th><th>Estado</th><th></th></tr>

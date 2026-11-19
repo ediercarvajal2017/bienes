@@ -43,7 +43,8 @@ use App\Models\Categoria;
         </div>
     </form>
 
-    <div class="table-responsive contenedor-md">
+    <?= ui('herramientas_tabla', ['suelta' => true]) ?>
+    <div data-navegable class="table-responsive contenedor-md">
         <table class="table table-sm bg-white align-middle tabla-cards">
             <thead>
             <tr>

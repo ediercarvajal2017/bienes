@@ -42,7 +42,8 @@ $conInstitucion = static fn (string $ruta): string => Url::to($ruta)
         <?php // Por qué no aparece el código y qué hacer (ReintegroUnidadesService::explicarSinResultados). ?>
         <?= ui('estado_vacio', $sinResultados ?? ['titulo' => 'Ningún código coincide con la búsqueda.', 'detalle' => '']) ?>
     <?php else: ?>
-        <div class="table-responsive">
+        <?= ui('herramientas_tabla', ['suelta' => true]) ?>
+        <div data-navegable class="table-responsive">
             <table class="table table-sm table-hover align-middle bg-white tabla-cards">
                 <thead>
                 <tr>
