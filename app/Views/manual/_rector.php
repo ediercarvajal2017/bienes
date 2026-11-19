@@ -59,7 +59,7 @@
             <ol class="mb-0 ps-3">
                 <li>Entra a <strong>Espacios</strong> para crear aulas, oficinas o bodegas, y asignarles un
                     responsable.</li>
-                <li>Puedes activar o desactivar un espacio, y cargar varios de una vez con la carga masiva. Si un espacio que ya existe viene sin responsables en el archivo, conserva los que tiene.</li>
+                <li>Puedes activar o desactivar un espacio, y cargar varios de una vez con la carga masiva: la plantilla se descarga en el ícono (?) junto al título y trae la lista de responsables para elegir. Si un espacio que ya existe viene sin responsables en el archivo, conserva los que tiene.</li>
             </ol>
         </div>
     </details>
@@ -72,7 +72,7 @@
                     institución.</li>
                 <li>Puedes editar sus datos, desactivarlos o eliminarlos (si un usuario ya tiene movimientos
                     registrados, el sistema te pedirá desactivarlo en vez de eliminarlo).</li>
-                <li>Para cargar varios usuarios de una vez, usa la carga masiva. En un usuario que ya existe, una columna en blanco conserva lo que tiene (incluido su rol).</li>
+                <li>Para cargar varios usuarios de una vez, usa la carga masiva: la plantilla se descarga en el ícono (?) junto al título y trae las listas de Cargo y Rol. En un usuario que ya existe, una columna en blanco conserva lo que tiene (incluido su rol).</li>
                 <li>Si alguien perdió el teléfono con el que entra (verificación en dos pasos), ábrelo en
                     <strong>Usuarios</strong> y pulsa <strong>Restablecer</strong> en esa sección; te pedirá tu
                     contraseña.</li>

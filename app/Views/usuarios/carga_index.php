@@ -7,23 +7,14 @@ use App\Core\View;
 ?>
 <?php ob_start(); ?>
     <a href="<?= Url::to('/usuarios') ?>" class="btn btn-sm btn-outline-secondary">Volver</a>
-<?= ui('encabezado_pagina', ['titulo' => 'Carga masiva de usuarios', 'icono' => 'usuarios', 'acciones' => (string) ob_get_clean()]) ?>
+<?= ui('encabezado_pagina', ['titulo' => 'Carga masiva de usuarios', 'icono' => 'usuarios', 'ayuda' => \App\Helpers\AyudaCampo::boton('carga_masiva_usuarios'), 'acciones' => (string) ob_get_clean()]) ?>
 
 <div class="card mb-4 contenedor-md">
     <div class="card-body">
-        <p class="small text-muted mb-2">
-            Sube un archivo <strong>.xlsx</strong> con las columnas de la
-            <a href="<?= Url::to('/usuarios/carga-masiva/plantilla.xlsx') ?>">plantilla</a>. Primero se analiza y ves qué
-            cambiaría en cada fila; nada se guarda hasta que pulses «Confirmar importación».
+        <p class="small text-muted mb-3">
+            Sube la plantilla diligenciada (<strong>.xlsx</strong>). La descargas en el ícono <?= icono('ayuda') ?> junto
+            al título: trae las instrucciones, las listas de Cargo y Rol, y la columna obligatoria en rojo claro.
         </p>
-        <ul class="small text-muted mb-3 ps-3">
-            <li><strong>Obligatorias:</strong> Documento siempre. Para un usuario nuevo, también Nombres, Apellidos, Cargo y
-                Correo; si Rol va vacío, queda como «docente».</li>
-            <li><strong>No se borra nada:</strong> los usuarios que no están en el archivo no se tocan, y en un usuario que ya
-                existe una columna en blanco conserva lo que tiene (incluido su rol).</li>
-            <li>El archivo nunca trae contraseñas: cada usuario nuevo entra la primera vez con «¿Olvidaste tu contraseña?» y su
-                correo registrado.</li>
-        </ul>
         <form method="post" action="<?= Url::to('/usuarios/carga-masiva/subir') ?>" enctype="multipart/form-data" class="d-flex gap-2">
             <?= Csrf::field() ?>
             <input type="file" name="archivo" accept=".xlsx" aria-label="Archivo Excel de usuarios" class="form-control form-control-sm" required>

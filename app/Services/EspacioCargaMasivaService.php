@@ -7,15 +7,16 @@ namespace App\Services;
 use App\Helpers\LectorExcel;
 use App\Models\Espacio;
 use App\Models\Usuario;
-use PhpOffice\PhpSpreadsheet\Spreadsheet;
-use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 final class EspacioCargaMasivaService
 {
     /**
-     * Lee un .xlsx (columnas A-C: Número, Nombre, Documentos de responsables separados por
-     * coma) y compara cada fila contra la base de datos de la institución. No escribe nada
-     * todavía.
+     * Lee un .xlsx (columnas A-E: Número, Nombre y Responsable 1 a 3) y compara cada fila
+     * contra la base de datos de la institución. No escribe nada todavía. Los datos empiezan
+     * debajo de la fila de títulos (la plantilla trae instrucciones arriba: PlantillaCargaEspacios).
+     *
+     * Cada responsable llega como lo deja la lista de la plantilla («documento — nombre») o
+     * como documentos separados por coma (así era la plantilla anterior, con todo en la C).
      *
      * Número y Nombre son obligatorios. Responsables es obligatorio para un espacio nuevo
      * (todo espacio necesita al menos uno); en un espacio que ya existe, en blanco CONSERVA
@@ -26,16 +27,23 @@ final class EspacioCargaMasivaService
      */
     public static function analizar(string $rutaArchivo, int $institucionId): array
     {
-        $sheet = LectorExcel::hojaActiva($rutaArchivo);
+        $sheet = LectorExcel::hojaActiva($rutaArchivo, PlantillaCargaEspacios::HOJA);
         $filas = [];
         $codigosVistos = [];
 
         $ultimaFila = $sheet->getHighestDataRow();
+        $primeraFila = LectorExcel::filaDeTitulos($sheet, 'Número', 'Nombre') + 1;
 
-        for ($numeroFila = 2; $numeroFila <= $ultimaFila; $numeroFila++) {
+        for ($numeroFila = $primeraFila; $numeroFila <= $ultimaFila; $numeroFila++) {
             $codigo = trim((string) $sheet->getCell("A{$numeroFila}")->getValue());
             $nombre = trim((string) $sheet->getCell("B{$numeroFila}")->getValue());
-            $documentosTexto = trim((string) $sheet->getCell("C{$numeroFila}")->getValue());
+            $documentos = [];
+            foreach (['C', 'D', 'E'] as $columna) {
+                $celda = trim((string) $sheet->getCell("{$columna}{$numeroFila}")->getValue());
+                $documentos = array_merge($documentos, str_contains($celda, PlantillaExcel::RAYA)
+                    ? [PlantillaExcel::valorDeLista($celda)]
+                    : explode(',', $celda));
+            }
 
             if ($codigo === '' && $nombre === '') {
                 continue;
@@ -59,6 +67,18 @@ final class EspacioCargaMasivaService
             }
             $codigosVistos[$codigo] = $numeroFila;
 
+            // Los mismos límites de la base de datos: antes un texto más largo tumbaba toda la
+            // carga al confirmarla.
+            $motivoLargo = match (true) {
+                mb_strlen($codigo) > 30 => 'El número tiene más de 30 caracteres',
+                mb_strlen($nombre) > 100 => 'El nombre tiene más de 100 caracteres',
+                default => null,
+            };
+            if ($motivoLargo !== null) {
+                $filas[] = ['fila' => $numeroFila, 'tipo' => 'invalido', 'motivo' => $motivoLargo, 'codigo' => $codigo, 'nombre' => $nombre];
+                continue;
+            }
+
             $existente = Espacio::buscarPorCodigoInstitucion($institucionId, $codigo);
             if ($existente !== null && $existente['eliminado_en'] !== null) {
                 $filas[] = [
@@ -69,7 +89,7 @@ final class EspacioCargaMasivaService
                 continue;
             }
 
-            $documentos = array_values(array_unique(array_filter(array_map('trim', explode(',', $documentosTexto)), fn ($d) => $d !== '')));
+            $documentos = array_values(array_unique(array_filter(array_map('trim', $documentos), fn ($d) => $d !== '')));
             if (empty($documentos) && $existente === null) {
                 $filas[] = [
                     'fila' => $numeroFila, 'tipo' => 'invalido',
@@ -168,23 +188,6 @@ final class EspacioCargaMasivaService
         }
 
         return $omitidas;
-    }
-
-    public static function enviarPlantilla(): void
-    {
-        $spreadsheet = new Spreadsheet();
-        $sheet = $spreadsheet->getActiveSheet();
-        $sheet->fromArray(['Numero', 'Nombre', 'Documentos_Responsables'], null, 'A1');
-        $sheet->fromArray(['101', 'Sala de sistemas 1', '123456789,987654321'], null, 'A2');
-        foreach (range('A', 'C') as $columna) {
-            $sheet->getColumnDimension($columna)->setAutoSize(true);
-        }
-
-        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        header('Content-Disposition: attachment; filename="plantilla_carga_espacios.xlsx"');
-        header('Cache-Control: max-age=0');
-        (new Xlsx($spreadsheet))->save('php://output');
-        exit;
     }
 
     private static function detectarCambios(array $existente, array $nuevo): array
