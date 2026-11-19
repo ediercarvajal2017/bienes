@@ -48,7 +48,7 @@
                     en una celda y muévete con las flechas; Enter abre el bien (o marca la casilla en las tablas para
                     seleccionar) y Av Pág pasa a la página siguiente. En Bienes, Foto,
                     Descripción y Código quedan fijas al desplazarte a la derecha, y «Vista compacta» muestra más filas.
-                    Un clic en un título (Descripción, Código, Categoría, Valor o Estado) ordena toda la lista, y lo que
+                    Un clic en un título con flechas (por ejemplo Descripción, Valor, Fecha o Estado) ordena toda la lista, y lo que
                     buscas se marca en amarillo. El ícono (?) junto al título tiene todas las teclas.</li>
                 <li>Cada pantalla a la que lleva <strong>Acciones</strong> tiene el mismo botón, con la pantalla actual
                     resaltada: pasas de una acción a otra (por ejemplo, de Alta masiva a Generar QR masivo) sin volver a Bienes.</li>

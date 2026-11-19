@@ -135,7 +135,7 @@ final class BajaController
 
         View::layout('partials/layout', 'bajas/index', [
             'title' => 'Bajas de bienes',
-            'bajas' => Baja::listar($institucionId, $pagina, $porPagina, $soloDe),
+            'bajas' => Baja::listar($institucionId, $pagina, $porPagina, $soloDe, ...\App\Helpers\OrdenListado::desdeConsulta(Baja::ORDENES)),
             'pagina' => $pagina,
             'porPagina' => $porPagina,
             'opcionesPorPagina' => self::OPCIONES_POR_PAGINA,

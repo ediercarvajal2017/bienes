@@ -36,7 +36,7 @@ $clases = [
 <div data-navegable class="table-responsive">
     <table class="table table-sm bg-white tabla-cards">
         <thead>
-        <tr><th>Fila</th><th>Estado</th><th>Documento</th><th>Nombre</th><th>Detalle</th></tr>
+        <tr><th data-ordenar>Fila</th><th data-ordenar>Estado</th><th data-ordenar>Documento</th><th data-ordenar>Nombre</th><th>Detalle</th></tr>
         </thead>
         <tbody>
         <?php foreach ($filas as $f): ?>

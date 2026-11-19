@@ -44,7 +44,7 @@ final class AuditoriaController
 
         View::layout('partials/layout', 'auditoria/index', [
             'title' => 'Auditoría',
-            'registros' => Auditoria::listar($filtros, $pagina, self::POR_PAGINA),
+            'registros' => Auditoria::listar($filtros, $pagina, self::POR_PAGINA, ...\App\Helpers\OrdenListado::desdeConsulta(Auditoria::ORDENES)),
             'mapas' => $mapas,
             'pagina' => $pagina,
             'porPagina' => self::POR_PAGINA,

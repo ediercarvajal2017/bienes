@@ -166,7 +166,17 @@ final class Usuario
         return $stmt->fetch() ?: null;
     }
 
-    public static function listar(?int $institucionId = null, ?string $busqueda = null, int $pagina = 1, int $porPagina = 50, bool $incluirSuperusuarios = true): array
+    /** Columnas por las que se puede ordenar el listado (clic en el título): ver \App\Helpers\OrdenListado. */
+    public const ORDENES = [
+        'nombre' => ['u.nombres', 'u.apellidos'],
+        'documento' => ['CHAR_LENGTH(u.documento)', 'u.documento'],
+        'cargo' => ['c.nombre'],
+        'rol' => ['r.nombre'],
+        'institucion' => ['i.nombre'],
+        'estado' => ['(1 - u.activo)'],
+    ];
+
+    public static function listar(?int $institucionId = null, ?string $busqueda = null, int $pagina = 1, int $porPagina = 50, bool $incluirSuperusuarios = true, ?string $orden = null, string $dir = 'asc'): array
     {
         [$whereSql, $params] = self::condicionesListado($institucionId, $busqueda, $incluirSuperusuarios);
 
@@ -176,7 +186,7 @@ final class Usuario
                 JOIN cargos c ON c.id = u.cargo_id
                 JOIN instituciones i ON i.id = u.institucion_id'
                . $whereSql
-               . ' ORDER BY u.created_at DESC, u.id DESC' . Paginador::limitSql($pagina, $porPagina);
+               . \App\Helpers\OrdenListado::sql(self::ORDENES, $orden, $dir, 'u.created_at DESC, u.id DESC', 'u.id') . Paginador::limitSql($pagina, $porPagina);
 
         $stmt = Database::connection()->prepare($sql);
         $stmt->execute($params);

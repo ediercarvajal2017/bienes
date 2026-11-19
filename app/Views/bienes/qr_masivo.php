@@ -59,13 +59,19 @@ use App\Core\View;
                 'urlBase' => $urlBasePaginacion,
             ]); ?>
 
+            <?php // Un clic en el título ordena todo el listado (App\Helpers\OrdenListado). ?>
+            <?php $columnasOrden = [
+                'codigo' => ['Código', ['de menor a mayor', 'de mayor a menor']],
+                'descripcion' => ['Descripción', ['de la A a la Z', 'de la Z a la A']],
+            ]; ?>
+            <?= ui('filtros_activos', ['filtros' => filtro_orden($columnasOrden)]) ?>
             <div data-navegable class="table-responsive">
                 <table class="table table-sm table-hover align-middle bg-white tabla-cards">
                     <thead>
                     <tr>
                         <th class="columna-casilla"><input type="checkbox" id="seleccionarTodos" class="form-check-input" aria-label="Seleccionar todos"></th>
-                        <th>Código</th>
-                        <th>Descripción</th>
+                        <?= th_orden('codigo', $columnasOrden) ?>
+                        <?= th_orden('descripcion', $columnasOrden) ?>
                         <th>Ubicación</th>
                     </tr>
                     </thead>

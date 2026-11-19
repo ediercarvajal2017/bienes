@@ -70,10 +70,10 @@ $fecha = static fn (?string $f): string => $f ? date('d/m/Y H:i', strtotime($f))
                         <thead>
                         <tr>
                             <th class="columna-casilla"><input type="checkbox" class="form-check-input seleccionar-todos" aria-label="Seleccionar todos" checked></th>
-                            <th>Código</th>
-                            <th>Nombre del bien</th>
-                            <th>Solicitado por</th>
-                            <th>Solicitado el</th>
+                            <th data-ordenar>Código</th>
+                            <th data-ordenar>Nombre del bien</th>
+                            <th data-ordenar>Solicitado por</th>
+                            <th data-ordenar>Solicitado el</th>
                         </tr>
                         </thead>
                         <tbody>
@@ -119,9 +119,9 @@ $fecha = static fn (?string $f): string => $f ? date('d/m/Y H:i', strtotime($f))
                         <thead>
                         <tr>
                             <th class="columna-casilla"><input type="checkbox" class="form-check-input seleccionar-todos" aria-label="Seleccionar todos"></th>
-                            <th>Código</th>
-                            <th>Nombre del bien</th>
-                            <th>Impreso el</th>
+                            <th data-ordenar>Código</th>
+                            <th data-ordenar>Nombre del bien</th>
+                            <th data-ordenar>Impreso el</th>
                         </tr>
                         </thead>
                         <tbody>

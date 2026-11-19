@@ -37,7 +37,7 @@ final class CargaMasivaController
 
         View::layout('partials/layout', 'cargas/index', [
             'title' => 'Carga masiva de bienes',
-            'cargas' => CargaMasiva::listar($institucionId, 'bienes', $terminoBusqueda, $pagina, $porPagina),
+            'cargas' => CargaMasiva::listar($institucionId, 'bienes', $terminoBusqueda, $pagina, $porPagina, ...\App\Helpers\OrdenListado::desdeConsulta(CargaMasiva::ORDENES)),
             'busqueda' => $busqueda,
             'pagina' => $pagina,
             'porPagina' => $porPagina,

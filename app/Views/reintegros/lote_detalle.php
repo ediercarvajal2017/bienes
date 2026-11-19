@@ -110,14 +110,14 @@ $estado = (string) $lote['estado'];
         <table class="table table-sm bg-white tabla-cards">
             <thead>
             <tr>
-                <th>Placa</th>
-                <th>Descripción</th>
-                <th>Categoría</th>
-                <th class="text-end">Cant.</th>
-                <th>Fecha de reintegro</th>
-                <th>Destino</th>
-                <th>Espacio de origen</th>
-                <th class="text-end">Valor</th>
+                <th data-ordenar>Placa</th>
+                <th data-ordenar>Descripción</th>
+                <th data-ordenar>Categoría</th>
+                <th class="text-end" data-ordenar>Cant.</th>
+                <th data-ordenar>Fecha de reintegro</th>
+                <th data-ordenar>Destino</th>
+                <th data-ordenar>Espacio de origen</th>
+                <th class="text-end" data-ordenar>Valor</th>
             </tr>
             </thead>
             <tbody>

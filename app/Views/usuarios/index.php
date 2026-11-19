@@ -32,17 +32,27 @@ use App\Core\View;
     'urlBase' => Url::to('/usuarios') . ($busqueda !== '' ? '?' . http_build_query(['q' => $busqueda]) : ''),
 ]); ?>
 
+<?php // Un clic en el título ordena todo el listado (App\Helpers\OrdenListado). ?>
+<?php $columnasOrden = [
+    'nombre' => ['Nombre', ['de la A a la Z', 'de la Z a la A']],
+    'documento' => ['Documento', ['de menor a mayor', 'de mayor a menor']],
+    'cargo' => ['Cargo', ['de la A a la Z', 'de la Z a la A']],
+    'rol' => ['Rol', ['de la A a la Z', 'de la Z a la A']],
+    'institucion' => ['Institución', ['de la A a la Z', 'de la Z a la A']],
+    'estado' => ['Estado', ['de activos a inactivos', 'de inactivos a activos']],
+]; ?>
+<?= ui('filtros_activos', ['filtros' => filtro_orden($columnasOrden)]) ?>
 <div data-navegable data-columnas-fijas="2" class="table-responsive">
     <table class="table table-sm table-hover align-middle bg-white tabla-cards">
         <thead>
         <tr>
             <th></th>
-            <th>Nombre</th>
-            <th>Documento</th>
-            <th>Cargo</th>
-            <th>Rol</th>
-            <?php if (Auth::esSuperusuario()): ?><th>Institución</th><?php endif; ?>
-            <th>Estado</th>
+            <?= th_orden('nombre', $columnasOrden) ?>
+            <?= th_orden('documento', $columnasOrden) ?>
+            <?= th_orden('cargo', $columnasOrden) ?>
+            <?= th_orden('rol', $columnasOrden) ?>
+            <?php if (Auth::esSuperusuario()): ?><?= th_orden('institucion', $columnasOrden) ?><?php endif; ?>
+            <?= th_orden('estado', $columnasOrden) ?>
             <th></th>
         </tr>
         </thead>

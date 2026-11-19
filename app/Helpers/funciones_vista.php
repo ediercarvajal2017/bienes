@@ -105,3 +105,66 @@ if (!function_exists('resaltar')) {
         return $html . $escapar(implode('', array_slice($caracteres, $desde)));
     }
 }
+
+if (!function_exists('url_orden')) {
+    /**
+     * La dirección actual con otro orden por columna (o sin orden, con $clave null), de vuelta
+     * a la página 1. Conserva la búsqueda y los filtros.
+     */
+    function url_orden(?string $clave, string $dir = 'asc'): string
+    {
+        $ruta = parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH) ?: '/';
+        $consulta = array_diff_key($_GET, ['pagina' => true, 'orden' => true, 'dir' => true]);
+        if ($clave !== null) {
+            $consulta += ['orden' => $clave, 'dir' => $dir === 'desc' ? 'desc' : 'asc'];
+        }
+
+        return $ruta . ($consulta !== [] ? '?' . http_build_query($consulta) : '');
+    }
+}
+
+if (!function_exists('th_orden')) {
+    /**
+     * Título de columna que ordena el listado (App\Helpers\OrdenListado): un enlace con la
+     * flecha del sentido y aria-sort en la columna ordenada. $columnas: clave => [título,
+     * [texto ascendente, texto descendente]], p. ej. 'valor' => ['Valor', ['de menor a mayor', 'de mayor a menor']].
+     *
+     * @param array<string, array{0: string, 1: array{0: string, 1: string}}> $columnas
+     */
+    function th_orden(string $clave, array $columnas, string $clase = ''): string
+    {
+        [$texto, [$textoAsc, $textoDesc]] = $columnas[$clave];
+        $actual = ($_GET['orden'] ?? null) === $clave;
+        $dir = $actual && ($_GET['dir'] ?? '') === 'desc' ? 'desc' : 'asc';
+        $siguiente = $actual && $dir === 'asc' ? 'desc' : 'asc';
+        $accion = 'ordenar ' . ($siguiente === 'asc' ? $textoAsc : $textoDesc);
+        $icono = $actual ? ($dir === 'asc' ? 'orden_ascendente' : 'orden_descendente') : 'ordenable';
+        $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
+
+        return '<th scope="col"' . ($clase !== '' ? ' class="' . $e($clase) . '"' : '')
+            . ($actual ? ' aria-sort="' . ($dir === 'asc' ? 'ascending' : 'descending') . '"' : '') . '>'
+            . '<a class="encabezado-orden' . ($actual ? ' activo' : '') . '" href="' . $e(url_orden($clave, $siguiente)) . '"'
+            . ' aria-label="' . $e($texto . ', ' . $accion) . '" title="' . $e(mb_strtoupper(mb_substr($accion, 0, 1)) . mb_substr($accion, 1)) . '">'
+            . $e($texto) . icono($icono, 'encabezado-orden-icono') . '</a></th>';
+    }
+}
+
+if (!function_exists('filtro_orden')) {
+    /**
+     * El orden elegido como etiqueta para ui('filtros_activos') («Orden: Fecha, de la más
+     * reciente…» con ✕ para volver al orden de siempre), o nada si no hay orden.
+     *
+     * @param array<string, array{0: string, 1: array{0: string, 1: string}}> $columnas
+     * @return list<array{etiqueta: string, valor: string, urlQuitar: string}>
+     */
+    function filtro_orden(array $columnas): array
+    {
+        $orden = $_GET['orden'] ?? null;
+        if (!is_string($orden) || !isset($columnas[$orden])) {
+            return [];
+        }
+        $desc = ($_GET['dir'] ?? '') === 'desc';
+
+        return [['etiqueta' => 'Orden', 'valor' => $columnas[$orden][0] . ', ' . $columnas[$orden][1][$desc ? 1 : 0], 'urlQuitar' => url_orden(null)]];
+    }
+}

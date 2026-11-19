@@ -55,18 +55,26 @@ final class LoteReintegro
         return $stmt->fetch() ?: null;
     }
 
+    /** Columnas por las que se puede ordenar el listado (clic en el título): ver \App\Helpers\OrdenListado. */
+    public const ORDENES = [
+        'lote' => ['l.id'],
+        'fecha' => ['l.fecha'],
+        'bienes' => ['total_bienes'],
+        'estado' => ['l.estado'],
+    ];
+
     /**
      * @param array{estado?: ?string, categoria?: ?string, desde?: ?string, hasta?: ?string} $filtros
      *        estado null = todos; categoria = nombre exacto o FILTRO_SIN_CATEGORIA;
      *        desde/hasta (Y-m-d) sobre la fecha del lote.
      */
-    public static function listar(?int $institucionId = null, int $pagina = 1, int $porPagina = 50, array $filtros = []): array
+    public static function listar(?int $institucionId = null, int $pagina = 1, int $porPagina = 50, array $filtros = [], ?string $orden = null, string $dir = 'asc'): array
     {
         [$whereSql, $params] = self::condiciones($institucionId, $filtros);
 
         // Lo que más importa en cada vista: los pendientes del más viejo al más nuevo (lo
         // primero que hay que entregar); los reintegrados por fecha de entrega reciente.
-        $orden = match ($filtros['estado'] ?? null) {
+        $porDefecto = match ($filtros['estado'] ?? null) {
             'pendiente' => 'l.fecha ASC, l.id ASC',
             'reintegrado' => 'l.reintegrado_fecha DESC, l.id DESC',
             default => 'l.fecha DESC, l.id DESC',
@@ -97,7 +105,7 @@ final class LoteReintegro
                 LEFT JOIN bienes b ON b.id = m.bien_id
                 LEFT JOIN categorias_bienes c ON c.id = b.categoria_id'
                . $whereSql
-               . ' GROUP BY l.id ORDER BY ' . $orden . Paginador::limitSql($pagina, $porPagina);
+               . ' GROUP BY l.id' . \App\Helpers\OrdenListado::sql(self::ORDENES, $orden, $dir, $porDefecto, 'l.id') . Paginador::limitSql($pagina, $porPagina);
 
         $stmt = Database::connection()->prepare($sql);
         $stmt->execute([self::NOMBRE_SIN_CATEGORIA, ...$params]);

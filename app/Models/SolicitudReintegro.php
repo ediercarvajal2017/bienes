@@ -44,17 +44,26 @@ final class SolicitudReintegro
         return (bool) $stmt->fetchColumn();
     }
 
+    /** Columnas por las que se puede ordenar el listado (clic en el título): ver \App\Helpers\OrdenListado. */
+    public const ORDENES = [
+        'numero' => ['s.id'],
+        'bien' => ['b.descripcion'],
+        'solicitante' => ['us.nombres', 'us.apellidos'],
+        'fecha' => ['s.created_at'],
+        'estado' => ["FIELD(s.estado, 'pendiente', 'aprobada', 'rechazada', 'cancelada')"],
+    ];
+
     /**
      * Pendientes primero; $soloDe limita a las solicitudes de un usuario (el docente ve las
      * suyas; quien aprueba ve todas las de la institución).
      */
-    public static function listar(?int $institucionId, ?int $soloDe, ?string $estado, int $pagina = 1, int $porPagina = 25): array
+    public static function listar(?int $institucionId, ?int $soloDe, ?string $estado, int $pagina = 1, int $porPagina = 25, ?string $orden = null, string $dir = 'asc'): array
     {
         [$where, $params] = self::condiciones($institucionId, $soloDe, $estado);
 
         $stmt = Database::connection()->prepare(
             self::sqlBase() . $where
-            . " ORDER BY FIELD(s.estado, 'pendiente', 'aprobada', 'rechazada', 'cancelada'), s.created_at DESC, s.id DESC"
+            . \App\Helpers\OrdenListado::sql(self::ORDENES, $orden, $dir, "FIELD(s.estado, 'pendiente', 'aprobada', 'rechazada', 'cancelada'), s.created_at DESC, s.id DESC", 's.id')
             . Paginador::limitSql($pagina, $porPagina)
         );
         $stmt->execute($params);

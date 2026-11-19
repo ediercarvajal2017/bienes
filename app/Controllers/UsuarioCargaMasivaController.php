@@ -34,7 +34,7 @@ final class UsuarioCargaMasivaController
 
         View::layout('partials/layout', 'usuarios/carga_index', [
             'title' => 'Carga masiva de usuarios',
-            'cargas' => CargaMasiva::listar($institucionId, 'usuarios', null, $pagina, $porPagina),
+            'cargas' => CargaMasiva::listar($institucionId, 'usuarios', null, $pagina, $porPagina, ...\App\Helpers\OrdenListado::desdeConsulta(CargaMasiva::ORDENES)),
             'pagina' => $pagina,
             'porPagina' => $porPagina,
             'opcionesPorPagina' => self::OPCIONES_POR_PAGINA,

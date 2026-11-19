@@ -22,6 +22,12 @@
  * de una vez, así que no importa cuántas copias del partial haya en la página.
  */
 $separador = str_contains($urlBase, '?') ? '&' : '?';
+// El orden elegido con un clic en el título de una columna (?orden=&dir=) sigue al cambiar de
+// página o de «Mostrar N» (url_orden(), App\Helpers\OrdenListado).
+if (is_string($_GET['orden'] ?? null) && !str_contains($urlBase, 'orden=')) {
+    $urlBase .= $separador . http_build_query(['orden' => $_GET['orden'], 'dir' => ($_GET['dir'] ?? '') === 'desc' ? 'desc' : 'asc']);
+    $separador = '&';
+}
 // Cifras con separador de miles colombiano (1.340).
 $cifra = static fn (int $n): string => number_format($n, 0, ',', '.');
 $opcionesPorPagina = $opcionesPorPagina ?? [];

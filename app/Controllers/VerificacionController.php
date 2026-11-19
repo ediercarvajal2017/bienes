@@ -38,7 +38,7 @@ final class VerificacionController
 
         View::layout('partials/layout', 'verificaciones/index', [
             'title' => 'Verificación física de bienes',
-            'jornadas' => JornadaVerificacion::listar($institucionId, $pagina, $porPagina),
+            'jornadas' => JornadaVerificacion::listar($institucionId, $pagina, $porPagina, ...\App\Helpers\OrdenListado::desdeConsulta(JornadaVerificacion::ORDENES)),
             'jornadaActiva' => Auth::institucionId() !== null ? JornadaVerificacion::activaPara(Auth::institucionId()) : null,
             'pagina' => $pagina,
             'porPagina' => $porPagina,

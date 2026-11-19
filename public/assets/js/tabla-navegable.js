@@ -344,6 +344,83 @@
         contenedor.classList.toggle('tabla-fijas-activas', activas);
     }
 
+    // Orden en el navegador para las tablas que ya traen todas sus filas (sin paginación):
+    // los títulos con data-ordenar se vuelven botones; un clic ordena de menor a mayor (o de la
+    // A a la Z) y otro invierte. Números como números ($ 150.000), textos sin importar
+    // mayúsculas ni tildes, y las celdas vacías siempre al final. Se recuerda en la pestaña.
+    var COMPARAR = new Intl.Collator('es', { numeric: true, sensitivity: 'base' });
+    function ordenLocal(contenedor, indice) {
+        var tabla = contenedor.querySelector('table');
+        if (!tabla || !tabla.tHead || !tabla.tBodies[0]) { return; }
+        var titulos = tabla.tHead.querySelectorAll('th[data-ordenar]');
+        if (titulos.length === 0) { return; }
+        var cuerpo = tabla.tBodies[0];
+        var clave = 'mia.tabla.orden.' + window.location.pathname + '#' + indice;
+
+        function valor(fila, columna) {
+            var celda = fila.cells[columna];
+            if (!celda) { return ''; }
+            if (celda.hasAttribute('data-valor')) { return celda.getAttribute('data-valor'); }
+            var campo = celda.querySelector('input[type="text"]');
+            var texto = (campo ? campo.value : celda.innerText).trim();
+            return texto === '—' ? '' : texto;
+        }
+        function numero(texto) {
+            // Formato colombiano: puntos de miles y coma decimal.
+            return parseFloat(texto.replace(/[^\d,.-]/g, '').replace(/\./g, '').replace(',', '.'));
+        }
+
+        function ordenar(th, dir) {
+            var columna = th.cellIndex;
+            var filasDatos = Array.prototype.filter.call(cuerpo.rows, function (f) { return f.cells.length > 1; });
+            var valores = filasDatos.map(function (f) { return valor(f, columna); });
+            var sonNumeros = valores.some(function (v) { return v !== ''; })
+                && valores.every(function (v) { return v === '' || /^[$\s]*-?[\d.,]+\s*$/.test(v); });
+            var orden = filasDatos.map(function (f, i) { return { fila: f, valor: valores[i], i: i }; });
+            orden.sort(function (a, b) {
+                if (a.valor === '' || b.valor === '') { return a.valor === b.valor ? a.i - b.i : (a.valor === '' ? 1 : -1); }
+                var c = sonNumeros ? numero(a.valor) - numero(b.valor) : COMPARAR.compare(a.valor, b.valor);
+                return (dir === 'desc' ? -c : c) || a.i - b.i;
+            });
+            orden.forEach(function (o) { cuerpo.appendChild(o.fila); });
+            titulos.forEach(function (otro) {
+                otro.removeAttribute('aria-sort');
+                var boton = otro.querySelector('.encabezado-orden');
+                boton.classList.remove('activo');
+                boton.querySelector('.encabezado-orden-icono').className = 'bi bi-arrow-down-up encabezado-orden-icono';
+            });
+            th.setAttribute('aria-sort', dir === 'asc' ? 'ascending' : 'descending');
+            var activo = th.querySelector('.encabezado-orden');
+            activo.classList.add('activo');
+            activo.querySelector('.encabezado-orden-icono').className = 'bi bi-' + (dir === 'asc' ? 'sort-up' : 'sort-down') + ' encabezado-orden-icono';
+            guardar('sessionStorage', clave, JSON.stringify({ columna: columna, dir: dir }));
+        }
+
+        titulos.forEach(function (th) {
+            var texto = th.textContent.trim();
+            var boton = document.createElement('button');
+            boton.type = 'button';
+            boton.className = 'encabezado-orden';
+            boton.setAttribute('aria-label', texto + ', ordenar');
+            boton.textContent = texto;
+            var icono = document.createElement('i');
+            icono.className = 'bi bi-arrow-down-up encabezado-orden-icono';
+            icono.setAttribute('aria-hidden', 'true');
+            boton.appendChild(icono);
+            th.textContent = '';
+            th.appendChild(boton);
+            boton.addEventListener('click', function () {
+                ordenar(th, th.getAttribute('aria-sort') === 'ascending' ? 'desc' : 'asc');
+            });
+        });
+
+        var guardado = null;
+        try { guardado = JSON.parse(leer('sessionStorage', clave) || 'null'); } catch (e) { guardado = null; }
+        if (guardado && tabla.tHead.rows[0].cells[guardado.columna] && tabla.tHead.rows[0].cells[guardado.columna].hasAttribute('data-ordenar')) {
+            ordenar(tabla.tHead.rows[0].cells[guardado.columna], guardado.dir === 'desc' ? 'desc' : 'asc');
+        }
+    }
+
     // Vista compacta: se aplica antes de medir las columnas (cambia los anchos).
     function aplicarDensidad(compacta) {
         document.querySelectorAll('[data-navegable]').forEach(function (contenedor) {
@@ -361,6 +438,7 @@
         if (contenedores.length === 0) { return; }
         aplicarDensidad(leer('localStorage', CLAVE_DENSIDAD) === 'compacta');
         contenedores.forEach(function (contenedor, indice) {
+            ordenLocal(contenedor, indice); // antes de recordar la celda: cambia el orden de las filas
             var tabla = iniciar(contenedor, indice);
             if (tabla) { tablas.push(tabla); }
         });

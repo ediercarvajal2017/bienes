@@ -125,6 +125,7 @@ final class AyudaCampo
                 . "**Av Pág / Re Pág:** 10 filas; desde la última fila pasa a la página siguiente.\n\n"
                 . "**Enter o doble clic:** abre la fila. En las tablas para seleccionar, **Enter o Espacio** marca la casilla. En una celda con botones o campos, Enter entra a ellos y Escape vuelve.\n\n"
                 . "**Ctrl+C:** copia la celda. **/ (barra):** va al buscador; **Escape** vuelve a la tabla.\n\n"
+                . "**Clic en un título con flechas:** ordena la lista; otro clic invierte el orden. Lo buscado se marca en amarillo.\n\n"
                 . '«Vista compacta» muestra más filas. Al recargar, MIA te deja en la misma celda.',
         ],
         'tabla_bienes' => [

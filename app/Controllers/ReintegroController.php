@@ -61,7 +61,7 @@ final class ReintegroController
             'categorias' => $institucionId !== null ? Categoria::activas($institucionId) : [],
             'categoriaId' => $categoriaId,
 
-            'bienes' => $institucionId !== null ? Bien::reintegrables($institucionId, $termino, $pagina, $porPagina, $idsSeleccionados, $categoriaId) : [],
+            'bienes' => $institucionId !== null ? Bien::reintegrables($institucionId, $termino, $pagina, $porPagina, $idsSeleccionados, $categoriaId, ...\App\Helpers\OrdenListado::desdeConsulta(Bien::ORDENES_REINTEGRABLES)) : [],
             'q' => $q,
             'pagina' => $pagina,
             'total' => $total,

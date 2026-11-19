@@ -106,3 +106,75 @@ test.describe('en el celular', () => {
         await pagina.context().close();
     });
 });
+
+// Listados paginados: el orden lo hace la base de datos (App\Helpers\OrdenListado).
+const ORDENABLES = {
+    rector: ['asignaciones', 'reintegros', 'reintegros/lotes?estado=todos', 'reintegros/solicitudes', 'bajas', 'bienes/qr-masivo', 'espacios',
+        'usuarios', 'verificaciones', 'cargas-masivas', 'espacios/carga-masiva', 'usuarios/carga-masiva'],
+    superusuario: ['auditoria'],
+};
+
+for (const [rol, rutas] of Object.entries(ORDENABLES)) {
+    test(`${rol}: cada título ordenable ordena el listado en los dos sentidos sin error`, async ({ browser }) => {
+        const pagina = await (await comoRol(browser, rol)).newPage();
+        await pagina.setViewportSize({ width: 1280, height: 800 });
+        let probados = 0;
+        for (const ruta of rutas) {
+            await pagina.goto(ruta);
+            const titulos = pagina.locator('thead a.encabezado-orden');
+            const cuantos = await titulos.count();
+            if (cuantos === 0 && await pagina.locator('[data-navegable] table').count() === 0) { continue; } // pantalla sin tabla (vacía)
+            expect(cuantos, `${ruta}: tiene títulos ordenables`).toBeGreaterThan(0);
+            for (let i = 0; i < cuantos; i++) {
+                const nombre = (await titulos.nth(i).getAttribute('aria-label')).split(',')[0];
+                for (const sentido of ['ascending', 'descending']) {
+                    const respuesta = await Promise.all([pagina.waitForNavigation(), pagina.locator('thead a.encabezado-orden').nth(i).click()]).then(([r]) => r);
+                    expect(respuesta.status(), `${ruta} ordenado por ${nombre}`).toBeLessThan(400);
+                    await expect(pagina.locator(`thead th[aria-sort="${sentido}"]`), `${ruta}: ${nombre} ${sentido}`).toContainText(nombre);
+                    probados++;
+                }
+                await pagina.goto(ruta);
+            }
+        }
+        expect(probados).toBeGreaterThan(0);
+        await pagina.context().close();
+    });
+}
+
+test('el orden elegido sigue al cambiar de página y se quita con su etiqueta', async ({ browser }) => {
+    const pagina = await (await comoRol(browser, 'rector')).newPage();
+    await pagina.setViewportSize({ width: 1280, height: 800 });
+    await pagina.goto('usuarios?porPagina=10');
+    await pagina.getByRole('link', { name: /^Nombre, ordenar/ }).click();
+    await expect(pagina).toHaveURL(/orden=nombre&dir=asc/);
+    const nombres = await pagina.locator('[data-navegable] tbody td[data-label="Nombre"]').allInnerTexts();
+    const primeras = nombres.map((n) => n.split('\n')[0].trim());
+    expect(primeras, 'de la A a la Z').toEqual([...primeras].sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' })));
+    const siguiente = pagina.locator('a.page-link[aria-label="Página siguiente"]').first();
+    if (await siguiente.count() > 0 && await siguiente.getAttribute('aria-disabled') !== 'true') {
+        await expect(siguiente).toHaveAttribute('href', /orden=nombre/);
+    }
+    const etiqueta = pagina.locator('.filtro-activo', { hasText: 'Orden:' });
+    await expect(etiqueta).toContainText('Nombre, de la A a la Z');
+    await etiqueta.click();
+    await expect(pagina).not.toHaveURL(/orden=/);
+    await pagina.context().close();
+});
+
+test('las tablas sin paginación se ordenan en la pantalla y lo recuerdan al recargar', async ({ browser }) => {
+    const pagina = await (await comoRol(browser, 'superusuario')).newPage();
+    await pagina.setViewportSize({ width: 1280, height: 800 });
+    await pagina.goto('instituciones');
+    const boton = pagina.locator('thead th[data-ordenar] button', { hasText: 'Institución' });
+    const nombres = async () => (await pagina.locator('[data-navegable] tbody td[data-label="Institución"]').allInnerTexts()).map((n) => n.split('\n')[0].trim());
+    await boton.click();
+    await expect(pagina.locator('thead th[aria-sort="ascending"]')).toContainText('Institución');
+    const asc = await nombres();
+    expect(asc).toEqual([...asc].sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base', numeric: true })));
+    await boton.click();
+    await expect(pagina.locator('thead th[aria-sort="descending"]')).toContainText('Institución');
+    expect(await nombres()).toEqual([...asc].reverse());
+    await pagina.reload();
+    await expect(pagina.locator('thead th[aria-sort="descending"]'), 'se recuerda al recargar').toContainText('Institución');
+    await pagina.context().close();
+});

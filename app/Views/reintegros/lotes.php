@@ -107,6 +107,14 @@ $e = static fn (?string $texto): string => htmlspecialchars((string) $texto, ENT
         <?= Csrf::field() ?>
         <input type="hidden" name="volver" value="<?= $e($urlRegreso) ?>">
 
+        <?php // Un clic en el título ordena todo el listado (App\Helpers\OrdenListado). ?>
+        <?php $columnasOrden = [
+            'lote' => ['Lote', ['de menor a mayor', 'de mayor a menor']],
+            'fecha' => ['Fecha del lote', ['de la más antigua a la más reciente', 'de la más reciente a la más antigua']],
+            'bienes' => ['Bienes', ['de menor a mayor', 'de mayor a menor']],
+            'estado' => ['Estado', ['de pendientes a reintegrados', 'de reintegrados a pendientes']],
+        ]; ?>
+        <?= ui('filtros_activos', ['filtros' => filtro_orden($columnasOrden)]) ?>
         <div data-navegable data-columnas-fijas="2" class="table-responsive">
             <table class="table table-sm table-hover align-middle bg-white tabla-cards">
                 <thead>
@@ -116,13 +124,13 @@ $e = static fn (?string $texto): string => htmlspecialchars((string) $texto, ENT
                             <input type="checkbox" id="seleccionarTodos" class="form-check-input" aria-label="Seleccionar todos los lotes pendientes">
                         <?php endif; ?>
                     </th>
-                    <th>Lote</th>
-                    <th>Fecha del lote</th>
+                    <?= th_orden('lote', $columnasOrden) ?>
+                    <?= th_orden('fecha', $columnasOrden) ?>
                     <?php if (Auth::esSuperusuario()): ?><th>Institución</th><?php endif; ?>
                     <th>Categoría</th>
                     <th>Fechas de reintegro</th>
-                    <th class="text-end">Bienes</th>
-                    <th>Estado</th>
+                    <?= th_orden('bienes', $columnasOrden, 'text-end') ?>
+                    <?= th_orden('estado', $columnasOrden) ?>
                     <th></th>
                 </tr>
                 </thead>

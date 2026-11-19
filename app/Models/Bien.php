@@ -1043,6 +1043,14 @@ final class Bien
         return [' WHERE ' . implode(' AND ', $condiciones), $params];
     }
 
+    /** Columnas por las que se puede ordenar el listado (clic en el título): ver \App\Helpers\OrdenListado. */
+    public const ORDENES_OPERABLES = [
+        'codigo' => ['CHAR_LENGTH(b.codigo_identificacion)', 'b.codigo_identificacion'],
+        'descripcion' => ['b.descripcion'],
+        'estado' => ['asignado'],
+        'valor' => ['b.valor'],
+    ];
+
     /**
      * Bienes operables desde /asignaciones: un bien que no esté dado de baja ni
      * reintegrado puede Asignarse o Reasignarse a un espacio, tenga ya uno o no. Ninguno
@@ -1051,11 +1059,11 @@ final class Bien
      * aparezcan aquí como candidatos. (Los candidatos a Reintegrar se listan aparte, ver
      * reintegrables(), en la pantalla dedicada /reintegros.)
      */
-    public static function operables(?int $institucionId = null, ?string $busqueda = null, int $pagina = 1, int $porPagina = 50, ?int $espacioId = null, ?int $responsableId = null, ?string $tipo = null): array
+    public static function operables(?int $institucionId = null, ?string $busqueda = null, int $pagina = 1, int $porPagina = 50, ?int $espacioId = null, ?int $responsableId = null, ?string $tipo = null, ?string $orden = null, string $dir = 'asc'): array
     {
         [$sql, $params] = self::sqlOperables($institucionId, $busqueda, $espacioId, $responsableId, $tipo);
 
-        $sql .= ' ORDER BY asignado ASC, b.codigo_identificacion ASC, b.id ASC' . self::limitSql($pagina, $porPagina);
+        $sql .= \App\Helpers\OrdenListado::sql(self::ORDENES_OPERABLES, $orden, $dir, 'asignado ASC, b.codigo_identificacion ASC, b.id ASC', 'b.id') . self::limitSql($pagina, $porPagina);
 
         $stmt = Database::connection()->prepare($sql);
         $stmt->execute($params);
@@ -1125,12 +1133,19 @@ final class Bien
         return [' WHERE ' . implode(' AND ', $condiciones), $params];
     }
 
+    /** Columnas por las que se puede ordenar el listado (clic en el título): ver \App\Helpers\OrdenListado. */
+    public const ORDENES_REINTEGRABLES = [
+        'codigo' => ['CHAR_LENGTH(b.codigo_identificacion)', 'b.codigo_identificacion'],
+        'descripcion' => ['b.descripcion'],
+        'valor' => ['b.valor'],
+    ];
+
     /**
      * Bienes reintegrables desde /reintegros: 'activo' y con una asignación vigente
      * (a diferencia de operables(), aquí sí se filtra desde la BD — la pantalla de
      * reintegro solo debe listar lo que realmente se puede reintegrar).
      */
-    public static function reintegrables(?int $institucionId = null, ?string $busqueda = null, int $pagina = 1, int $porPagina = 50, ?array $soloIds = null, ?int $categoriaId = null): array
+    public static function reintegrables(?int $institucionId = null, ?string $busqueda = null, int $pagina = 1, int $porPagina = 50, ?array $soloIds = null, ?int $categoriaId = null, ?string $orden = null, string $dir = 'asc'): array
     {
         if ($soloIds !== null && empty($soloIds)) {
             return [];
@@ -1146,7 +1161,7 @@ final class Bien
                 LEFT JOIN espacios e ON e.id = a.espacio_id
                 LEFT JOIN categorias_bienes c ON c.id = b.categoria_id'
                . $whereSql
-               . ' ORDER BY b.codigo_identificacion ASC, b.id ASC' . self::limitSql($pagina, $porPagina);
+               . \App\Helpers\OrdenListado::sql(self::ORDENES_REINTEGRABLES, $orden, $dir, 'b.codigo_identificacion ASC, b.id ASC', 'b.id') . self::limitSql($pagina, $porPagina);
 
         $stmt = Database::connection()->prepare($sql);
         $stmt->execute($params);

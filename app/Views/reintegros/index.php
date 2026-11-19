@@ -139,16 +139,23 @@ $viejo ??= [];
             <?php // Por qué la búsqueda no encontró nada para reintegrar (ReintegroController::explicarSinResultados). ?>
             <?= ui('estado_vacio', $sinResultados + ['clases' => 'mb-3']) ?>
         <?php endif; ?>
+        <?php // Un clic en el título ordena todo el listado (App\Helpers\OrdenListado). ?>
+        <?php $columnasOrden = [
+            'codigo' => ['Código', ['de menor a mayor', 'de mayor a menor']],
+            'descripcion' => ['Descripción', ['de la A a la Z', 'de la Z a la A']],
+            'valor' => ['Valor', ['de menor a mayor', 'de mayor a menor']],
+        ]; ?>
+        <?= ui('filtros_activos', ['filtros' => filtro_orden($columnasOrden)]) ?>
         <div data-navegable data-columnas-fijas="3" class="table-responsive">
             <table class="table table-sm table-hover align-middle bg-white tabla-cards">
                 <thead>
                 <tr>
                     <th class="columna-casilla"><input type="checkbox" id="seleccionarTodos" class="form-check-input" aria-label="Seleccionar todos"></th>
                     <th></th>
-                    <th>Código</th>
-                    <th>Descripción</th>
+                    <?= th_orden('codigo', $columnasOrden) ?>
+                    <?= th_orden('descripcion', $columnasOrden) ?>
                     <th>Responsable / ubicación</th>
-                    <th class="text-end">Valor</th>
+                    <?= th_orden('valor', $columnasOrden, 'text-end') ?>
                 </tr>
                 </thead>
                 <tbody>

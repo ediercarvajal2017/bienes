@@ -18,12 +18,20 @@ use App\Helpers\Paginador;
  */
 final class Baja
 {
+    /** Columnas por las que se puede ordenar el listado (clic en el título): ver \App\Helpers\OrdenListado. */
+    public const ORDENES = [
+        'bien' => ['b.descripcion'],
+        'reportado' => ['u.nombres', 'u.apellidos'],
+        'fecha' => ['bb.fecha_reporte'],
+        'estado' => ["FIELD(bb.estado, 'pendiente', 'aprobada', 'rechazada')"],
+    ];
+
     /**
      * Pendientes primero (requieren atención), y dentro de cada grupo las más
      * recientes primero. $soloDe: id del usuario cuyo listado se limita a sus propios
      * reportes (quien reporta pero no aprueba bajas, p. ej. un docente).
      */
-    public static function listar(?int $institucionId = null, int $pagina = 1, int $porPagina = 50, ?int $soloDe = null): array
+    public static function listar(?int $institucionId = null, int $pagina = 1, int $porPagina = 50, ?int $soloDe = null, ?string $orden = null, string $dir = 'asc'): array
     {
         [$where, $params] = self::condiciones($institucionId, $soloDe);
 
@@ -36,7 +44,7 @@ final class Baja
                 JOIN usuarios u ON u.id = bb.responsable_id
                 LEFT JOIN usuarios ur ON ur.id = bb.resuelta_por'
             . $where
-            . " ORDER BY FIELD(bb.estado, 'pendiente', 'aprobada', 'rechazada'), bb.fecha_reporte DESC, bb.id DESC"
+            . \App\Helpers\OrdenListado::sql(self::ORDENES, $orden, $dir, "FIELD(bb.estado, 'pendiente', 'aprobada', 'rechazada'), bb.fecha_reporte DESC, bb.id DESC", 'bb.id')
             . Paginador::limitSql($pagina, $porPagina);
 
         $stmt = Database::connection()->prepare($sql);

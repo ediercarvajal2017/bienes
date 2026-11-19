@@ -110,6 +110,12 @@ La guía de una página va en el ícono (?) junto al título: `'ayuda' => AyudaC
 - **Qué abre Enter:** el `data-url` de la fila o, si no tiene, su único enlace (Editar, Ver).
 - **Tablas para marcar varios:** en una fila con casilla y sin `data-url`, Enter y Espacio marcan la casilla.
 - **Celdas con campos de texto:** Enter entra al campo, las flechas son del texto y Escape vuelve a la celda.
+- **Ordenar un listado paginado:** el orden lo hace la base de datos, sobre todo el listado.
+  1. En el modelo, `public const ORDENES = ['nombre' => ['u.nombres', 'u.apellidos'], …]` y `App\Helpers\OrdenListado::sql(...)` en el `ORDER BY`.
+  2. En el controlador, `...OrdenListado::desdeConsulta(Modelo::ORDENES)`.
+  3. En la vista, `<?= th_orden('nombre', $columnasOrden) ?>` en el título y `filtro_orden($columnasOrden)` para la etiqueta con ✕.
+  4. `partials/paginacion` conserva el orden al cambiar de página.
+- **Ordenar una tabla sin paginación:** basta `data-ordenar` en el `<th>`, y se ordena en el navegador. Los números se comparan como números; los textos, sin importar mayúsculas ni tildes. El orden se recuerda en la pestaña.
 
 ```php
 <?= ui('tabla', ['leyenda' => 'Bienes', 'navegable' => true, 'filaInicial' => ($pagina - 1) * $porPagina, 'totalFilas' => $total,

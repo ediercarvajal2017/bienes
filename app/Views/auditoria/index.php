@@ -149,15 +149,23 @@ $etiquetasEntidad = [
 <?php if (empty($registros)): ?>
     <p class="text-muted">No hay nada registrado con estos filtros.</p>
 <?php else: ?>
+    <?php // Un clic en el título ordena todo el listado (App\Helpers\OrdenListado). ?>
+    <?php $columnasOrden = [
+        'fecha' => ['Fecha', ['de la más antigua a la más reciente', 'de la más reciente a la más antigua']],
+        'quien' => ['Quién', ['de la A a la Z', 'de la Z a la A']],
+        'accion' => ['Acción', ['de la A a la Z', 'de la Z a la A']],
+        'tipo' => ['Tipo', ['de la A a la Z', 'de la Z a la A']],
+    ]; ?>
+    <?= ui('filtros_activos', ['filtros' => filtro_orden($columnasOrden)]) ?>
     <div data-navegable class="table-responsive">
         <table class="table table-sm bg-white align-middle tabla-cards">
             <thead>
             <tr>
-                <th>Fecha</th>
-                <th>Quién</th>
+                <?= th_orden('fecha', $columnasOrden) ?>
+                <?= th_orden('quien', $columnasOrden) ?>
                 <th>Institución</th>
-                <th>Acción</th>
-                <th>Tipo</th>
+                <?= th_orden('accion', $columnasOrden) ?>
+                <?= th_orden('tipo', $columnasOrden) ?>
                 <th></th>
             </tr>
             </thead>
