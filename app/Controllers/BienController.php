@@ -61,6 +61,9 @@ final class BienController
         if (!in_array($porPagina, self::OPCIONES_POR_PAGINA, true)) {
             $porPagina = self::POR_PAGINA_DEFECTO;
         }
+        // Orden por columna (clic en el título): solo las columnas de Bien::ORDENES.
+        $orden = in_array($_GET['orden'] ?? null, Bien::ORDENES, true) ? (string) $_GET['orden'] : null;
+        $dir = $orden !== null && ($_GET['dir'] ?? '') === 'desc' ? 'desc' : 'asc';
 
         // Mientras no se busque ni filtre nada, los bienes que pertenecen a un lote (ej.
         // 250 sillas identicas) se excluyen del listado individual y se muestran agrupados
@@ -68,14 +71,18 @@ final class BienController
         // En cuanto el usuario busca o filtra algo, se ve todo, agrupado o no, para que el
         // resultado siga siendo confiable.
         $hayFiltroActivo = $terminoBusqueda !== null || $estado !== null || $espacioId !== null || $responsableId !== null || $tipo !== null;
-        $excluirLotes = !$soloPropios && !$hayFiltroActivo;
+        $excluirLotes = !$soloPropios && !$hayFiltroActivo && $orden === null;
+        // Ordenado (sin buscar ni filtrar): cada unidad de los lotes en su lugar del orden, pero
+        // sin los reintegrados ni los dados de baja, igual que el listado sin ordenar.
+        $ocultarRetirados = !$soloPropios && !$hayFiltroActivo && $orden !== null;
 
         if ($soloPropios) {
             $total = Bien::contarPropios((int) Auth::id(), $institucionId, $terminoBusqueda, $categoriaId, $estado, $espacioId);
-            $bienes = Bien::listarPropios((int) Auth::id(), $institucionId, $terminoBusqueda, $pagina, $porPagina, $categoriaId, $estado, $espacioId);
+            $bienes = Bien::listarPropios((int) Auth::id(), $institucionId, $terminoBusqueda, $pagina, $porPagina, $categoriaId, $estado, $espacioId, $orden, $dir);
         } else {
-            $total = Bien::contarListado($institucionId, $terminoBusqueda, $excluirLotes, $categoriaId, $estado, $espacioId, $responsableId, $tipo);
-            $bienes = Bien::listar($institucionId, $terminoBusqueda, $pagina, $porPagina, $excluirLotes, $categoriaId, $estado, $espacioId, $responsableId, $tipo);
+            $total = Bien::contarListado($institucionId, $terminoBusqueda, $excluirLotes, $categoriaId, $estado, $espacioId, $responsableId, $tipo, $ocultarRetirados);
+            $bienes = Bien::listar($institucionId, $terminoBusqueda, $pagina, $porPagina, $excluirLotes, $categoriaId, $estado, $espacioId, $responsableId, $tipo,
+                orden: $orden, dir: $dir, ocultarRetirados: $ocultarRetirados);
         }
 
         // Las filas-resumen de lote se intercalan arriba de los bienes individuales en la
@@ -83,7 +90,7 @@ final class BienController
         // mostrarlas en la vista sin filtrar de la primera pagina: en cuanto hay una
         // busqueda o filtro activo, "Ver detalles" ya te trae directamente los bienes reales
         // del lote (ver $excluirLotes arriba), asi que repetir el resumen ahi seria redundante.
-        $vistaSinFiltrar = !$soloPropios && $institucionId !== null && !$hayFiltroActivo && $pagina === 1;
+        $vistaSinFiltrar = !$soloPropios && $institucionId !== null && !$hayFiltroActivo && $orden === null && $pagina === 1;
         $lotes = $vistaSinFiltrar ? Bien::listarLotes($institucionId, null, $categoriaId) : [];
 
         // El filtro Estado dice cuántos bienes hay en cada estado con los demás filtros puestos
@@ -93,7 +100,7 @@ final class BienController
         // Se recuerda la consulta del listado (búsqueda, filtros, página) para volver a
         // ella al guardar un bien o pulsar "Volver" en su ficha.
         Session::put('bienes_listado', http_build_query(array_intersect_key(
-            $_GET, array_flip(['q', 'categoria', 'estado', 'espacio', 'responsable', 'tipo', 'pagina', 'porPagina'])
+            $_GET, array_flip(['q', 'categoria', 'estado', 'espacio', 'responsable', 'tipo', 'pagina', 'porPagina', 'orden', 'dir'])
         )));
 
         View::layout('partials/layout', 'bienes/index', [
@@ -126,6 +133,8 @@ final class BienController
                     'responsable' => $responsableId, 'tipo' => $tipo,
                 ]) + (Auth::esSuperusuario() && $institucionId !== null ? ['institucion' => $institucionId] : []))
                 : null,
+            'orden' => $orden,
+            'dir' => $dir,
             'pagina' => $pagina,
             'porPagina' => $porPagina,
             'opcionesPorPagina' => self::OPCIONES_POR_PAGINA,

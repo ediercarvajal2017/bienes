@@ -26,9 +26,41 @@ final class Bien
      * vista sin filtrar; siguen apareciendo aquí si el usuario busca algo o filtra por
      * Estado (el filtro dice cuántos hay en cada estado: contarPorEstado()).
      */
-    public static function listar(?int $institucionId = null, ?string $busqueda = null, int $pagina = 1, int $porPagina = 50, bool $excluirLotes = false, ?int $categoriaId = null, ?string $estado = null, ?int $espacioId = null, ?int $responsableId = null, ?string $tipo = null): array
+    /** Columnas por las que se puede ordenar el listado (?orden=…): ver sqlOrden(). */
+    public const ORDENES = ['codigo', 'descripcion', 'categoria', 'valor', 'estado'];
+
+    /**
+     * ORDER BY del listado. Solo admite las columnas de ORDENES (cualquier otro valor deja el
+     * orden de siempre: los más recientes primero) y desempata por id, para que una página no
+     * repita ni salte bienes.
+     *  - código: orden natural (primero por largo), así 9 queda antes que 10;
+     *  - categoría: los bienes sin categoría van siempre al final;
+     *  - estado: activo, en reparación, reintegrado, dado de baja.
+     */
+    public static function sqlOrden(?string $orden, string $dir = 'asc'): string
     {
-        [$whereSql, $params] = self::condicionesListado($institucionId, $busqueda, $excluirLotes, $categoriaId, $estado, $espacioId, $responsableId, $tipo);
+        if ($orden === null || !in_array($orden, self::ORDENES, true)) {
+            return ' ORDER BY b.created_at DESC, b.id DESC';
+        }
+        $sentido = $dir === 'desc' ? ' DESC' : ' ASC';
+
+        return ' ORDER BY ' . match ($orden) {
+            'codigo' => "CHAR_LENGTH(b.codigo_identificacion){$sentido}, b.codigo_identificacion{$sentido}",
+            'descripcion' => "b.descripcion{$sentido}",
+            'categoria' => "c.nombre IS NULL, c.nombre{$sentido}",
+            'valor' => "b.valor{$sentido}",
+            'estado' => "FIELD(b.estado, 'activo', 'en_reparacion', 'reintegrado', 'dado_de_baja'){$sentido}",
+        } . ", b.id{$sentido}";
+    }
+
+    /**
+     * $orden / $dir: ver sqlOrden(). $ocultarRetirados: sin los reintegrados ni los dados de
+     * baja aunque no se excluyan los lotes (el listado ordenado muestra cada unidad, pero no
+     * debe traer más bienes que el listado sin ordenar).
+     */
+    public static function listar(?int $institucionId = null, ?string $busqueda = null, int $pagina = 1, int $porPagina = 50, bool $excluirLotes = false, ?int $categoriaId = null, ?string $estado = null, ?int $espacioId = null, ?int $responsableId = null, ?string $tipo = null, ?string $orden = null, string $dir = 'asc', bool $ocultarRetirados = false): array
+    {
+        [$whereSql, $params] = self::condicionesListado($institucionId, $busqueda, $excluirLotes, $categoriaId, $estado, $espacioId, $responsableId, $tipo, $ocultarRetirados);
 
         $sql = 'SELECT b.*, c.nombre AS categoria_nombre, CONCAT(e.codigo, " - ", e.nombre) AS espacio_nombre,
                        ' . self::sqlResponsable() . ' AS responsables_nombres, ' . self::sqlTipoResponsabilidad() . ' AS tipo_responsabilidad
@@ -37,7 +69,7 @@ final class Bien
                 LEFT JOIN asignaciones a ON a.bien_id = b.id AND a.activa = 1
                 LEFT JOIN espacios e ON e.id = a.espacio_id'
                . $whereSql
-               . ' ORDER BY b.created_at DESC, b.id DESC'
+               . self::sqlOrden($orden, $dir)
                . self::limitSql($pagina, $porPagina);
 
         $stmt = Database::connection()->prepare($sql);
@@ -46,9 +78,9 @@ final class Bien
         return $stmt->fetchAll();
     }
 
-    public static function contarListado(?int $institucionId = null, ?string $busqueda = null, bool $excluirLotes = false, ?int $categoriaId = null, ?string $estado = null, ?int $espacioId = null, ?int $responsableId = null, ?string $tipo = null): int
+    public static function contarListado(?int $institucionId = null, ?string $busqueda = null, bool $excluirLotes = false, ?int $categoriaId = null, ?string $estado = null, ?int $espacioId = null, ?int $responsableId = null, ?string $tipo = null, bool $ocultarRetirados = false): int
     {
-        [$whereSql, $params] = self::condicionesListado($institucionId, $busqueda, $excluirLotes, $categoriaId, $estado, $espacioId, $responsableId, $tipo);
+        [$whereSql, $params] = self::condicionesListado($institucionId, $busqueda, $excluirLotes, $categoriaId, $estado, $espacioId, $responsableId, $tipo, $ocultarRetirados);
 
         $sql = 'SELECT COUNT(*)
                 FROM bienes b
@@ -96,7 +128,7 @@ final class Bien
      * responsable es la persona (responsabilidad individual) o los responsables del
      * espacio (grupal).
      */
-    private static function condicionesListado(?int $institucionId, ?string $busqueda, bool $excluirLotes = false, ?int $categoriaId = null, ?string $estado = null, ?int $espacioId = null, ?int $responsableId = null, ?string $tipo = null): array
+    private static function condicionesListado(?int $institucionId, ?string $busqueda, bool $excluirLotes = false, ?int $categoriaId = null, ?string $estado = null, ?int $espacioId = null, ?int $responsableId = null, ?string $tipo = null, bool $ocultarRetirados = false): array
     {
         [$condiciones, $params] = self::condicionesResponsabilidad($responsableId, $tipo);
 
@@ -109,7 +141,7 @@ final class Bien
             $condiciones[] = 'b.lote IS NULL';
         }
 
-        if ($excluirLotes && $estado === null) {
+        if (($excluirLotes || $ocultarRetirados) && $estado === null) {
             $condiciones[] = 'b.estado NOT IN ("reintegrado", "dado_de_baja")';
         }
 
@@ -148,7 +180,7 @@ final class Bien
      * sqlRespondePor). Un bien sin asignación activa, o individual de otra persona aunque
      * esté guardado en su espacio, queda fuera.
      */
-    public static function listarPropios(int $usuarioId, ?int $institucionId = null, ?string $busqueda = null, int $pagina = 1, int $porPagina = 50, ?int $categoriaId = null, ?string $estado = null, ?int $espacioId = null): array
+    public static function listarPropios(int $usuarioId, ?int $institucionId = null, ?string $busqueda = null, int $pagina = 1, int $porPagina = 50, ?int $categoriaId = null, ?string $estado = null, ?int $espacioId = null, ?string $orden = null, string $dir = 'asc'): array
     {
         [$whereSql, $params] = self::condicionesPropios($usuarioId, $institucionId, $busqueda, $categoriaId, $estado, $espacioId);
 
@@ -159,7 +191,7 @@ final class Bien
                 JOIN asignaciones a ON a.bien_id = b.id AND a.activa = 1
                 LEFT JOIN espacios e ON e.id = a.espacio_id'
                . $whereSql
-               . ' ORDER BY b.created_at DESC, b.id DESC'
+               . self::sqlOrden($orden, $dir)
                . self::limitSql($pagina, $porPagina);
 
         $stmt = Database::connection()->prepare($sql);

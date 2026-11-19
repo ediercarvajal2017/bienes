@@ -1327,6 +1327,17 @@ html { scroll-padding-top: calc(var(--alto-navbar) + 0.75rem); }
   .tabla-compacta .badge { font-size: .6875rem; }
   .tabla-compacta .celda-acciones .btn { padding-top: 0; padding-bottom: 0; font-size: .75rem; }
 }
+/* Títulos que ordenan la tabla (ui('tabla') con 'orden'): enlace con el aspecto del título;
+   la flecha tenue invita a ordenar y la de la columna ordenada va en verde. */
+.encabezado-orden { color: inherit; text-decoration: none; white-space: nowrap; }
+.encabezado-orden:hover { color: var(--sigebi-primary); text-decoration: underline; }
+.encabezado-orden-icono { margin-left: .25rem; font-size: .75em; opacity: .55; }
+.encabezado-orden.activo { color: var(--sigebi-primary); }
+.encabezado-orden.activo .encabezado-orden-icono { opacity: 1; }
+
+/* Lo buscado, marcado en cada fila (resaltar()). */
+mark.coincidencia { padding: 0 .1em; border-radius: 2px; background: var(--sigebi-advertencia-fondo); color: var(--sigebi-advertencia-texto); }
+
 /* El botón «Vista compacta» encendido se distingue del apagado. */
 .btn[data-densidad][aria-pressed="true"] {
   background: rgba(var(--sigebi-primary-rgb), .12); border-color: var(--sigebi-primary); color: var(--sigebi-primary);

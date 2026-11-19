@@ -16,7 +16,8 @@
                 <li>En el computador, la lista de <strong>Bienes</strong> se recorre con el teclado como una planilla: haz clic
                     en una celda y muévete con las flechas; Enter abre el bien y Av Pág pasa a la página siguiente. Foto,
                     Descripción y Código quedan fijas al desplazarte a la derecha, y «Vista compacta» muestra más filas.
-                    El ícono (?) junto al título tiene todas las teclas.</li>
+                    Un clic en un título (Descripción, Código, Categoría, Valor o Estado) ordena toda la lista, y lo que
+                    buscas se marca en amarillo. El ícono (?) junto al título tiene todas las teclas.</li>
                 <li>Haz clic en un bien para ver su ficha completa (descripción, estado, ubicación).</li>
             </ol>
         </div>

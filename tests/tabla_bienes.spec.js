@@ -154,3 +154,67 @@ test.describe('en el celular', () => {
         await expect(page.getByRole('button', { name: 'Vista compacta' }).first()).toBeHidden();
     });
 });
+
+const valores = async (page) => (await filas(page).locator('td[data-label="Valor"]').allInnerTexts()).map((v) => Number(v.replace(/[^0-9]/g, '')));
+
+test('un clic en el título ordena todo el listado; el orden sigue al cambiar de página y se quita con su etiqueta', async ({ page }) => {
+    const p = `PWO${Date.now()}`;
+    crearBienes(p, 12); // valores de 1.000 a 12.000
+    await page.goto(`bienes?q=${p}&porPagina=10`);
+
+    await page.getByRole('link', { name: /^Valor, ordenar/ }).click();
+    await expect(page).toHaveURL(/orden=valor&dir=asc/);
+    await expect(page.locator('th[aria-sort="ascending"]')).toContainText('Valor');
+    await expect(filas(page)).toHaveCount(10);
+    expect(await valores(page)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => n * 1000));
+
+    await page.getByRole('link', { name: 'Página 2' }).first().click();
+    await expect(page).toHaveURL(/pagina=2/);
+    await expect(filas(page)).toHaveCount(2);
+    expect(await valores(page), 'la página 2 sigue el mismo orden').toEqual([11000, 12000]);
+
+    await page.getByRole('link', { name: /^Valor, ordenar/ }).click();
+    await expect(page).toHaveURL(/orden=valor&dir=desc/);
+    await expect(page.locator('th[aria-sort="descending"]')).toContainText('Valor');
+    await expect(filas(page)).toHaveCount(10);
+    expect(await valores(page), 'de mayor a menor, desde la página 1').toEqual([12, 11, 10, 9, 8, 7, 6, 5, 4, 3].map((n) => n * 1000));
+
+    const etiqueta = page.locator('.filtro-activo', { hasText: 'Orden:' });
+    await expect(etiqueta).toContainText('Valor, de mayor a menor');
+    await expect(page.locator('#botonFiltrosBienes'), 'ordenar no cuenta como filtro').toHaveText(/^\s*Filtros\s*$/);
+    await etiqueta.click();
+    await expect(page).not.toHaveURL(/orden=/);
+    await expect(page).toHaveURL(new RegExp(`q=${p}`));
+    await expect(page.locator('th[aria-sort]')).toHaveCount(0);
+});
+
+test('ordenado sin buscar: cada unidad de los lotes en su lugar y sin los reintegrados; un orden inventado no falla', async ({ page }) => {
+    const s = Date.now();
+    const inst = datos().instituciones.A;
+    bd(`INSERT INTO bienes (institucion_id, codigo_identificacion, lote, descripcion, fecha_ingreso, valor, estado, qr_token) VALUES
+        (${inst}, 'PWL${s}-001', 'PWL${s}', 'PW LOTE ORDEN ${s}', CURDATE(), 987654321, 'activo', UUID()),
+        (${inst}, 'PWX${s}', NULL, 'PW REINTEGRADO ORDEN ${s}', CURDATE(), 987654322, 'reintegrado', UUID())`);
+
+    await page.goto('bienes?orden=valor&dir=desc&porPagina=10');
+    await expect(filas(page).first()).toContainText(`PW LOTE ORDEN ${s}`);
+    await expect(page.getByText(`PW REINTEGRADO ORDEN ${s}`)).toHaveCount(0);
+    await expect(page.getByText(/en cartera de \d+ unidades/), 'sin las filas-resumen de los lotes').toHaveCount(0);
+
+    await page.goto('bienes?orden=inventado&dir=desc');
+    await expect(page.locator('.tabla-datos table')).toBeVisible();
+    await expect(page.locator('th[aria-sort]')).toHaveCount(0);
+});
+
+test('lo buscado se marca en cada fila, sin importar tildes ni mayúsculas, y sin interpretar HTML', async ({ page }) => {
+    const p = `PWS${Date.now()}`;
+    const inst = datos().instituciones.A;
+    bd(`INSERT INTO bienes (institucion_id, codigo_identificacion, descripcion, fecha_ingreso, valor, estado, qr_token)
+        VALUES (${inst}, '${p}-1', CONCAT('S', CONVERT(0xC38D USING utf8mb4), 'LLA ${p} <b>negrita</b>'), CURDATE(), 1000, 'activo', UUID())`);
+    // (la «Í» va como bytes UTF-8: escrita en la línea de comandos de Windows llega dañada)
+
+    await page.goto(`bienes?q=${encodeURIComponent(`silla ${p.toLowerCase()}`)}`);
+    const descripcion = filas(page).first().locator('td[data-label="Descripción"]');
+    await expect(descripcion.locator('mark.coincidencia')).toHaveText(`SÍLLA ${p}`);
+    await expect(descripcion.locator('b'), 'el texto del bien no se interpreta como HTML').toHaveCount(0);
+    await expect(descripcion).toContainText('<b>negrita</b>');
+});

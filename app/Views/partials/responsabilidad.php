@@ -5,11 +5,13 @@
  *  - Individual: la persona a cargo y, si lo hay, el espacio donde está guardado.
  *  - Grupal: el espacio y sus responsables (o un aviso si el espacio no tiene).
  *  - Sin asignar.
- * Variables: $fila con tipo_responsabilidad, espacio_nombre y responsables_nombres.
+ * Variables: $fila con tipo_responsabilidad, espacio_nombre y responsables_nombres;
+ * $resaltar (opcional): lo buscado, que se marca en los nombres (ver resaltar()).
  */
 
 $tipo = $fila['tipo_responsabilidad'] ?? (!empty($fila['espacio_nombre']) ? 'grupal' : null);
-$texto = static fn (mixed $valor): string => htmlspecialchars((string) $valor, ENT_QUOTES);
+$resaltar ??= '';
+$texto = static fn (mixed $valor): string => resaltar((string) $valor, (string) $resaltar);
 ?>
 <?php if ($tipo === 'individual'): ?>
     <span class="badge etiqueta-responsabilidad etiqueta-individual">Individual</span>

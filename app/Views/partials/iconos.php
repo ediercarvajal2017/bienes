@@ -30,6 +30,9 @@ return [
     'cambiar' => ['icono' => 'arrow-repeat', 'uso' => 'Cambiar o recargar (cámara, código)'],
     'agrupar' => ['icono' => 'diagram-3', 'uso' => 'Unificar o separar lotes de reintegro por categoría'],
     'densidad' => ['icono' => 'arrows-collapse', 'uso' => 'Vista compacta de una tabla (más filas en pantalla)'],
+    'ordenable' => ['icono' => 'arrow-down-up', 'uso' => 'Título de columna que ordena la tabla al hacer clic'],
+    'orden_ascendente' => ['icono' => 'sort-up', 'uso' => 'Tabla ordenada por esta columna, de menor a mayor'],
+    'orden_descendente' => ['icono' => 'sort-down', 'uso' => 'Tabla ordenada por esta columna, de mayor a menor'],
     'ayuda' => ['icono' => 'question-circle', 'activo' => 'question-circle-fill', 'uso' => 'Ayuda de un campo o guía rápida'],
 
     // ── Conceptos del dominio (también son los módulos del menú) ──

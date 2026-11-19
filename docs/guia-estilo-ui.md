@@ -122,6 +122,13 @@ La guía de una página va en el ícono (?) junto al título: `'ayuda' => AyudaC
 - **Columnas fijas:** las primeras marcadas con `fija` quedan inmovilizadas al desplazarse a la derecha. Si juntas ocupan más de la mitad del recuadro, no se inmovilizan.
 - **Vista compacta:** se activa con `'densidad' => true` en `partials/paginacion` y se recuerda en el computador.
 - **En el celular:** nada cambia, siguen las tarjetas.
+- **Ordenar por columna:**
+  - cada columna ordenable lleva `'orden' => 'valor'` (y, si se quiere, `'ordenTextos' => ['de menor a mayor', 'de mayor a menor']`);
+  - el componente recibe `'ordenActual'`, `'direccion'` y `'urlOrden' => fn ($clave, $dir) => …`;
+  - el título es un enlace con `aria-sort`, así que funciona sin JavaScript;
+  - en la consulta, solo se aceptan las columnas de una lista fija (ver `Bien::sqlOrden`);
+  - el orden elegido se muestra como una etiqueta más de `filtros_activos`, con ✕ para quitarlo.
+- **Resaltar lo buscado:** `resaltar($texto, $busqueda)` escapa el texto y marca cada coincidencia con `<mark class="coincidencia">`, sin importar mayúsculas ni tildes.
 
 ### Campo de formulario
 ```php
