@@ -29,6 +29,7 @@ return [
     'enviar' => ['icono' => 'send', 'uso' => 'Enviar por correo'],
     'cambiar' => ['icono' => 'arrow-repeat', 'uso' => 'Cambiar o recargar (cámara, código)'],
     'agrupar' => ['icono' => 'diagram-3', 'uso' => 'Unificar o separar lotes de reintegro por categoría'],
+    'densidad' => ['icono' => 'arrows-collapse', 'uso' => 'Vista compacta de una tabla (más filas en pantalla)'],
     'ayuda' => ['icono' => 'question-circle', 'activo' => 'question-circle-fill', 'uso' => 'Ayuda de un campo o guía rápida'],
 
     // ── Conceptos del dominio (también son los módulos del menú) ──

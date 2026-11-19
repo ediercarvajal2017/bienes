@@ -99,7 +99,7 @@ $alcanceDescarga = array_filter([
 <?php if ($puedeCrear): ?>
     <?= ui('boton', ['texto' => 'Registrar bien', 'tipo' => 'primario', 'icono' => 'crear', 'tamano' => 'sm', 'url' => Url::to('/bienes/crear')]) ?>
 <?php endif; ?>
-<?= ui('encabezado_pagina', ['titulo' => 'Bienes', 'icono' => 'bien', 'acciones' => (string) ob_get_clean()]) ?>
+<?= ui('encabezado_pagina', ['titulo' => 'Bienes', 'icono' => 'bien', 'ayuda' => \App\Helpers\AyudaCampo::boton('tabla_bienes'), 'acciones' => (string) ob_get_clean()]) ?>
 
 <?php if (!empty($soloPropios)): ?>
     <p class="text-muted small">Mostrando solo los bienes de los espacios donde eres responsable.</p>
@@ -190,13 +190,18 @@ $alcanceDescarga = array_filter([
     'pagina' => $pagina, 'porPagina' => $porPagina, 'total' => $total, 'totalPaginas' => $totalPaginas,
     'opcionesPorPagina' => $opcionesPorPagina,
     'urlBase' => $urlBasePaginacion,
+    'densidad' => true,
 ]); ?>
 
-<?= ui('tabla', ['leyenda' => 'Bienes', 'columnas' => [
-    ['texto' => 'Foto', 'oculta' => true], ['texto' => 'Descripción'], ['texto' => 'Código'], ['texto' => 'Categoría'],
-    ['texto' => 'Responsable / ubicación'], ['texto' => 'Valor', 'alineacion' => 'derecha'], ['texto' => 'Estado'], ['texto' => 'QR'],
-    ['texto' => 'Acciones', 'alineacion' => 'derecha', 'oculta' => true],
-]]) ?>
+<?php // Como una planilla: se recorre con el teclado, y Foto, Descripción y Código quedan
+      // inmovilizadas al desplazarse a la derecha (public/assets/js/tabla-navegable.js). ?>
+<?= ui('tabla', ['leyenda' => 'Bienes', 'navegable' => true,
+    'filaInicial' => $porPagina > 0 ? ($pagina - 1) * $porPagina : 0, 'totalFilas' => $total + count($lotes),
+    'columnas' => [
+        ['texto' => 'Foto', 'oculta' => true, 'fija' => true], ['texto' => 'Descripción', 'fija' => true], ['texto' => 'Código', 'fija' => true],
+        ['texto' => 'Categoría'], ['texto' => 'Responsable / ubicación'], ['texto' => 'Valor', 'alineacion' => 'derecha'], ['texto' => 'Estado'],
+        ['texto' => 'QR'], ['texto' => 'Acciones', 'alineacion' => 'derecha', 'oculta' => true],
+    ]]) ?>
         <?php if (empty($lotes) && empty($bienes) && !$algunFiltroActivo): ?>
             <?php View::render('partials/tabla_vacia', [
                 'colspan' => 9,
@@ -231,7 +236,7 @@ $alcanceDescarga = array_filter([
             </tr>
         <?php endif; ?>
         <?php foreach ($lotes as $l): ?>
-            <tr>
+            <tr data-url="<?= htmlspecialchars(Url::to('/bienes') . '?q=' . urlencode((string) $l['lote']), ENT_QUOTES) ?>">
                 <td>
                     <span class="miniatura-vacia" title="Código con varias unidades"><?= icono('bien') ?></span>
                 </td>
@@ -263,7 +268,7 @@ $alcanceDescarga = array_filter([
         <?php endforeach; ?>
         <?php $bienEditado = (int) ($_GET['editado'] ?? 0); ?>
         <?php foreach ($bienes as $b): ?>
-            <tr<?= (int) $b['id'] === $bienEditado ? ' id="bienEditado" class="fila-editada"' : '' ?>>
+            <tr data-id="<?= (int) $b['id'] ?>" data-url="<?= htmlspecialchars(Url::to('/bienes/' . $b['id'] . '/editar'), ENT_QUOTES) ?>"<?= (int) $b['id'] === $bienEditado ? ' id="bienEditado" class="fila-editada"' : '' ?>>
                 <td>
                     <?php if (!empty($b['foto_path'])): ?>
                         <img src="<?= \App\Helpers\EnlaceArchivo::url($b['foto_path'], 96) ?>" loading="lazy"

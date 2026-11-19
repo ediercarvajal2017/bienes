@@ -103,6 +103,26 @@ La guía de una página va en el ícono (?) junto al título: `'ayuda' => AyudaC
 - En el celular cada fila se ve como una tarjeta (`data-label`).
 - Los números van a la derecha, con separador de miles colombiano: `number_format($v, 0, ',', '.')`.
 
+**Tabla navegable como una planilla** (por ahora en Bienes):
+
+```php
+<?= ui('tabla', ['leyenda' => 'Bienes', 'navegable' => true, 'filaInicial' => ($pagina - 1) * $porPagina, 'totalFilas' => $total,
+    'columnas' => [['texto' => 'Descripción', 'fija' => true], ['texto' => 'Código', 'fija' => true], …]]) ?>
+    <tr data-id="<?= $id ?>" data-url="<?= $urlDeLaFila ?>">…</tr>
+```
+
+- **Teclado:** desde 992 px se recorre con el teclado, con `public/assets/js/tabla-navegable.js`:
+  - flechas, Inicio/Fin y Ctrl+Inicio/Fin para moverse;
+  - Av/Re Pág para avanzar 10 filas o cambiar de página;
+  - Enter o doble clic abre el `data-url` de la fila;
+  - Espacio pulsa el único botón o foto de la celda;
+  - Ctrl+C copia la celda;
+  - «/» va al buscador y Escape vuelve a la tabla.
+- **Recuerdo de la posición:** la celda del cursor se guarda por pestaña, y `data-id` permite volver a la misma fila al recargar.
+- **Columnas fijas:** las primeras marcadas con `fija` quedan inmovilizadas al desplazarse a la derecha. Si juntas ocupan más de la mitad del recuadro, no se inmovilizan.
+- **Vista compacta:** se activa con `'densidad' => true` en `partials/paginacion` y se recuerda en el computador.
+- **En el celular:** nada cambia, siguen las tarjetas.
+
 ### Campo de formulario
 ```php
 <?= ui('campo_formulario', ['id' => 'codigo', 'nombre' => 'codigo_identificacion', 'etiqueta' => 'Código de identificación',
