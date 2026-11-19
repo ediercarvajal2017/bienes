@@ -64,7 +64,15 @@ final class Auditoria
         );
     }
 
-    public static function listar(array $filtros = [], int $pagina = 1, int $porPagina = 50): array
+    /** Columnas por las que se puede ordenar el listado (clic en el título): ver \App\Helpers\OrdenListado. */
+    public const ORDENES = [
+        'fecha' => ['a.created_at'],
+        'quien' => ['u.nombres', 'u.apellidos'],
+        'accion' => ['a.accion'],
+        'tipo' => ['a.entidad'],
+    ];
+
+    public static function listar(array $filtros = [], int $pagina = 1, int $porPagina = 50, ?string $orden = null, string $dir = 'asc'): array
     {
         [$whereSql, $params] = self::condiciones($filtros);
 
@@ -73,7 +81,7 @@ final class Auditoria
                 LEFT JOIN usuarios u ON u.id = a.usuario_id
                 LEFT JOIN instituciones i ON i.id = a.institucion_id'
                . $whereSql
-               . ' ORDER BY a.created_at DESC' . Paginador::limitSql($pagina, $porPagina);
+               . \App\Helpers\OrdenListado::sql(self::ORDENES, $orden, $dir, 'a.created_at DESC, a.id DESC', 'a.id') . Paginador::limitSql($pagina, $porPagina);
 
         $stmt = Database::connection()->prepare($sql);
         $stmt->execute($params);

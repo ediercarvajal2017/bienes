@@ -57,7 +57,7 @@ final class AsignacionController
             'espacios' => $institucionId !== null ? Espacio::listadoParaSelect($institucionId) : [],
             'personas' => $institucionId !== null ? Usuario::elegiblesACargo($institucionId) : [],
 
-            'bienes' => $institucionId !== null ? Bien::operables($institucionId, $termino, $pagina, $porPagina, $espacioFiltro, $responsableFiltro, $tipoFiltro) : [],
+            'bienes' => $institucionId !== null ? Bien::operables($institucionId, $termino, $pagina, $porPagina, $espacioFiltro, $responsableFiltro, $tipoFiltro, ...\App\Helpers\OrdenListado::desdeConsulta(Bien::ORDENES_OPERABLES)) : [],
             'q' => $q,
             'espacioFiltro' => $espacioFiltro,
             'responsableFiltro' => $responsableFiltro,

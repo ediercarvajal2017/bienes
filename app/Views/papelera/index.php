@@ -30,11 +30,11 @@ $etiquetasTipo = [
         <table class="table table-sm bg-white align-middle tabla-cards" id="tablaPapelera">
             <thead>
             <tr>
-                <th>Tipo</th>
-                <th>Elemento</th>
-                <th>Institución</th>
-                <th>Eliminado por</th>
-                <th>Eliminado el</th>
+                <th data-ordenar>Tipo</th>
+                <th data-ordenar>Elemento</th>
+                <th data-ordenar>Institución</th>
+                <th data-ordenar>Eliminado por</th>
+                <th data-ordenar>Eliminado el</th>
                 <th></th>
             </tr>
             </thead>

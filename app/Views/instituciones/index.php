@@ -16,11 +16,11 @@ use App\Core\View;
     <table class="table table-sm table-hover align-middle bg-white tabla-cards">
         <thead>
         <tr>
-            <th>Institución</th>
-            <th>Código DANE</th>
-            <th>Tipo</th>
-            <th>Correo</th>
-            <th>Estado</th>
+            <th data-ordenar>Institución</th>
+            <th data-ordenar>Código DANE</th>
+            <th data-ordenar>Tipo</th>
+            <th data-ordenar>Correo</th>
+            <th data-ordenar>Estado</th>
             <th></th>
         </tr>
         </thead>

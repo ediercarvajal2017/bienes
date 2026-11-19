@@ -33,10 +33,18 @@ use App\Core\View;
         'urlBase' => Url::to('/espacios/carga-masiva'),
     ]); ?>
 
+    <?php // Un clic en el título ordena todo el listado (App\Helpers\OrdenListado). ?>
+    <?php $columnasOrden = [
+        'fecha' => ['Fecha', ['de la más antigua a la más reciente', 'de la más reciente a la más antigua']],
+        'subido' => ['Subido por', ['de la A a la Z', 'de la Z a la A']],
+        'filas' => ['Filas', ['de menor a mayor', 'de mayor a menor']],
+        'estado' => ['Estado', ['de pendientes a aplicadas', 'de aplicadas a pendientes']],
+    ]; ?>
+    <?= ui('filtros_activos', ['filtros' => filtro_orden($columnasOrden)]) ?>
     <div data-navegable class="table-responsive contenedor-md">
         <table class="table table-sm bg-white tabla-cards">
             <thead>
-            <tr><th>Fecha</th><th>Subido por</th><th>Filas</th><th>Nuevos</th><th>Modificados</th><th>Sin cambios</th><th>Estado</th><th></th></tr>
+            <tr><?= th_orden('fecha', $columnasOrden) ?><?= th_orden('subido', $columnasOrden) ?><?= th_orden('filas', $columnasOrden) ?><th>Nuevos</th><th>Modificados</th><th>Sin cambios</th><?= th_orden('estado', $columnasOrden) ?><th></th></tr>
             </thead>
             <tbody>
             <?php foreach ($cargas as $c): ?>

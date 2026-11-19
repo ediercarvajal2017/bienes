@@ -59,7 +59,7 @@ final class LoteReintegroController
 
         View::layout('partials/layout', 'reintegros/lotes', [
             'title' => 'Lotes de reintegro',
-            'lotes' => LoteReintegro::listar($institucionId, $pagina, $porPagina, $filtros),
+            'lotes' => LoteReintegro::listar($institucionId, $pagina, $porPagina, $filtros, ...\App\Helpers\OrdenListado::desdeConsulta(LoteReintegro::ORDENES)),
             'pestana' => $pestana,
             'filtros' => $filtrosComunes,
             'conteos' => LoteReintegro::contarPorEstado($institucionId, $filtrosComunes),

@@ -31,16 +31,25 @@ $etiquetas = [
     'urlBase' => Url::to('/reintegros/solicitudes') . ($estado !== null ? '?estado=' . $estado : ''),
 ]); ?>
 
+<?php // Un clic en el título ordena todo el listado (App\Helpers\OrdenListado). ?>
+<?php $columnasOrden = [
+    'numero' => ['N.º', ['de menor a mayor', 'de mayor a menor']],
+    'bien' => ['Bien', ['de la A a la Z', 'de la Z a la A']],
+    'solicitante' => ['Solicitado por', ['de la A a la Z', 'de la Z a la A']],
+    'fecha' => ['Fecha', ['de la más antigua a la más reciente', 'de la más reciente a la más antigua']],
+    'estado' => ['Estado', ['de pendientes a canceladas', 'de canceladas a pendientes']],
+]; ?>
+<?= ui('filtros_activos', ['filtros' => filtro_orden($columnasOrden)]) ?>
 <div data-navegable class="table-responsive">
     <table class="table table-sm table-hover align-middle bg-white tabla-cards">
         <thead>
         <tr>
-            <th>N.º</th>
-            <th>Bien</th>
+            <?= th_orden('numero', $columnasOrden) ?>
+            <?= th_orden('bien', $columnasOrden) ?>
             <th>Motivo</th>
-            <?php if ($puedeAprobar): ?><th>Solicitado por</th><?php endif; ?>
-            <th>Fecha</th>
-            <th>Estado</th>
+            <?php if ($puedeAprobar): ?><?= th_orden('solicitante', $columnasOrden) ?><?php endif; ?>
+            <?= th_orden('fecha', $columnasOrden) ?>
+            <?= th_orden('estado', $columnasOrden) ?>
             <th></th>
         </tr>
         </thead>

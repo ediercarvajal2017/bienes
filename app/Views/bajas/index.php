@@ -16,17 +16,25 @@ use App\Models\Categoria;
     'urlBase' => Url::to('/bajas'),
 ]); ?>
 
+<?php // Un clic en el título ordena todo el listado (App\Helpers\OrdenListado). ?>
+<?php $columnasOrden = [
+    'bien' => ['Bien', ['de la A a la Z', 'de la Z a la A']],
+    'reportado' => ['Reportado por', ['de la A a la Z', 'de la Z a la A']],
+    'fecha' => ['Fecha', ['de la más antigua a la más reciente', 'de la más reciente a la más antigua']],
+    'estado' => ['Estado', ['de pendientes a rechazadas', 'de rechazadas a pendientes']],
+]; ?>
+<?= ui('filtros_activos', ['filtros' => filtro_orden($columnasOrden)]) ?>
 <div data-navegable data-columnas-fijas="2" class="table-responsive">
     <table class="table table-sm table-hover align-middle bg-white tabla-cards">
         <thead>
         <tr>
             <th></th>
-            <th>Bien</th>
+            <?= th_orden('bien', $columnasOrden) ?>
             <th>Estado reportado</th>
             <th>Ubicación</th>
-            <th>Reportado por</th>
-            <th>Fecha</th>
-            <th>Estado</th>
+            <?= th_orden('reportado', $columnasOrden) ?>
+            <?= th_orden('fecha', $columnasOrden) ?>
+            <?= th_orden('estado', $columnasOrden) ?>
             <th></th>
         </tr>
         </thead>

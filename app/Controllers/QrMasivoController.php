@@ -41,7 +41,7 @@ final class QrMasivoController
             'title' => 'Generar QR masivo',
             'instituciones' => Auth::esSuperusuario() ? Institucion::listadoParaSelect(true) : [],
             'institucionId' => $institucionId,
-            'bienes' => $institucionId !== null ? Bien::listar($institucionId, $terminoBusqueda, $pagina, $porPagina) : [],
+            'bienes' => $institucionId !== null ? Bien::listar($institucionId, $terminoBusqueda, $pagina, $porPagina, orden: in_array($_GET['orden'] ?? null, ['codigo', 'descripcion'], true) ? (string) $_GET['orden'] : null, dir: ($_GET['dir'] ?? '') === 'desc' ? 'desc' : 'asc') : [],
             'busqueda' => $busqueda,
             'pagina' => $pagina,
             'porPagina' => $porPagina,

@@ -36,7 +36,7 @@ final class EspacioController
 
         View::layout('partials/layout', 'espacios/index', [
             'title' => 'Espacios',
-            'espacios' => Espacio::listar($institucionId, $terminoBusqueda, $pagina, $porPagina),
+            'espacios' => Espacio::listar($institucionId, $terminoBusqueda, $pagina, $porPagina, ...\App\Helpers\OrdenListado::desdeConsulta(Espacio::ORDENES)),
             'busqueda' => $busqueda,
             'pagina' => $pagina,
             'porPagina' => $porPagina,

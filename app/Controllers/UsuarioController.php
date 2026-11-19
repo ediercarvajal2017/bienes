@@ -42,7 +42,7 @@ final class UsuarioController
 
         View::layout('partials/layout', 'usuarios/index', [
             'title' => 'Usuarios',
-            'usuarios' => Usuario::listar($institucionId, $terminoBusqueda, $pagina, $porPagina, Auth::esSuperusuario()),
+            'usuarios' => Usuario::listar($institucionId, $terminoBusqueda, $pagina, $porPagina, Auth::esSuperusuario(), ...\App\Helpers\OrdenListado::desdeConsulta(Usuario::ORDENES)),
             'busqueda' => $busqueda,
             'pagina' => $pagina,
             'porPagina' => $porPagina,

@@ -7,7 +7,7 @@
 //
 // Al cambiar CACHE, activate borra las versiones anteriores (incluida 'sigebi-v1', que
 // sí guardaba el panel autenticado).
-const CACHE = 'sigebi-v13'; // v13: todas las tablas navegables como planilla
+const CACHE = 'sigebi-v14'; // v14: ordenar por columna en todas las tablas
 const PRECARGA = ['./offline.html', './assets/css/tokens.css', './assets/css/app.css'];
 
 self.addEventListener('install', (event) => {

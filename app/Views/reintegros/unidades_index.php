@@ -47,10 +47,10 @@ $conInstitucion = static fn (string $ruta): string => Url::to($ruta)
             <table class="table table-sm table-hover align-middle bg-white tabla-cards">
                 <thead>
                 <tr>
-                    <th>Placa</th>
-                    <th>Descripción</th>
-                    <th>Categoría</th>
-                    <th class="text-end">En cartera</th>
+                    <th data-ordenar>Placa</th>
+                    <th data-ordenar>Descripción</th>
+                    <th data-ordenar>Categoría</th>
+                    <th class="text-end" data-ordenar>En cartera</th>
                     <th>Otras</th>
                     <th></th>
                 </tr>

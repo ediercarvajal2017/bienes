@@ -9,7 +9,14 @@ use App\Helpers\Paginador;
 
 final class Espacio
 {
-    public static function listar(?int $institucionId = null, ?string $busqueda = null, int $pagina = 1, int $porPagina = 50): array
+    /** Columnas por las que se puede ordenar el listado (clic en el título): ver \App\Helpers\OrdenListado. */
+    public const ORDENES = [
+        'codigo' => ['CHAR_LENGTH(e.codigo)', 'e.codigo'],
+        'nombre' => ['e.nombre'],
+        'estado' => ['(1 - e.activo)'],
+    ];
+
+    public static function listar(?int $institucionId = null, ?string $busqueda = null, int $pagina = 1, int $porPagina = 50, ?string $orden = null, string $dir = 'asc'): array
     {
         [$whereSql, $params] = self::condicionesListado($institucionId, $busqueda);
 
@@ -19,7 +26,7 @@ final class Espacio
                         WHERE er.espacio_id = e.id) AS responsables_nombres
                 FROM espacios e'
                . $whereSql
-               . ' ORDER BY e.created_at DESC, e.id DESC' . Paginador::limitSql($pagina, $porPagina);
+               . \App\Helpers\OrdenListado::sql(self::ORDENES, $orden, $dir, 'e.created_at DESC, e.id DESC', 'e.id') . Paginador::limitSql($pagina, $porPagina);
 
         $stmt = Database::connection()->prepare($sql);
         $stmt->execute($params);

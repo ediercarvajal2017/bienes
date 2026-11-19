@@ -100,7 +100,7 @@ final class SolicitudReintegroController
 
         View::layout('partials/layout', 'solicitudes_reintegro/index', [
             'title' => 'Solicitudes de reintegro',
-            'solicitudes' => SolicitudReintegro::listar($institucionId, $soloDe, $estado, $pagina, $porPagina),
+            'solicitudes' => SolicitudReintegro::listar($institucionId, $soloDe, $estado, $pagina, $porPagina, ...\App\Helpers\OrdenListado::desdeConsulta(SolicitudReintegro::ORDENES)),
             'puedeAprobar' => $puedeAprobar,
             'estado' => $estado,
             'pagina' => $pagina,

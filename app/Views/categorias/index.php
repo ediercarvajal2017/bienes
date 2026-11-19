@@ -48,7 +48,7 @@ use App\Models\Categoria;
         <table class="table table-sm bg-white align-middle tabla-cards">
             <thead>
             <tr>
-                <th>Nombre</th>
+                <th data-ordenar>Nombre</th>
                 <th><span class="d-inline-flex align-items-center gap-1">Estado <?= \App\Helpers\AyudaCampo::boton('estado_categoria') ?></span></th>
                 <th></th>
             </tr>

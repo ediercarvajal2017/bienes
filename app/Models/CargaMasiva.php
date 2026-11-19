@@ -9,7 +9,15 @@ use App\Helpers\Paginador;
 
 final class CargaMasiva
 {
-    public static function listar(?int $institucionId = null, string $tipo = 'bienes', ?string $busqueda = null, int $pagina = 1, int $porPagina = 50): array
+    /** Columnas por las que se puede ordenar el listado (clic en el título): ver \App\Helpers\OrdenListado. */
+    public const ORDENES = [
+        'fecha' => ['cm.created_at'],
+        'subido' => ['u.nombres', 'u.apellidos'],
+        'filas' => ['cm.total_filas'],
+        'estado' => ['cm.aplicada'],
+    ];
+
+    public static function listar(?int $institucionId = null, string $tipo = 'bienes', ?string $busqueda = null, int $pagina = 1, int $porPagina = 50, ?string $orden = null, string $dir = 'asc'): array
     {
         [$whereSql, $params] = self::condiciones($institucionId, $tipo, $busqueda);
 
@@ -17,7 +25,7 @@ final class CargaMasiva
                 FROM cargas_masivas cm
                 JOIN usuarios u ON u.id = cm.usuario_id'
                . $whereSql
-               . ' ORDER BY cm.created_at DESC, cm.id DESC'
+               . \App\Helpers\OrdenListado::sql(self::ORDENES, $orden, $dir, 'cm.created_at DESC, cm.id DESC', 'cm.id')
                . Paginador::limitSql($pagina, $porPagina);
 
         $stmt = Database::connection()->prepare($sql);

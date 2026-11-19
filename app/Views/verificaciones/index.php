@@ -28,10 +28,17 @@ use App\Core\View;
         'urlBase' => Url::to('/verificaciones'),
     ]); ?>
 
+    <?php // Un clic en el título ordena todo el listado (App\Helpers\OrdenListado). ?>
+    <?php $columnasOrden = [
+        'nombre' => ['Nombre', ['de la A a la Z', 'de la Z a la A']],
+        'fecha' => ['Fecha de inicio', ['de la más antigua a la más reciente', 'de la más reciente a la más antigua']],
+        'estado' => ['Estado', ['de cerradas a en progreso', 'de en progreso a cerradas']],
+    ]; ?>
+    <?= ui('filtros_activos', ['filtros' => filtro_orden($columnasOrden)]) ?>
     <div data-navegable class="table-responsive">
         <table class="table table-sm table-hover align-middle bg-white tabla-cards">
             <thead>
-            <tr><th>Nombre</th><th>Fecha de inicio</th><th>Creada por</th><th>Estado</th><th></th></tr>
+            <tr><?= th_orden('nombre', $columnasOrden) ?><?= th_orden('fecha', $columnasOrden) ?><th>Creada por</th><?= th_orden('estado', $columnasOrden) ?><th></th></tr>
             </thead>
             <tbody>
             <?php foreach ($jornadas as $j): ?>

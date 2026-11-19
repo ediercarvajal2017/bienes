@@ -62,14 +62,21 @@ $puedeCrearEspacio = Auth::esSuperusuario() || Auth::tienePermiso('espacios.crea
     'urlBase' => $urlBasePaginacion,
 ]); ?>
 
+<?php // Un clic en el título ordena todo el listado (App\Helpers\OrdenListado). ?>
+<?php $columnasOrden = [
+    'codigo' => ['N.º', ['de menor a mayor', 'de mayor a menor']],
+    'nombre' => ['Nombre', ['de la A a la Z', 'de la Z a la A']],
+    'estado' => ['Estado', ['de activos a inactivos', 'de inactivos a activos']],
+]; ?>
+<?= ui('filtros_activos', ['filtros' => filtro_orden($columnasOrden)]) ?>
 <div data-navegable class="table-responsive">
     <table class="table table-sm table-hover align-middle bg-white tabla-cards">
         <thead>
         <tr>
-            <th>N.º</th>
-            <th>Nombre</th>
+            <?= th_orden('codigo', $columnasOrden) ?>
+            <?= th_orden('nombre', $columnasOrden) ?>
             <th>Responsable(s)</th>
-            <th>Estado</th>
+            <?= th_orden('estado', $columnasOrden) ?>
             <th></th>
         </tr>
         </thead>

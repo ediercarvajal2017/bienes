@@ -37,7 +37,14 @@ final class JornadaVerificacion
         return $stmt->fetch() ?: null;
     }
 
-    public static function listar(?int $institucionId, int $pagina = 1, int $porPagina = 25): array
+    /** Columnas por las que se puede ordenar el listado (clic en el título): ver \App\Helpers\OrdenListado. */
+    public const ORDENES = [
+        'nombre' => ['jv.nombre'],
+        'fecha' => ['jv.fecha_inicio'],
+        'estado' => ['jv.estado'],
+    ];
+
+    public static function listar(?int $institucionId, int $pagina = 1, int $porPagina = 25, ?string $orden = null, string $dir = 'asc'): array
     {
         [$whereSql, $params] = self::condiciones($institucionId);
 
@@ -45,7 +52,7 @@ final class JornadaVerificacion
                 FROM jornadas_verificacion jv
                 JOIN usuarios u ON u.id = jv.creada_por'
                . $whereSql
-               . ' ORDER BY jv.created_at DESC, jv.id DESC'
+               . \App\Helpers\OrdenListado::sql(self::ORDENES, $orden, $dir, 'jv.created_at DESC, jv.id DESC', 'jv.id')
                . Paginador::limitSql($pagina, $porPagina);
 
         $stmt = Database::connection()->prepare($sql);
