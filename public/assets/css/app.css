@@ -1294,6 +1294,44 @@ html { scroll-padding-top: calc(var(--alto-navbar) + 0.75rem); }
 .muestra-color-recuadro { flex: 0 0 auto; width: 40px; height: 40px; border: 1px solid var(--sigebi-border); border-radius: var(--sigebi-radio-sm); }
 .tabla-datos:focus-visible { outline: 2px solid var(--sigebi-primary); outline-offset: 2px; }
 
+/* Tabla navegable como una planilla (ui('tabla', ['navegable' => true]), tabla-navegable.js):
+   solo en pantallas grandes; en el celular siguen las tarjetas. */
+@media (min-width: 992px) {
+  /* La celda activa (la del cursor) y su fila. */
+  .tabla-datos[data-navegable] tbody td:focus { outline: 2px solid var(--sigebi-primary); outline-offset: -2px; }
+  .tabla-datos[data-navegable] tbody tr.fila-activa > * { --bs-table-bg-state: rgba(var(--sigebi-primary-rgb), .07); }
+
+  /* Columnas inmovilizadas (como «Inmovilizar paneles»): el script mide cada una y pone su
+     posición en --fija-1, --fija-2, --fija-3. Una línea marca dónde terminan. */
+  .tabla-fijas-activas tr > :nth-child(1),
+  .tabla-fijas-activas[data-columnas-fijas="2"] tr > :nth-child(2),
+  .tabla-fijas-activas[data-columnas-fijas="3"] tr > :nth-child(2),
+  .tabla-fijas-activas[data-columnas-fijas="3"] tr > :nth-child(3) { position: sticky; z-index: 1; }
+  .tabla-fijas-activas tr > :nth-child(1) { left: var(--fija-1, 0); }
+  .tabla-fijas-activas tr > :nth-child(2) { left: var(--fija-2, 0); }
+  .tabla-fijas-activas tr > :nth-child(3) { left: var(--fija-3, 0); }
+  .tabla-fijas-activas thead th { z-index: 2; }
+  .tabla-fijas-activas[data-columnas-fijas="1"] thead th:nth-child(1),
+  .tabla-fijas-activas[data-columnas-fijas="2"] thead th:nth-child(-n+2),
+  .tabla-fijas-activas[data-columnas-fijas="3"] thead th:nth-child(-n+3) { z-index: 3; }
+  .tabla-fijas-activas[data-columnas-fijas="1"] tr > :nth-child(1)::after,
+  .tabla-fijas-activas[data-columnas-fijas="2"] tr > :nth-child(2)::after,
+  .tabla-fijas-activas[data-columnas-fijas="3"] tr > :nth-child(3)::after {
+    content: ""; position: absolute; top: 0; right: 0; bottom: 0; width: 1px; background: var(--sigebi-border);
+  }
+  .tabla-fijas-activas tr > td[colspan] { position: static; }
+
+  /* Vista compacta: filas más bajas, más bienes en pantalla. */
+  .tabla-compacta .table > :not(caption) > * > * { padding-top: .1rem; padding-bottom: .1rem; font-size: .8125rem; }
+  .tabla-compacta .miniatura-36, .tabla-compacta .miniatura-vacia { width: 28px; height: 28px; }
+  .tabla-compacta .badge { font-size: .6875rem; }
+  .tabla-compacta .celda-acciones .btn { padding-top: 0; padding-bottom: 0; font-size: .75rem; }
+}
+/* El botón «Vista compacta» encendido se distingue del apagado. */
+.btn[data-densidad][aria-pressed="true"] {
+  background: rgba(var(--sigebi-primary-rgb), .12); border-color: var(--sigebi-primary); color: var(--sigebi-primary);
+}
+
 /* Barra superior: buscador y botón Salir (antes btn-light, fuera de la jerarquía). */
 .buscador-navbar { width: 220px; }
 .boton-salir {

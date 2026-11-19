@@ -243,6 +243,7 @@ foreach (['/manual', '/mi-cuenta'] as $rutaPie) {
 <script src="<?= Url::asset('/assets/js/selector-buscable.js') ?>"></script>
 <script src="<?= Url::asset('/assets/js/responsabilidad.js') ?>"></script>
 <script src="<?= Url::asset('/assets/js/ayuda-campo.js') ?>"></script>
+<script src="<?= Url::asset('/assets/js/tabla-navegable.js') ?>"></script>
 <script>
 if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register(<?= json_encode(Url::to('/sw.js')) ?>).catch(function () {});

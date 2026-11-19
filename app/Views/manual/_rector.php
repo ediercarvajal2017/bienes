@@ -43,6 +43,10 @@
                     claro. Primero ves qué cambiaría
                     en cada fila y nada se guarda hasta que confirmas. La carga no borra nada: los bienes que no están en el
                     archivo no se tocan, y una columna en blanco conserva lo que el bien ya tenía.</li>
+                <li>En el computador, la lista de <strong>Bienes</strong> se recorre con el teclado como una planilla: haz clic
+                    en una celda y muévete con las flechas; Enter abre el bien y Av Pág pasa a la página siguiente. Foto,
+                    Descripción y Código quedan fijas al desplazarte a la derecha, y «Vista compacta» muestra más filas.
+                    El ícono (?) junto al título tiene todas las teclas.</li>
                 <li>Cada pantalla a la que lleva <strong>Acciones</strong> tiene el mismo botón, con la pantalla actual
                     resaltada: pasas de una acción a otra (por ejemplo, de Alta masiva a Generar QR masivo) sin volver a Bienes.</li>
                 <li>Después de cada acción, MIA te dice arriba de la página <strong>qué pasó</strong>. Si algo no se pudo hacer,

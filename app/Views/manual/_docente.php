@@ -13,6 +13,10 @@
                 <li>Verás solo los bienes por los que respondes: los de los espacios de los que eres responsable
                     (responsabilidad <strong>Grupal</strong>, compartida con los demás responsables del espacio) y los que están
                     a tu cargo directo (responsabilidad <strong>Individual</strong>, por ejemplo un portátil que te entregaron).</li>
+                <li>En el computador, la lista de <strong>Bienes</strong> se recorre con el teclado como una planilla: haz clic
+                    en una celda y muévete con las flechas; Enter abre el bien y Av Pág pasa a la página siguiente. Foto,
+                    Descripción y Código quedan fijas al desplazarte a la derecha, y «Vista compacta» muestra más filas.
+                    El ícono (?) junto al título tiene todas las teclas.</li>
                 <li>Haz clic en un bien para ver su ficha completa (descripción, estado, ubicación).</li>
             </ol>
         </div>

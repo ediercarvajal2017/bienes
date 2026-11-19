@@ -13,6 +13,9 @@
  *   discrepancias y pendientes cada una con su propia paginación) — así cambiar de
  *   página en una tabla no pisa ni reinicia las otras dos.
  *
+ * - $densidad (opcional, bool): muestra el botón «Vista compacta» de una tabla navegable
+ *   (ui('tabla', ['navegable' => true])); en pantallas grandes, que es donde se ve la tabla.
+ *
  * Se puede incluir varias veces en la misma vista (arriba y abajo de la tabla): el
  * selector usa una clase (no id) y el script queda protegido contra registrarse más
  * de una vez, así que no importa cuántas copias del partial haya en la página.
@@ -57,6 +60,12 @@ if ($totalPaginas > 1) {
     </span>
 
     <div class="d-flex flex-wrap align-items-center gap-3">
+        <?php if (!empty($densidad)): ?>
+            <button type="button" class="btn btn-sm btn-outline-secondary d-none d-lg-inline-flex align-items-center" data-densidad aria-pressed="false"
+                    title="Filas más bajas: más bienes en pantalla">
+                <?= icono('densidad', 'me-1') ?>Vista compacta
+            </button>
+        <?php endif; ?>
         <?php if (!empty($opcionesPorPagina)): ?>
             <div class="d-flex align-items-center gap-2">
                 <label class="small text-muted mb-0 text-nowrap">Mostrar
