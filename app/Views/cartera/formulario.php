@@ -4,6 +4,7 @@ use App\Core\Auth;
 use App\Core\Csrf;
 use App\Core\Url;
 use App\Core\View;
+use App\Helpers\AyudaCampo;
 use App\Helpers\Evidencia;
 
 /**
@@ -13,7 +14,7 @@ use App\Helpers\Evidencia;
 $editando = $registro !== null;
 $ventana = '/cartera/enviar';
 ?>
-<?= ui('encabezado_pagina', ['titulo' => 'Cartera recibida de la Alcaldía', 'icono' => 'cartera', 'subtitulo' => 'Registra la evidencia de cada cartera que la institución solicitó por correo (fuera del sistema). Con «Verificar un lote» compruebas que la Alcaldía descargó los bienes reintegrados.']) ?>
+<?= ui('encabezado_pagina', ['titulo' => 'Cartera recibida de la Alcaldía', 'icono' => 'cartera', 'ayuda' => AyudaCampo::boton('cartera_recibida'), 'subtitulo' => 'Registra la evidencia de cada cartera que la institución solicitó por correo (fuera del sistema). Con «Verificar un lote» compruebas que la Alcaldía descargó los bienes reintegrados.']) ?>
 
 <?php View::render('partials/evidencia_institucion', ['instituciones' => $instituciones, 'institucionId' => $institucionId, 'ventana' => $ventana]); ?>
 
@@ -23,7 +24,6 @@ $ventana = '/cartera/enviar';
     <section class="card mb-4 contenedor-md" id="formularioEvidencia" aria-labelledby="tituloFormularioEvidencia">
         <div class="card-body">
             <h2 class="h6 mb-2" id="tituloFormularioEvidencia"><?= $editando ? 'Editar registro' : 'Registrar cartera recibida' ?></h2>
-            <p class="text-muted small mb-2">Los campos marcados con <span class="text-danger">*</span> son obligatorios.</p>
             <form method="post" action="<?= $editando ? Url::to('/cartera/' . $registro['id'] . '/actualizar') : Url::to($ventana) ?>"
                   enctype="multipart/form-data" class="row g-3">
                 <?= Csrf::field() ?>
@@ -48,12 +48,12 @@ $ventana = '/cartera/enviar';
                         </a>
                     </div>
                     <div class="col-12">
-                        <label for="campo-archivo" class="form-label small">Reemplazar archivo (opcional, Excel)</label>
+                        <?= AyudaCampo::etiqueta('campo-archivo', 'Reemplazar archivo (opcional, Excel)', 'cartera_archivo') ?>
                         <input id="campo-archivo" type="file" name="archivo" accept=".xlsx,.xls" class="form-control">
                     </div>
                 <?php else: ?>
                     <div class="col-12">
-                        <label for="campo-archivo" class="form-label small requerido">Archivo de la cartera recibida (Excel)</label>
+                        <?= AyudaCampo::etiqueta('campo-archivo', 'Archivo de la cartera recibida (Excel)', 'cartera_archivo', true) ?>
                         <input id="campo-archivo" type="file" name="archivo" accept=".xlsx,.xls" class="form-control" required>
                     </div>
                 <?php endif; ?>

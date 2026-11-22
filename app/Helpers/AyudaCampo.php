@@ -128,6 +128,47 @@ final class AyudaCampo
                 . "**Clic en un título con flechas:** ordena la lista; otro clic invierte el orden. Lo buscado se marca en amarillo.\n\n"
                 . '«Vista compacta» muestra más filas. Al recargar, MIA te deja en la misma celda.',
         ],
+        'cartera_recibida' => [
+            'titulo' => 'Cartera recibida de la Alcaldía',
+            'texto' => "Aquí queda la evidencia de cada cartera de bienes que la institución pidió a la Alcaldía.\n\n"
+                . "**1. Solicitar:** el rector o el secretario pide la cartera a la Alcaldía por correo (fuera de MIA).\n\n"
+                . "**2. Registrar:** cuando llega, llena este formulario con quién la pidió, quién la envió, desde qué correos, la fecha en que llegó y el Excel recibido.\n\n"
+                . "**3. Verificar:** en la lista de abajo, «Verificar un lote» compara la cartera con un lote de reintegro ya entregado y muestra los bienes que la Alcaldía todavía no ha descargado.\n\n"
+                . 'Cada registro se puede descargar, editar o eliminar. Lo eliminado va a la Papelera, desde donde un superusuario puede restaurarlo.',
+        ],
+        'cartera_funcionario' => [
+            'titulo' => 'Funcionario que solicitó la cartera',
+            'texto' => "La persona de la institución que pidió la cartera a la Alcaldía, por lo general el rector o el secretario. Se elige de la lista de usuarios activos de la institución; puedes escribir para buscarlo.\n\n"
+                . "Al elegirlo, MIA llena su correo en el campo «Correo del funcionario que la solicitó».\n\n"
+                . 'El nombre queda guardado tal como está hoy: si más adelante el usuario se desactiva o cambia de cargo, el registro sigue diciendo quién hizo la solicitud.',
+        ],
+        'cartera_correo_solicitante' => [
+            'titulo' => 'Correo del funcionario que la solicitó',
+            'texto' => "La dirección desde la que se envió la solicitud a la Alcaldía.\n\n"
+                . "MIA pone el correo que el funcionario tiene en MIA. Cámbialo si la solicitud salió de otro correo, por ejemplo el institucional de rectoría.\n\n"
+                . 'Sirve para encontrar ese correo en la bandeja de enviados si después hay que demostrar cuándo y desde dónde se pidió la cartera.',
+        ],
+        'cartera_remitente' => [
+            'titulo' => 'Funcionario de la Alcaldía que envió la cartera',
+            'texto' => "Nombres y apellidos completos de la persona de la Alcaldía que respondió con la cartera, como aparecen en la firma del correo. Ej.: María Fernanda López Ruiz.\n\n"
+                . 'Máximo 150 caracteres. Así queda claro quién entregó la información si hay que aclarar algo con la Alcaldía.',
+        ],
+        'cartera_correo_remitente' => [
+            'titulo' => 'Correo desde el que llegó la cartera',
+            'texto' => "La dirección desde la que llegó el correo con la cartera. Ej.: bienes@alcaldia.gov.co. Cópiala del correo recibido para no equivocarte.\n\n"
+                . 'Junto con la fecha, permite ubicar ese correo en la bandeja de entrada si hay que comprobar el envío.',
+        ],
+        'cartera_fecha' => [
+            'titulo' => 'Fecha en que se recibió',
+            'texto' => "El día en que llegó el correo con la cartera, no el día en que la registras en MIA. No puede ser una fecha futura.\n\n"
+                . '**Importa para «Verificar un lote»:** solo se verifican los lotes entregados a la Alcaldía hasta esta fecha. Un lote entregado después todavía no podía aparecer descargado en esta cartera.',
+        ],
+        'cartera_archivo' => [
+            'titulo' => 'Archivo de la cartera recibida',
+            'texto' => "El Excel (.xlsx o .xls) tal como lo envió la Alcaldía, sin cambiarle nada. Máximo 8 MB.\n\n"
+                . "Queda guardado como evidencia y se puede descargar desde la lista. Con «Verificar un lote», MIA lee la columna de la placa (y la de cantidad, si la tiene) para decir qué bienes reintegrados siguen en la cartera.\n\n"
+                . 'Al editar un registro, adjunta un archivo solo si quieres reemplazar el que ya tiene.',
+        ],
         'verificacion_cartera' => [
             'titulo' => 'Verificar un lote en la cartera',
             'texto' => "Cuando entregas un lote de reintegro, la Alcaldía debe descargar esos bienes de la cartera del rector. Con esta pantalla compruebas que sí lo hizo.\n\n"
