@@ -434,6 +434,36 @@ final class LoteReintegro
         }
     }
 
+    /**
+     * Bienes del lote que la Alcaldía ya debía descargar de la cartera (App\Services\VerificacionCartera):
+     * los que siguen reintegrados y cuyo último reintegro es el de este lote (uno reactivado, o
+     * reintegrado otra vez en otro lote, ya no le toca a este). Sin el renglón de la cartera de
+     * una placa con unidades: cuentan sus unidades, no el renglón.
+     *
+     * @return list<array{id: int, codigo_identificacion: string, lote: ?string, descripcion: string, fecha_reintegro: string}>
+     */
+    public static function bienesParaVerificarCartera(int $loteId): array
+    {
+        $stmt = Database::connection()->prepare(
+            'SELECT b.id, b.codigo_identificacion, b.lote, b.descripcion, m.fecha AS fecha_reintegro
+             FROM movimientos m
+             JOIN bienes b ON b.id = m.bien_id
+             WHERE m.lote_reintegro_id = ? AND m.tipo = "reintegro" AND b.estado = "reintegrado"
+               AND m.id = (SELECT MAX(m2.id) FROM movimientos m2 WHERE m2.bien_id = b.id AND m2.tipo = "reintegro")
+               AND NOT (b.lote IS NULL AND EXISTS (SELECT 1 FROM bienes u WHERE u.institucion_id = b.institucion_id AND u.lote = b.codigo_identificacion))
+             ORDER BY b.codigo_identificacion, b.id'
+        );
+        $stmt->execute([$loteId]);
+
+        return array_values(array_map(static fn (array $f): array => [
+            'id' => (int) $f['id'],
+            'codigo_identificacion' => (string) $f['codigo_identificacion'],
+            'lote' => $f['lote'] !== null && $f['lote'] !== '' ? (string) $f['lote'] : null,
+            'descripcion' => (string) $f['descripcion'],
+            'fecha_reintegro' => (string) $f['fecha_reintegro'],
+        ], $stmt->fetchAll()));
+    }
+
     public static function bienesDe(int $loteId): array
     {
         $stmt = Database::connection()->prepare(

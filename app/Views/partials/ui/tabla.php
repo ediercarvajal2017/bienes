@@ -26,6 +26,8 @@
  *    $ordenActual / $direccion ('asc'|'desc') dicen cómo está ordenada, y $urlOrden
  *    (fn (string $clave, string $dir): string) arma el enlace. El título es un enlace
  *    (funciona sin JavaScript) con aria-sort en la columna ordenada.
+ *  - 'ordenLocal' => true en una columna: en una tabla corta (sin paginar) ordena en la misma
+ *    pantalla, sin recargar (tabla-navegable.js, th[data-ordenar]); requiere $navegable.
  */
 
 $leyenda ??= null;
@@ -73,7 +75,7 @@ $clases = 'table-responsive tabla-datos' . ($encabezadoFijo ? ' tabla-encabezado
                            title="<?= htmlspecialchars(mb_strtoupper(mb_substr($accion, 0, 1)) . mb_substr($accion, 1), ENT_QUOTES) ?>"><?= htmlspecialchars($columna['texto'], ENT_QUOTES) ?><?= icono($icono, 'encabezado-orden-icono') ?></a>
                     </th>
                 <?php else: ?>
-                <th scope="col"<?= $clase !== '' ? ' class="' . htmlspecialchars($clase, ENT_QUOTES) . '"' : '' ?>><?php if (!empty($columna['oculta'])): ?><span class="visually-hidden"><?= htmlspecialchars($columna['texto'], ENT_QUOTES) ?></span><?php else: ?><?= htmlspecialchars($columna['texto'], ENT_QUOTES) ?><?php endif; ?></th>
+                <th scope="col"<?= $clase !== '' ? ' class="' . htmlspecialchars($clase, ENT_QUOTES) . '"' : '' ?><?= !empty($columna['ordenLocal']) ? ' data-ordenar' : '' ?>><?php if (!empty($columna['oculta'])): ?><span class="visually-hidden"><?= htmlspecialchars($columna['texto'], ENT_QUOTES) ?></span><?php else: ?><?= htmlspecialchars($columna['texto'], ENT_QUOTES) ?><?php endif; ?></th>
                 <?php endif; ?>
             <?php endforeach; ?>
         </tr>

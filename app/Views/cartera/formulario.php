@@ -13,7 +13,7 @@ use App\Helpers\Evidencia;
 $editando = $registro !== null;
 $ventana = '/cartera/enviar';
 ?>
-<?= ui('encabezado_pagina', ['titulo' => 'Cartera recibida de la Alcaldía', 'icono' => 'cartera', 'subtitulo' => 'Registra la evidencia de cada cartera que la institución solicitó por correo (fuera del sistema).']) ?>
+<?= ui('encabezado_pagina', ['titulo' => 'Cartera recibida de la Alcaldía', 'icono' => 'cartera', 'subtitulo' => 'Registra la evidencia de cada cartera que la institución solicitó por correo (fuera del sistema). Con «Verificar un lote» compruebas que la Alcaldía descargó los bienes reintegrados.']) ?>
 
 <?php View::render('partials/evidencia_institucion', ['instituciones' => $instituciones, 'institucionId' => $institucionId, 'ventana' => $ventana]); ?>
 
@@ -112,6 +112,7 @@ $ventana = '/cartera/enviar';
                         <td class="text-muted small mono" data-label="Registrado el"><?= htmlspecialchars($e['fecha_registro'], ENT_QUOTES) ?></td>
                         <td class="text-end">
                             <?php View::render('partials/evidencia_acciones', [
+                                'extras' => [['texto' => 'Verificar un lote', 'icono' => 'verificacion', 'url' => Url::to('/cartera/' . (int) $e['id'] . '/verificacion')]],
                                 'archivoPath' => $e['archivo_path'],
                                 'urlEditar' => Url::to(Evidencia::ruta($ventana, (int) $e['institucion_id'], ['editar' => (int) $e['id']])) . '#formularioEvidencia',
                                 'urlEliminar' => Url::to('/cartera/' . $e['id'] . '/eliminar'),

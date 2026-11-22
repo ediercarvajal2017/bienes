@@ -146,6 +146,10 @@
                     y la Alcaldía le envió: el funcionario que la solicitó (se elige de la lista) y su correo, los nombres
                     completos del funcionario de la Alcaldía que la envió y el correo desde el que llegó, la fecha en que se recibió y el archivo. Los registros aparecen debajo del
                     formulario, en la misma ventana, con Descargar, Editar y Eliminar.</li>
+                <li>Con <strong>Verificar un lote</strong>, en cada cartera recibida, compruebas que la Alcaldía descargó los
+                    bienes reintegrados: eliges un lote ya entregado y MIA lee el Excel de la cartera y muestra solo los bienes
+                    de ese lote que <strong>siguen en la cartera</strong>, con un Excel para enviárselo a la Alcaldía. En una placa
+                    con varias unidades compara la cantidad: si el lote reintegró 8 de 178 sillas, la cartera debe decir 170 o menos.</li>
             </ol>
         </div>
     </details>

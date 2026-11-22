@@ -115,7 +115,7 @@ La guía de una página va en el ícono (?) junto al título: `'ayuda' => AyudaC
   2. En el controlador, `...OrdenListado::desdeConsulta(Modelo::ORDENES)`.
   3. En la vista, `<?= th_orden('nombre', $columnasOrden) ?>` en el título y `filtro_orden($columnasOrden)` para la etiqueta con ✕.
   4. `partials/paginacion` conserva el orden al cambiar de página.
-- **Ordenar una tabla sin paginación:** basta `data-ordenar` en el `<th>`, y se ordena en el navegador. Los números se comparan como números; los textos, sin importar mayúsculas ni tildes. El orden se recuerda en la pestaña.
+- **Ordenar una tabla sin paginación:** basta `data-ordenar` en el `<th>`, y se ordena en el navegador. Los números se comparan como números; los textos, sin importar mayúsculas ni tildes. El orden se recuerda en la pestaña. Con `ui('tabla')`, se pone `'ordenLocal' => true` en la columna.
 
 ```php
 <?= ui('tabla', ['leyenda' => 'Bienes', 'navegable' => true, 'filaInicial' => ($pagina - 1) * $porPagina, 'totalFilas' => $total,

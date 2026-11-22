@@ -567,6 +567,46 @@ final class ReporteService
      * de revisión y quién/cuándo la atendió) y "Pendientes". Este archivo es el respaldo
      * que se puede archivar o compartir con quien pida cuentas de la jornada.
      */
+    /**
+     * Bienes de un lote de reintegro que siguen en la cartera de la Alcaldía
+     * (App\Services\VerificacionCartera), para enviarlo a la Alcaldía y pedir que los descargue.
+     *
+     * @param list<array<string, mixed>> $filas filas de VerificacionCartera::verificar()
+     */
+    public static function bienesSinDescargar(array $envio, array $lote, array $filas, int $totalLote): Spreadsheet
+    {
+        $spreadsheet = self::libroNuevo();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Siguen en la cartera');
+
+        $totalSiguen = (int) array_sum(array_map(static fn (array $f): int => (int) $f['siguen'], $filas));
+        $sheet->setCellValue('A1', 'Bienes reintegrados que siguen en la cartera de la Alcaldía');
+        $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(13);
+        $sheet->setCellValue('A2', 'Institución: ' . $lote['institucion_nombre']);
+        $sheet->setCellValue('A3', 'Lote de reintegro #' . (int) $lote['id'] . ', entregado a la Alcaldía el ' . $lote['reintegrado_fecha']);
+        $sheet->setCellValue('A4', 'Cartera recibida el ' . $envio['fecha_envio'] . ': ' . $totalSiguen . ' de ' . $totalLote . ' bienes del lote siguen en ella.');
+
+        $sheet->fromArray(['Placa', 'Descripción', 'Siguen en la cartera', 'La cartera dice', 'Deberían quedar', 'Reintegrado el'], null, 'A6');
+        $sheet->getStyle('A6:F6')->getFont()->setBold(true);
+        $fila = 7;
+        foreach ($filas as $f) {
+            // La placa como texto: 200033042 no debe volverse 2,00E+08 ni perder ceros.
+            $sheet->setCellValueExplicit("A{$fila}", (string) $f['placa'], DataType::TYPE_STRING);
+            $sheet->fromArray([
+                $f['descripcion'],
+                (int) $f['siguen'],
+                (int) $f['cartera_dice'],
+                $f['deberian_quedar'] !== null ? (int) $f['deberian_quedar'] : '',
+                $f['fecha_desde'] . ($f['fecha_hasta'] !== $f['fecha_desde'] ? ' a ' . $f['fecha_hasta'] : ''),
+            ], null, "B{$fila}");
+            $fila++;
+        }
+        self::autoajustarColumnas($sheet, 'A', 'F');
+        $sheet->getColumnDimension('A')->setAutoSize(false)->setWidth(16);
+
+        return $spreadsheet;
+    }
+
     public static function jornadaVerificacion(array $jornada, int $institucionId): Spreadsheet
     {
         $jornadaId = (int) $jornada['id'];
