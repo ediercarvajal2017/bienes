@@ -95,6 +95,34 @@ test('la ficha del bien y el alta masiva también tienen su ayuda', async ({ pag
     await expect(page.getByText('Los campos marcados con')).toHaveCount(0);
 });
 
+test('la cartera recibida explica cada campo como el formulario de bienes', async ({ page }) => {
+    await page.goto('cartera/enviar');
+    const ayudas = {
+        'Cartera recibida de la Alcaldía': 'Verificar un lote',
+        'Funcionario que solicitó la cartera': 'usuarios activos de la institución',
+        'Correo del funcionario que la solicitó': 'Cámbialo si la solicitud salió de otro correo',
+        'Funcionario de la Alcaldía que envió la cartera': 'como aparecen en la firma del correo',
+        'Correo desde el que llegó la cartera': 'Cópiala del correo recibido',
+        'Fecha en que se recibió': 'solo se verifican los lotes entregados a la Alcaldía hasta esta fecha',
+        'Archivo de la cartera recibida': 'Máximo 8 MB',
+    };
+    for (const [titulo, texto] of Object.entries(ayudas)) {
+        const boton = ayudaDe(page, titulo);
+        const globo = await globoDe(page, boton);
+        await boton.hover();
+        await expect(globo, titulo).toBeVisible();
+        await expect(globo, titulo).toContainText(texto);
+        await page.keyboard.press('Escape');
+        await page.locator('h1').hover();
+        await expect(globo, titulo).toBeHidden();
+    }
+    // El nombre de cada campo no cambia: el ícono va fuera de la etiqueta.
+    await expect(page.getByLabel('Fecha en que se recibió', { exact: true })).toHaveAttribute('type', 'date');
+    // Como en bienes, sin textos sueltos: la explicación está en el ícono (?).
+    await expect(page.getByText('Los campos marcados con')).toHaveCount(0);
+    await expect(page.getByText('Se llena con el correo del funcionario elegido')).toHaveCount(0);
+});
+
 test.describe('en el celular', () => {
     test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
 
