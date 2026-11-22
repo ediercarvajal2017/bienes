@@ -546,6 +546,13 @@ $router->post('/cartera/{id}/actualizar', [CarteraController::class, 'actualizar
 $router->post('/cartera/{id}/eliminar', [CarteraController::class, 'eliminar'], [
     AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':cartera.gestionar',
 ]);
+// Verificar un lote de reintegro en la cartera: qué bienes del lote siguen en ella (solo lee).
+$router->get('/cartera/{id}/verificacion', [CarteraController::class, 'verificacion'], [
+    AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':cartera.gestionar',
+]);
+$router->get('/cartera/{id}/verificacion.xlsx', [CarteraController::class, 'verificacionXlsx'], [
+    AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':cartera.gestionar',
+]);
 
 $router->get('/formatos-reintegro', [FormatoReintegroController::class, 'formulario'], [
     AuthMiddleware::class, InstitucionScopeMiddleware::class, PermissionMiddleware::class . ':formatos_reintegro.gestionar',

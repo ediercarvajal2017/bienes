@@ -19,7 +19,7 @@ final class LectorExcel
      * La hoja con los datos: la llamada $preferida si el libro la tiene (la plantilla de bienes
      * trae además una hoja oculta de listas), o si no la que estaba abierta al guardar.
      */
-    public static function hojaActiva(string $ruta, ?string $preferida = null): Worksheet
+    public static function hojaActiva(string $ruta, ?string $preferida = null, bool $soloDatos = false): Worksheet
     {
         $extension = strtolower(pathinfo($ruta, PATHINFO_EXTENSION));
         $tipo = match ($extension) {
@@ -28,9 +28,12 @@ final class LectorExcel
             default => throw new \RuntimeException('El archivo debe ser un Excel (.xlsx o .xls).'),
         };
 
-        // Sin setReadDataOnly(): CargaMasivaService::leerFecha() reconoce las fechas por el
-        // formato de la celda, que se perdería.
-        $libro = IOFactory::createReader($tipo)->load($ruta);
+        // Por defecto sin setReadDataOnly(): CargaMasivaService::leerFecha() reconoce las fechas
+        // por el formato de la celda, que se perdería. $soloDatos: solo los valores (la cartera de
+        // la Alcaldía, que puede ser grande y no necesita formatos).
+        $lector = IOFactory::createReader($tipo);
+        $lector->setReadDataOnly($soloDatos);
+        $libro = $lector->load($ruta);
 
         return ($preferida !== null ? $libro->getSheetByName($preferida) : null) ?? $libro->getActiveSheet();
     }

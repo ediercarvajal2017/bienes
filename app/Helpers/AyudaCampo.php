@@ -128,6 +128,15 @@ final class AyudaCampo
                 . "**Clic en un título con flechas:** ordena la lista; otro clic invierte el orden. Lo buscado se marca en amarillo.\n\n"
                 . '«Vista compacta» muestra más filas. Al recargar, MIA te deja en la misma celda.',
         ],
+        'verificacion_cartera' => [
+            'titulo' => 'Verificar un lote en la cartera',
+            'texto' => "Cuando entregas un lote de reintegro, la Alcaldía debe descargar esos bienes de la cartera del rector. Con esta pantalla compruebas que sí lo hizo.\n\n"
+                . "**1.** Pide la cartera a la Alcaldía y regístrala en «Cartera recibida de la Alcaldía».\n\n"
+                . "**2.** En esa cartera, pulsa «Verificar un lote» y elige el lote entregado.\n\n"
+                . "**3.** MIA lee el Excel y muestra solo los bienes del lote que **siguen en la cartera**. Descarga el Excel y envíalo a la Alcaldía para que los descargue.\n\n"
+                . "**Placas con varias unidades** (ej. 178 sillas): si el lote reintegró 8, la cartera debe decir 170 o menos. Si dice 174, siguen 4.\n\n"
+                . 'Solo se pueden verificar lotes entregados antes de la fecha en que se recibió la cartera. La verificación solo lee: no cambia ningún bien ni lote.',
+        ],
         'tabla_bienes' => [
             'titulo' => 'Moverse por la tabla',
             'texto' => "En el computador, la tabla se recorre con el teclado como una planilla de Excel. Haz clic en una celda y luego:\n\n"

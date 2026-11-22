@@ -1380,6 +1380,54 @@ final class Bien
     }
 
     /**
+     * Para verificar un lote de reintegro en la cartera de la Alcaldía (App\Services\VerificacionCartera):
+     * por cada placa con unidades, cuántas deben seguir en la cartera recibida el $fechaCartera
+     * y cuántas de otros lotes ya debían haberse descargado. Las unidades del lote $loteId no
+     * cuentan aquí (son las que se verifican).
+     *  - en_cartera: activas o en reparación, fuera de "Sin cartera".
+     *  - aun_sin_descargar: reintegradas que la Alcaldía todavía no tenía para descargar (sin
+     *    lote, en un lote pendiente o entregado después de la fecha de la cartera).
+     *  - en_otros_lotes / otros_lotes: reintegradas en otros lotes ya entregados en esa fecha.
+     *
+     * @param list<string> $placas
+     * @return array<string, array{en_cartera: int, aun_sin_descargar: int, en_otros_lotes: int, otros_lotes: list<int>}>
+     */
+    public static function unidadesDePlacasParaCartera(int $institucionId, array $placas, int $loteId, string $fechaCartera): array
+    {
+        if ($placas === []) {
+            return [];
+        }
+        $entregadoAntes = 'b.estado = "reintegrado" AND m.lote_reintegro_id <> ? AND l.estado = "reintegrado" AND l.reintegrado_fecha <= ?';
+        $stmt = Database::connection()->prepare(
+            'SELECT b.lote AS placa,
+                    SUM(CASE WHEN ' . self::sqlUnidadEnCartera() . ' THEN 1 ELSE 0 END) AS en_cartera,
+                    SUM(CASE WHEN b.estado = "reintegrado" AND (m.lote_reintegro_id IS NULL OR m.lote_reintegro_id <> ?)
+                              AND (l.id IS NULL OR l.estado <> "reintegrado" OR l.reintegrado_fecha > ?) THEN 1 ELSE 0 END) AS aun_sin_descargar,
+                    SUM(CASE WHEN ' . $entregadoAntes . ' THEN 1 ELSE 0 END) AS en_otros_lotes,
+                    GROUP_CONCAT(DISTINCT CASE WHEN ' . $entregadoAntes . ' THEN l.id END ORDER BY l.id) AS otros_lotes
+             FROM bienes b
+             LEFT JOIN movimientos m ON m.id = (SELECT MAX(m2.id) FROM movimientos m2 WHERE m2.bien_id = b.id AND m2.tipo = "reintegro")
+             LEFT JOIN lotes_reintegro l ON l.id = m.lote_reintegro_id
+             WHERE b.institucion_id = ? AND b.lote IN (' . implode(',', array_fill(0, count($placas), '?')) . ')
+             GROUP BY b.lote'
+        );
+        $stmt->execute([$loteId, $fechaCartera, $loteId, $fechaCartera, $loteId, $fechaCartera, $institucionId, ...$placas]);
+
+        $resultado = [];
+        foreach ($stmt->fetchAll() as $fila) {
+            $resultado[(string) $fila['placa']] = [
+                'en_cartera' => (int) $fila['en_cartera'],
+                'aun_sin_descargar' => (int) $fila['aun_sin_descargar'],
+                'en_otros_lotes' => (int) $fila['en_otros_lotes'],
+                'otros_lotes' => $fila['otros_lotes'] !== null && $fila['otros_lotes'] !== ''
+                    ? array_map('intval', explode(',', (string) $fila['otros_lotes'])) : [],
+            ];
+        }
+
+        return $resultado;
+    }
+
+    /**
      * Resumen de un código con varias unidades (bienes.lote): cuántas hay en total, cuántas
      * quedan en cartera (activas o en reparación), reintegradas y dadas de baja. null si
      * el código no existe en la institución.

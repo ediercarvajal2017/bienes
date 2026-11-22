@@ -18,8 +18,11 @@ use App\Models\Auditoria;
 use App\Models\CarteraEnvio;
 use App\Models\Institucion;
 use App\Models\Usuario;
+use App\Services\VerificacionCartera;
 
 /**
+ * @phpstan-import-type DatosAviso from Aviso
+ *
  * "Cartera recibida de la Alcaldía": la institución solicita la cartera por correo (fuera
  * del sistema), la Alcaldía la envía y aquí se guarda la evidencia: quién la solicitó y
  * desde qué correo, quién la envió en la Alcaldía y desde qué correo, la fecha en que se
@@ -154,6 +157,118 @@ final class CarteraController
         }
 
         Evidencia::redirigir($volverA);
+    }
+
+    /**
+     * Verificar un lote en esta cartera (App\Services\VerificacionCartera): el usuario elige un
+     * lote entregado y MIA muestra solo sus bienes que siguen en la cartera. Solo lee.
+     */
+    public function verificacion(string $id): void
+    {
+        $envio = CarteraEnvio::find((int) $id);
+        Evidencia::verificarAcceso($envio);
+
+        View::layout('partials/layout', 'cartera/verificacion', ['title' => 'Verificar un lote en la cartera'] + $this->verificar($envio));
+    }
+
+    /** Los bienes del lote que siguen en la cartera, en Excel, para enviarlo a la Alcaldía. */
+    public function verificacionXlsx(string $id): void
+    {
+        $envio = CarteraEnvio::find((int) $id);
+        Evidencia::verificarAcceso($envio);
+        $datos = $this->verificar($envio);
+
+        if ($datos['lote'] === null || $datos['resultado'] === null || $datos['resultado']['filas'] === []) {
+            // Si hubo un problema, la pantalla lo vuelve a mostrar con su aviso guiado.
+            if ($datos['problema'] === null) {
+                Aviso::enviar(Aviso::info('No hay nada que descargar', $datos['lote'] === null
+                    ? 'Elige primero el lote que quieres verificar.'
+                    : 'Ningún bien de ese lote sigue en la cartera.'));
+            }
+            Evidencia::redirigir('/cartera/' . (int) $envio['id'] . '/verificacion?' . http_build_query(array_filter([
+                'lote' => $datos['loteId'] ?: null, 'columna' => $datos['columnaPlaca'], 'cantidad' => $datos['columnaCantidad'],
+            ])));
+        }
+
+        \App\Services\ReporteService::enviarXlsx(
+            \App\Services\ReporteService::bienesSinDescargar($envio, $datos['lote'], $datos['resultado']['filas'], $datos['resultado']['total_lote']),
+            'siguen-en-cartera-lote-' . (int) $datos['lote']['id']
+        );
+    }
+
+    /**
+     * Lo que muestra la verificación: los lotes entregados para elegir y, con ?lote=, el
+     * resultado o el problema que lo impidió (aviso guiado). ?columna= y ?cantidad=: las columnas
+     * de placa y cantidad elegidas a mano cuando MIA no reconoce los títulos de la cartera.
+     *
+     * @return array{envio: array<string, mixed>, lotes: list<array<string, mixed>>, loteId: int, lote: ?array<string, mixed>,
+     *     problema: ?DatosAviso, lectura: ?array<string, mixed>, resultado: ?array{filas: list<array<string, mixed>>, total_lote: int, total_siguen: int},
+     *     columnaPlaca: ?string, columnaCantidad: ?string}
+     */
+    private function verificar(array $envio): array
+    {
+        $institucionId = (int) $envio['institucion_id'];
+        $texto = static fn (string $clave): ?string => is_string($_GET[$clave] ?? null) && trim($_GET[$clave]) !== '' ? trim($_GET[$clave]) : null;
+        $datos = [
+            'envio' => $envio,
+            'lotes' => array_values(\App\Models\LoteReintegro::listar($institucionId, 1, 0, ['estado' => 'reintegrado'])),
+            'loteId' => max(0, (int) ($_GET['lote'] ?? 0)),
+            'lote' => null,
+            'problema' => null,
+            'lectura' => null,
+            'resultado' => null,
+            'columnaPlaca' => $texto('columna'),
+            'columnaCantidad' => $texto('cantidad'),
+        ];
+        if ($datos['loteId'] === 0) {
+            return $datos;
+        }
+
+        $numero = '#' . $datos['loteId'];
+        $lote = \App\Models\LoteReintegro::find($datos['loteId']);
+        if ($lote === null || (int) $lote['institucion_id'] !== $institucionId || $lote['estado'] !== 'reintegrado') {
+            return ['problema' => Aviso::error('No se verificó el lote',
+                "El lote {$numero} no está entre los lotes entregados a la Alcaldía de esta institución.",
+                'Elige uno de la lista «¿Qué lote quieres verificar?».')] + $datos;
+        }
+        $datos['lote'] = $lote;
+
+        if ((string) $lote['reintegrado_fecha'] > (string) $envio['fecha_envio']) {
+            return ['problema' => Aviso::advertencia('Esta cartera es anterior a la entrega del lote',
+                "El lote {$numero} se entregó el {$lote['reintegrado_fecha']} y esta cartera se recibió el {$envio['fecha_envio']}: todavía no podía mostrar el descargo.",
+                'Pide a la Alcaldía una cartera más reciente, regístrala y verifica el lote con ella.',
+                Aviso::accion('Registrar otra cartera', Evidencia::ruta(self::VENTANA, $institucionId)))] + $datos;
+        }
+
+        $editar = Aviso::accion('Editar el registro', Evidencia::ruta(self::VENTANA, $institucionId, ['editar' => (int) $envio['id']]) . '#formularioEvidencia');
+        $config = require dirname(__DIR__, 2) . '/config/app.php';
+        $ruta = $config['storage_path'] . '/uploads/' . $envio['archivo_path'];
+        if (!is_file($ruta)) {
+            return ['problema' => Aviso::error('No se pudo leer la cartera', 'El archivo de esta cartera no está en el servidor.',
+                'Edita el registro y vuelve a adjuntar el Excel que envió la Alcaldía.', $editar)] + $datos;
+        }
+
+        try {
+            $lectura = VerificacionCartera::leerCartera($ruta, $datos['columnaPlaca'], $datos['columnaCantidad']);
+        } catch (\Throwable $e) {
+            $incidente = \App\Core\ErrorHandler::reportar($e, __METHOD__);
+
+            return ['problema' => Aviso::error('No se pudo leer la cartera', 'MIA no pudo abrir el archivo como Excel: puede estar dañado o tener otro formato.',
+                "Ábrelo en Excel, guárdalo de nuevo como .xlsx y reemplázalo en el registro. Si se repite, comparte el código {$incidente} con soporte.", $editar)] + $datos;
+        }
+        $datos['lectura'] = $lectura;
+
+        if (!$lectura['encontrada']) {
+            return ['problema' => Aviso::advertencia('No se encontró la columna de la placa',
+                $datos['columnaPlaca'] !== null
+                    ? 'La columna elegida no existe en el archivo.'
+                    : 'Ninguna columna de la cartera tiene un título como «Placa», «Código» o «Inventario».',
+                'Elige abajo en qué columna está la placa y vuelve a verificar.')] + $datos;
+        }
+
+        $datos['resultado'] = VerificacionCartera::verificar($institucionId, $datos['loteId'], (string) $envio['fecha_envio'], $lectura['placas']);
+
+        return $datos;
     }
 
     /** La lista ya está en la ventana única: la dirección vieja lleva allí. */
