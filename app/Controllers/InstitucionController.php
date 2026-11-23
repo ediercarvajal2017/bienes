@@ -213,6 +213,24 @@ final class InstitucionController
                 'queHacer' => 'Escribe el nombre completo de la institución y vuelve a guardar.'];
         }
 
+        // Lo que cabe en la base (instituciones): un texto más largo se rechaza con su motivo.
+        $largos = [
+            'codigo_dane' => ['El código DANE es más largo de lo que se puede guardar.', 20],
+            'nombre' => ['El nombre es más largo de lo que se puede guardar.', 150],
+            'direccion' => ['La dirección es más larga de lo que se puede guardar.', 200],
+            'email_institucional' => ['El correo institucional es más largo de lo que se puede guardar.', 150],
+        ];
+        foreach ($largos as $campo => [$porQue, $maximo]) {
+            if (mb_strlen((string) $datos[$campo]) > $maximo) {
+                return ['campo' => $campo, 'porQue' => $porQue, 'enCampo' => "Máximo {$maximo} caracteres.",
+                    'queHacer' => "Acórtalo a {$maximo} caracteres o menos y vuelve a guardar."];
+            }
+        }
+        if ($datos['email_institucional'] !== null && !filter_var($datos['email_institucional'], FILTER_VALIDATE_EMAIL)) {
+            return ['campo' => 'email_institucional', 'porQue' => 'El correo institucional no es válido.', 'enCampo' => 'Revisa el correo.',
+                'queHacer' => 'Escríbelo completo, por ejemplo rectoria@colegio.edu.co, o déjalo vacío, y vuelve a guardar.'];
+        }
+
         if (Institucion::existeCodigoDane($datos['codigo_dane'], $exceptId)) {
             return ['campo' => 'codigo_dane', 'porQue' => "Ya existe una institución con el código DANE {$datos['codigo_dane']}.",
                 'enCampo' => 'Este código DANE ya existe.', 'queHacer' => 'Revisa el número; si es la misma institución, edita la que ya existe.'];

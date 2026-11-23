@@ -3,6 +3,7 @@
 use App\Core\Auth;
 use App\Core\Csrf;
 use App\Core\Url;
+use App\Helpers\AyudaCampo;
 
 $esEdicion = $institucion !== null;
 $puedeEditar = Auth::esSuperusuario() || Auth::tienePermiso('instituciones.editar');
@@ -16,24 +17,20 @@ $v = static fn (string $campo, mixed $porDefecto = '') => $viejo[$campo] ?? $ins
     <a href="<?= Url::to('/instituciones') ?>" class="btn btn-sm btn-outline-secondary">Volver</a>
 <?= ui('encabezado_pagina', ['titulo' => (string) ($esEdicion ? 'Editar institución' : 'Nueva institución'), 'icono' => 'institucion', 'acciones' => (string) ob_get_clean()]) ?>
 
-<?php if ($puedeEditar): ?>
-    <p class="text-muted small mb-2">Los campos marcados con <span class="text-danger">*</span> son obligatorios.</p>
-<?php endif; ?>
-
 <form method="post"
       action="<?= $esEdicion ? Url::to('/instituciones/' . $institucion['id']) : Url::to('/instituciones') ?>"
       enctype="multipart/form-data" class="row g-3 contenedor-md">
     <?= Csrf::field() ?>
 
     <div class="col-md-6">
-        <label class="form-label small requerido" for="codigoDane">Código DANE</label>
-        <input type="text" name="codigo_dane" id="codigoDane" class="form-control<?= clase_invalido('codigo_dane') ?>" inputmode="numeric" pattern="[0-9]*" required <?= $puedeEditarEstructura ? '' : 'disabled' ?>
+        <?= AyudaCampo::etiqueta('codigoDane', 'Código DANE', 'institucion_dane', true) ?>
+        <input type="text" name="codigo_dane" id="codigoDane" class="form-control<?= clase_invalido('codigo_dane') ?>" inputmode="numeric" pattern="[0-9]*" maxlength="20" required <?= $puedeEditarEstructura ? '' : 'disabled' ?>
                value="<?= htmlspecialchars($v('codigo_dane'), ENT_QUOTES) ?>">
         <?= error_campo('codigo_dane') ?>
     </div>
 
     <div class="col-md-6">
-        <label class="form-label small" for="tipoSede">Tipo de sede</label>
+        <?= AyudaCampo::etiqueta('tipoSede', 'Tipo de sede', 'institucion_tipo_sede') ?>
         <select name="tipo_sede" id="tipoSede" class="form-select" <?= $puedeEditarEstructura ? '' : 'disabled' ?>>
             <option value="principal" <?= $v('tipo_sede', 'principal') === 'principal' ? 'selected' : '' ?>>Principal</option>
             <option value="seccion" <?= $v('tipo_sede') === 'seccion' ? 'selected' : '' ?>>Sección</option>
@@ -49,14 +46,14 @@ $v = static fn (string $campo, mixed $porDefecto = '') => $viejo[$campo] ?? $ins
     <?php endif; ?>
 
     <div class="col-12">
-        <label for="campo-nombre" class="form-label small requerido">Nombre</label>
-        <input id="campo-nombre" type="text" name="nombre" class="form-control<?= clase_invalido('nombre') ?>" required <?= $puedeEditar ? '' : 'disabled' ?>
+        <?= AyudaCampo::etiqueta('campo-nombre', 'Nombre', 'institucion_nombre', true) ?>
+        <input id="campo-nombre" type="text" name="nombre" class="form-control<?= clase_invalido('nombre') ?>" required maxlength="150" <?= $puedeEditar ? '' : 'disabled' ?>
                value="<?= htmlspecialchars($v('nombre'), ENT_QUOTES) ?>">
         <?= error_campo('nombre') ?>
     </div>
 
     <div class="col-12" id="campoPadre"<?= $v('tipo_sede') === 'seccion' ? '' : ' hidden' ?>>
-        <label class="form-label small" for="institucionPadre">Institución principal</label>
+        <?= AyudaCampo::etiqueta('institucionPadre', 'Institución principal', 'institucion_principal') ?>
         <select name="institucion_padre_id" id="institucionPadre" class="form-select selector-buscable<?= clase_invalido('institucion_padre_id') ?>" <?= $puedeEditarEstructura ? '' : 'disabled' ?>>
             <option value="">-- Selecciona --</option>
             <?php foreach ($instituciones as $opt): ?>
@@ -70,19 +67,21 @@ $v = static fn (string $campo, mixed $porDefecto = '') => $viejo[$campo] ?? $ins
     </div>
 
     <div class="col-12">
-        <label for="campo-direccion" class="form-label small">Dirección</label>
-        <input id="campo-direccion" type="text" name="direccion" class="form-control" <?= $puedeEditar ? '' : 'disabled' ?>
+        <?= AyudaCampo::etiqueta('campo-direccion', 'Dirección', 'institucion_direccion') ?>
+        <input id="campo-direccion" type="text" name="direccion" class="form-control<?= clase_invalido('direccion') ?>" maxlength="200" <?= $puedeEditar ? '' : 'disabled' ?>
                value="<?= htmlspecialchars($v('direccion'), ENT_QUOTES) ?>">
+        <?= error_campo('direccion') ?>
     </div>
 
     <div class="col-12">
-        <label for="campo-email-institucional" class="form-label small">Correo institucional</label>
-        <input id="campo-email-institucional" type="email" name="email_institucional" class="form-control" <?= $puedeEditar ? '' : 'disabled' ?>
+        <?= AyudaCampo::etiqueta('campo-email-institucional', 'Correo institucional', 'institucion_correo') ?>
+        <input id="campo-email-institucional" type="email" name="email_institucional" class="form-control<?= clase_invalido('email_institucional') ?>" maxlength="150" <?= $puedeEditar ? '' : 'disabled' ?>
                value="<?= htmlspecialchars($v('email_institucional'), ENT_QUOTES) ?>">
+        <?= error_campo('email_institucional') ?>
     </div>
 
     <div class="col-12">
-        <label for="campo-logo" class="form-label small d-block">Logo institucional (JPG o PNG)</label>
+        <?= AyudaCampo::etiqueta('campo-logo', 'Logo institucional (JPG o PNG)', 'institucion_logo') ?>
         <?php if (!empty($institucion['logo_path'])): ?>
             <img src="<?= \App\Helpers\EnlaceArchivo::url($institucion['logo_path']) ?>" alt="Logo actual" class="mb-2 d-block logo-56">
         <?php endif; ?>

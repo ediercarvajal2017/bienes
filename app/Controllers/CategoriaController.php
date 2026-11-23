@@ -44,6 +44,8 @@ final class CategoriaController
 
         if ($nombre === '') {
             Aviso::enviar(Aviso::error('No se creó la categoría', 'Falta el nombre de la categoría.', 'Escribe el nombre (por ejemplo «Muebles») y vuelve a intentarlo.'));
+        } elseif (mb_strlen($nombre) > 80) {
+            Aviso::enviar(Aviso::error('No se creó la categoría', 'El nombre es más largo de lo que se puede guardar.', 'Acórtalo a 80 caracteres o menos y vuelve a intentarlo.'));
         } elseif (Categoria::existeNombre($institucionId, $nombre)) {
             Aviso::enviar(Aviso::error('No se creó la categoría', "La categoría «{$nombre}» ya existe en esta institución.",
                 'Búscala en la lista; si está inactiva, actívala en lugar de crearla otra vez.'));
@@ -72,6 +74,8 @@ final class CategoriaController
 
         if ($nombre === '') {
             Aviso::enviar(Aviso::error('No se guardó la categoría', 'El nombre quedó vacío.', 'Escribe el nombre de la categoría y vuelve a guardar.'));
+        } elseif (mb_strlen($nombre) > 80) {
+            Aviso::enviar(Aviso::error('No se guardó la categoría', 'El nombre es más largo de lo que se puede guardar.', 'Acórtalo a 80 caracteres o menos y vuelve a guardar.'));
         } elseif (Categoria::existeNombre($institucionId, $nombre, $id)) {
             Aviso::enviar(Aviso::error('No se guardó la categoría', "Ya existe otra categoría llamada «{$nombre}» en esta institución.",
                 'Usa un nombre distinto, o usa la categoría que ya existe.'));

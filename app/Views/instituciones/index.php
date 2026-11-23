@@ -3,13 +3,14 @@
 use App\Core\Csrf;
 use App\Core\Url;
 use App\Core\View;
+use App\Helpers\AyudaCampo;
 
 ?>
 <?php ob_start(); ?>
     <a href="<?= Url::to('/instituciones/crear') ?>" class="btn btn-primary btn-sm">
         <?= icono('crear', 'me-1') ?>Nueva institución
     </a>
-<?= ui('encabezado_pagina', ['titulo' => 'Instituciones', 'icono' => 'institucion', 'acciones' => (string) ob_get_clean()]) ?>
+<?= ui('encabezado_pagina', ['titulo' => 'Instituciones', 'icono' => 'institucion', 'ayuda' => AyudaCampo::boton('instituciones'), 'acciones' => (string) ob_get_clean()]) ?>
 
 <?= ui('herramientas_tabla', ['suelta' => true]) ?>
 <div data-navegable class="table-responsive">

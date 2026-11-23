@@ -2,15 +2,16 @@
 
 use App\Core\Auth;
 use App\Core\Url;
+use App\Helpers\AyudaCampo;
 use App\Models\Institucion;
 
 $instituciones = Auth::esSuperusuario() ? Institucion::listadoParaSelect() : [];
 ?>
-<?= ui('encabezado_pagina', ['titulo' => 'Reportes', 'icono' => 'reporte']) ?>
+<?= ui('encabezado_pagina', ['titulo' => 'Reportes', 'icono' => 'reporte', 'ayuda' => AyudaCampo::boton('reportes')]) ?>
 
 <?php if (Auth::esSuperusuario()): ?>
     <div class="mb-3 contenedor-sm">
-        <label for="selectorInstitucion" class="form-label small">Institución a exportar</label>
+        <?= AyudaCampo::etiqueta('selectorInstitucion', 'Institución a exportar', 'reporte_institucion') ?>
         <select id="selectorInstitucion" class="form-select form-select-sm selector-buscable">
             <option value="">Todas las instituciones</option>
             <?php foreach ($instituciones as $i): ?>
@@ -24,7 +25,7 @@ $instituciones = Auth::esSuperusuario() ? Institucion::listadoParaSelect() : [];
     <div class="col-md-6">
         <div class="card h-100">
             <div class="card-body">
-                <h2 class="h6">Cartera de bienes</h2>
+                <div class="d-flex align-items-center gap-1 mb-2"><h2 class="h6 mb-0">Cartera de bienes</h2><?= AyudaCampo::boton('reporte_cartera') ?></div>
                 <p class="small text-muted mb-3">Código, descripción, ubicación, responsable, valor y fecha de ingreso de todos los bienes.</p>
                 <div class="d-flex gap-2">
                     <a class="btn btn-sm btn-primary enlace-reporte" data-base="<?= Url::to('/reportes/cartera.xlsx') ?>" data-descarga="Generando…" href="<?= Url::to('/reportes/cartera.xlsx') ?>">
@@ -40,7 +41,7 @@ $instituciones = Auth::esSuperusuario() ? Institucion::listadoParaSelect() : [];
         <div class="card h-100 border-warning-subtle">
             <div class="card-body">
                 <span class="badge badge-advertencia mb-2">AÚN NO SE HAN DEVUELTO</span>
-                <h2 class="h6">Bienes asignados pendientes de devolver</h2>
+                <div class="d-flex align-items-center gap-1 mb-2"><h2 class="h6 mb-0">Bienes asignados pendientes de devolver</h2><?= AyudaCampo::boton('reporte_pendientes') ?></div>
                 <p class="small text-muted mb-3">Bienes que alguien tiene actualmente en su poder y todavía <strong>no</strong> han sido reintegrados. Antes se llamaba "Planilla de reintegros pendientes".</p>
                 <a class="btn btn-sm btn-primary enlace-reporte" data-base="<?= Url::to('/reportes/reintegros.xlsx') ?>" data-descarga="Generando…" href="<?= Url::to('/reportes/reintegros.xlsx') ?>">
                     <?= icono('exportar_excel', 'me-1') ?>.xlsx
@@ -53,7 +54,7 @@ $instituciones = Auth::esSuperusuario() ? Institucion::listadoParaSelect() : [];
         <div class="card h-100 border-success-subtle">
             <div class="card-body">
                 <span class="badge badge-exito mb-2">YA REINTEGRADOS</span>
-                <h2 class="h6">Historial de bienes reintegrados</h2>
+                <div class="d-flex align-items-center gap-1 mb-2"><h2 class="h6 mb-0">Historial de bienes reintegrados</h2><?= AyudaCampo::boton('reporte_historial') ?></div>
                 <p class="small text-muted mb-3">Bienes que <strong>ya fueron devueltos</strong>, con la fecha exacta del reintegro, el destino y quién lo registró.</p>
                 <a class="btn btn-sm btn-primary enlace-reporte" data-base="<?= Url::to('/reportes/reintegros-historial.xlsx') ?>" data-descarga="Generando…" href="<?= Url::to('/reportes/reintegros-historial.xlsx') ?>">
                     <?= icono('exportar_excel', 'me-1') ?>.xlsx
@@ -65,11 +66,11 @@ $instituciones = Auth::esSuperusuario() ? Institucion::listadoParaSelect() : [];
     <div class="col-md-6">
         <section class="card h-100" aria-labelledby="tituloActa">
             <div class="card-body">
-                <h2 class="h6" id="tituloActa">Acta de bienes a cargo</h2>
+                <div class="d-flex align-items-center gap-1 mb-2"><h2 class="h6 mb-0" id="tituloActa">Acta de bienes a cargo</h2><?= AyudaCampo::boton('reporte_acta') ?></div>
                 <p class="small text-muted mb-2">Los bienes por los que responde un funcionario (los individuales y los de sus espacios), en Excel para imprimir y firmar.</p>
                 <form method="get" action="<?= Url::to('/reportes/acta-a-cargo.xlsx') ?>" id="formActa" class="d-flex flex-wrap gap-2 align-items-end" data-sin-cargando>
                     <div class="flex-grow-1">
-                        <label class="form-label small mb-1" for="actaUsuario">Funcionario</label>
+                        <?= AyudaCampo::etiqueta('actaUsuario', 'Funcionario', 'reporte_acta_funcionario', true) ?>
                         <select name="usuario" id="actaUsuario" class="form-select form-select-sm selector-buscable" required>
                             <option value="">-- Selecciona --</option>
                             <?php foreach ($funcionariosActa as $f): ?>
@@ -88,7 +89,7 @@ $instituciones = Auth::esSuperusuario() ? Institucion::listadoParaSelect() : [];
             <section class="card border-primary-subtle" aria-labelledby="tituloActividad">
                 <div class="card-body">
                     <span class="badge badge-info mb-2">CONTROL</span>
-                    <h2 class="h6" id="tituloActividad"><?= icono('usuarios', 'me-1') ?>Actividad de los funcionarios</h2>
+                    <div class="d-flex align-items-center gap-1 mb-2"><h2 class="h6 mb-0" id="tituloActividad"><?= icono('usuarios', 'me-1') ?>Actividad de los funcionarios</h2><?= AyudaCampo::boton('reporte_actividad') ?></div>
                     <p class="small text-muted mb-3">
                         Qué se registró, qué se cambió y qué se movió, quién lo hizo y a qué hora<?= Auth::esSuperusuario() ? ' (en la institución elegida arriba, o en todas)' : '' ?>.
                         Cada reporte se descarga en Excel.
@@ -98,7 +99,7 @@ $instituciones = Auth::esSuperusuario() ? Institucion::listadoParaSelect() : [];
                             <input type="hidden" name="institucion" id="actividadInstitucion" value="">
                         <?php endif; ?>
                         <div class="col-sm-6 col-lg-3">
-                            <label class="form-label small mb-1" for="actividadPeriodo">Período</label>
+                            <?= AyudaCampo::etiqueta('actividadPeriodo', 'Período', 'reporte_periodo') ?>
                             <select name="periodo" id="actividadPeriodo" class="form-select form-select-sm">
                                 <?php foreach (\App\Services\ReportesControl::PERIODOS as $clave => $texto): ?>
                                     <option value="<?= $clave ?>"><?= htmlspecialchars($texto, ENT_QUOTES) ?></option>
@@ -114,7 +115,7 @@ $instituciones = Auth::esSuperusuario() ? Institucion::listadoParaSelect() : [];
                             <input type="date" name="hasta" id="actividadHasta" class="form-control form-control-sm" max="<?= date('Y-m-d') ?>">
                         </div>
                         <div class="col-sm-6 col-lg-5">
-                            <label class="form-label small mb-1" for="actividadUsuario">Funcionario</label>
+                            <?= AyudaCampo::etiqueta('actividadUsuario', 'Funcionario', 'reporte_actividad_funcionario') ?>
                             <select name="usuario" id="actividadUsuario" class="form-select form-select-sm selector-buscable">
                                 <option value="">Todos los funcionarios</option>
                                 <?php foreach ($funcionarios as $f): ?>
@@ -137,7 +138,7 @@ $instituciones = Auth::esSuperusuario() ? Institucion::listadoParaSelect() : [];
         <div class="col-12">
             <section class="card" aria-labelledby="tituloControlInventario">
                 <div class="card-body">
-                    <h2 class="h6" id="tituloControlInventario"><?= icono('reporte', 'me-1') ?>Control del inventario</h2>
+                    <div class="d-flex align-items-center gap-1 mb-2"><h2 class="h6 mb-0" id="tituloControlInventario"><?= icono('reporte', 'me-1') ?>Control del inventario</h2><?= AyudaCampo::boton('reporte_control') ?></div>
                     <p class="small text-muted mb-3">Para revisar qué falta completar, dónde está el valor del inventario y quién no está usando MIA<?= Auth::esSuperusuario() ? ' (institución elegida arriba, o todas)' : '' ?>.</p>
                     <form method="get" action="<?= Url::to('/reportes/control.xlsx') ?>" id="formControl" class="row g-3" data-sin-cargando>
                         <?php if (Auth::esSuperusuario()): ?>
@@ -170,7 +171,7 @@ $instituciones = Auth::esSuperusuario() ? Institucion::listadoParaSelect() : [];
         <div class="col-12">
             <section class="card" aria-labelledby="tituloExportacion">
                 <div class="card-body">
-                    <h2 class="h6" id="tituloExportacion"><?= icono('descargar', 'me-1') ?>Descargar toda la información</h2>
+                    <div class="d-flex align-items-center gap-1 mb-2"><h2 class="h6 mb-0" id="tituloExportacion"><?= icono('descargar', 'me-1') ?>Descargar toda la información</h2><?= AyudaCampo::boton('reporte_exportacion') ?></div>
                     <p class="small text-muted mb-2">
                         Un archivo .zip con todo lo registrado en MIA<?= Auth::esSuperusuario() ? ' para la institución elegida' : '' ?> y sus sedes:
                         bienes, asignaciones, movimientos, bajas, reintegros, espacios, usuarios, verificaciones, documentos y

@@ -288,6 +288,138 @@ final class AyudaCampo
             'texto' => "Opcional, pero ayuda a identificar el bien y a no registrarlo dos veces. JPG o PNG, máximo 2 MB.\n\n"
                 . 'En el celular puedes tomarla con la cámara.',
         ],
+        'categorias' => [
+            'titulo' => 'Categorías de bienes',
+            'texto' => "Las categorías agrupan los bienes de la cartera: Muebles, Tecnología, Elementos deportivos… Cada institución tiene las suyas.\n\n"
+                . "Se eligen al registrar un bien, en la carga masiva y en los filtros. Al generar lotes de reintegro, MIA arma un lote por categoría.\n\n"
+                . "**Sin cartera** es una categoría protegida, para los bienes que no están en la cartera de la Alcaldía (donaciones, compras propias): no se puede renombrar ni eliminar, y sus bienes solo admiten baja, no reintegro.\n\n"
+                . '**Desactivar** oculta la categoría al registrar bienes nuevos y conserva los que ya la usan. **Eliminar** solo es posible si ningún bien la usa.',
+        ],
+        'categoria_institucion' => [
+            'titulo' => 'Institución',
+            'texto' => 'Las categorías son propias de cada institución: elige de cuál quieres ver y administrar las categorías.',
+        ],
+        'categoria_nombre' => [
+            'titulo' => 'Nombre de la categoría',
+            'texto' => "El nombre del grupo, completo y sin abreviar. Ej.: Muebles, Tecnología, Elementos deportivos.\n\n"
+                . "No se puede repetir en la institución. Máximo 80 caracteres.\n\n"
+                . 'Para corregir una categoría que ya existe, cambia su nombre en la tabla y pulsa «Guardar»: el cambio se ve en todos sus bienes.',
+        ],
+        'cargos' => [
+            'titulo' => 'Cargos',
+            'texto' => "Los cargos que se eligen al registrar un usuario: Rector, Coordinador, Docente, Secretaria… La lista es la misma para todas las instituciones y solo el superusuario la administra.\n\n"
+                . "El cargo es informativo: lo que cada persona puede hacer en MIA lo define su **rol**.\n\n"
+                . '**Desactivar** oculta el cargo al registrar usuarios nuevos y conserva los que ya lo tienen. **Eliminar** solo es posible si ningún usuario lo tiene.',
+        ],
+        'cargo_nombre' => [
+            'titulo' => 'Nombre del cargo',
+            'texto' => "El nombre del cargo como se usa en la institución. Ej.: Coordinador académico, Auxiliar administrativo.\n\n"
+                . "No se puede repetir. Máximo 80 caracteres.\n\n"
+                . 'Para corregir un cargo que ya existe, cambia su nombre en la tabla y pulsa «Guardar»: el cambio se ve en todos los usuarios que lo tienen.',
+        ],
+        'instituciones' => [
+            'titulo' => 'Instituciones',
+            'texto' => "Las instituciones educativas y sus sedes que usan MIA. Cada una tiene sus propios bienes, espacios, usuarios y categorías; al crearla, MIA le pone un catálogo inicial de categorías.\n\n"
+                . "**Principal:** la institución con su rector. **Sección:** una sede que depende de una principal; el rector de la principal puede pasar de una sede a otra y crear usuarios en cualquiera de ellas.\n\n"
+                . 'Solo el superusuario crea instituciones y cambia el código DANE, el tipo de sede y la institución principal. El rector puede editar el nombre, la dirección, el correo y el logo de la suya.',
+        ],
+        'institucion_dane' => [
+            'titulo' => 'Código DANE',
+            'texto' => "El código que el DANE le asigna a la institución o sede: solo números, normalmente 12 dígitos. Ej.: 168001000123.\n\n"
+                . 'No se puede repetir en MIA. Máximo 20 caracteres. Solo el superusuario lo puede cambiar.',
+        ],
+        'institucion_tipo_sede' => [
+            'titulo' => 'Tipo de sede',
+            'texto' => "**Principal:** la institución educativa, con su propio rector.\n\n"
+                . "**Sección:** una sede que depende de una principal (por ejemplo, la sede rural o la de primaria). Al elegirla aparece «Institución principal».\n\n"
+                . 'Una institución que tiene secciones no puede volverse sección. Solo el superusuario lo puede cambiar.',
+        ],
+        'institucion_nombre' => [
+            'titulo' => 'Nombre',
+            'texto' => "El nombre oficial completo, como aparece en los documentos. Ej.: Institución Educativa María de los Ángeles.\n\n"
+                . 'Máximo 150 caracteres. Se ve en el menú y en los documentos que genera MIA, como el comprobante de reintegro.',
+        ],
+        'institucion_principal' => [
+            'titulo' => 'Institución principal',
+            'texto' => 'La institución de la que depende esta sección. Solo se puede elegir una principal activa. Solo el superusuario lo puede cambiar.',
+        ],
+        'institucion_direccion' => [
+            'titulo' => 'Dirección',
+            'texto' => 'Opcional. La dirección de la institución o sede. Ej.: Calle 10 # 5-20, barrio Centro. Máximo 200 caracteres.',
+        ],
+        'institucion_correo' => [
+            'titulo' => 'Correo institucional',
+            'texto' => 'Opcional. El correo oficial de la institución o sede. Ej.: rectoria@colegio.edu.co. Máximo 150 caracteres.',
+        ],
+        'institucion_logo' => [
+            'titulo' => 'Logo institucional',
+            'texto' => 'Opcional. El escudo o logo de la institución. JPG o PNG, máximo 2 MB. Si subes uno nuevo, reemplaza el anterior.',
+        ],
+        'reportes' => [
+            'titulo' => 'Reportes',
+            'texto' => "Descargas en Excel para revisar y entregar la información del inventario. Cada archivo trae la información del momento en que lo descargas.\n\n"
+                . "**Para el rector y el secretario:** Cartera de bienes, Bienes pendientes de devolver, Historial de reintegrados y Acta de bienes a cargo.\n\n"
+                . '**Solo para el rector:** Actividad de los funcionarios, Control del inventario y Descargar toda la información.',
+        ],
+        'reporte_institucion' => [
+            'titulo' => 'Institución a exportar',
+            'texto' => 'De qué institución salen los reportes. «Todas las instituciones» junta la información de todas; «Descargar toda la información» necesita que elijas una.',
+        ],
+        'reporte_cartera' => [
+            'titulo' => 'Cartera de bienes',
+            'texto' => "Todos los bienes, uno por fila: código, descripción, marca, categoría, ubicación, responsable, tipo de responsabilidad, estado, valor y fecha de ingreso.\n\n"
+                . "En .xlsx trae además la hoja «Cartera por placa»: cuánto queda de cada placa (las de varias unidades en una sola fila), cuánto se reintegró o se dio de baja, y su valor.\n\n"
+                . '.csv es para abrirlo en otros programas.',
+        ],
+        'reporte_pendientes' => [
+            'titulo' => 'Bienes asignados pendientes de devolver',
+            'texto' => "Los bienes que hoy están asignados a un espacio o a una persona y no se han reintegrado: código, descripción, categoría, responsable, ubicación, fecha de asignación y valor.\n\n"
+                . 'Sirve para saber qué tiene cada quien antes de una entrega o de un cierre de año.',
+        ],
+        'reporte_historial' => [
+            'titulo' => 'Historial de bienes reintegrados',
+            'texto' => 'Los bienes que ya se reintegraron: código, descripción, fecha del reintegro, destino, quién lo registró, observaciones y valor.',
+        ],
+        'reporte_acta' => [
+            'titulo' => 'Acta de bienes a cargo',
+            'texto' => "Un Excel listo para imprimir y firmar con los bienes por los que responde el funcionario:\n\n"
+                . "**Individual:** los que están a su cargo directo.\n\n"
+                . "**Grupal:** los de los espacios donde es responsable, con los demás responsables de cada espacio.\n\n"
+                . 'Úsala al entregarle bienes o cuando sale de la institución.',
+        ],
+        'reporte_acta_funcionario' => [
+            'titulo' => 'Funcionario del acta',
+            'texto' => 'La persona cuya acta quieres descargar. Escribe para buscarla.',
+        ],
+        'reporte_actividad' => [
+            'titulo' => 'Actividad de los funcionarios',
+            'texto' => "Qué se registró, qué se cambió y qué se movió en MIA, quién lo hizo y a qué hora (hora de Colombia).\n\n"
+                . "**Resumen por funcionario:** cuánto hizo cada uno.\n\n"
+                . "**Registros nuevos** y **Registros actualizados:** qué se creó y qué campo cambió, con el antes y el después.\n\n"
+                . "**Movimientos:** traslados, reintegros y reactivaciones.\n\n"
+                . '**Todo en un solo Excel:** todo lo anterior, una hoja por tema.',
+        ],
+        'reporte_periodo' => [
+            'titulo' => 'Período',
+            'texto' => '**Hoy**, **Ayer**, **Últimos 7 días**, **Este mes** o **Rango de fechas**. Con el rango eliges «Desde» y «Hasta»; ninguna puede ser una fecha futura.',
+        ],
+        'reporte_actividad_funcionario' => [
+            'titulo' => 'Funcionario de la actividad',
+            'texto' => 'Déjalo en «Todos los funcionarios» para ver la actividad de todos, o elige uno para ver solo la suya. Escribe para buscarlo.',
+        ],
+        'reporte_control' => [
+            'titulo' => 'Control del inventario',
+            'texto' => "Tres revisiones para tener el inventario al día:\n\n"
+                . "**Calidad del inventario:** bienes sin foto, sin categoría, sin asignar o sin el QR pegado, por espacio y con la lista de cada caso.\n\n"
+                . "**Valor por espacio y categoría:** cantidad de bienes y valor total, cruzados y con totales.\n\n"
+                . '**Funcionarios inactivos:** quienes no entran a MIA hace 30 días o más, o nunca han entrado.',
+        ],
+        'reporte_exportacion' => [
+            'titulo' => 'Descargar toda la información',
+            'texto' => "Un .zip con todo lo registrado de la institución y sus sedes, en un Excel con una hoja por tema: bienes, asignaciones, movimientos, bajas, reintegros, espacios, usuarios, verificaciones, documentos y auditoría.\n\n"
+                . "**Solo los datos:** rápido y liviano. **Datos con fotos y documentos:** incluye los archivos; puede tardar varios minutos y pesar bastante.\n\n"
+                . 'Contiene datos personales (no contraseñas): guárdalo en un lugar seguro.',
+        ],
         'usuarios' => [
             'titulo' => 'Usuarios',
             'texto' => "Las personas que entran a MIA. Cada una entra con su correo y su contraseña, y puede hacer lo que su rol le permite.\n\n"

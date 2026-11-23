@@ -3,15 +3,16 @@
 use App\Core\Csrf;
 use App\Core\Url;
 use App\Core\View;
+use App\Helpers\AyudaCampo;
 
 ?>
-<?= ui('encabezado_pagina', ['titulo' => 'Cargos', 'icono' => 'cargo', 'subtitulo' => 'Catálogo global de cargos disponible al registrar usuarios en cualquier institución.']) ?>
+<?= ui('encabezado_pagina', ['titulo' => 'Cargos', 'icono' => 'cargo', 'ayuda' => AyudaCampo::boton('cargos'), 'subtitulo' => 'Catálogo global de cargos disponible al registrar usuarios en cualquier institución.']) ?>
 
 <form method="post" action="<?= Url::to('/cargos') ?>" class="mb-4 contenedor-md">
     <?= Csrf::field() ?>
-    <label class="form-label small requerido" for="nombreCargo">Nombre del cargo</label>
+    <?= AyudaCampo::etiqueta('nombreCargo', 'Nombre del cargo', 'cargo_nombre', true) ?>
     <div class="d-flex gap-2">
-        <input type="text" id="nombreCargo" name="nombre" class="form-control" placeholder="Ej. Docente" required>
+        <input type="text" id="nombreCargo" name="nombre" class="form-control" placeholder="Ej. Docente" required maxlength="80">
         <button type="submit" class="btn btn-primary text-nowrap">Registrar</button>
     </div>
 </form>
@@ -37,7 +38,8 @@ use App\Core\View;
                     <form method="post" action="<?= Url::to('/cargos/' . $c['id']) ?>" class="d-flex gap-2">
                         <?= Csrf::field() ?>
                         <input type="text" name="nombre" class="form-control form-control-sm"
-                               value="<?= htmlspecialchars($c['nombre'], ENT_QUOTES) ?>" required>
+                               aria-label="Nombre del cargo <?= htmlspecialchars($c['nombre'], ENT_QUOTES) ?>"
+                               value="<?= htmlspecialchars($c['nombre'], ENT_QUOTES) ?>" required maxlength="80">
                         <button type="submit" class="btn btn-sm btn-outline-secondary text-nowrap">Guardar</button>
                     </form>
                 </td>
