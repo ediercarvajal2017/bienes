@@ -92,6 +92,12 @@ final class VerificacionController
             header('Location: ' . Url::to('/verificaciones/crear'));
             exit;
         }
+        if (mb_strlen($nombre) > 150) {
+            Aviso::enviar(Aviso::error('No se inició la jornada', 'El nombre es más largo de lo que se puede guardar.',
+                'Acórtalo a 150 caracteres o menos y vuelve a intentarlo.', null, ['nombre' => 'Máximo 150 caracteres.']));
+            header('Location: ' . Url::to('/verificaciones/crear'));
+            exit;
+        }
 
         // Bloqueo de la fila de la institución: dos personas iniciando una jornada al mismo
         // tiempo quedan en fila, y la segunda ve que ya existe una en progreso (antes el
@@ -254,6 +260,12 @@ final class VerificacionController
         }
 
         $observaciones = trim((string) $request->input('observaciones')) ?: null;
+        if (mb_strlen((string) $observaciones) > 500) {
+            Aviso::enviar(Aviso::error('No se cerró la jornada', 'Las observaciones de cierre son más largas de lo que se puede guardar.',
+                'Acórtalas a 500 caracteres o menos y vuelve a cerrar.'));
+            header('Location: ' . Url::to("/verificaciones/{$id}"));
+            exit;
+        }
         JornadaVerificacion::cerrar($id, $observaciones);
         Auditoria::registrar(Auth::id(), (int) $jornada['institucion_id'], 'cerrar', 'jornada_verificacion', $id,
             ['estado' => 'en_progreso'],
@@ -351,6 +363,12 @@ final class VerificacionController
 
         $observaciones = trim((string) $request->input('observaciones')) ?: null;
         $motivo = null;
+        if (mb_strlen((string) $observaciones) > 500) {
+            Aviso::enviar(Aviso::error('No se registró la verificación', 'El detalle es más largo de lo que se puede guardar.',
+                'Acórtalo a 500 caracteres o menos y vuelve a enviar.'));
+            header('Location: ' . Url::to("/qr/{$token}"));
+            exit;
+        }
 
         if ($resultado === 'discrepancia') {
             $motivo = (string) $request->input('motivo');

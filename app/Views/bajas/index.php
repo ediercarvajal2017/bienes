@@ -4,10 +4,11 @@ use App\Core\Auth;
 use App\Core\Csrf;
 use App\Core\Url;
 use App\Core\View;
+use App\Helpers\AyudaCampo;
 use App\Models\Categoria;
 
 ?>
-<?= ui('encabezado_pagina', ['titulo' => 'Bajas de bienes', 'icono' => 'baja', 'subtitulo' => 'Reportes enviados desde la ficha de cada bien, pendientes de aprobación.']) ?>
+<?= ui('encabezado_pagina', ['titulo' => 'Bajas de bienes', 'icono' => 'baja', 'ayuda' => AyudaCampo::boton('bajas'), 'subtitulo' => 'Reportes enviados desde la ficha de cada bien, pendientes de aprobación.']) ?>
 
 
 <?php View::render('partials/paginacion', ['densidad' => true,

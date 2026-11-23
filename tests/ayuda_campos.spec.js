@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { datos } from './helpers/datos.js';
+import { datos, bd } from './helpers/datos.js';
 
 /**
  * Ayuda emergente de los campos (App\Helpers\AyudaCampo y assets/js/ayuda-campo.js): el
@@ -187,6 +187,64 @@ test('un texto más largo de lo que cabe se rechaza con su motivo, sin error del
         expect(respuesta.status(), ventana).toBe(302);
         await page.goto(ventana);
         await expect(page.locator('.alert-danger'), ventana).toContainText(motivo);
+    }
+});
+
+test('bajas y verificación física explican cada campo como el formulario de bienes', async ({ page }) => {
+    test.skip(datos().remoto === true, 'Necesita la base de pruebas local');
+    const d = datos();
+
+    await page.goto('bajas');
+    await revisarAyudas(page, { 'Bajas de bienes': 'Solo se dan de baja los bienes de la categoría' });
+
+    await page.goto(`qr/${d.qr.para_baja}/baja`);
+    await revisarAyudas(page, {
+        'Reportar baja': 'no da de baja',
+        'Estado del bien': 'Deteriorado por uso',
+        Ubicación: 'déjalo vacío si se perdió',
+        'Descripción de la baja': 'Máximo 500 caracteres',
+        'Fotografía del estado actual': 'máximo 2 MB',
+    });
+    await expect(page.locator('#campo-estado-reportado')).toHaveAttribute('maxlength', '100');
+    await expect(page.locator('#campo-ubicacion')).toHaveAttribute('maxlength', '150');
+    await expect(page.locator('#campo-descripcion')).toHaveAttribute('maxlength', '500');
+
+    await page.goto('verificaciones');
+    await revisarAyudas(page, { 'Verificación física': 'Solo puede haber una en progreso a la vez' });
+
+    // La nueva jornada solo se puede crear si no hay otra en progreso; si la prueba la crea, la borra al final.
+    const activa = bd(`SELECT id FROM jornadas_verificacion WHERE institucion_id = ${d.instituciones.A} AND estado = 'en_progreso' LIMIT 1`);
+    let creada = null;
+    if (activa === '') {
+        await page.goto('verificaciones/crear');
+        await revisarAyudas(page, { 'Nombre de la jornada': 'Máximo 150 caracteres', 'Fecha de inicio': 'por defecto, hoy' });
+        await expect(page.locator('#campo-nombre')).toHaveAttribute('maxlength', '150');
+        creada = Number(bd(`INSERT INTO jornadas_verificacion (institucion_id, nombre, fecha_inicio, creada_por)
+            VALUES (${d.instituciones.A}, 'PW-TEST ayudas', CURDATE(), ${d.usuarios.rector.id}); SELECT LAST_INSERT_ID();`));
+    }
+    try {
+        await page.goto(`verificaciones/${creada ?? Number(activa)}`);
+        await revisarAyudas(page, { 'Observaciones de cierre': 'Máximo 500 caracteres' });
+
+        await page.goto(`qr/${d.qr.A}`);
+        await page.getByRole('button', { name: 'Reportar discrepancia' }).click();
+        await revisarAyudas(page, {
+            '¿Qué pasa con este bien?': 'Está en otro salón',
+            'Detalle de la discrepancia': 'salvo con el motivo «Otro»',
+        });
+        await expect(page.getByLabel('Detalle', { exact: true })).toHaveAttribute('maxlength', '500');
+
+        await page.goto('hallazgos/crear');
+        await revisarAyudas(page, {
+            'Reportar bien no registrado': 'no tiene placa ni QR',
+            'Espacio donde lo encontraste': 'Un docente solo ve',
+            'Descripción del hallazgo': 'Máximo 300 caracteres',
+            'Foto del hallazgo': 'máximo 2 MB',
+        });
+    } finally {
+        if (creada !== null) {
+            bd(`DELETE FROM jornadas_verificacion WHERE id = ${creada}`);
+        }
     }
 });
 

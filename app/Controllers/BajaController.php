@@ -69,6 +69,18 @@ final class BajaController
             header('Location: ' . Url::to("/qr/{$token}/baja"));
             exit;
         }
+        // Lo que cabe en la base (bajas_bienes): un texto más largo se rechaza con su motivo.
+        $largos = array_filter([
+            'estado_reportado' => mb_strlen(trim((string) $request->input('estado_reportado'))) > 100 ? 'Máximo 100 caracteres.' : null,
+            'ubicacion' => mb_strlen(trim((string) $request->input('ubicacion'))) > 150 ? 'Máximo 150 caracteres.' : null,
+            'descripcion' => mb_strlen(trim((string) $request->input('descripcion'))) > 500 ? 'Máximo 500 caracteres.' : null,
+        ]);
+        if ($largos !== []) {
+            Aviso::enviar(Aviso::error('No se envió el reporte de baja', 'Un texto es más largo de lo que se puede guardar.',
+                'Acórtalo (el límite está debajo del campo) y vuelve a enviar.', null, $largos));
+            header('Location: ' . Url::to("/qr/{$token}/baja"));
+            exit;
+        }
 
         // El id de verificacion viaja como campo oculto del formulario; se revalida aqui
         // igual que en formulario() para que nadie pueda vincular la baja a la discrepancia
