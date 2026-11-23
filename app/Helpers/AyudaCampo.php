@@ -193,6 +193,34 @@ final class AyudaCampo
                 . "Revisa que se lean las firmas y las placas antes de subirlo: es la prueba de que la Alcaldía recibió los bienes.\n\n"
                 . 'Al editar un registro, adjunta un archivo solo si quieres reemplazar el que ya tiene.',
         ],
+        'formatos_plaqueteo' => [
+            'titulo' => 'Formatos de plaqueteo',
+            'texto' => "Aquí archivas el formato que se firma cuando la Alcaldía viene a poner las placas a los bienes. MIA no lo genera: es la copia firmada del plaqueteo.\n\n"
+                . "La placa es el número que la Alcaldía le asigna a cada bien en la cartera; en MIA es el «Código de identificación» del bien.\n\n"
+                . "**1. Plaquetear:** el funcionario de la Alcaldía pega las placas y se firma el formato.\n\n"
+                . "**2. Registrar:** llena este formulario con la fecha, quién asistió, una descripción y el PDF escaneado.\n\n"
+                . 'Cada registro se puede descargar, editar o eliminar. Lo eliminado va a la Papelera, desde donde un superusuario puede restaurarlo.',
+        ],
+        'formato_plaqueteo_fecha' => [
+            'titulo' => 'Fecha del plaqueteo',
+            'texto' => 'El día en que se pusieron las placas, como figura en el formato firmado. No es el día en que lo registras en MIA. Sirve para encontrar el formato por período en la lista.',
+        ],
+        'formato_plaqueteo_funcionario' => [
+            'titulo' => 'Funcionario que asistió',
+            'texto' => "Nombres y apellidos completos de quien estuvo a cargo del plaqueteo, como aparece en el formato firmado. Por lo general es el funcionario de la Alcaldía que vino a poner las placas. Ej.: Carlos Andrés Pérez Gómez.\n\n"
+                . 'Máximo 150 caracteres. Así queda claro con quién aclarar una placa mal puesta o faltante.',
+        ],
+        'formato_plaqueteo_descripcion' => [
+            'titulo' => 'Descripción del formato de plaqueteo',
+            'texto' => "Opcional. Lo que ayude a reconocer el formato después: qué bienes se plaquetearon y dónde. Ej.: Plaqueteo de los equipos nuevos del aula 101.\n\n"
+                . 'Máximo 300 caracteres. Se ve en la lista de abajo, junto a la fecha.',
+        ],
+        'formato_plaqueteo_archivo' => [
+            'titulo' => 'Archivo del formato de plaqueteo',
+            'texto' => "El formato firmado, escaneado en PDF. Máximo 8 MB.\n\n"
+                . "Revisa que se lean las firmas y los números de placa antes de subirlo: es la prueba de qué placas se pusieron y cuándo.\n\n"
+                . 'Al editar un registro, adjunta un archivo solo si quieres reemplazar el que ya tiene.',
+        ],
         'facturas' => [
             'titulo' => 'Facturas',
             'texto' => "Aquí archivas las facturas de los procesos administrativos de la institución (compras, servicios) para tenerlas todas en un solo lugar.\n\n"

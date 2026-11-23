@@ -4,6 +4,7 @@ use App\Core\Auth;
 use App\Core\Csrf;
 use App\Core\Url;
 use App\Core\View;
+use App\Helpers\AyudaCampo;
 use App\Helpers\Evidencia;
 
 /**
@@ -14,7 +15,7 @@ $editando = $registro !== null;
 $ventana = '/formatos-plaqueteo';
 $v = static fn (string $campo): string => htmlspecialchars((string) ($valores[$campo] ?? ''), ENT_QUOTES);
 ?>
-<?= ui('encabezado_pagina', ['titulo' => 'Formatos de plaqueteo', 'icono' => 'formato_plaqueteo', 'subtitulo' => 'Registra la evidencia de cada plaqueteo realizado por la Alcaldía.']) ?>
+<?= ui('encabezado_pagina', ['titulo' => 'Formatos de plaqueteo', 'icono' => 'formato_plaqueteo', 'ayuda' => AyudaCampo::boton('formatos_plaqueteo'), 'subtitulo' => 'Registra la evidencia de cada plaqueteo realizado por la Alcaldía.']) ?>
 
 <?php View::render('partials/evidencia_institucion', ['instituciones' => $instituciones, 'institucionId' => $institucionId, 'ventana' => $ventana]); ?>
 
@@ -24,7 +25,6 @@ $v = static fn (string $campo): string => htmlspecialchars((string) ($valores[$c
     <section class="card mb-4 contenedor-md" id="formularioEvidencia" aria-labelledby="tituloFormularioEvidencia">
         <div class="card-body">
             <h2 class="h6 mb-2" id="tituloFormularioEvidencia"><?= $editando ? 'Editar registro' : 'Registrar formato de plaqueteo' ?></h2>
-            <p class="text-muted small mb-2">Los campos marcados con <span class="text-danger">*</span> son obligatorios.</p>
             <form method="post" action="<?= $editando ? Url::to($ventana . '/' . $registro['id'] . '/actualizar') : Url::to($ventana) ?>"
                   enctype="multipart/form-data" class="row g-3">
                 <?= Csrf::field() ?>
@@ -32,16 +32,17 @@ $v = static fn (string $campo): string => htmlspecialchars((string) ($valores[$c
                     <input type="hidden" name="institucion_id" value="<?= $institucionId ?>">
                 <?php endif; ?>
                 <div class="col-md-6">
-                    <label for="campo-fecha-plaqueteo" class="form-label small requerido">Fecha del plaqueteo</label>
+                    <?= AyudaCampo::etiqueta('campo-fecha-plaqueteo', 'Fecha del plaqueteo', 'formato_plaqueteo_fecha', true) ?>
                     <input id="campo-fecha-plaqueteo" type="date" name="fecha_plaqueteo" class="form-control" required value="<?= $v('fecha_plaqueteo') ?>">
                 </div>
                 <div class="col-md-6">
-                    <label for="campo-funcionario-asistio" class="form-label small requerido">Funcionario que asistió</label>
-                    <input id="campo-funcionario-asistio" type="text" name="funcionario_asistio" class="form-control" required value="<?= $v('funcionario_asistio') ?>">
+                    <?= AyudaCampo::etiqueta('campo-funcionario-asistio', 'Funcionario que asistió', 'formato_plaqueteo_funcionario', true) ?>
+                    <input id="campo-funcionario-asistio" type="text" name="funcionario_asistio" class="form-control" required maxlength="150"
+                           autocomplete="off" placeholder="Nombres y apellidos completos" value="<?= $v('funcionario_asistio') ?>">
                 </div>
                 <div class="col-12">
-                    <label for="campo-descripcion" class="form-label small">Descripción (opcional)</label>
-                    <input id="campo-descripcion" type="text" name="descripcion" class="form-control" placeholder="Ej. Plaqueteo de equipos nuevos del aula 101" value="<?= $v('descripcion') ?>">
+                    <?= AyudaCampo::etiqueta('campo-descripcion', 'Descripción (opcional)', 'formato_plaqueteo_descripcion') ?>
+                    <input id="campo-descripcion" type="text" name="descripcion" class="form-control" maxlength="300" placeholder="Ej. Plaqueteo de equipos nuevos del aula 101" value="<?= $v('descripcion') ?>">
                 </div>
                 <?php if ($editando): ?>
                     <div class="col-md-6">
@@ -51,12 +52,12 @@ $v = static fn (string $campo): string => htmlspecialchars((string) ($valores[$c
                         </a>
                     </div>
                     <div class="col-12">
-                        <label for="campo-archivo" class="form-label small">Reemplazar archivo (opcional, PDF)</label>
+                        <?= AyudaCampo::etiqueta('campo-archivo', 'Reemplazar archivo (opcional, PDF)', 'formato_plaqueteo_archivo') ?>
                         <input id="campo-archivo" type="file" name="archivo" accept="application/pdf" class="form-control">
                     </div>
                 <?php else: ?>
                     <div class="col-12">
-                        <label for="campo-archivo" class="form-label small requerido">Archivo adjunto (PDF)</label>
+                        <?= AyudaCampo::etiqueta('campo-archivo', 'Archivo adjunto (PDF)', 'formato_plaqueteo_archivo', true) ?>
                         <input id="campo-archivo" type="file" name="archivo" accept="application/pdf" class="form-control" required>
                     </div>
                 <?php endif; ?>
