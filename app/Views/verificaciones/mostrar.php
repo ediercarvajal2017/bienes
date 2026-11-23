@@ -39,8 +39,10 @@ $urlBaseDiscrepancia = $urlBaseSeccion(['paginaDiscrepancia', 'porPaginaDiscrepa
 // prioridad que exista. Hallazgos solo aparece si hay alguno; las otras 3 siempre.
 $tabPorDefecto = !empty($hallazgos) ? 'hallazgos' : 'discrepancia';
 ?>
+<?php $ayudaJornada = \App\Helpers\AyudaCampo::boton('jornada_detalle') ?>
 <?= ui('encabezado_pagina', [
     'titulo' => (string) $jornada['nombre'],
+    'ayuda' => $ayudaJornada,
     'icono' => 'verificacion',
     'subtitulo' => number_format((int) $universo, 0, ',', '.') . ' bienes en total · Iniciada el ' . $jornada['fecha_inicio']
         . ($jornada['estado'] === 'cerrada' ? ' · Cerrada el ' . substr((string) $jornada['fecha_cierre'], 0, 16) : ''),
@@ -101,7 +103,7 @@ $tabPorDefecto = !empty($hallazgos) ? 'hallazgos' : 'discrepancia';
 
 <?php if (!empty($hallazgos)): ?>
 <div data-tab-panel="hallazgos" id="seccion-hallazgos" class="<?= $tabPorDefecto === 'hallazgos' ? '' : 'd-none' ?>">
-    <p class="text-muted small mb-2">Bienes físicos reportados por el personal durante la verificación, que no están en el sistema.</p>
+    <p class="text-muted small mb-2 d-flex align-items-center gap-1 flex-wrap">Bienes físicos reportados por el personal durante la verificación, que no están en el sistema.<?= \App\Helpers\AyudaCampo::boton('jornada_hallazgos') ?></p>
 
     <div data-navegable class="table-responsive mb-2">
         <table class="table table-sm bg-white tabla-cards">
@@ -144,7 +146,7 @@ $tabPorDefecto = !empty($hallazgos) ? 'hallazgos' : 'discrepancia';
 <?php endif; ?>
 
 <div data-tab-panel="discrepancia" id="seccion-discrepancia" class="<?= $tabPorDefecto === 'discrepancia' ? '' : 'd-none' ?>">
-    <p class="text-muted small mb-2">Bienes que no coinciden con lo esperado: dañados, en otro lugar, sin responsable correcto, o que no aparecieron.</p>
+    <p class="text-muted small mb-2 d-flex align-items-center gap-1 flex-wrap">Bienes que no coinciden con lo esperado: dañados, en otro lugar, sin responsable correcto, o que no aparecieron.<?= \App\Helpers\AyudaCampo::boton('jornada_discrepancias') ?></p>
     <?php
     $motivosConDatos = array_filter($discrepanciasPorMotivo, static fn (int $cantidad) => $cantidad > 0);
     ?>
@@ -168,7 +170,7 @@ $tabPorDefecto = !empty($hallazgos) ? 'hallazgos' : 'discrepancia';
                        value="<?= htmlspecialchars($busquedaDiscrepancia, ENT_QUOTES) ?>">
             </div>
             <div>
-                <label for="selectorEstadoDiscrepancia" class="form-label small mb-1">Estado</label>
+                <?= \App\Helpers\AyudaCampo::etiqueta('selectorEstadoDiscrepancia', 'Estado', 'discrepancia_estado') ?>
                 <select id="selectorEstadoDiscrepancia" class="form-select form-select-sm">
                     <option value="pendiente" <?= $estadoDiscrepancia === 'pendiente' ? 'selected' : '' ?>>Sin atender</option>
                     <option value="revisada" <?= $estadoDiscrepancia === 'revisada' ? 'selected' : '' ?>>Revisadas</option>
@@ -253,7 +255,7 @@ $tabPorDefecto = !empty($hallazgos) ? 'hallazgos' : 'discrepancia';
 </div>
 
 <div data-tab-panel="pendientes" id="seccion-pendientes" class="d-none">
-    <p class="text-muted small mb-2">Bienes que todavía no han sido escaneados ni verificados en esta jornada.</p>
+    <p class="text-muted small mb-2 d-flex align-items-center gap-1 flex-wrap">Bienes que todavía no han sido escaneados ni verificados en esta jornada.<?= \App\Helpers\AyudaCampo::boton('jornada_pendientes') ?></p>
     <div class="mb-2 contenedor-sm">
         <input type="search" id="buscadorPendientes" data-buscar="q" data-buscar-pagina="pagina" data-buscar-ancla="seccion-pendientes" class="form-control form-control-sm"
                placeholder="Buscar por código, descripción o ubicación..."
@@ -285,7 +287,7 @@ $tabPorDefecto = !empty($hallazgos) ? 'hallazgos' : 'discrepancia';
 </div>
 
 <div data-tab-panel="ok" id="seccion-ok" class="d-none">
-    <p class="text-muted small mb-2">Bienes confirmados — coinciden exactamente con lo que el sistema tiene registrado.</p>
+    <p class="text-muted small mb-2 d-flex align-items-center gap-1 flex-wrap">Bienes confirmados — coinciden exactamente con lo que el sistema tiene registrado.<?= \App\Helpers\AyudaCampo::boton('jornada_verificados') ?></p>
     <?php if ($verificadosOk > 0): ?>
         <div class="mb-2 contenedor-sm">
             <input type="search" id="buscadorOk" data-buscar="qOk" data-buscar-pagina="paginaOk" data-buscar-ancla="seccion-ok" class="form-control form-control-sm"

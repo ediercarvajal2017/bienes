@@ -145,8 +145,21 @@ final class CicloVidaBien
      * Si el bien ya tenía una asignación, el cambio es un traslado y queda como movimiento
      * con el espacio y la persona de origen y de destino. Devuelve el mensaje de éxito.
      */
+    /**
+     * Lo que cabe en la base: un texto más largo se rechaza con su motivo (antes hacía fallar
+     * el guardado). $campo: el del formulario de la ficha, para marcarlo.
+     */
+    private static function verificarLargo(?string $texto, int $maximo, string $queTexto, string $campo): void
+    {
+        if (mb_strlen(trim((string) $texto)) > $maximo) {
+            throw new ErrorGuiado("{$queTexto} es más largo de lo que se puede guardar (máximo {$maximo} caracteres).",
+                'Acórtalo y vuelve a guardar.', null, [$campo => "Máximo {$maximo} caracteres."]);
+        }
+    }
+
     public static function asignarResponsabilidad(array $bien, ?int $espacioId, ?int $personaId, string $fecha, ?string $observaciones, ?int $verificacionId = null): string
     {
+        self::verificarLargo($observaciones, 500, 'El texto de la observación', 'accion_observaciones');
         self::verificarEnCirculacion($bien);
         self::verificarFecha($fecha);
         $id = (int) $bien['id'];
@@ -228,6 +241,7 @@ final class CicloVidaBien
      */
     public static function trasladarSede(array $bien, int $institucionDestinoId, int $espacioId, string $fecha, ?string $observaciones): string
     {
+        self::verificarLargo($observaciones, 500, 'El texto de la observación', 'accion_observaciones');
         self::verificarEnCirculacion($bien);
         self::verificarFecha($fecha);
         $id = (int) $bien['id'];
@@ -300,6 +314,8 @@ final class CicloVidaBien
 
     public static function reintegrar(array $bien, string $fecha, string $destino, ?string $observaciones): string
     {
+        self::verificarLargo($destino, 200, 'El destino', 'accion_destino');
+        self::verificarLargo($observaciones, 500, 'El texto de la observación', 'accion_observaciones');
         self::verificarEnCirculacion($bien);
         $asignacionActiva = Asignacion::activaDe((int) $bien['id']);
         // Misma regla que el reintegro masivo, el escáner y el reintegro por cantidad (una
@@ -334,6 +350,7 @@ final class CicloVidaBien
                 'No hace falta reactivarlo: ya está en la institución.');
         }
         $motivo = trim($motivo);
+        self::verificarLargo($motivo, 500, 'El motivo', 'accion_motivo');
         self::verificarFecha($fecha);
         if ($motivo === '') {
             throw new ErrorGuiado('Falta el motivo de la reactivación.',
@@ -382,6 +399,8 @@ final class CicloVidaBien
         }
         $estadoReportado = trim($estadoReportado);
         $descripcion = trim($descripcion);
+        self::verificarLargo($estadoReportado, 100, 'El estado del bien', 'accion_estado_reportado');
+        self::verificarLargo($descripcion, 500, 'El texto de qué pasó', 'accion_descripcion_baja');
         if ($estadoReportado === '' || $descripcion === '') {
             throw new ErrorGuiado('Faltan el estado del bien o el motivo de la baja.',
                 'Elige en qué estado está y describe por qué se da de baja; luego vuelve a guardar.');

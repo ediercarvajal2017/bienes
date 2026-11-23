@@ -93,11 +93,11 @@ $etiquetasEntidad = [
 ];
 ?>
 <?= ui('encabezado_pagina', ['titulo' => 'Auditoría', 'icono' => 'auditoria',
-    'subtitulo' => 'Quién hizo qué y cuándo, en cualquier institución: altas y cambios, asignaciones, traslados, reintegros, bajas, verificaciones e inicios de sesión. Incluye lo que ya se purgó de la papelera.']) ?>
+    'subtitulo' => 'Quién hizo qué y cuándo, en cualquier institución: altas y cambios, asignaciones, traslados, reintegros, bajas, verificaciones e inicios de sesión. Incluye lo que ya se purgó de la papelera.', 'ayuda' => \App\Helpers\AyudaCampo::boton('auditoria')]) ?>
 
 <form method="get" action="<?= Url::to('/auditoria') ?>" class="mb-3 d-flex flex-wrap gap-3 align-items-end">
     <div>
-        <label for="campo-institucion-id" class="form-label small mb-1">Institución</label>
+        <?= \App\Helpers\AyudaCampo::etiqueta('campo-institucion-id', 'Institución', 'auditoria_institucion') ?>
         <select id="campo-institucion-id" name="institucion_id" class="form-select form-select-sm selector-buscable selector-filtro">
             <option value="">Todas</option>
             <?php foreach ($instituciones as $i): ?>
@@ -108,7 +108,7 @@ $etiquetasEntidad = [
         </select>
     </div>
     <div>
-        <label for="campo-entidad" class="form-label small mb-1">Tipo</label>
+        <?= \App\Helpers\AyudaCampo::etiqueta('campo-entidad', 'Tipo', 'auditoria_tipo') ?>
         <select id="campo-entidad" name="entidad" class="form-select form-select-sm">
             <option value="">Todos</option>
             <?php foreach ($etiquetasEntidad as $valor => $etiqueta): ?>
@@ -117,7 +117,7 @@ $etiquetasEntidad = [
         </select>
     </div>
     <div>
-        <label for="campo-accion" class="form-label small mb-1">Acción</label>
+        <?= \App\Helpers\AyudaCampo::etiqueta('campo-accion', 'Acción', 'auditoria_accion') ?>
         <select id="campo-accion" name="accion" class="form-select form-select-sm">
             <option value="">Todas</option>
             <?php foreach ($etiquetasAccion as $valor => $etiqueta): ?>
@@ -126,7 +126,7 @@ $etiquetasEntidad = [
         </select>
     </div>
     <div>
-        <label for="campo-desde" class="form-label small mb-1">Desde</label>
+        <?= \App\Helpers\AyudaCampo::etiqueta('campo-desde', 'Desde', 'auditoria_fechas') ?>
         <input id="campo-desde" type="date" name="desde" class="form-control form-control-sm" value="<?= htmlspecialchars($filtros['desde'] ?? '', ENT_QUOTES) ?>">
     </div>
     <div>

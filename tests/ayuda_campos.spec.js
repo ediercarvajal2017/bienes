@@ -499,6 +499,190 @@ test('asignaciones y reintegros explican cada campo como el formulario de bienes
     }
 });
 
+test('las cargas masivas explican el archivo, el resultado y las cargas anteriores', async ({ page }) => {
+    test.skip(datos().remoto === true, 'Necesita la base de pruebas local');
+
+    for (const [ruta, tituloCarga] of [
+        ['cargas-masivas', 'Carga masiva de bienes'],
+        ['espacios/carga-masiva', 'Carga masiva de espacios'],
+        ['usuarios/carga-masiva', 'Carga masiva de usuarios'],
+    ]) {
+        await page.goto(ruta);
+        await revisarAyudas(page, {
+            [tituloCarga]: 'Descargar plantilla',
+            'Archivo de la carga': 'sin guardar nada todavía',
+        });
+        // El campo del archivo tiene su etiqueta visible.
+        await expect(page.getByLabel('Archivo Excel (.xlsx)', { exact: true })).toHaveAttribute('type', 'file');
+    }
+
+    // Una carga analizada (sin confirmar) explica cada estado de fila; después se borra.
+    await page.goto('cargas-masivas');
+    await page.setInputFiles('input[name="archivo"]', 'tests/fixtures/carga_masiva_bienes.xlsx');
+    await page.getByRole('button', { name: 'Analizar archivo' }).click();
+    await expect(page).toHaveURL(/\/cargas-masivas\/\d+/);
+    const carga = Number(page.url().match(/cargas-masivas\/(\d+)/)[1]);
+    try {
+        await revisarAyudas(page, { 'Resultado de la carga': 'Nada se borra' });
+        await page.goto('cargas-masivas');
+        await revisarAyudas(page, { 'Cargas anteriores': 'Una carga se aplica una sola vez' });
+    } finally {
+        bd(`DELETE FROM cargas_masivas WHERE id = ${carga} AND aplicada = 0`);
+    }
+
+    await page.goto('bienes/carga-masiva-fotos');
+    await revisarAyudas(page, {
+        'Carga masiva de fotos': 'No reemplaza la foto de un bien que ya tiene una',
+        'Archivo .zip con las fotos': 'hasta 3.000 archivos',
+    });
+});
+
+test('panel principal, escáner, ficha del QR, mis notas y mi cuenta explican cada parte', async ({ page }) => {
+    test.skip(datos().remoto === true, 'Necesita la base de pruebas local');
+    const d = datos();
+
+    await page.goto('dashboard');
+    await revisarAyudas(page, {
+        'Panel principal': 'depende de tu rol y de la sede activa',
+        'Cifras del inventario': 'los activos y en reparación',
+        'Accesos rápidos': 'las mismas del menú',
+    });
+    if (await ayudaDe(page, 'Requiere atención').count() > 0) {
+        await revisarAyudas(page, { 'Requiere atención': 'bajas por aprobar' });
+    }
+
+    await page.goto('escanear');
+    await revisarAyudas(page, {
+        'Escanear código QR': 'permiso para usar la cámara',
+        'Escribir el código': 'tal como está en la etiqueta',
+    });
+
+    // La verificación en curso solo aparece con una jornada abierta: se abre una un momento y se borra.
+    const activa = bd(`SELECT id FROM jornadas_verificacion WHERE institucion_id = ${d.instituciones.A} AND estado = 'en_progreso' LIMIT 1`);
+    const creada = activa === '' ? Number(bd(`INSERT INTO jornadas_verificacion (institucion_id, nombre, fecha_inicio, creada_por)
+        VALUES (${d.instituciones.A}, 'PW-TEST ayudas QR', CURDATE(), ${d.usuarios.rector.id}); SELECT LAST_INSERT_ID();`)) : null;
+    try {
+        await page.goto(`qr/${d.qr.A}`);
+        await revisarAyudas(page, {
+            'Ficha del bien': 'Lo que abre el QR pegado en el bien',
+            'Etiqueta QR': 'Etiqueta impresa, sin confirmar',
+            'Verificación física en curso': 'reemplaza el registro anterior',
+        });
+    } finally {
+        if (creada !== null) {
+            bd(`DELETE FROM jornadas_verificacion WHERE id = ${creada}`);
+        }
+    }
+
+    await page.goto('mi-cuenta');
+    await revisarAyudas(page, {
+        'Mi cuenta': 'pídeselo al administrador',
+        'Verificación en dos pasos': 'Códigos de recuperación',
+        'Contraseña actual': 'confirmar que eres tú',
+        'Contraseña nueva': 'Mínimo 10 caracteres, con letras y números',
+        'Confirmar contraseña nueva': 'error de digitación',
+        'Tus datos y privacidad': 'política de tratamiento de datos',
+    });
+    await expect(page.getByText('No uses tu nombre, documento ni correo')).toHaveCount(0);
+
+    // Mis notas: el (?) del panel.
+    await page.goto('dashboard');
+    await page.getByRole('button', { name: /^Mis notas/ }).click();
+    const boton = ayudaDe(page, 'Mis notas');
+    await boton.click();
+    await expect(await globoDe(page, boton)).toContainText('Son privadas: solo tú las ves');
+});
+
+test('bienes (tabla, registrar, editar, alta masiva) y detalle de la jornada explican cada parte', async ({ page }) => {
+    test.skip(datos().remoto === true, 'Necesita la base de pruebas local');
+    const d = datos();
+
+    await page.goto('bienes');
+    await page.locator('#botonFiltrosBienes').click();
+    await revisarAyudas(page, {
+        'Buscar bienes': 'No distingue tildes ni mayúsculas',
+        'Filtro por categoría': 'Sin cartera',
+        'Filtro por estado': 'Dado de baja',
+        'Filtro por espacio': 'están hoy en ese espacio',
+        'Filtro por responsabilidad': 'Sin asignar',
+    });
+
+    await page.goto('bienes/crear');
+    await revisarAyudas(page, { 'Registrar o editar un bien': 'Los datos y la acción se guardan juntos' });
+    await expect(page.locator('#codigoIdentificacion')).toHaveAttribute('maxlength', '40');
+    await expect(page.locator('#campo-descripcion')).toHaveAttribute('maxlength', '200');
+    await expect(page.locator('#campo-marca')).toHaveAttribute('maxlength', '100');
+
+    // Al editar, los campos de la acción elegida tienen su ayuda.
+    await page.goto(`bienes/${d.bienes.A.silla}/editar`);
+    await page.locator('#accionBien').selectOption('reintegrar');
+    await revisarAyudas(page, {
+        Destino: 'Máximo 200 caracteres',
+        'Fecha de la acción': 'por defecto, hoy',
+        'Observación de la acción': 'Máximo 500 caracteres',
+    });
+    await expect(page.locator('#accionDestino')).toHaveAttribute('maxlength', '200');
+
+    await page.goto('bienes/alta-masiva');
+    await revisarAyudas(page, {
+        'Alta masiva de bienes idénticos': 'reintegrar por cantidad',
+        'Código de lote': 'máximo 36 caracteres',
+    });
+    await expect(page.locator('#campo-lote')).toHaveAttribute('maxlength', '36');
+
+    // Un código de lote más largo de lo que cabe se rechaza con su motivo (antes fallaba al guardar).
+    const token = await page.locator('input[name="_csrf"]').first().inputValue();
+    const respuesta = await page.request.post('bienes/alta-masiva', {
+        form: { _csrf: token, lote: 'L'.repeat(37), cantidad: '2', descripcion: 'SILLA DE PRUEBA', fecha_ingreso: '2024-01-15', valor: '0' },
+        maxRedirects: 0,
+    });
+    expect(respuesta.status()).toBe(302);
+    await page.goto('bienes/alta-masiva');
+    await expect(page.locator('.alert-danger')).toContainText('El código de lote es más largo de lo que se puede guardar');
+
+    // Detalle de una jornada (se abre una si no hay, y se borra al final).
+    const activa = bd(`SELECT id FROM jornadas_verificacion WHERE institucion_id = ${d.instituciones.A} AND estado = 'en_progreso' LIMIT 1`);
+    const creada = activa === '' ? Number(bd(`INSERT INTO jornadas_verificacion (institucion_id, nombre, fecha_inicio, creada_por)
+        VALUES (${d.instituciones.A}, 'PW-TEST ayudas jornada', CURDATE(), ${d.usuarios.rector.id}); SELECT LAST_INSERT_ID();`)) : null;
+    try {
+        await page.goto(`verificaciones/${creada ?? Number(activa)}`);
+        await revisarAyudas(page, {
+            'Detalle de la jornada': 'Exportar a Excel',
+            Discrepancias: 'la discrepancia queda revisada sola',
+        });
+        await page.locator('[data-tab-link="pendientes"]').click();
+        await revisarAyudas(page, { Pendientes: 'nadie ha escaneado' });
+        await page.locator('[data-tab-link="ok"]').click();
+        await revisarAyudas(page, { Verificados: 'el bien está aquí' });
+    } finally {
+        if (creada !== null) {
+            bd(`DELETE FROM jornadas_verificacion WHERE id = ${creada}`);
+        }
+    }
+});
+
+test('auditoría y papelera (superusuario) explican cada parte', async ({ browser }) => {
+    test.skip(datos().remoto === true, 'Necesita la base de pruebas local');
+    const contexto = await comoRol(browser, 'superusuario');
+    const page = await contexto.newPage();
+
+    await page.goto('auditoria');
+    await revisarAyudas(page, {
+        Auditoría: 'Nadie puede borrar ni cambiar un registro de auditoría',
+        'Filtro por institución': 'esa institución',
+        'Filtro por tipo': 'un lote de reintegro',
+        'Filtro por acción': 'iniciar sesión',
+        'Filtro por fechas': 'ambos incluidos',
+    });
+
+    await page.goto('papelera');
+    await revisarAyudas(page, { 'Papelera de reciclaje': 'más de 90 días' });
+    if (await ayudaDe(page, 'Buscar en la papelera').count() > 0) {
+        await revisarAyudas(page, { 'Buscar en la papelera': 'mientras escribes' });
+    }
+    await contexto.close();
+});
+
 test.describe('en el celular', () => {
     test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
 

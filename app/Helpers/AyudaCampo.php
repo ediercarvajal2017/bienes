@@ -38,15 +38,15 @@ final class AyudaCampo
         'codigo' => [
             'titulo' => 'Código de identificación',
             'texto' => "La placa del bien tal como aparece en la cartera de la Alcaldía (ej. 200033042). No se puede repetir en la institución.\n\n"
-                . 'Con la categoría "Sin cartera", MIA sugiere el siguiente código de 10 dígitos; puedes cambiarlo.',
+                . 'Con la categoría "Sin cartera", MIA sugiere el siguiente código de 10 dígitos; puedes cambiarlo. Máximo 40 caracteres.',
         ],
         'descripcion' => [
             'titulo' => 'Descripción',
-            'texto' => 'Qué es el bien, como figura en la cartera: tipo, material, color y modelo. Ej.: SILLA UNIVERSITARIA EN MADERA, PROYECTOR EPSON X200.',
+            'texto' => 'Qué es el bien, como figura en la cartera: tipo, material, color y modelo. Ej.: SILLA UNIVERSITARIA EN MADERA, PROYECTOR EPSON X200. Máximo 200 caracteres.',
         ],
         'marca' => [
             'titulo' => 'Marca',
-            'texto' => 'El fabricante, si lo tiene (Epson, Lenovo, Rimax). Déjalo vacío si no aplica.',
+            'texto' => 'El fabricante, si lo tiene (Epson, Lenovo, Rimax). Déjalo vacío si no aplica. Máximo 100 caracteres.',
         ],
         'fecha_ingreso' => [
             'titulo' => 'Fecha de ingreso',
@@ -106,9 +106,15 @@ final class AyudaCampo
             'titulo' => 'Estado de la categoría',
             'texto' => 'Desactivar una categoría la oculta al registrar bienes nuevos, pero conserva los bienes que ya la usan.',
         ],
+        'alta_masiva' => [
+            'titulo' => 'Alta masiva de bienes idénticos',
+            'texto' => "Registra de una vez muchas unidades iguales que comparten una placa (ej. 250 sillas de la placa 200033042).\n\n"
+                . "Cada unidad queda como un bien propio, con código CÓDIGO-001, CÓDIGO-002…, su QR, su ubicación y su historial. Así se pueden asignar a espacios distintos y reintegrar por cantidad.\n\n"
+                . 'Para un solo bien usa «Registrar bien»; para más de 500 unidades, haz varias altas masivas con códigos distintos.',
+        ],
         'lote_codigo' => [
             'titulo' => 'Código de lote',
-            'texto' => 'El código que comparten todas las unidades (ej. la placa de la Alcaldía). Solo letras, números y guiones. Cada unidad queda como CÓDIGO-001, CÓDIGO-002…',
+            'texto' => 'El código que comparten todas las unidades (ej. la placa de la Alcaldía). Solo letras, números y guiones, máximo 36 caracteres (cada unidad le suma 4: -001). Cada unidad queda como CÓDIGO-001, CÓDIGO-002…',
         ],
         'lote_cantidad' => [
             'titulo' => 'Cantidad',
@@ -287,6 +293,241 @@ final class AyudaCampo
             'titulo' => 'Foto del hallazgo',
             'texto' => "Opcional, pero ayuda a identificar el bien y a no registrarlo dos veces. JPG o PNG, máximo 2 MB.\n\n"
                 . 'En el celular puedes tomarla con la cámara.',
+        ],
+        'registrar_bien' => [
+            'titulo' => 'Registrar o editar un bien',
+            'texto' => "**Registrar:** escribe los datos del bien tal como está en la cartera de la Alcaldía, su ubicación (opcional) y su foto. Para muchas unidades iguales usa «Alta masiva».\n\n"
+                . "**Editar:** cambia sus datos y, en «¿Qué deseas hacer con este bien?», elige una acción: asignar o trasladar, cambiar de sede, reintegrar, reactivar o reportar la baja.\n\n"
+                . 'Los datos y la acción se guardan juntos: si la acción no se puede hacer, tampoco se guardan los datos, y el formulario conserva lo que escribiste.',
+        ],
+        'accion_sede' => [
+            'titulo' => 'Sede destino',
+            'texto' => 'La sede de tu institución (principal o sección) a la que pasa el bien. Después eliges el espacio de esa sede donde queda.',
+        ],
+        'accion_espacio_sede' => [
+            'titulo' => 'Espacio en la sede destino',
+            'texto' => 'El espacio de la sede elegida donde queda el bien. Elige primero la sede para ver sus espacios.',
+        ],
+        'reactivar_motivo' => [
+            'titulo' => 'Motivo de la reactivación',
+            'texto' => 'Por qué el bien vuelve a la institución. Ej.: La Alcaldía devolvió el bien, se reintegró por error. Queda en el historial y en la auditoría. Solo el rector puede reactivar. Máximo 500 caracteres.',
+        ],
+        'accion_fecha' => [
+            'titulo' => 'Fecha de la acción',
+            'texto' => 'El día en que ocurrió lo que vas a registrar (asignación, traslado, reintegro, reactivación o baja); por defecto, hoy. No puede ser futura ni anterior al año 2000.',
+        ],
+        'accion_observacion' => [
+            'titulo' => 'Observación de la acción',
+            'texto' => 'Opcional. Una nota que queda en el historial del bien junto con el movimiento. Máximo 500 caracteres.',
+        ],
+        'buscar_bienes' => [
+            'titulo' => 'Buscar bienes',
+            'texto' => "Escribe parte del código, la descripción, el responsable, la ubicación o el valor: la lista se actualiza sola.\n\n"
+                . 'No distingue tildes ni mayúsculas, y lo encontrado se marca en amarillo. Desde el teclado llegas aquí con «/».',
+        ],
+        'filtro_categoria' => [
+            'titulo' => 'Filtro por categoría',
+            'texto' => 'Muestra solo los bienes de esa categoría (Muebles, Tecnología, Sin cartera…).',
+        ],
+        'filtro_estado' => [
+            'titulo' => 'Filtro por estado',
+            'texto' => "**Activo:** en uso. **En reparación:** fuera de servicio por un tiempo. **Reintegrado:** devuelto a la Alcaldía. **Dado de baja:** ya no existe.\n\n"
+                . 'Entre paréntesis, cuántos hay de cada uno con los demás filtros aplicados.',
+        ],
+        'jornada_detalle' => [
+            'titulo' => 'Detalle de la jornada',
+            'texto' => "El avance de esta jornada de verificación física, en cuatro pestañas:\n\n"
+                . "**Hallazgos:** bienes encontrados que no están en MIA. **Discrepancias:** bienes que no coinciden. **Pendientes:** los que nadie ha escaneado. **Verificados:** los que coinciden.\n\n"
+                . '«Exportar a Excel» descarga todo. Cuando termines, cierra la jornada con «Cerrar jornada».',
+        ],
+        'jornada_hallazgos' => [
+            'titulo' => 'Hallazgos',
+            'texto' => "Bienes que alguien encontró en un espacio y no están en MIA.\n\n"
+                . "**Registrar como bien:** abre «Registrar bien» a partir del hallazgo.\n\n"
+                . '**Descartar:** si no corresponde registrarlo (ya existía, no es de la institución…). Los hallazgos no se pierden al cerrar la jornada.',
+        ],
+        'jornada_discrepancias' => [
+            'titulo' => 'Discrepancias',
+            'texto' => "Bienes que no coinciden con lo que dice MIA.\n\n"
+                . "**Corregir ubicación:** abre el bien para asignarlo al espacio correcto.\n\n"
+                . "**Dar de baja:** abre el reporte de baja (solo para bienes «Sin cartera»).\n\n"
+                . '**Marcar revisada:** cuando ya se atendió. Al corregir la ubicación o reportar la baja desde aquí, la discrepancia queda revisada sola.',
+        ],
+        'discrepancia_estado' => [
+            'titulo' => 'Estado de las discrepancias',
+            'texto' => '**Sin atender:** las que nadie ha revisado. **Revisadas:** las ya atendidas, con quién y cuándo. **Todas:** unas y otras.',
+        ],
+        'jornada_pendientes' => [
+            'titulo' => 'Pendientes',
+            'texto' => 'Bienes de la institución que todavía nadie ha escaneado en esta jornada; para verificarlos, escanea su QR. Los reintegrados y los dados de baja no cuentan.',
+        ],
+        'jornada_verificados' => [
+            'titulo' => 'Verificados',
+            'texto' => 'Bienes que alguien escaneó y confirmó con «el bien está aquí»: coinciden con lo que dice MIA.',
+        ],
+        'auditoria' => [
+            'titulo' => 'Auditoría',
+            'texto' => "Quién hizo qué y cuándo en MIA, en todas las instituciones. Nadie puede borrar ni cambiar un registro de auditoría.\n\n"
+                . 'Los registros de más de 3 años pasan a un archivo comprimido descargable: se guardan, no se pierden.',
+        ],
+        'auditoria_institucion' => [
+            'titulo' => 'Filtro por institución',
+            'texto' => 'Muestra solo lo ocurrido en esa institución. «Todas» muestra lo de todas.',
+        ],
+        'auditoria_tipo' => [
+            'titulo' => 'Filtro por tipo',
+            'texto' => 'Sobre qué se hizo la acción: un bien, un usuario, un espacio, un lote de reintegro… «Todos» muestra todo.',
+        ],
+        'auditoria_accion' => [
+            'titulo' => 'Filtro por acción',
+            'texto' => 'Qué se hizo: crear, editar, asignar, reintegrar, eliminar, iniciar sesión…',
+        ],
+        'auditoria_fechas' => [
+            'titulo' => 'Filtro por fechas',
+            'texto' => 'Desde y hasta qué día, ambos incluidos. Puedes llenar solo uno de los dos.',
+        ],
+        'papelera' => [
+            'titulo' => 'Papelera de reciclaje',
+            'texto' => "Lo que se eliminó en cualquier institución: usuarios, espacios, categorías, cargos, facturas, formatos y carteras.\n\n"
+                . "**Restaurar** lo devuelve tal como estaba.\n\n"
+                . 'Lo que lleva más de 90 días en la papelera se borra solo, de forma definitiva.',
+        ],
+        'papelera_buscar' => [
+            'titulo' => 'Buscar en la papelera',
+            'texto' => 'Filtra la lista mientras escribes: por tipo, elemento, institución o quién lo eliminó.',
+        ],
+        'ficha_qr' => [
+            'titulo' => 'Ficha del bien',
+            'texto' => "Lo que abre el QR pegado en el bien: qué es, su estado, dónde está y quién responde por él.\n\n"
+                . "Según tu rol, desde aquí puedes gestionar el bien, reportar su baja (solo los «Sin cartera»), solicitar su reintegro, confirmar la etiqueta y, durante una verificación física, confirmar que el bien está o reportar una discrepancia.\n\n"
+                . 'Sin iniciar sesión solo se ven los datos del bien.',
+        ],
+        'etiqueta_qr' => [
+            'titulo' => 'Etiqueta QR',
+            'texto' => "**QR sin imprimir todavía:** aún no se ha generado su etiqueta; se imprime en «Generar QR masivo».\n\n"
+                . "**Etiqueta impresa, sin confirmar:** ya se imprimió, pero nadie ha confirmado que quedó pegada en este bien.\n\n"
+                . '**Etiqueta confirmada:** alguien escaneó la etiqueta pegada y confirmó que corresponde a este bien.',
+        ],
+        'confirmar_etiqueta' => [
+            'titulo' => 'Confirmar la etiqueta',
+            'texto' => "¿Acabas de pegar esta etiqueta? Si lo que ves aquí (descripción, código, ubicación) coincide con el bien que tienes enfrente, confírmalo.\n\n"
+                . 'Así queda registrado quién la confirmó y cuándo, y el bien cuenta como «con etiqueta QR confirmada» en el panel principal. Si no coincide, no confirmes: la etiqueta quedó en otro bien.',
+        ],
+        'verificacion_en_curso' => [
+            'titulo' => 'Verificación física en curso',
+            'texto' => "Hay una jornada de verificación abierta en tu institución.\n\n"
+                . "**Confirmar: el bien está aquí:** el bien existe y coincide con lo que dice MIA.\n\n"
+                . "**Reportar discrepancia:** algo no coincide (no está, está en otro salón, dañado…).\n\n"
+                . 'Si el bien ya se verificó, volver a verificarlo reemplaza el registro anterior.',
+        ],
+        'escanear' => [
+            'titulo' => 'Escanear código QR',
+            'texto' => "Apunta la cámara al QR pegado en el bien: al leerlo, MIA abre su ficha. La primera vez, el navegador te pide permiso para usar la cámara: acéptalo.\n\n"
+                . "Si tu teléfono tiene varias cámaras, usa «Cambiar cámara». Con poca luz, «Linterna» (no todos los teléfonos la permiten).\n\n"
+                . 'Solo se abren etiquetas de MIA: un QR de otro sistema o de un producto se ignora, por seguridad.',
+        ],
+        'escanear_codigo' => [
+            'titulo' => 'Escribir el código',
+            'texto' => 'Si no tienes cámara o el QR está dañado, escribe la placa o el código del bien, tal como está en la etiqueta (ej. 200033042 o PA-0001), y pulsa «Buscar».',
+        ],
+        'notas' => [
+            'titulo' => 'Mis notas',
+            'texto' => "Notas adhesivas para anotar pendientes. Son privadas: solo tú las ves.\n\n"
+                . "Cada nota se guarda sola un momento después de dejar de escribir. Puedes cambiarle el color para organizarlas, y borrarla con confirmación.\n\n"
+                . 'Hasta 100 notas de 2.000 caracteres cada una. Una nota nueva que dejes vacía se descarta al cerrar el panel.',
+        ],
+        'mi_cuenta' => [
+            'titulo' => 'Mi cuenta',
+            'texto' => "Tu cuenta en MIA: arriba ves tu nombre, tu correo y tu rol. Para corregirlos, pídeselo al administrador de MIA de tu institución.\n\n"
+                . 'Aquí cambias tu contraseña, activas la verificación en dos pasos y revisas cómo se tratan tus datos.',
+        ],
+        'dos_pasos' => [
+            'titulo' => 'Verificación en dos pasos',
+            'texto' => "Además de la contraseña, MIA te pide un código de 6 dígitos que genera una aplicación en tu teléfono (Google Authenticator, Microsoft Authenticator u otra). Es opcional y recomendada.\n\n"
+                . "**Códigos de recuperación:** sirven para entrar si pierdes el teléfono; cada uno se usa una sola vez. Al generar nuevos, los anteriores dejan de servir.\n\n"
+                . 'Si pierdes el teléfono y los códigos, el rector puede restablecerla desde «Usuarios».',
+        ],
+        'confirmar_contrasena' => [
+            'titulo' => 'Contraseña para confirmar',
+            'texto' => 'Tu contraseña de MIA. Se pide para confirmar que eres tú antes de un cambio de seguridad.',
+        ],
+        'codigo_dos_pasos' => [
+            'titulo' => 'Código actual',
+            'texto' => 'El código de 6 dígitos que muestra ahora la aplicación de tu teléfono, o uno de tus códigos de recuperación.',
+        ],
+        'dispositivos_confianza' => [
+            'titulo' => 'Dispositivos de confianza',
+            'texto' => "Los navegadores donde marcaste «No volver a pedirlo en este dispositivo» al entrar: allí no se pide el código durante 30 días.\n\n"
+                . 'Quita los que no reconozcas o los de equipos compartidos: la próxima vez que entren, MIA pedirá el código.',
+        ],
+        'contrasena_actual' => [
+            'titulo' => 'Contraseña actual',
+            'texto' => 'La contraseña con la que entras hoy a MIA. Se pide para confirmar que eres tú.',
+        ],
+        'contrasena_nueva' => [
+            'titulo' => 'Contraseña nueva',
+            'texto' => "Mínimo 10 caracteres, con letras y números. No puede contener tu nombre, tus apellidos, tu documento ni tu correo, ni ser una contraseña muy común.\n\n"
+                . 'Al cambiarla, se cierran tus demás sesiones abiertas; la de este navegador sigue.',
+        ],
+        'contrasena_confirmacion' => [
+            'titulo' => 'Confirmar contraseña nueva',
+            'texto' => 'Escribe otra vez la contraseña nueva, igual, para evitar un error de digitación.',
+        ],
+        'privacidad' => [
+            'titulo' => 'Tus datos y privacidad',
+            'texto' => 'Cuándo aceptaste la política de tratamiento de datos de MIA y el enlace para leerla. Para corregir tus datos (nombre, documento o correo), pídeselo al administrador de MIA de tu institución.',
+        ],
+        'panel_principal' => [
+            'titulo' => 'Panel principal',
+            'texto' => "Tu punto de partida en MIA: lo que requiere atención, las cifras del inventario y los accesos a lo que tu rol puede hacer.\n\n"
+                . 'Lo que ves depende de tu rol y de la sede activa. Cada tarjeta y cada aviso llevan a la pantalla donde se ve el detalle.',
+        ],
+        'requiere_atencion' => [
+            'titulo' => 'Requiere atención',
+            'texto' => 'Pendientes que alguien debe resolver: bajas por aprobar, solicitudes de reintegro por revisar, bienes sin asignar y hallazgos de la verificación física. Cada aviso lleva a la pantalla donde se resuelve.',
+        ],
+        'cifras_inventario' => [
+            'titulo' => 'Cifras del inventario',
+            'texto' => "**Bienes en circulación:** los activos y en reparación, lo que la institución tiene hoy. Los reintegrados y dados de baja se cuentan aparte.\n\n"
+                . "**Valor del inventario:** la suma del valor de los bienes en circulación.\n\n"
+                . "**Asignados:** cuántos de ellos tienen espacio o persona responsable.\n\n"
+                . "**Con etiqueta QR confirmada:** cuántos tienen la etiqueta pegada y confirmada.\n\n"
+                . '**Bajas pendientes:** reportes de baja por aprobar o rechazar.',
+        ],
+        'accesos_rapidos' => [
+            'titulo' => 'Accesos rápidos',
+            'texto' => 'Atajos a las pantallas que tu rol puede usar; son las mismas del menú.',
+        ],
+        'carga_archivo' => [
+            'titulo' => 'Archivo de la carga',
+            'texto' => "La plantilla diligenciada y guardada como .xlsx (máximo 8 MB). Descárgala en el ícono (?) junto al título: trae las instrucciones y las listas para elegir.\n\n"
+                . "Al pulsar «Analizar archivo», MIA revisa cada fila y te muestra qué haría, **sin guardar nada todavía**.\n\n"
+                . 'Los cambios se aplican solo cuando pulsas «Confirmar importación» en el resultado.',
+        ],
+        'cargas_anteriores' => [
+            'titulo' => 'Cargas anteriores',
+            'texto' => "Cada archivo que se subió, con quién lo subió y cuántas filas traía.\n\n"
+                . "**Pendiente:** se analizó, pero nadie lo confirmó, así que no se guardó nada. Ábrelo con «Ver» para revisarlo y confirmarlo.\n\n"
+                . '**Aplicada:** ya se confirmó y sus cambios están en MIA. Una carga se aplica una sola vez.',
+        ],
+        'resultado_carga' => [
+            'titulo' => 'Resultado de la carga',
+            'texto' => "Lo que haría cada fila del archivo. Hasta que confirmes, no se ha guardado nada.\n\n"
+                . "**Nuevo:** se creará. **Modificado:** ya existe y cambiará lo que se muestra (antes → después). **Sin cambios:** ya existe igual; no se toca.\n\n"
+                . "**Inválido:** tiene un error, explicado en la fila, y no se aplicará. Corrígelo en el Excel y vuelve a subirlo.\n\n"
+                . '«Confirmar importación» aplica los nuevos y los modificados, una sola vez. Nada se borra: lo que no está en el archivo queda igual.',
+        ],
+        'carga_fotos' => [
+            'titulo' => 'Carga masiva de fotos',
+            'texto' => "Asocia muchas fotos a la vez: cada foto del .zip se llama igual que el código del bien (ej. PA-0001.jpg) y MIA la pone en ese bien.\n\n"
+                . "No reemplaza la foto de un bien que ya tiene una, así que puedes subir el mismo .zip otra vez sin perder nada.\n\n"
+                . 'El resultado dice cuántas se asociaron, cuáles ya tenían foto, cuáles no tienen un bien con ese código y cuáles no son una imagen válida.',
+        ],
+        'carga_fotos_archivo' => [
+            'titulo' => 'Archivo .zip con las fotos',
+            'texto' => "Un .zip con las fotos en JPG o PNG, cada una de máximo 2 MB y nombrada con el código del bien (ej. PA-0001.jpg), hasta 3.000 archivos.\n\n"
+                . "En Windows: selecciona las fotos, clic derecho › Enviar a › Carpeta comprimida.\n\n"
+                . 'Si el .zip es muy pesado, divídelo en varios y súbelos uno por uno.',
         ],
         'asignaciones' => [
             'titulo' => 'Asignar bienes',

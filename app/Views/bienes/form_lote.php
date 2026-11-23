@@ -12,7 +12,7 @@ $e = static fn (mixed $texto): string => htmlspecialchars((string) $texto, ENT_Q
 <div class="contenedor-md">
     <?= ui('encabezado_pagina', ['titulo' => 'Alta masiva de bienes idénticos', 'icono' => 'bien',
         'subtitulo' => 'Registra muchas unidades iguales con un solo código (ej. 250 sillas): cada una queda como un bien con su propio código y QR.',
-        'acciones' => ui('boton', ['texto' => 'Volver', 'icono' => 'volver', 'tamano' => 'sm', 'url' => Url::to('/bienes')]) . ui('menu_acciones', ['opciones' => \App\Helpers\AccionesBienes::opciones(), 'actual' => 'alta_masiva'])]) ?>
+        'ayuda' => AyudaCampo::boton('alta_masiva'), 'acciones' => ui('boton', ['texto' => 'Volver', 'icono' => 'volver', 'tamano' => 'sm', 'url' => Url::to('/bienes')]) . ui('menu_acciones', ['opciones' => \App\Helpers\AccionesBienes::opciones(), 'actual' => 'alta_masiva'])]) ?>
     <?php if (!empty($origen)): ?>
         <?php // Desde Reintegrar por cantidad: las unidades de un bien que agrupa varias (BienController::unidadesDesdeBien). ?>
         <?= ui('alerta', ['tipo' => 'info', 'cerrable' => false, 'clases' => 'py-2 small',
@@ -54,7 +54,7 @@ $e = static fn (mixed $texto): string => htmlspecialchars((string) $texto, ENT_Q
                 </div>
                 <div class="col-md-4">
                     <?= AyudaCampo::etiqueta('campo-lote', 'Código de lote', 'lote_codigo', true) ?>
-                    <input id="campo-lote" type="text" name="lote" class="form-control<?= clase_invalido('lote') ?>" required
+                    <input id="campo-lote" type="text" name="lote" class="form-control<?= clase_invalido('lote') ?>" required maxlength="36"
                            pattern="[A-Za-z0-9\-]+" data-error-formato="El código solo puede tener letras, números y guiones, sin espacios."
                            placeholder="Ej. SILLAS-2026"
                            value="<?= $e($v('lote')) ?>">
@@ -69,14 +69,15 @@ $e = static fn (mixed $texto): string => htmlspecialchars((string) $texto, ENT_Q
 
                 <div class="col-md-8">
                     <?= AyudaCampo::etiqueta('campo-descripcion', 'Descripción', 'descripcion', true) ?>
-                    <input id="campo-descripcion" type="text" name="descripcion" data-descripcion-segun-categoria="categoriaLote" class="form-control<?= clase_invalido('descripcion') ?>" required
+                    <input id="campo-descripcion" type="text" name="descripcion" data-descripcion-segun-categoria="categoriaLote" class="form-control<?= clase_invalido('descripcion') ?>" required maxlength="200"
                            placeholder="Ej. Silla metálica con espaldar en polipropileno"
                            value="<?= $e($v('descripcion')) ?>">
                     <?= error_campo('descripcion') ?>
                 </div>
                 <div class="col-md-4">
                     <?= AyudaCampo::etiqueta('campo-marca', 'Marca', 'marca') ?>
-                    <input id="campo-marca" type="text" name="marca" class="form-control" value="<?= $e($v('marca')) ?>">
+                    <input id="campo-marca" type="text" name="marca" class="form-control<?= clase_invalido('marca') ?>" maxlength="100" value="<?= $e($v('marca')) ?>">
+                    <?= error_campo('marca') ?>
                 </div>
 
                 <div class="col-md-4">
