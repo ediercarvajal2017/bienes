@@ -4,6 +4,7 @@ use App\Core\Auth;
 use App\Core\Csrf;
 use App\Core\Url;
 use App\Core\View;
+use App\Helpers\AyudaCampo;
 
 $viejo ??= [];
 $bienesSeleccionados = $viejo['bienes'] ?? [];
@@ -11,12 +12,12 @@ $bienesSeleccionados = $viejo['bienes'] ?? [];
 <?php ob_start(); ?>
     <a href="<?= Url::to('/bienes') ?>" class="btn btn-sm btn-outline-secondary">Volver</a>
     <?= ui('menu_acciones', ['opciones' => \App\Helpers\AccionesBienes::opciones(), 'actual' => 'asignar']) ?>
-<?= ui('encabezado_pagina', ['titulo' => 'Asignar bienes', 'icono' => 'asignacion', 'subtitulo' => 'Selecciona uno o varios bienes y asígnalos (o reasígnalos) a un espacio o a una persona.', 'acciones' => (string) ob_get_clean()]) ?>
+<?= ui('encabezado_pagina', ['titulo' => 'Asignar bienes', 'icono' => 'asignacion', 'ayuda' => AyudaCampo::boton('asignaciones'), 'subtitulo' => 'Selecciona uno o varios bienes y asígnalos (o reasígnalos) a un espacio o a una persona.', 'acciones' => (string) ob_get_clean()]) ?>
 
 
 <?php if (Auth::esSuperusuario()): ?>
     <div class="mb-3 contenedor-sm">
-        <label for="selectorInstitucion" class="form-label small">Institución</label>
+        <?= AyudaCampo::etiqueta('selectorInstitucion', 'Institución', 'asignacion_institucion') ?>
         <select id="selectorInstitucion" class="form-select form-select-sm selector-buscable">
             <option value="">-- Selecciona una institución --</option>
             <?php foreach ($instituciones as $i): ?>
@@ -70,15 +71,15 @@ $bienesSeleccionados = $viejo['bienes'] ?? [];
                         <?php endif; ?>
                     </div>
                     <div class="col-md-5">
-                        <label for="campo-fecha-asignacion" class="form-label small">Fecha de asignación</label>
+                        <?= AyudaCampo::etiqueta('campo-fecha-asignacion', 'Fecha de asignación', 'asignacion_fecha', true) ?>
                         <input id="campo-fecha-asignacion" type="date" min="<?= \App\Helpers\FechaMovimiento::MINIMA ?>" max="<?= \App\Helpers\FechaMovimiento::hoy() ?>" name="fecha_asignacion" class="form-control form-control-sm<?= clase_invalido('fecha_asignacion') ?>" value="<?= htmlspecialchars($viejo['fecha_asignacion'] ?? date('Y-m-d'), ENT_QUOTES) ?>" required>
                         <?= error_campo('fecha_asignacion') ?>
                     </div>
                 </div>
 
                 <div class="mt-3">
-                    <label for="campo-observaciones" class="form-label small">Observaciones (opcional, aplica a todos)</label>
-                    <input id="campo-observaciones" type="text" name="observaciones" class="form-control form-control-sm" value="<?= htmlspecialchars($viejo['observaciones'] ?? '', ENT_QUOTES) ?>">
+                    <?= AyudaCampo::etiqueta('campo-observaciones', 'Observaciones (opcional, aplica a todos)', 'asignacion_observaciones') ?>
+                    <input id="campo-observaciones" type="text" name="observaciones" class="form-control form-control-sm<?= clase_invalido('observaciones') ?>" maxlength="500" value="<?= htmlspecialchars($viejo['observaciones'] ?? '', ENT_QUOTES) ?>">
                 </div>
             </div>
         </div>
@@ -93,7 +94,7 @@ $bienesSeleccionados = $viejo['bienes'] ?? [];
         <h2 class="h6 mb-2">Bienes (<?= $total ?>)</h2>
         <div class="d-flex flex-wrap gap-3 align-items-end mb-2" id="filtrosAsignacion">
             <div class="filtro-item">
-                <label for="filtroAsigEspacio" class="form-label small mb-1">Espacio</label>
+                <?= AyudaCampo::etiqueta('filtroAsigEspacio', 'Espacio', 'filtro_espacio') ?>
                 <select id="filtroAsigEspacio" data-filtro="espacio" class="form-select form-select-sm selector-buscable">
                     <option value="">Todos los espacios</option>
                     <?php foreach ($espacios as $e): ?>
@@ -102,7 +103,7 @@ $bienesSeleccionados = $viejo['bienes'] ?? [];
                 </select>
             </div>
             <div class="filtro-item">
-                <label for="filtroAsigResponsable" class="form-label small mb-1">Responsable</label>
+                <?= AyudaCampo::etiqueta('filtroAsigResponsable', 'Responsable', 'filtro_responsable') ?>
                 <select id="filtroAsigResponsable" data-filtro="responsable" class="form-select form-select-sm selector-buscable">
                     <option value="">Todos los responsables</option>
                     <?php foreach ($responsablesFiltro as $r): ?>
@@ -113,7 +114,7 @@ $bienesSeleccionados = $viejo['bienes'] ?? [];
                 </select>
             </div>
             <div class="filtro-item">
-                <label for="filtroAsigTipo" class="form-label small mb-1">Responsabilidad</label>
+                <?= AyudaCampo::etiqueta('filtroAsigTipo', 'Responsabilidad', 'filtro_responsabilidad') ?>
                 <select id="filtroAsigTipo" data-filtro="tipo" class="form-select form-select-sm">
                     <option value="">Todas</option>
                     <?php foreach ($tipos as $valorTipo => $etiquetaTipo): ?>

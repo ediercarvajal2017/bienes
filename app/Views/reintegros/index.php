@@ -4,18 +4,19 @@ use App\Core\Auth;
 use App\Core\Csrf;
 use App\Core\Url;
 use App\Core\View;
+use App\Helpers\AyudaCampo;
 
 $viejo ??= [];
 ?>
 <?php ob_start(); ?>
     <?= ui('boton', ['texto' => 'Volver', 'icono' => 'volver', 'tamano' => 'sm', 'url' => Url::to('/bienes')]) ?>
     <?= ui('menu_acciones', ['opciones' => \App\Helpers\AccionesBienes::opciones(), 'actual' => 'reintegrar']) ?>
-<?= ui('encabezado_pagina', ['titulo' => 'Reintegrar bienes', 'icono' => 'reintegro', 'acciones' => (string) ob_get_clean()]) ?>
+<?= ui('encabezado_pagina', ['titulo' => 'Reintegrar bienes', 'icono' => 'reintegro', 'ayuda' => AyudaCampo::boton('reintegros'), 'acciones' => (string) ob_get_clean()]) ?>
 <p class="text-muted small">Selecciona uno o varios bienes asignados y regístralos como reintegrados. ¿Un código con varias unidades (alta masiva)? <a href="<?= Url::to('/reintegros/unidades') ?>">Reintegrar por cantidad</a>.</p>
 
 <?php if (Auth::esSuperusuario()): ?>
     <div class="mb-3 contenedor-sm">
-        <label for="selectorInstitucion" class="form-label small">Institución</label>
+        <?= AyudaCampo::etiqueta('selectorInstitucion', 'Institución', 'reintegro_institucion') ?>
         <select id="selectorInstitucion" class="form-select form-select-sm selector-buscable">
             <option value="">-- Selecciona una institución --</option>
             <?php foreach ($instituciones as $i): ?>
@@ -48,21 +49,22 @@ $viejo ??= [];
 
                 <div class="row g-3">
                     <div class="col-md-6">
-                        <label for="campo-destino-texto" class="form-label small">Destino</label>
-                        <input id="campo-destino-texto" type="text" name="destino_texto" class="form-control form-control-sm<?= clase_invalido('destino_texto') ?>" placeholder="Ej. Almacén institucional" required
+                        <?= AyudaCampo::etiqueta('campo-destino-texto', 'Destino', 'reintegro_destino', true) ?>
+                        <input id="campo-destino-texto" type="text" name="destino_texto" class="form-control form-control-sm<?= clase_invalido('destino_texto') ?>" placeholder="Ej. Almacén institucional" required maxlength="200"
                                value="<?= htmlspecialchars($viejo['destino_texto'] ?? '', ENT_QUOTES) ?>">
                         <?= error_campo('destino_texto') ?>
                     </div>
                     <div class="col-md-6">
-                        <label for="campo-fecha" class="form-label small">Fecha del reintegro</label>
+                        <?= AyudaCampo::etiqueta('campo-fecha', 'Fecha del reintegro', 'reintegro_fecha', true) ?>
                         <input id="campo-fecha" type="date" min="<?= \App\Helpers\FechaMovimiento::MINIMA ?>" max="<?= \App\Helpers\FechaMovimiento::hoy() ?>" name="fecha" class="form-control form-control-sm<?= clase_invalido('fecha') ?>" value="<?= htmlspecialchars($viejo['fecha'] ?? date('Y-m-d'), ENT_QUOTES) ?>" required>
                         <?= error_campo('fecha') ?>
                     </div>
                 </div>
 
                 <div class="mt-3">
-                    <label for="campo-observaciones" class="form-label small">Observaciones (opcional, aplica a todos)</label>
-                    <input id="campo-observaciones" type="text" name="observaciones" class="form-control form-control-sm" value="<?= htmlspecialchars($viejo['observaciones'] ?? '', ENT_QUOTES) ?>">
+                    <?= AyudaCampo::etiqueta('campo-observaciones', 'Observaciones (opcional, aplica a todos)', 'reintegro_observaciones') ?>
+                    <input id="campo-observaciones" type="text" name="observaciones" class="form-control form-control-sm<?= clase_invalido('observaciones') ?>" maxlength="500" value="<?= htmlspecialchars($viejo['observaciones'] ?? '', ENT_QUOTES) ?>">
+                    <?= error_campo('observaciones') ?>
                 </div>
             </div>
         </div>

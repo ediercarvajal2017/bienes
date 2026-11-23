@@ -125,6 +125,10 @@ final class SolicitudReintegroController
             $this->volverConError(Aviso::error('No se aprobó la solicitud', 'Falta el destino del reintegro.',
                 'Escribe a dónde va el bien (por ejemplo «Almacén de la Secretaría de Educación») y vuelve a pulsar «Aprobar».'));
         }
+        if (mb_strlen($destino) > 200) {
+            $this->volverConError(Aviso::error('No se aprobó la solicitud', 'El destino es más largo de lo que se puede guardar.',
+                'Acórtalo a 200 caracteres o menos y vuelve a pulsar «Aprobar».'));
+        }
         if ($errorFecha = FechaMovimiento::error($fecha)) {
             $this->volverConError(Aviso::error('No se aprobó la solicitud', $errorFecha, 'Elige una fecha entre el 01/01/2000 y hoy y vuelve a pulsar «Aprobar».'));
         }

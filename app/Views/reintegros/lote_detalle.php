@@ -28,12 +28,12 @@ $estado = (string) $lote['estado'];
             <input type="hidden" name="lotes[]" value="<?= (int) $lote['id'] ?>">
             <input type="hidden" name="volver" value="/reintegros/lotes/<?= (int) $lote['id'] ?>">
             <div class="col-sm-4">
-                <label for="campoFechaEntrega" class="form-label small mb-1">Fecha de entrega</label>
+                <?= \App\Helpers\AyudaCampo::etiqueta('campoFechaEntrega', 'Fecha de entrega', 'lote_fecha_entrega', true) ?>
                 <input id="campoFechaEntrega" type="date" name="fecha_entrega" class="form-control form-control-sm" required
                        value="<?= FechaMovimiento::hoy() ?>" max="<?= FechaMovimiento::hoy() ?>">
             </div>
             <div class="col-sm-5">
-                <label for="campoNota" class="form-label small mb-1">Nota (opcional)</label>
+                <?= \App\Helpers\AyudaCampo::etiqueta('campoNota', 'Nota (opcional)', 'lote_nota') ?>
                 <input id="campoNota" type="text" name="nota" maxlength="500" class="form-control form-control-sm">
             </div>
             <div class="col-sm-3">
@@ -61,7 +61,7 @@ $estado = (string) $lote['estado'];
                       data-confirmar="¿Reabrir el lote #<?= (int) $lote['id'] ?>? Volverá a quedar pendiente.">
                     <?= Csrf::field() ?>
                     <div class="col-sm-9">
-                        <label for="campoMotivo" class="form-label small mb-1">Motivo</label>
+                        <?= \App\Helpers\AyudaCampo::etiqueta('campoMotivo', 'Motivo', 'lote_motivo_reabrir', true) ?>
                         <input id="campoMotivo" type="text" name="motivo" maxlength="500" required class="form-control form-control-sm" placeholder="Ej. Se marcó el lote equivocado">
                     </div>
                     <div class="col-sm-3">

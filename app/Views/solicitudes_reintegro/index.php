@@ -14,7 +14,7 @@ $etiquetas = [
 ?>
 <?php ob_start(); ?>
     <form method="get" class="d-flex gap-2 align-items-center">
-        <label class="small text-muted" for="filtroEstado">Estado</label>
+        <label class="small text-muted" for="filtroEstado">Estado</label><?= \App\Helpers\AyudaCampo::boton('solicitudes_estado') ?>
         <select name="estado" id="filtroEstado" class="form-select form-select-sm" onchange="this.form.submit()">
             <option value="">Todos</option>
             <?php foreach ($etiquetas as $valor => [$texto]): ?>
@@ -22,7 +22,7 @@ $etiquetas = [
             <?php endforeach; ?>
         </select>
     </form>
-<?= ui('encabezado_pagina', ['titulo' => 'Solicitudes de reintegro', 'icono' => 'solicitud', 'subtitulo' => (string) ($puedeAprobar ? 'Pedidos de reintegro de los docentes: al aprobar uno, el bien se reintegra.' : 'Sus solicitudes de reintegro y su estado. Para pedir una nueva, abra la ficha del bien (escaneando su QR).'), 'acciones' => (string) ob_get_clean()]) ?>
+<?= ui('encabezado_pagina', ['titulo' => 'Solicitudes de reintegro', 'icono' => 'solicitud', 'ayuda' => \App\Helpers\AyudaCampo::boton('solicitudes_reintegro'), 'subtitulo' => (string) ($puedeAprobar ? 'Pedidos de reintegro de los docentes: al aprobar uno, el bien se reintegra.' : 'Sus solicitudes de reintegro y su estado. Para pedir una nueva, abra la ficha del bien (escaneando su QR).'), 'acciones' => (string) ob_get_clean()]) ?>
 
 
 <?php View::render('partials/paginacion', ['densidad' => true,
@@ -91,7 +91,7 @@ $etiquetas = [
                             <?= Csrf::field() ?>
                             <input type="date" name="fecha" min="<?= \App\Helpers\FechaMovimiento::MINIMA ?>" max="<?= \App\Helpers\FechaMovimiento::hoy() ?>" class="form-control form-control-sm contenedor-sm"
                                    value="<?= date('Y-m-d') ?>" required aria-label="Fecha del reintegro">
-                            <input type="text" name="destino_texto" class="form-control form-control-sm contenedor-sm"
+                            <input type="text" name="destino_texto" maxlength="200" class="form-control form-control-sm contenedor-sm"
                                    placeholder="Destino (ej. Almacén)" required aria-label="Destino del reintegro">
                             <button type="submit" class="btn btn-sm btn-outline-secondary">Aprobar</button>
                         </form>
