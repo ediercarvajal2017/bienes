@@ -159,7 +159,11 @@ final class FormatoReintegroController
             'fecha_reintegro' => trim((string) $request->input('fecha_reintegro')),
             'descripcion' => trim((string) $request->input('descripcion')) ?: null,
         ];
-        $error = $datos['fecha_reintegro'] === '' ? 'Indica la fecha del reintegro.' : null;
+        $error = match (true) {
+            $datos['fecha_reintegro'] === '' => 'Indica la fecha del reintegro.',
+            mb_strlen((string) $datos['descripcion']) > 300 => 'La descripción es muy larga (máximo 300 caracteres).',
+            default => null,
+        };
 
         return [$error, $datos];
     }

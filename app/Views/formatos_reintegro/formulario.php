@@ -4,6 +4,7 @@ use App\Core\Auth;
 use App\Core\Csrf;
 use App\Core\Url;
 use App\Core\View;
+use App\Helpers\AyudaCampo;
 use App\Helpers\Evidencia;
 
 /**
@@ -14,7 +15,7 @@ $editando = $registro !== null;
 $ventana = '/formatos-reintegro';
 $v = static fn (string $campo): string => htmlspecialchars((string) ($valores[$campo] ?? ''), ENT_QUOTES);
 ?>
-<?= ui('encabezado_pagina', ['titulo' => 'Formatos de reintegro', 'icono' => 'formato_reintegro', 'subtitulo' => 'Registra la evidencia de cada formato de reintegro firmado por la Alcaldía.']) ?>
+<?= ui('encabezado_pagina', ['titulo' => 'Formatos de reintegro', 'icono' => 'formato_reintegro', 'ayuda' => AyudaCampo::boton('formatos_reintegro'), 'subtitulo' => 'Registra la evidencia de cada formato de reintegro firmado por la Alcaldía.']) ?>
 
 <?php View::render('partials/evidencia_institucion', ['instituciones' => $instituciones, 'institucionId' => $institucionId, 'ventana' => $ventana]); ?>
 
@@ -24,7 +25,6 @@ $v = static fn (string $campo): string => htmlspecialchars((string) ($valores[$c
     <section class="card mb-4 contenedor-md" id="formularioEvidencia" aria-labelledby="tituloFormularioEvidencia">
         <div class="card-body">
             <h2 class="h6 mb-2" id="tituloFormularioEvidencia"><?= $editando ? 'Editar registro' : 'Registrar formato de reintegro' ?></h2>
-            <p class="text-muted small mb-2">Los campos marcados con <span class="text-danger">*</span> son obligatorios.</p>
             <form method="post" action="<?= $editando ? Url::to($ventana . '/' . $registro['id'] . '/actualizar') : Url::to($ventana) ?>"
                   enctype="multipart/form-data" class="row g-3">
                 <?= Csrf::field() ?>
@@ -32,12 +32,12 @@ $v = static fn (string $campo): string => htmlspecialchars((string) ($valores[$c
                     <input type="hidden" name="institucion_id" value="<?= $institucionId ?>">
                 <?php endif; ?>
                 <div class="col-md-6">
-                    <label for="campo-fecha-reintegro" class="form-label small requerido">Fecha del reintegro</label>
+                    <?= AyudaCampo::etiqueta('campo-fecha-reintegro', 'Fecha del reintegro', 'formato_reintegro_fecha', true) ?>
                     <input id="campo-fecha-reintegro" type="date" name="fecha_reintegro" class="form-control" required value="<?= $v('fecha_reintegro') ?>">
                 </div>
                 <div class="col-12">
-                    <label for="campo-descripcion" class="form-label small">Descripción (opcional)</label>
-                    <input id="campo-descripcion" type="text" name="descripcion" class="form-control" placeholder="Ej. Reintegro de equipos de la sede principal" value="<?= $v('descripcion') ?>">
+                    <?= AyudaCampo::etiqueta('campo-descripcion', 'Descripción (opcional)', 'formato_reintegro_descripcion') ?>
+                    <input id="campo-descripcion" type="text" name="descripcion" class="form-control" maxlength="300" placeholder="Ej. Reintegro de equipos de la sede principal" value="<?= $v('descripcion') ?>">
                 </div>
                 <?php if ($editando): ?>
                     <div class="col-md-6">
@@ -47,12 +47,12 @@ $v = static fn (string $campo): string => htmlspecialchars((string) ($valores[$c
                         </a>
                     </div>
                     <div class="col-12">
-                        <label for="campo-archivo" class="form-label small">Reemplazar archivo (opcional, PDF)</label>
+                        <?= AyudaCampo::etiqueta('campo-archivo', 'Reemplazar archivo (opcional, PDF)', 'formato_reintegro_archivo') ?>
                         <input id="campo-archivo" type="file" name="archivo" accept="application/pdf" class="form-control">
                     </div>
                 <?php else: ?>
                     <div class="col-12">
-                        <label for="campo-archivo" class="form-label small requerido">Archivo adjunto (PDF)</label>
+                        <?= AyudaCampo::etiqueta('campo-archivo', 'Archivo adjunto (PDF)', 'formato_reintegro_archivo', true) ?>
                         <input id="campo-archivo" type="file" name="archivo" accept="application/pdf" class="form-control" required>
                     </div>
                 <?php endif; ?>

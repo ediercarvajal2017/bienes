@@ -123,6 +123,60 @@ test('la cartera recibida explica cada campo como el formulario de bienes', asyn
     await expect(page.getByText('Se llena con el correo del funcionario elegido')).toHaveCount(0);
 });
 
+/** Cada (?) de la página abre su globo con el texto esperado y se cierra al salir. */
+async function revisarAyudas(page, ayudas) {
+    for (const [titulo, texto] of Object.entries(ayudas)) {
+        const boton = ayudaDe(page, titulo);
+        const globo = await globoDe(page, boton);
+        await boton.hover();
+        await expect(globo, titulo).toBeVisible();
+        await expect(globo, titulo).toContainText(texto);
+        await page.keyboard.press('Escape');
+        await page.locator('h1').hover();
+        await expect(globo, titulo).toBeHidden();
+    }
+    await expect(page.getByText('Los campos marcados con')).toHaveCount(0);
+}
+
+test('formatos de reintegro y facturas explican cada campo como el formulario de bienes', async ({ page }) => {
+    await page.goto('formatos-reintegro');
+    await revisarAyudas(page, {
+        'Formatos de reintegro': 'FO-ADMI-009',
+        'Fecha del reintegro': 'día en que se entregaron los bienes a la Alcaldía',
+        'Descripción del formato de reintegro': 'Máximo 300 caracteres',
+        'Archivo del formato de reintegro': 'escaneado en PDF. Máximo 8 MB',
+    });
+    await expect(page.locator('#campo-descripcion')).toHaveAttribute('maxlength', '300');
+
+    await page.goto('facturas');
+    await revisarAyudas(page, {
+        Facturas: 'se adjunta en la ficha de ese bien',
+        'Fecha de la factura': 'fecha de expedición',
+        'Descripción breve': 'Máximo 300 caracteres',
+        'Archivo de la factura': 'PDF o una foto (JPG o PNG). Máximo 8 MB',
+    });
+    await expect(page.locator('#campo-descripcion')).toHaveAttribute('maxlength', '300');
+});
+
+test('una descripción de más de 300 caracteres se rechaza con su motivo, sin error del servidor', async ({ page }) => {
+    test.skip(datos().remoto === true, 'Necesita la base de pruebas local');
+    const pdf = { name: 'documento.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.4\n1 0 obj<<>>endobj\ntrailer<<>>\n%%EOF\n') };
+    for (const [ventana, campos] of [
+        ['formatos-reintegro', { fecha_reintegro: '2026-01-15' }],
+        ['facturas', { fecha_factura: '2026-01-15' }],
+    ]) {
+        await page.goto(ventana);
+        const token = await page.locator('input[name="_csrf"]').first().inputValue();
+        const respuesta = await page.request.post(ventana, {
+            multipart: { _csrf: token, ...campos, descripcion: 'x'.repeat(301), archivo: pdf },
+            maxRedirects: 0,
+        });
+        expect(respuesta.status(), ventana).toBe(302);
+        await page.goto(ventana);
+        await expect(page.locator('.alert-danger'), ventana).toContainText('máximo 300 caracteres');
+    }
+});
+
 test.describe('en el celular', () => {
     test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
 
