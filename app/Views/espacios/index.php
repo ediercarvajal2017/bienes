@@ -4,6 +4,7 @@ use App\Core\Auth;
 use App\Core\Csrf;
 use App\Core\Url;
 use App\Core\View;
+use App\Helpers\AyudaCampo;
 
 $urlBasePaginacion = Url::to('/espacios') . ($busqueda !== '' ? '?q=' . urlencode($busqueda) : '');
 $puedeCrearEspacio = Auth::esSuperusuario() || Auth::tienePermiso('espacios.crear');
@@ -18,7 +19,7 @@ $puedeCrearEspacio = Auth::esSuperusuario() || Auth::tienePermiso('espacios.crea
                 <?= icono('crear', 'me-1') ?>Nuevo espacio
             </a>
         
-<?= ui('encabezado_pagina', ['titulo' => 'Espacios', 'icono' => 'espacio', 'acciones' => (string) ob_get_clean()]) ?>
+<?= ui('encabezado_pagina', ['titulo' => 'Espacios', 'icono' => 'espacio', 'ayuda' => AyudaCampo::boton('espacios'), 'acciones' => (string) ob_get_clean()]) ?>
     <?php endif; ?>
 </div>
 

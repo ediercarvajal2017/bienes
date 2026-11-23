@@ -248,6 +248,89 @@ test('bajas y verificación física explican cada campo como el formulario de bi
     }
 });
 
+test('usuarios y espacios explican cada campo como el formulario de bienes', async ({ page }) => {
+    test.skip(datos().remoto === true, 'Necesita la base de pruebas local');
+    const d = datos();
+
+    await page.goto('usuarios');
+    await revisarAyudas(page, { Usuarios: 'quita el acceso sin borrar nada' });
+
+    await page.goto('usuarios/crear');
+    await revisarAyudas(page, {
+        Documento: 'sin puntos ni espacios',
+        Correo: 'el enlace para crear una nueva contraseña',
+        Nombres: 'Máximo 100 caracteres',
+        Apellidos: 'Máximo 100 caracteres',
+        Cargo: 'Es informativo',
+        Rol: 'Superusuario',
+        Contraseña: 'Mínimo 10 caracteres, con letras y números',
+        Fotografía: 'máximo 2 MB',
+    });
+    await expect(page.locator('#campo-documento')).toHaveAttribute('maxlength', '20');
+    await expect(page.locator('#campo-email')).toHaveAttribute('maxlength', '150');
+    await expect(page.getByText('No use su nombre, documento ni correo')).toHaveCount(0);
+
+    // Al editar otro usuario: la contraseña es opcional y el restablecimiento de la verificación en dos pasos explica qué contraseña pide.
+    await page.goto(`usuarios/${d.usuarios.docente.id}/editar`);
+    await revisarAyudas(page, { Contraseña: 'déjala vacía para conservar la que tiene' });
+    // Solo aparece si el usuario tiene activa la verificación en dos pasos: se activa un momento
+    // en la base (si no la tenía) y se deja como estaba.
+    const antes = bd(`SELECT CONCAT(IFNULL(totp_secreto, ''), '|', IFNULL(totp_activado_en, '')) FROM usuarios WHERE id = ${d.usuarios.dosfa.id}`);
+    if (antes === '|') {
+        bd(`UPDATE usuarios SET totp_secreto = 'PW-TEST', totp_activado_en = NOW() WHERE id = ${d.usuarios.dosfa.id}`);
+    }
+    try {
+        await page.goto(`usuarios/${d.usuarios.dosfa.id}/editar`);
+        await revisarAyudas(page, { 'Tu contraseña, para confirmar': 'no la del usuario' });
+    } finally {
+        if (antes === '|') {
+            bd(`UPDATE usuarios SET totp_secreto = NULL, totp_activado_en = NULL WHERE id = ${d.usuarios.dosfa.id}`);
+        }
+    }
+
+    await page.goto('espacios');
+    await revisarAyudas(page, { Espacios: 'responsabilidad grupal' });
+
+    await page.goto('espacios/crear');
+    await revisarAyudas(page, {
+        'Número de espacio': 'No se puede repetir en la institución',
+        'Nombre del espacio': 'Máximo 100 caracteres',
+        'Responsable(s) del espacio': 'Es obligatorio al menos uno',
+    });
+    await expect(page.locator('#campo-codigo')).toHaveAttribute('maxlength', '30');
+    await expect(page.locator('#campo-nombre')).toHaveAttribute('maxlength', '100');
+    await expect(page.getByText('Mantén Ctrl')).toHaveCount(0);
+});
+
+test('un usuario o un espacio con un texto más largo de lo que cabe se rechaza con su motivo', async ({ page }) => {
+    test.skip(datos().remoto === true, 'Necesita la base de pruebas local');
+    const d = datos();
+
+    await page.goto('usuarios/crear');
+    let token = await page.locator('input[name="_csrf"]').first().inputValue();
+    const cargo = await page.locator('#campo-cargo-id option').first().getAttribute('value');
+    const rol = await page.locator('#campo-rol-id option').first().getAttribute('value');
+    let respuesta = await page.request.post('usuarios', {
+        form: { _csrf: token, documento: '9'.repeat(21), email: `largo-${Date.now()}@example.com`, nombres: 'Prueba', apellidos: 'Largo',
+            cargo_id: cargo, rol_id: rol, password: 'Clave-Segura-2026x' },
+        maxRedirects: 0,
+    });
+    expect(respuesta.status()).toBe(302);
+    await page.goto('usuarios/crear');
+    await expect(page.locator('.alert-danger')).toContainText('El documento es más largo de lo que se puede guardar');
+    await expect(page.locator('#campo-documento')).toHaveClass(/is-invalid/);
+
+    await page.goto('espacios/crear');
+    token = await page.locator('input[name="_csrf"]').first().inputValue();
+    respuesta = await page.request.post('espacios', {
+        form: { _csrf: token, codigo: 'X'.repeat(31), nombre: 'Espacio largo', 'responsables[]': String(d.usuarios.docente.id) },
+        maxRedirects: 0,
+    });
+    expect(respuesta.status()).toBe(302);
+    await page.goto('espacios/crear');
+    await expect(page.locator('.alert-danger')).toContainText('El número del espacio es más largo de lo que se puede guardar');
+});
+
 test.describe('en el celular', () => {
     test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
 

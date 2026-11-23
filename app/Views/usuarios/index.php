@@ -4,6 +4,7 @@ use App\Core\Auth;
 use App\Core\Csrf;
 use App\Core\Url;
 use App\Core\View;
+use App\Helpers\AyudaCampo;
 
 ?>
 <?php ob_start(); ?>
@@ -16,7 +17,7 @@ use App\Core\View;
                 <?= icono('crear', 'me-1') ?>Nuevo usuario
             </a>
         
-<?= ui('encabezado_pagina', ['titulo' => 'Usuarios', 'icono' => 'usuarios', 'acciones' => (string) ob_get_clean()]) ?>
+<?= ui('encabezado_pagina', ['titulo' => 'Usuarios', 'icono' => 'usuarios', 'ayuda' => AyudaCampo::boton('usuarios'), 'acciones' => (string) ob_get_clean()]) ?>
     <?php endif; ?>
 </div>
 

@@ -4,6 +4,7 @@ use App\Core\Auth;
 use App\Core\Csrf;
 use App\Core\Url;
 use App\Core\View;
+use App\Helpers\AyudaCampo;
 
 $esEdicion = $usuario !== null;
 $viejo ??= [];
@@ -15,41 +16,39 @@ $invalido = static fn (string $campo): string => clase_invalido($campo);
     <a href="<?= Url::to('/usuarios') ?>" class="btn btn-sm btn-outline-secondary">Volver</a>
 <?= ui('encabezado_pagina', ['titulo' => (string) ($esEdicion ? 'Editar usuario' : 'Nuevo usuario'), 'icono' => 'usuarios', 'acciones' => (string) ob_get_clean()]) ?>
 
-<p class="text-muted small mb-2">Los campos marcados con <span class="text-danger">*</span> son obligatorios.</p>
-
 <form method="post"
       action="<?= $esEdicion ? Url::to('/usuarios/' . $usuario['id']) : Url::to('/usuarios') ?>"
       enctype="multipart/form-data" class="row g-3 contenedor-md">
     <?= Csrf::field() ?>
 
     <div class="col-md-6">
-        <label for="campo-documento" class="form-label small requerido">Documento</label>
-        <input id="campo-documento" type="text" name="documento" class="form-control<?= $invalido('documento') ?>" required
+        <?= AyudaCampo::etiqueta('campo-documento', 'Documento', 'usuario_documento', true) ?>
+        <input id="campo-documento" type="text" name="documento" class="form-control<?= $invalido('documento') ?>" required maxlength="20"
                value="<?= htmlspecialchars($v('documento'), ENT_QUOTES) ?>">
         <?= error_campo('documento') ?>
     </div>
     <div class="col-md-6">
-        <label for="campo-email" class="form-label small requerido">Correo</label>
-        <input id="campo-email" type="email" name="email" class="form-control<?= $invalido('email') ?>" required
+        <?= AyudaCampo::etiqueta('campo-email', 'Correo', 'usuario_correo', true) ?>
+        <input id="campo-email" type="email" name="email" class="form-control<?= $invalido('email') ?>" required maxlength="150"
                value="<?= htmlspecialchars($v('email'), ENT_QUOTES) ?>">
         <?= error_campo('email') ?>
     </div>
 
     <div class="col-md-6">
-        <label for="campo-nombres" class="form-label small requerido">Nombres</label>
-        <input id="campo-nombres" type="text" name="nombres" class="form-control<?= $invalido('nombres') ?>" required
+        <?= AyudaCampo::etiqueta('campo-nombres', 'Nombres', 'usuario_nombres', true) ?>
+        <input id="campo-nombres" type="text" name="nombres" class="form-control<?= $invalido('nombres') ?>" required maxlength="100"
                value="<?= htmlspecialchars($v('nombres'), ENT_QUOTES) ?>">
         <?= error_campo('nombres') ?>
     </div>
     <div class="col-md-6">
-        <label for="campo-apellidos" class="form-label small requerido">Apellidos</label>
-        <input id="campo-apellidos" type="text" name="apellidos" class="form-control<?= $invalido('apellidos') ?>" required
+        <?= AyudaCampo::etiqueta('campo-apellidos', 'Apellidos', 'usuario_apellidos', true) ?>
+        <input id="campo-apellidos" type="text" name="apellidos" class="form-control<?= $invalido('apellidos') ?>" required maxlength="100"
                value="<?= htmlspecialchars($v('apellidos'), ENT_QUOTES) ?>">
         <?= error_campo('apellidos') ?>
     </div>
 
     <div class="col-md-6">
-        <label for="campo-cargo-id" class="form-label small requerido">Cargo</label>
+        <?= AyudaCampo::etiqueta('campo-cargo-id', 'Cargo', 'usuario_cargo', true) ?>
         <select id="campo-cargo-id" name="cargo_id" class="form-select" required>
             <?php foreach ($cargos as $c): ?>
                 <option value="<?= $c['id'] ?>" <?= (int) $v('cargo_id', 0) === (int) $c['id'] ? 'selected' : '' ?>>
@@ -60,7 +59,7 @@ $invalido = static fn (string $campo): string => clase_invalido($campo);
     </div>
 
     <div class="col-md-6">
-        <label for="campo-rol-id" class="form-label small requerido">Rol</label>
+        <?= AyudaCampo::etiqueta('campo-rol-id', 'Rol', 'usuario_rol', true) ?>
         <select id="campo-rol-id" name="rol_id" class="form-select<?= $invalido('rol_id') ?>" required>
             <?php foreach ($roles as $r): ?>
                 <option value="<?= $r['id'] ?>" <?= (int) $v('rol_id', 0) === (int) $r['id'] ? 'selected' : '' ?>>
@@ -73,7 +72,7 @@ $invalido = static fn (string $campo): string => clase_invalido($campo);
 
     <?php if (Auth::esSuperusuario()): ?>
         <div class="col-12">
-            <label for="campo-institucion-id" class="form-label small requerido">Institución</label>
+            <?= AyudaCampo::etiqueta('campo-institucion-id', 'Institución', 'usuario_institucion', true) ?>
             <select id="campo-institucion-id" name="institucion_id" class="form-select selector-buscable" required>
                 <?php foreach ($instituciones as $i): ?>
                     <option value="<?= $i['id'] ?>" <?= (int) $v('institucion_id', 0) === (int) $i['id'] ? 'selected' : '' ?>>
@@ -84,7 +83,7 @@ $invalido = static fn (string $campo): string => clase_invalido($campo);
         </div>
     <?php elseif (count($familiaSedes) > 1): ?>
         <div class="col-12">
-            <label class="form-label small requerido" for="sedeUsuarioSelect">Sede</label>
+            <?= AyudaCampo::etiqueta('sedeUsuarioSelect', 'Sede', 'usuario_sede', true) ?>
             <select name="institucion_id" id="sedeUsuarioSelect" class="form-select" required>
                 <?php foreach ($familiaSedes as $sede): ?>
                     <option value="<?= $sede['id'] ?>" <?= (int) $v('institucion_id', Auth::institucionId()) === (int) $sede['id'] ? 'selected' : '' ?>>
@@ -96,19 +95,16 @@ $invalido = static fn (string $campo): string => clase_invalido($campo);
     <?php endif; ?>
 
     <div class="col-md-6">
-        <label for="password" class="form-label small<?= $esEdicion ? '' : ' requerido' ?>" for="password"><?= $esEdicion ? 'Nueva contraseña (opcional)' : 'Contraseña' ?></label>
+        <?= AyudaCampo::etiqueta('password', $esEdicion ? 'Nueva contraseña (opcional)' : 'Contraseña', 'usuario_contrasena', !$esEdicion) ?>
         <input type="password" name="password" id="password" class="form-control<?= $invalido('password') ?>" <?= $esEdicion ? '' : 'required' ?> minlength="10" autocomplete="new-password">
-        <?php if (\App\Core\Aviso::errorDeCampo('password') !== null): ?>
-            <?= error_campo('password') ?>
-        <?php else: ?>
-            <div class="form-text">Mínimo 10 caracteres, con letras y números. No use su nombre, documento ni correo.</div>
-        <?php endif; ?>
+        <?= error_campo('password') ?>
     </div>
 
     <div class="col-12">
         <?php View::render('partials/campo_foto', [
             'nombreCampo' => 'foto',
             'etiqueta' => 'Fotografía',
+            'ayuda' => 'usuario_foto',
             'fotoActualUrl' => !empty($usuario['foto_path']) ? \App\Helpers\EnlaceArchivo::url($usuario['foto_path']) : null,
         ]); ?>
     </div>
@@ -132,7 +128,7 @@ $invalido = static fn (string $campo): string => clase_invalido($campo);
                       data-confirmar="¿Restablecer la verificación en dos pasos de este usuario? Se cerrarán sus sesiones abiertas.">
                     <?= Csrf::field() ?>
                     <div class="col-sm-7">
-                        <label class="form-label small" for="passwordConfirmacion2fa">Tu contraseña, para confirmar</label>
+                        <?= AyudaCampo::etiqueta('passwordConfirmacion2fa', 'Tu contraseña, para confirmar', 'restablecer_dos_pasos') ?>
                         <input type="password" name="password_confirmacion" id="passwordConfirmacion2fa" class="form-control form-control-sm" required autocomplete="current-password">
                     </div>
                     <div class="col-sm-5">

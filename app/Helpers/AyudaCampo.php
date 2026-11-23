@@ -288,6 +288,96 @@ final class AyudaCampo
             'texto' => "Opcional, pero ayuda a identificar el bien y a no registrarlo dos veces. JPG o PNG, máximo 2 MB.\n\n"
                 . 'En el celular puedes tomarla con la cámara.',
         ],
+        'usuarios' => [
+            'titulo' => 'Usuarios',
+            'texto' => "Las personas que entran a MIA. Cada una entra con su correo y su contraseña, y puede hacer lo que su rol le permite.\n\n"
+                . "**Rector:** todo en su institución: usuarios, bienes, espacios, reintegros, bajas, reportes, categorías, auditoría y verificación física.\n\n"
+                . "**Secretario:** trabaja el inventario igual que el rector (bienes, espacios, asignaciones, reintegros, bajas, reportes, cartera y verificación), pero no administra usuarios ni categorías, no ve la auditoría y no elimina bienes.\n\n"
+                . "**Docente:** ve los bienes y los espacios, solicita reintegros, reporta bajas y verifica los bienes de los espacios donde es responsable.\n\n"
+                . '**Desactivar** quita el acceso sin borrar nada. **Eliminar** solo es posible si el usuario no tiene registros que deban conservarse.',
+        ],
+        'usuario_documento' => [
+            'titulo' => 'Documento',
+            'texto' => "El número de cédula o documento de identidad de la persona, sin puntos ni espacios. Ej.: 1098765432.\n\n"
+                . 'No se puede repetir en MIA: si ya existe, edita ese usuario en vez de crear otro. Máximo 20 caracteres.',
+        ],
+        'usuario_correo' => [
+            'titulo' => 'Correo',
+            'texto' => "El correo con el que la persona entra a MIA. También es a donde le llega el enlace para crear una nueva contraseña si la olvida, así que debe ser un correo suyo y que use.\n\n"
+                . 'No se puede repetir en MIA. Máximo 150 caracteres.',
+        ],
+        'usuario_nombres' => [
+            'titulo' => 'Nombres',
+            'texto' => "Los nombres de la persona tal como aparecen en su documento. Ej.: María Fernanda.\n\n"
+                . 'Se ven en las listas de responsables, en las actas y en los comprobantes. Máximo 100 caracteres.',
+        ],
+        'usuario_apellidos' => [
+            'titulo' => 'Apellidos',
+            'texto' => "Los apellidos de la persona tal como aparecen en su documento. Ej.: López Ruiz.\n\n"
+                . 'Se ven en las listas de responsables, en las actas y en los comprobantes. Máximo 100 caracteres.',
+        ],
+        'usuario_cargo' => [
+            'titulo' => 'Cargo',
+            'texto' => "El cargo de la persona en la institución: Docente, Coordinador, Secretaria, Auxiliar…\n\n"
+                . 'Es informativo: se ve junto a su nombre en las listas. Lo que puede hacer en MIA lo define el **Rol**. La lista de cargos se administra en «Cargos».',
+        ],
+        'usuario_rol' => [
+            'titulo' => 'Rol',
+            'texto' => "Lo que la persona puede hacer en MIA.\n\n"
+                . "**Rector:** todo en su institución, incluidos los usuarios, las categorías y la auditoría.\n\n"
+                . "**Secretario:** el inventario completo (bienes, espacios, asignaciones, reintegros, bajas, reportes, cartera y verificación), sin administrar usuarios ni categorías.\n\n"
+                . "**Docente:** ve los bienes y los espacios, solicita reintegros, reporta bajas y verifica los bienes de los espacios donde es responsable.\n\n"
+                . 'El rol **Superusuario** administra todas las instituciones; solo otro superusuario puede asignarlo.',
+        ],
+        'usuario_institucion' => [
+            'titulo' => 'Institución',
+            'texto' => 'La institución o sede a la que pertenece la persona. Trabajará con los bienes, espacios y usuarios de esa institución.',
+        ],
+        'usuario_sede' => [
+            'titulo' => 'Sede',
+            'texto' => 'Tu institución tiene varias sedes: elige en cuál trabaja la persona. Trabajará con los bienes, espacios y usuarios de esa sede.',
+        ],
+        'usuario_contrasena' => [
+            'titulo' => 'Contraseña',
+            'texto' => "Mínimo 10 caracteres, con letras y números. No puede contener los nombres, los apellidos, el documento ni el correo de la persona, ni ser una contraseña muy común.\n\n"
+                . "Al editar, déjala vacía para conservar la que tiene.\n\n"
+                . 'Entrégasela a la persona en privado: después ella puede cambiarla en «Mi cuenta».',
+        ],
+        'usuario_foto' => [
+            'titulo' => 'Fotografía',
+            'texto' => "Opcional. Una foto de la cara de la persona, para reconocerla en la lista de usuarios. JPG o PNG, máximo 2 MB.\n\n"
+                . 'En el celular puedes tomarla con la cámara.',
+        ],
+        'restablecer_dos_pasos' => [
+            'titulo' => 'Tu contraseña, para confirmar',
+            'texto' => "Escribe **tu** contraseña (la de quien está restableciendo), no la del usuario. Es una confirmación de seguridad.\n\n"
+                . 'Al restablecer, el usuario entra solo con su contraseña y vuelve a configurar la verificación en dos pasos desde «Mi cuenta». Sus sesiones abiertas se cierran.',
+        ],
+        'espacios' => [
+            'titulo' => 'Espacios',
+            'texto' => "Los lugares donde están los bienes: aulas, oficinas, laboratorios, bodegas.\n\n"
+                . "Cada espacio tiene uno o varios **responsables**, que responden por los bienes que se asignan allí (responsabilidad grupal). Un docente ve y verifica los bienes de los espacios donde es responsable.\n\n"
+                . '**Desactivar** un espacio hace que ya no se ofrezca al asignar bienes, sin borrar su historial. **Eliminar** solo es posible si nunca ha tenido bienes; si los tuvo, se desactiva.',
+        ],
+        'espacio_institucion' => [
+            'titulo' => 'Institución',
+            'texto' => 'La institución o sede a la que pertenece el espacio. Sus bienes y responsables serán de esa institución.',
+        ],
+        'espacio_numero' => [
+            'titulo' => 'Número de espacio',
+            'texto' => "El número o código con el que se identifica el espacio en la institución, como está en la puerta o en el plano. Ej.: 101, A-101, LAB-2.\n\n"
+                . 'No se puede repetir en la institución. Máximo 30 caracteres. Aparece en la ubicación de cada bien (A-101 - Aula 101) y se usa en las cargas masivas.',
+        ],
+        'espacio_nombre' => [
+            'titulo' => 'Nombre del espacio',
+            'texto' => 'Cómo se conoce el espacio. Ej.: Aula 101, Sala de sistemas 1, Bodega de deportes. Máximo 100 caracteres.',
+        ],
+        'espacio_responsables' => [
+            'titulo' => 'Responsable(s) del espacio',
+            'texto' => "Las personas que responden por los bienes de este espacio. Es obligatorio al menos uno. Escribe para buscar y elige una o varias.\n\n"
+                . "Un docente responsable ve los bienes del espacio, los verifica en la verificación física y puede reportar allí bienes no registrados.\n\n"
+                . 'Si la persona no aparece, créala primero en «Usuarios».',
+        ],
         'formatos_plaqueteo' => [
             'titulo' => 'Formatos de plaqueteo',
             'texto' => "Aquí archivas el formato que se firma cuando la Alcaldía viene a poner las placas a los bienes. MIA no lo genera: es la copia firmada del plaqueteo.\n\n"

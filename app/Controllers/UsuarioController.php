@@ -383,6 +383,20 @@ final class UsuarioController
                 'queHacer' => 'Escribe el correo con el que la persona entrará a MIA y vuelve a guardar.'];
         }
 
+        // Lo que cabe en la base (usuarios): un texto más largo se rechaza con su motivo.
+        $largos = [
+            'documento' => ['El documento es más largo de lo que se puede guardar.', 20],
+            'nombres' => ['Los nombres son más largos de lo que se puede guardar.', 100],
+            'apellidos' => ['Los apellidos son más largos de lo que se puede guardar.', 100],
+            'email' => ['El correo es más largo de lo que se puede guardar.', 150],
+        ];
+        foreach ($largos as $campo => [$porQue, $maximo]) {
+            if (mb_strlen($datos[$campo]) > $maximo) {
+                return ['campo' => $campo, 'porQue' => $porQue, 'enCampo' => "Máximo {$maximo} caracteres.",
+                    'queHacer' => "Acórtalo a {$maximo} caracteres o menos y vuelve a guardar."];
+            }
+        }
+
         if (!filter_var($datos['email'], FILTER_VALIDATE_EMAIL)) {
             return ['campo' => 'email', 'porQue' => 'El correo electrónico no es válido.', 'enCampo' => 'Revisa el correo.',
                 'queHacer' => 'Escríbelo completo, por ejemplo nombre@colegio.edu.co, y vuelve a guardar.'];
