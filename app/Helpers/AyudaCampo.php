@@ -396,6 +396,16 @@ final class AyudaCampo
             'titulo' => 'Buscar en la papelera',
             'texto' => 'Filtra la lista mientras escribes: por tipo, elemento, institución o quién lo eliminó.',
         ],
+        'sede_activa' => [
+            'titulo' => 'Sede activa',
+            'texto' => "Tu institución tiene varias sedes: la principal y sus secciones. Elige con cuál quieres trabajar: los bienes, espacios, listas y reportes que ves son los de esa sede.\n\n"
+                . 'Al cambiarla, MIA te deja en la misma pantalla con la información de la sede elegida. Puedes cambiarla cuando quieras; tus permisos no cambian.',
+        ],
+        'filtro_institucion' => [
+            'titulo' => 'Ver institución',
+            'texto' => "Como superusuario ves todas las instituciones. Elige una para que las listas, el panel y los reportes muestren solo la suya.\n\n"
+                . 'Mientras el filtro está puesto, el selector queda resaltado, para que no olvides que estás viendo una sola institución. «Ver todas las instituciones» quita el filtro.',
+        ],
         'ficha_qr' => [
             'titulo' => 'Ficha del bien',
             'texto' => "Lo que abre el QR pegado en el bien: qué es, su estado, dónde está y quién responde por él.\n\n"
