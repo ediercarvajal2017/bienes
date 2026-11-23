@@ -161,8 +161,12 @@ final class FormatoPlaqueteoController
             'funcionario_asistio' => trim((string) $request->input('funcionario_asistio')),
             'descripcion' => trim((string) $request->input('descripcion')) ?: null,
         ];
-        $error = $datos['fecha_plaqueteo'] === '' || $datos['funcionario_asistio'] === ''
-            ? 'Indica la fecha del plaqueteo y el funcionario que asistió.' : null;
+        $error = match (true) {
+            $datos['fecha_plaqueteo'] === '' || $datos['funcionario_asistio'] === '' => 'Indica la fecha del plaqueteo y el funcionario que asistió.',
+            mb_strlen($datos['funcionario_asistio']) > 150 => 'El nombre del funcionario que asistió es muy largo (máximo 150 caracteres).',
+            mb_strlen((string) $datos['descripcion']) > 300 => 'La descripción es muy larga (máximo 300 caracteres).',
+            default => null,
+        };
 
         return [$error, $datos];
     }

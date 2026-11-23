@@ -138,7 +138,7 @@ async function revisarAyudas(page, ayudas) {
     await expect(page.getByText('Los campos marcados con')).toHaveCount(0);
 }
 
-test('formatos de reintegro y facturas explican cada campo como el formulario de bienes', async ({ page }) => {
+test('formatos de reintegro, de plaqueteo y facturas explican cada campo como el formulario de bienes', async ({ page }) => {
     await page.goto('formatos-reintegro');
     await revisarAyudas(page, {
         'Formatos de reintegro': 'FO-ADMI-009',
@@ -146,6 +146,17 @@ test('formatos de reintegro y facturas explican cada campo como el formulario de
         'Descripción del formato de reintegro': 'Máximo 300 caracteres',
         'Archivo del formato de reintegro': 'escaneado en PDF. Máximo 8 MB',
     });
+    await expect(page.locator('#campo-descripcion')).toHaveAttribute('maxlength', '300');
+
+    await page.goto('formatos-plaqueteo');
+    await revisarAyudas(page, {
+        'Formatos de plaqueteo': 'Código de identificación',
+        'Fecha del plaqueteo': 'día en que se pusieron las placas',
+        'Funcionario que asistió': 'Máximo 150 caracteres',
+        'Descripción del formato de plaqueteo': 'Máximo 300 caracteres',
+        'Archivo del formato de plaqueteo': 'escaneado en PDF. Máximo 8 MB',
+    });
+    await expect(page.locator('#campo-funcionario-asistio')).toHaveAttribute('maxlength', '150');
     await expect(page.locator('#campo-descripcion')).toHaveAttribute('maxlength', '300');
 
     await page.goto('facturas');
@@ -158,22 +169,24 @@ test('formatos de reintegro y facturas explican cada campo como el formulario de
     await expect(page.locator('#campo-descripcion')).toHaveAttribute('maxlength', '300');
 });
 
-test('una descripción de más de 300 caracteres se rechaza con su motivo, sin error del servidor', async ({ page }) => {
+test('un texto más largo de lo que cabe se rechaza con su motivo, sin error del servidor', async ({ page }) => {
     test.skip(datos().remoto === true, 'Necesita la base de pruebas local');
     const pdf = { name: 'documento.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.4\n1 0 obj<<>>endobj\ntrailer<<>>\n%%EOF\n') };
-    for (const [ventana, campos] of [
-        ['formatos-reintegro', { fecha_reintegro: '2026-01-15' }],
-        ['facturas', { fecha_factura: '2026-01-15' }],
+    for (const [ventana, campos, motivo] of [
+        ['formatos-reintegro', { fecha_reintegro: '2026-01-15', descripcion: 'x'.repeat(301) }, 'máximo 300 caracteres'],
+        ['formatos-plaqueteo', { fecha_plaqueteo: '2026-01-15', funcionario_asistio: 'PW', descripcion: 'x'.repeat(301) }, 'máximo 300 caracteres'],
+        ['formatos-plaqueteo', { fecha_plaqueteo: '2026-01-15', funcionario_asistio: 'x'.repeat(151) }, 'máximo 150 caracteres'],
+        ['facturas', { fecha_factura: '2026-01-15', descripcion: 'x'.repeat(301) }, 'máximo 300 caracteres'],
     ]) {
         await page.goto(ventana);
         const token = await page.locator('input[name="_csrf"]').first().inputValue();
         const respuesta = await page.request.post(ventana, {
-            multipart: { _csrf: token, ...campos, descripcion: 'x'.repeat(301), archivo: pdf },
+            multipart: { _csrf: token, ...campos, archivo: pdf },
             maxRedirects: 0,
         });
         expect(respuesta.status(), ventana).toBe(302);
         await page.goto(ventana);
-        await expect(page.locator('.alert-danger'), ventana).toContainText('máximo 300 caracteres');
+        await expect(page.locator('.alert-danger'), ventana).toContainText(motivo);
     }
 });
 
