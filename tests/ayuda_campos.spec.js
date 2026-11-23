@@ -499,6 +499,44 @@ test('asignaciones y reintegros explican cada campo como el formulario de bienes
     }
 });
 
+test('las cargas masivas explican el archivo, el resultado y las cargas anteriores', async ({ page }) => {
+    test.skip(datos().remoto === true, 'Necesita la base de pruebas local');
+
+    for (const [ruta, tituloCarga] of [
+        ['cargas-masivas', 'Carga masiva de bienes'],
+        ['espacios/carga-masiva', 'Carga masiva de espacios'],
+        ['usuarios/carga-masiva', 'Carga masiva de usuarios'],
+    ]) {
+        await page.goto(ruta);
+        await revisarAyudas(page, {
+            [tituloCarga]: 'Descargar plantilla',
+            'Archivo de la carga': 'sin guardar nada todavía',
+        });
+        // El campo del archivo tiene su etiqueta visible.
+        await expect(page.getByLabel('Archivo Excel (.xlsx)', { exact: true })).toHaveAttribute('type', 'file');
+    }
+
+    // Una carga analizada (sin confirmar) explica cada estado de fila; después se borra.
+    await page.goto('cargas-masivas');
+    await page.setInputFiles('input[name="archivo"]', 'tests/fixtures/carga_masiva_bienes.xlsx');
+    await page.getByRole('button', { name: 'Analizar archivo' }).click();
+    await expect(page).toHaveURL(/\/cargas-masivas\/\d+/);
+    const carga = Number(page.url().match(/cargas-masivas\/(\d+)/)[1]);
+    try {
+        await revisarAyudas(page, { 'Resultado de la carga': 'Nada se borra' });
+        await page.goto('cargas-masivas');
+        await revisarAyudas(page, { 'Cargas anteriores': 'Una carga se aplica una sola vez' });
+    } finally {
+        bd(`DELETE FROM cargas_masivas WHERE id = ${carga} AND aplicada = 0`);
+    }
+
+    await page.goto('bienes/carga-masiva-fotos');
+    await revisarAyudas(page, {
+        'Carga masiva de fotos': 'No reemplaza la foto de un bien que ya tiene una',
+        'Archivo .zip con las fotos': 'hasta 3.000 archivos',
+    });
+});
+
 test.describe('en el celular', () => {
     test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
 

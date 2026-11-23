@@ -23,9 +23,8 @@ $listar = static function (array $items, int $limite = 40): string {
     return $html;
 };
 ?>
-<?= ui('encabezado_pagina', ['titulo' => 'Carga masiva de fotos', 'icono' => 'subir',
-    'acciones' => ui('boton', ['texto' => 'Volver', 'icono' => 'volver', 'tamano' => 'sm', 'url' => Url::to('/cargas-masivas')]),
-]) ?>
+<?php $volver = ui('boton', ['texto' => 'Volver', 'icono' => 'volver', 'tamano' => 'sm', 'url' => Url::to('/cargas-masivas')]); ?>
+<?= ui('encabezado_pagina', ['titulo' => 'Carga masiva de fotos', 'icono' => 'subir', 'acciones' => $volver, 'ayuda' => \App\Helpers\AyudaCampo::boton('carga_fotos')]) ?>
 
 <div class="card mb-4 contenedor-md">
     <div class="card-body">
@@ -39,9 +38,10 @@ $listar = static function (array $items, int $limite = 40): string {
             divídelo en lotes más pequeños y sube varios — puedes repetir este paso las veces
             que necesites, los bienes ya emparejados simplemente se omiten.
         </p>
+        <?= \App\Helpers\AyudaCampo::etiqueta('archivoFotos', 'Archivo .zip con las fotos', 'carga_fotos_archivo', true) ?>
         <form method="post" action="<?= Url::to('/bienes/carga-masiva-fotos') ?>" enctype="multipart/form-data" class="d-flex gap-2">
             <?= Csrf::field() ?>
-            <input type="file" name="archivo" accept=".zip" aria-label="Archivo .zip con las fotos" class="form-control form-control-sm" required>
+            <input type="file" name="archivo" id="archivoFotos" accept=".zip" class="form-control form-control-sm" required>
             <button type="submit" class="btn btn-sm btn-primary text-nowrap">Subir .zip</button>
         </form>
     </div>

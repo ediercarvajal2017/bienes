@@ -17,9 +17,10 @@ $urlBasePaginacion = Url::to('/cargas-masivas') . ($busqueda !== '' ? '?' . http
             Sube la plantilla diligenciada (<strong>.xlsx</strong>). La descargas en el ícono <?= icono('ayuda') ?> junto
             al título: trae las instrucciones, las listas de Ubicación y Categoría, y las columnas obligatorias en rojo claro.
         </p>
+        <?= \App\Helpers\AyudaCampo::etiqueta('archivoCarga', 'Archivo Excel (.xlsx)', 'carga_archivo', true) ?>
         <form method="post" action="<?= Url::to('/cargas-masivas') ?>" enctype="multipart/form-data" class="d-flex gap-2">
             <?= Csrf::field() ?>
-            <input type="file" name="archivo" accept=".xlsx" aria-label="Archivo Excel de bienes" class="form-control form-control-sm" required>
+            <input type="file" name="archivo" id="archivoCarga" accept=".xlsx" class="form-control form-control-sm" required>
             <button type="submit" class="btn btn-sm btn-primary text-nowrap">Analizar archivo</button>
         </form>
         <hr>
@@ -30,7 +31,7 @@ $urlBasePaginacion = Url::to('/cargas-masivas') . ($busqueda !== '' ? '?' . http
     </div>
 </div>
 
-<h2 class="h6">Cargas anteriores</h2>
+<div class="d-flex align-items-center gap-1 mb-2"><h2 class="h6 mb-0">Cargas anteriores</h2><?= \App\Helpers\AyudaCampo::boton('cargas_anteriores') ?></div>
 
 <div class="mb-2 contenedor-sm">
     <input type="search" id="buscador" data-buscar="q" class="form-control form-control-sm"

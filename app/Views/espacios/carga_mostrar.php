@@ -13,7 +13,7 @@ $clases = [
 ?>
 <?php ob_start(); ?>
     <a href="<?= Url::to('/espacios/carga-masiva') ?>" class="btn btn-sm btn-outline-secondary">Volver</a>
-<?= ui('encabezado_pagina', ['titulo' => 'Resultado de la carga', 'icono' => 'espacio', 'acciones' => (string) ob_get_clean()]) ?>
+<?= ui('encabezado_pagina', ['titulo' => 'Resultado de la carga', 'ayuda' => \App\Helpers\AyudaCampo::boton('resultado_carga'), 'icono' => 'espacio', 'acciones' => (string) ob_get_clean()]) ?>
 
 <?php $invalidas = (int) $carga['total_filas'] - (int) $carga['nuevos'] - (int) $carga['modificados'] - (int) $carga['sin_cambios']; ?>
 <p class="text-muted small">

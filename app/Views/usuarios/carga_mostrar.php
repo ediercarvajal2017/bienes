@@ -13,7 +13,7 @@ $clases = [
 ?>
 <?php ob_start(); ?>
     <a href="<?= Url::to('/usuarios/carga-masiva') ?>" class="btn btn-sm btn-outline-secondary">Volver</a>
-<?= ui('encabezado_pagina', ['titulo' => 'Resultado de la carga', 'icono' => 'usuarios', 'acciones' => (string) ob_get_clean()]) ?>
+<?= ui('encabezado_pagina', ['titulo' => 'Resultado de la carga', 'ayuda' => \App\Helpers\AyudaCampo::boton('resultado_carga'), 'icono' => 'usuarios', 'acciones' => (string) ob_get_clean()]) ?>
 
 <p class="text-muted small">
     <?= (int) $carga['total_filas'] ?> filas ·

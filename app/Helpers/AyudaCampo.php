@@ -288,6 +288,37 @@ final class AyudaCampo
             'texto' => "Opcional, pero ayuda a identificar el bien y a no registrarlo dos veces. JPG o PNG, máximo 2 MB.\n\n"
                 . 'En el celular puedes tomarla con la cámara.',
         ],
+        'carga_archivo' => [
+            'titulo' => 'Archivo de la carga',
+            'texto' => "La plantilla diligenciada y guardada como .xlsx (máximo 8 MB). Descárgala en el ícono (?) junto al título: trae las instrucciones y las listas para elegir.\n\n"
+                . "Al pulsar «Analizar archivo», MIA revisa cada fila y te muestra qué haría, **sin guardar nada todavía**.\n\n"
+                . 'Los cambios se aplican solo cuando pulsas «Confirmar importación» en el resultado.',
+        ],
+        'cargas_anteriores' => [
+            'titulo' => 'Cargas anteriores',
+            'texto' => "Cada archivo que se subió, con quién lo subió y cuántas filas traía.\n\n"
+                . "**Pendiente:** se analizó, pero nadie lo confirmó, así que no se guardó nada. Ábrelo con «Ver» para revisarlo y confirmarlo.\n\n"
+                . '**Aplicada:** ya se confirmó y sus cambios están en MIA. Una carga se aplica una sola vez.',
+        ],
+        'resultado_carga' => [
+            'titulo' => 'Resultado de la carga',
+            'texto' => "Lo que haría cada fila del archivo. Hasta que confirmes, no se ha guardado nada.\n\n"
+                . "**Nuevo:** se creará. **Modificado:** ya existe y cambiará lo que se muestra (antes → después). **Sin cambios:** ya existe igual; no se toca.\n\n"
+                . "**Inválido:** tiene un error, explicado en la fila, y no se aplicará. Corrígelo en el Excel y vuelve a subirlo.\n\n"
+                . '«Confirmar importación» aplica los nuevos y los modificados, una sola vez. Nada se borra: lo que no está en el archivo queda igual.',
+        ],
+        'carga_fotos' => [
+            'titulo' => 'Carga masiva de fotos',
+            'texto' => "Asocia muchas fotos a la vez: cada foto del .zip se llama igual que el código del bien (ej. PA-0001.jpg) y MIA la pone en ese bien.\n\n"
+                . "No reemplaza la foto de un bien que ya tiene una, así que puedes subir el mismo .zip otra vez sin perder nada.\n\n"
+                . 'El resultado dice cuántas se asociaron, cuáles ya tenían foto, cuáles no tienen un bien con ese código y cuáles no son una imagen válida.',
+        ],
+        'carga_fotos_archivo' => [
+            'titulo' => 'Archivo .zip con las fotos',
+            'texto' => "Un .zip con las fotos en JPG o PNG, cada una de máximo 2 MB y nombrada con el código del bien (ej. PA-0001.jpg), hasta 3.000 archivos.\n\n"
+                . "En Windows: selecciona las fotos, clic derecho › Enviar a › Carpeta comprimida.\n\n"
+                . 'Si el .zip es muy pesado, divídelo en varios y súbelos uno por uno.',
+        ],
         'asignaciones' => [
             'titulo' => 'Asignar bienes',
             'texto' => "Asigna o reasigna varios bienes a la vez a un espacio (Grupal) o a una persona (Individual).\n\n"
