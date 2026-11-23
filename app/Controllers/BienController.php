@@ -471,6 +471,15 @@ final class BienController
                 'queHacer' => 'Elige la fecha en el calendario del campo «Fecha de ingreso».'];
         }
 
+        // Cada unidad es "{lote}-001": el código de la unidad (40) limita el lote a 36.
+        if (mb_strlen($datos['lote']) > 36) {
+            return ['campo' => 'lote', 'porQue' => 'El código de lote es más largo de lo que se puede guardar: cada unidad le suma -001.',
+                'enCampo' => 'Máximo 36 caracteres.', 'queHacer' => 'Acórtalo a 36 caracteres o menos y vuelve a guardar.'];
+        }
+        if ($falla = self::fallaLargoDescripcionMarca($datos)) {
+            return $falla;
+        }
+
         if (!preg_match('/^[A-Za-z0-9\-]+$/', $datos['lote'])) {
             return ['campo' => 'lote', 'porQue' => 'El código de la placa solo puede tener letras, números y guiones, sin espacios.',
                 'enCampo' => 'Solo letras, números y guiones.', 'queHacer' => 'Quita los espacios y otros signos del código y vuelve a guardar.'];
@@ -880,6 +889,27 @@ final class BienController
      *
      * @return array{campo: ?string, porQue: string, queHacer: string, enCampo: string, accion?: array{texto: string, url: string}|null}|null
      */
+    /**
+     * Descripción (200) y marca (100): lo que cabe en la base. Un texto más largo se rechaza
+     * con su motivo (antes hacía fallar el guardado).
+     *
+     * @return array{campo: string, porQue: string, enCampo: string, queHacer: string}|null
+     */
+    private static function fallaLargoDescripcionMarca(array $datos): ?array
+    {
+        if (mb_strlen((string) $datos['descripcion']) > 200) {
+            return ['campo' => 'descripcion', 'porQue' => 'La descripción es más larga de lo que se puede guardar.',
+                'enCampo' => 'Máximo 200 caracteres.', 'queHacer' => 'Acórtala a 200 caracteres o menos y vuelve a guardar.'];
+        }
+        if (mb_strlen((string) ($datos['marca'] ?? '')) > 100) {
+            return ['campo' => 'marca', 'porQue' => 'La marca es más larga de lo que se puede guardar.',
+                'enCampo' => 'Máximo 100 caracteres.', 'queHacer' => 'Acórtala a 100 caracteres o menos y vuelve a guardar.'];
+        }
+
+        return null;
+    }
+
+    /** @return array{campo: ?string, porQue: string, queHacer: string, enCampo: string, accion?: array{texto: string, url: string}|null}|null */
     private function validar(array $datos, ?int $exceptId): ?array
     {
         if ($datos['codigo_identificacion'] === '') {
@@ -895,6 +925,14 @@ final class BienController
         if ($datos['fecha_ingreso'] === '' || !strtotime($datos['fecha_ingreso'])) {
             return ['campo' => 'fecha_ingreso', 'porQue' => 'La fecha de ingreso no es válida.', 'enCampo' => 'Elige una fecha válida.',
                 'queHacer' => 'Elige la fecha en el calendario del campo «Fecha de ingreso».'];
+        }
+
+        if (mb_strlen((string) $datos['codigo_identificacion']) > 40) {
+            return ['campo' => 'codigo_identificacion', 'porQue' => 'El código es más largo de lo que se puede guardar.',
+                'enCampo' => 'Máximo 40 caracteres.', 'queHacer' => 'Acórtalo a 40 caracteres o menos y vuelve a guardar.'];
+        }
+        if ($falla = self::fallaLargoDescripcionMarca($datos)) {
+            return $falla;
         }
 
         if ($datos['valor'] < 0 || $datos['valor'] >= self::VALOR_MAXIMO) {

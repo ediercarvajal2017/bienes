@@ -65,7 +65,7 @@ test('un usuario nuevo debe aceptar la política antes de usar MIA, y solo una v
     expect(Number(bd(`SELECT COUNT(*) FROM auditoria WHERE accion = 'aceptar_politica' AND usuario_id = ${id}`))).toBe(1);
 
     await pagina.goto('mi-cuenta');
-    await expect(pagina.locator('#tituloPrivacidad').locator('..')).toContainText('Aceptaste la política');
+    await expect(pagina.locator('section[aria-labelledby="tituloPrivacidad"]')).toContainText('Aceptaste la política');
 
     // En el siguiente ingreso ya no se pide.
     await pagina.locator('form[action$="/logout"] button').first().click();

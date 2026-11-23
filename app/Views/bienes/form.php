@@ -36,7 +36,7 @@ $etiquetasEstado = ['activo' => 'Activo', 'reintegrado' => 'Reintegrado', 'en_re
 ?>
 <div class="contenedor-md">
     <?= ui('encabezado_pagina', ['titulo' => $esEdicion ? 'Editar bien' : 'Registrar bien', 'icono' => 'bien',
-        'acciones' => ui('boton', ['texto' => 'Volver', 'icono' => 'volver', 'tamano' => 'sm', 'url' => $urlVolver])]) ?>
+        'ayuda' => AyudaCampo::boton('registrar_bien'), 'acciones' => ui('boton', ['texto' => 'Volver', 'icono' => 'volver', 'tamano' => 'sm', 'url' => $urlVolver])]) ?>
 </div>
 
 <?php if ($esEdicion): ?>
@@ -152,14 +152,14 @@ $etiquetasEstado = ['activo' => 'Activo', 'reintegrado' => 'Reintegrado', 'en_re
 
                     <?php if (isset($acciones['trasladar_sede'])): ?>
                         <div data-campos-accion="trasladar_sede" class="mb-2" hidden>
-                            <label class="form-label small requerido" for="accionSede">Sede destino</label>
+                            <?= \App\Helpers\AyudaCampo::etiqueta('accionSede', 'Sede destino', 'accion_sede', true) ?>
                             <select id="accionSede" name="accion_sede_id" class="form-select form-select-sm mb-2" required disabled>
                                 <option value="">-- Selecciona una sede --</option>
                                 <?php foreach ($familiaSedesDestino as $sede): ?>
                                     <option value="<?= (int) $sede['id'] ?>" <?= $va('accion_sede_id') === (string) $sede['id'] ? 'selected' : '' ?>><?= $e($sede['nombre']) ?></option>
                                 <?php endforeach; ?>
                             </select>
-                            <label class="form-label small requerido" for="accionEspacioSede">Espacio en la sede destino</label>
+                            <?= \App\Helpers\AyudaCampo::etiqueta('accionEspacioSede', 'Espacio en la sede destino', 'accion_espacio_sede', true) ?>
                             <select id="accionEspacioSede" name="accion_espacio_sede_id" class="form-select form-select-sm" required disabled>
                                 <option value="">-- Primero selecciona una sede --</option>
                             </select>
@@ -168,8 +168,8 @@ $etiquetasEstado = ['activo' => 'Activo', 'reintegrado' => 'Reintegrado', 'en_re
 
                     <?php if (isset($acciones['reintegrar'])): ?>
                         <div data-campos-accion="reintegrar" class="mb-2" hidden>
-                            <label class="form-label small requerido" for="accionDestino">Destino del reintegro</label>
-                            <input id="accionDestino" type="text" name="accion_destino" class="form-control form-control-sm<?= $invalido('accion_destino') ?>" required disabled
+                            <?= \App\Helpers\AyudaCampo::etiqueta('accionDestino', 'Destino del reintegro', 'reintegro_destino', true) ?>
+                            <input id="accionDestino" type="text" name="accion_destino" class="form-control form-control-sm<?= $invalido('accion_destino') ?>" required maxlength="200" disabled
                                    placeholder="Ej. Almacén institucional" value="<?= $e($va('accion_destino')) ?>">
                             <?= $errorDe('accion_destino') ?>
                         </div>
@@ -177,23 +177,23 @@ $etiquetasEstado = ['activo' => 'Activo', 'reintegrado' => 'Reintegrado', 'en_re
 
                     <?php if (isset($acciones['reportar_baja'])): ?>
                         <div data-campos-accion="reportar_baja" class="mb-2" hidden>
-                            <label class="form-label small requerido" for="accionEstadoReportado">Estado del bien</label>
-                            <input id="accionEstadoReportado" type="text" name="accion_estado_reportado" class="form-control form-control-sm mb-2" required disabled
+                            <?= \App\Helpers\AyudaCampo::etiqueta('accionEstadoReportado', 'Estado del bien', 'baja_estado', true) ?>
+                            <input id="accionEstadoReportado" type="text" name="accion_estado_reportado" class="form-control form-control-sm mb-2" required maxlength="100" disabled
                                    list="sugerenciasEstadoBaja" value="<?= $e($va('accion_estado_reportado')) ?>">
                             <datalist id="sugerenciasEstadoBaja">
                                 <option value="Dañado"><option value="Inservible"><option value="Deteriorado"><option value="Obsoleto"><option value="Perdido">
                             </datalist>
-                            <label class="form-label small requerido" for="accionDescripcionBaja">Qué pasó y por qué se da de baja</label>
-                            <textarea id="accionDescripcionBaja" name="accion_descripcion_baja" class="form-control form-control-sm mb-2" rows="2" required disabled><?= $e($va('accion_descripcion_baja')) ?></textarea>
-                            <label class="form-label small" for="accionFotoBaja">Foto del estado (opcional)</label>
+                            <?= \App\Helpers\AyudaCampo::etiqueta('accionDescripcionBaja', 'Qué pasó y por qué se da de baja', 'baja_descripcion', true) ?>
+                            <textarea id="accionDescripcionBaja" name="accion_descripcion_baja" class="form-control form-control-sm mb-2" rows="2" required maxlength="500" disabled><?= $e($va('accion_descripcion_baja')) ?></textarea>
+                            <?= \App\Helpers\AyudaCampo::etiqueta('accionFotoBaja', 'Foto del estado (opcional)', 'baja_foto') ?>
                             <input id="accionFotoBaja" type="file" name="accion_foto_baja" accept="image/*" capture="environment" class="form-control form-control-sm" disabled>
                         </div>
                     <?php endif; ?>
 
                     <?php if (isset($acciones['reactivar'])): ?>
                         <div data-campos-accion="reactivar" class="mb-2" hidden>
-                            <label class="form-label small requerido" for="accionMotivo">Motivo</label>
-                            <textarea id="accionMotivo" name="accion_motivo" class="form-control form-control-sm<?= $invalido('accion_motivo') ?>" rows="2" required disabled
+                            <?= \App\Helpers\AyudaCampo::etiqueta('accionMotivo', 'Motivo', 'reactivar_motivo', true) ?>
+                            <textarea id="accionMotivo" name="accion_motivo" class="form-control form-control-sm<?= $invalido('accion_motivo') ?>" rows="2" required maxlength="500" disabled
                                       placeholder="Ej. La Alcaldía devolvió el bien"><?= $e($va('accion_motivo')) ?></textarea>
                             <?= $errorDe('accion_motivo') ?>
                         </div>
@@ -202,13 +202,13 @@ $etiquetasEstado = ['activo' => 'Activo', 'reintegrado' => 'Reintegrado', 'en_re
                     <div data-campos-accion="asignar trasladar trasladar_sede reintegrar reactivar reportar_baja" hidden>
                         <div class="row g-2">
                             <div class="col-sm-5">
-                                <label class="form-label small requerido" for="accionFecha">Fecha</label>
+                                <?= \App\Helpers\AyudaCampo::etiqueta('accionFecha', 'Fecha', 'accion_fecha', true) ?>
                                 <input id="accionFecha" type="date" min="<?= \App\Helpers\FechaMovimiento::MINIMA ?>" max="<?= \App\Helpers\FechaMovimiento::hoy() ?>" name="accion_fecha" class="form-control form-control-sm" required disabled
                                        value="<?= $e($va('accion_fecha', date('Y-m-d'))) ?>">
                             </div>
                             <div class="col-sm-7" data-campos-accion="asignar trasladar trasladar_sede reintegrar">
-                                <label class="form-label small" for="accionObservaciones">Observación</label>
-                                <input id="accionObservaciones" type="text" name="accion_observaciones" class="form-control form-control-sm" disabled
+                                <?= \App\Helpers\AyudaCampo::etiqueta('accionObservaciones', 'Observación', 'accion_observacion') ?>
+                                <input id="accionObservaciones" type="text" name="accion_observaciones" class="form-control form-control-sm<?= $invalido('accion_observaciones') ?>" maxlength="500" disabled
                                        value="<?= $e($va('accion_observaciones')) ?>">
                             </div>
                         </div>
@@ -265,22 +265,23 @@ $etiquetasEstado = ['activo' => 'Activo', 'reintegrado' => 'Reintegrado', 'en_re
                 </div>
                 <div class="col-md-6">
                     <?= AyudaCampo::etiqueta('codigoIdentificacion', 'Código de identificación', 'codigo', true) ?>
-                    <input type="text" name="codigo_identificacion" id="codigoIdentificacion" class="form-control<?= $invalido('codigo_identificacion') ?>" required autocomplete="off"<?= $deshabilitado ?>
+                    <input type="text" name="codigo_identificacion" id="codigoIdentificacion" class="form-control<?= $invalido('codigo_identificacion') ?>" required maxlength="40" autocomplete="off"<?= $deshabilitado ?>
                            value="<?= $e($v('codigo_identificacion')) ?>">
                     <?= $errorDe('codigo_identificacion') ?>
                 </div>
 
                 <div class="col-md-8">
                     <?= AyudaCampo::etiqueta('campo-descripcion', 'Descripción', 'descripcion', true) ?>
-                    <input id="campo-descripcion" type="text" name="descripcion" data-descripcion-segun-categoria="categoriaBien" class="form-control<?= $invalido('descripcion') ?>" required<?= $deshabilitado ?>
+                    <input id="campo-descripcion" type="text" name="descripcion" data-descripcion-segun-categoria="categoriaBien" class="form-control<?= $invalido('descripcion') ?>" required maxlength="200"<?= $deshabilitado ?>
                            placeholder="Ej. Silla universitaria en madera"
                            value="<?= $e($v('descripcion')) ?>">
                     <?= $errorDe('descripcion') ?>
                 </div>
                 <div class="col-md-4">
                     <?= AyudaCampo::etiqueta('campo-marca', 'Marca', 'marca') ?>
-                    <input id="campo-marca" type="text" name="marca" class="form-control"<?= $deshabilitado ?>
+                    <input id="campo-marca" type="text" name="marca" class="form-control<?= $invalido('marca') ?>" maxlength="100"<?= $deshabilitado ?>
                            value="<?= $e($v('marca')) ?>">
+                    <?= $errorDe('marca') ?>
                 </div>
 
                 <div class="col-md-4">

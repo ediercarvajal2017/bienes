@@ -38,15 +38,15 @@ final class AyudaCampo
         'codigo' => [
             'titulo' => 'Código de identificación',
             'texto' => "La placa del bien tal como aparece en la cartera de la Alcaldía (ej. 200033042). No se puede repetir en la institución.\n\n"
-                . 'Con la categoría "Sin cartera", MIA sugiere el siguiente código de 10 dígitos; puedes cambiarlo.',
+                . 'Con la categoría "Sin cartera", MIA sugiere el siguiente código de 10 dígitos; puedes cambiarlo. Máximo 40 caracteres.',
         ],
         'descripcion' => [
             'titulo' => 'Descripción',
-            'texto' => 'Qué es el bien, como figura en la cartera: tipo, material, color y modelo. Ej.: SILLA UNIVERSITARIA EN MADERA, PROYECTOR EPSON X200.',
+            'texto' => 'Qué es el bien, como figura en la cartera: tipo, material, color y modelo. Ej.: SILLA UNIVERSITARIA EN MADERA, PROYECTOR EPSON X200. Máximo 200 caracteres.',
         ],
         'marca' => [
             'titulo' => 'Marca',
-            'texto' => 'El fabricante, si lo tiene (Epson, Lenovo, Rimax). Déjalo vacío si no aplica.',
+            'texto' => 'El fabricante, si lo tiene (Epson, Lenovo, Rimax). Déjalo vacío si no aplica. Máximo 100 caracteres.',
         ],
         'fecha_ingreso' => [
             'titulo' => 'Fecha de ingreso',
@@ -106,9 +106,15 @@ final class AyudaCampo
             'titulo' => 'Estado de la categoría',
             'texto' => 'Desactivar una categoría la oculta al registrar bienes nuevos, pero conserva los bienes que ya la usan.',
         ],
+        'alta_masiva' => [
+            'titulo' => 'Alta masiva de bienes idénticos',
+            'texto' => "Registra de una vez muchas unidades iguales que comparten una placa (ej. 250 sillas de la placa 200033042).\n\n"
+                . "Cada unidad queda como un bien propio, con código CÓDIGO-001, CÓDIGO-002…, su QR, su ubicación y su historial. Así se pueden asignar a espacios distintos y reintegrar por cantidad.\n\n"
+                . 'Para un solo bien usa «Registrar bien»; para más de 500 unidades, haz varias altas masivas con códigos distintos.',
+        ],
         'lote_codigo' => [
             'titulo' => 'Código de lote',
-            'texto' => 'El código que comparten todas las unidades (ej. la placa de la Alcaldía). Solo letras, números y guiones. Cada unidad queda como CÓDIGO-001, CÓDIGO-002…',
+            'texto' => 'El código que comparten todas las unidades (ej. la placa de la Alcaldía). Solo letras, números y guiones, máximo 36 caracteres (cada unidad le suma 4: -001). Cada unidad queda como CÓDIGO-001, CÓDIGO-002…',
         ],
         'lote_cantidad' => [
             'titulo' => 'Cantidad',
@@ -287,6 +293,108 @@ final class AyudaCampo
             'titulo' => 'Foto del hallazgo',
             'texto' => "Opcional, pero ayuda a identificar el bien y a no registrarlo dos veces. JPG o PNG, máximo 2 MB.\n\n"
                 . 'En el celular puedes tomarla con la cámara.',
+        ],
+        'registrar_bien' => [
+            'titulo' => 'Registrar o editar un bien',
+            'texto' => "**Registrar:** escribe los datos del bien tal como está en la cartera de la Alcaldía, su ubicación (opcional) y su foto. Para muchas unidades iguales usa «Alta masiva».\n\n"
+                . "**Editar:** cambia sus datos y, en «¿Qué deseas hacer con este bien?», elige una acción: asignar o trasladar, cambiar de sede, reintegrar, reactivar o reportar la baja.\n\n"
+                . 'Los datos y la acción se guardan juntos: si la acción no se puede hacer, tampoco se guardan los datos, y el formulario conserva lo que escribiste.',
+        ],
+        'accion_sede' => [
+            'titulo' => 'Sede destino',
+            'texto' => 'La sede de tu institución (principal o sección) a la que pasa el bien. Después eliges el espacio de esa sede donde queda.',
+        ],
+        'accion_espacio_sede' => [
+            'titulo' => 'Espacio en la sede destino',
+            'texto' => 'El espacio de la sede elegida donde queda el bien. Elige primero la sede para ver sus espacios.',
+        ],
+        'reactivar_motivo' => [
+            'titulo' => 'Motivo de la reactivación',
+            'texto' => 'Por qué el bien vuelve a la institución. Ej.: La Alcaldía devolvió el bien, se reintegró por error. Queda en el historial y en la auditoría. Solo el rector puede reactivar. Máximo 500 caracteres.',
+        ],
+        'accion_fecha' => [
+            'titulo' => 'Fecha de la acción',
+            'texto' => 'El día en que ocurrió lo que vas a registrar (asignación, traslado, reintegro, reactivación o baja); por defecto, hoy. No puede ser futura ni anterior al año 2000.',
+        ],
+        'accion_observacion' => [
+            'titulo' => 'Observación de la acción',
+            'texto' => 'Opcional. Una nota que queda en el historial del bien junto con el movimiento. Máximo 500 caracteres.',
+        ],
+        'buscar_bienes' => [
+            'titulo' => 'Buscar bienes',
+            'texto' => "Escribe parte del código, la descripción, el responsable, la ubicación o el valor: la lista se actualiza sola.\n\n"
+                . 'No distingue tildes ni mayúsculas, y lo encontrado se marca en amarillo. Desde el teclado llegas aquí con «/».',
+        ],
+        'filtro_categoria' => [
+            'titulo' => 'Filtro por categoría',
+            'texto' => 'Muestra solo los bienes de esa categoría (Muebles, Tecnología, Sin cartera…).',
+        ],
+        'filtro_estado' => [
+            'titulo' => 'Filtro por estado',
+            'texto' => "**Activo:** en uso. **En reparación:** fuera de servicio por un tiempo. **Reintegrado:** devuelto a la Alcaldía. **Dado de baja:** ya no existe.\n\n"
+                . 'Entre paréntesis, cuántos hay de cada uno con los demás filtros aplicados.',
+        ],
+        'jornada_detalle' => [
+            'titulo' => 'Detalle de la jornada',
+            'texto' => "El avance de esta jornada de verificación física, en cuatro pestañas:\n\n"
+                . "**Hallazgos:** bienes encontrados que no están en MIA. **Discrepancias:** bienes que no coinciden. **Pendientes:** los que nadie ha escaneado. **Verificados:** los que coinciden.\n\n"
+                . '«Exportar a Excel» descarga todo. Cuando termines, cierra la jornada con «Cerrar jornada».',
+        ],
+        'jornada_hallazgos' => [
+            'titulo' => 'Hallazgos',
+            'texto' => "Bienes que alguien encontró en un espacio y no están en MIA.\n\n"
+                . "**Registrar como bien:** abre «Registrar bien» a partir del hallazgo.\n\n"
+                . '**Descartar:** si no corresponde registrarlo (ya existía, no es de la institución…). Los hallazgos no se pierden al cerrar la jornada.',
+        ],
+        'jornada_discrepancias' => [
+            'titulo' => 'Discrepancias',
+            'texto' => "Bienes que no coinciden con lo que dice MIA.\n\n"
+                . "**Corregir ubicación:** abre el bien para asignarlo al espacio correcto.\n\n"
+                . "**Dar de baja:** abre el reporte de baja (solo para bienes «Sin cartera»).\n\n"
+                . '**Marcar revisada:** cuando ya se atendió. Al corregir la ubicación o reportar la baja desde aquí, la discrepancia queda revisada sola.',
+        ],
+        'discrepancia_estado' => [
+            'titulo' => 'Estado de las discrepancias',
+            'texto' => '**Sin atender:** las que nadie ha revisado. **Revisadas:** las ya atendidas, con quién y cuándo. **Todas:** unas y otras.',
+        ],
+        'jornada_pendientes' => [
+            'titulo' => 'Pendientes',
+            'texto' => 'Bienes de la institución que todavía nadie ha escaneado en esta jornada; para verificarlos, escanea su QR. Los reintegrados y los dados de baja no cuentan.',
+        ],
+        'jornada_verificados' => [
+            'titulo' => 'Verificados',
+            'texto' => 'Bienes que alguien escaneó y confirmó con «el bien está aquí»: coinciden con lo que dice MIA.',
+        ],
+        'auditoria' => [
+            'titulo' => 'Auditoría',
+            'texto' => "Quién hizo qué y cuándo en MIA, en todas las instituciones. Nadie puede borrar ni cambiar un registro de auditoría.\n\n"
+                . 'Los registros de más de 3 años pasan a un archivo comprimido descargable: se guardan, no se pierden.',
+        ],
+        'auditoria_institucion' => [
+            'titulo' => 'Filtro por institución',
+            'texto' => 'Muestra solo lo ocurrido en esa institución. «Todas» muestra lo de todas.',
+        ],
+        'auditoria_tipo' => [
+            'titulo' => 'Filtro por tipo',
+            'texto' => 'Sobre qué se hizo la acción: un bien, un usuario, un espacio, un lote de reintegro… «Todos» muestra todo.',
+        ],
+        'auditoria_accion' => [
+            'titulo' => 'Filtro por acción',
+            'texto' => 'Qué se hizo: crear, editar, asignar, reintegrar, eliminar, iniciar sesión…',
+        ],
+        'auditoria_fechas' => [
+            'titulo' => 'Filtro por fechas',
+            'texto' => 'Desde y hasta qué día, ambos incluidos. Puedes llenar solo uno de los dos.',
+        ],
+        'papelera' => [
+            'titulo' => 'Papelera de reciclaje',
+            'texto' => "Lo que se eliminó en cualquier institución: usuarios, espacios, categorías, cargos, facturas, formatos y carteras.\n\n"
+                . "**Restaurar** lo devuelve tal como estaba.\n\n"
+                . 'Lo que lleva más de 90 días en la papelera se borra solo, de forma definitiva.',
+        ],
+        'papelera_buscar' => [
+            'titulo' => 'Buscar en la papelera',
+            'texto' => 'Filtra la lista mientras escribes: por tipo, elemento, institución o quién lo eliminó.',
         ],
         'ficha_qr' => [
             'titulo' => 'Ficha del bien',

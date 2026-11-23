@@ -15,12 +15,13 @@ $etiquetasTipo = [
 ];
 ?>
 <?= ui('encabezado_pagina', ['titulo' => 'Papelera de reciclaje', 'icono' => 'papelera',
-    'subtitulo' => 'Todo lo eliminado en cualquier institución, de cualquier tipo. Se conserva aquí hasta que lo restaures o hasta que la limpieza automática lo borre después del periodo de retención.']) ?>
+    'subtitulo' => 'Todo lo eliminado en cualquier institución, de cualquier tipo. Se conserva aquí hasta que lo restaures o hasta que la limpieza automática lo borre después del periodo de retención.', 'ayuda' => \App\Helpers\AyudaCampo::boton('papelera')]) ?>
 
 <?php if (empty($elementos)): ?>
     <p class="text-muted">La papelera está vacía.</p>
 <?php else: ?>
     <div class="mb-3 contenedor-sm">
+        <?= \App\Helpers\AyudaCampo::etiqueta('buscadorPapelera', 'Buscar', 'papelera_buscar') ?>
         <input type="search" id="buscadorPapelera" data-buscar-local class="form-control form-control-sm"
                placeholder="Buscar por tipo, elemento, institución o quién lo eliminó...">
     </div>

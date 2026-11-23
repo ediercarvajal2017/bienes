@@ -593,6 +593,96 @@ test('panel principal, escáner, ficha del QR, mis notas y mi cuenta explican ca
     await expect(await globoDe(page, boton)).toContainText('Son privadas: solo tú las ves');
 });
 
+test('bienes (tabla, registrar, editar, alta masiva) y detalle de la jornada explican cada parte', async ({ page }) => {
+    test.skip(datos().remoto === true, 'Necesita la base de pruebas local');
+    const d = datos();
+
+    await page.goto('bienes');
+    await page.locator('#botonFiltrosBienes').click();
+    await revisarAyudas(page, {
+        'Buscar bienes': 'No distingue tildes ni mayúsculas',
+        'Filtro por categoría': 'Sin cartera',
+        'Filtro por estado': 'Dado de baja',
+        'Filtro por espacio': 'están hoy en ese espacio',
+        'Filtro por responsabilidad': 'Sin asignar',
+    });
+
+    await page.goto('bienes/crear');
+    await revisarAyudas(page, { 'Registrar o editar un bien': 'Los datos y la acción se guardan juntos' });
+    await expect(page.locator('#codigoIdentificacion')).toHaveAttribute('maxlength', '40');
+    await expect(page.locator('#campo-descripcion')).toHaveAttribute('maxlength', '200');
+    await expect(page.locator('#campo-marca')).toHaveAttribute('maxlength', '100');
+
+    // Al editar, los campos de la acción elegida tienen su ayuda.
+    await page.goto(`bienes/${d.bienes.A.silla}/editar`);
+    await page.locator('#accionBien').selectOption('reintegrar');
+    await revisarAyudas(page, {
+        Destino: 'Máximo 200 caracteres',
+        'Fecha de la acción': 'por defecto, hoy',
+        'Observación de la acción': 'Máximo 500 caracteres',
+    });
+    await expect(page.locator('#accionDestino')).toHaveAttribute('maxlength', '200');
+
+    await page.goto('bienes/alta-masiva');
+    await revisarAyudas(page, {
+        'Alta masiva de bienes idénticos': 'reintegrar por cantidad',
+        'Código de lote': 'máximo 36 caracteres',
+    });
+    await expect(page.locator('#campo-lote')).toHaveAttribute('maxlength', '36');
+
+    // Un código de lote más largo de lo que cabe se rechaza con su motivo (antes fallaba al guardar).
+    const token = await page.locator('input[name="_csrf"]').first().inputValue();
+    const respuesta = await page.request.post('bienes/alta-masiva', {
+        form: { _csrf: token, lote: 'L'.repeat(37), cantidad: '2', descripcion: 'SILLA DE PRUEBA', fecha_ingreso: '2024-01-15', valor: '0' },
+        maxRedirects: 0,
+    });
+    expect(respuesta.status()).toBe(302);
+    await page.goto('bienes/alta-masiva');
+    await expect(page.locator('.alert-danger')).toContainText('El código de lote es más largo de lo que se puede guardar');
+
+    // Detalle de una jornada (se abre una si no hay, y se borra al final).
+    const activa = bd(`SELECT id FROM jornadas_verificacion WHERE institucion_id = ${d.instituciones.A} AND estado = 'en_progreso' LIMIT 1`);
+    const creada = activa === '' ? Number(bd(`INSERT INTO jornadas_verificacion (institucion_id, nombre, fecha_inicio, creada_por)
+        VALUES (${d.instituciones.A}, 'PW-TEST ayudas jornada', CURDATE(), ${d.usuarios.rector.id}); SELECT LAST_INSERT_ID();`)) : null;
+    try {
+        await page.goto(`verificaciones/${creada ?? Number(activa)}`);
+        await revisarAyudas(page, {
+            'Detalle de la jornada': 'Exportar a Excel',
+            Discrepancias: 'la discrepancia queda revisada sola',
+        });
+        await page.locator('[data-tab-link="pendientes"]').click();
+        await revisarAyudas(page, { Pendientes: 'nadie ha escaneado' });
+        await page.locator('[data-tab-link="ok"]').click();
+        await revisarAyudas(page, { Verificados: 'el bien está aquí' });
+    } finally {
+        if (creada !== null) {
+            bd(`DELETE FROM jornadas_verificacion WHERE id = ${creada}`);
+        }
+    }
+});
+
+test('auditoría y papelera (superusuario) explican cada parte', async ({ browser }) => {
+    test.skip(datos().remoto === true, 'Necesita la base de pruebas local');
+    const contexto = await comoRol(browser, 'superusuario');
+    const page = await contexto.newPage();
+
+    await page.goto('auditoria');
+    await revisarAyudas(page, {
+        Auditoría: 'Nadie puede borrar ni cambiar un registro de auditoría',
+        'Filtro por institución': 'esa institución',
+        'Filtro por tipo': 'un lote de reintegro',
+        'Filtro por acción': 'iniciar sesión',
+        'Filtro por fechas': 'ambos incluidos',
+    });
+
+    await page.goto('papelera');
+    await revisarAyudas(page, { 'Papelera de reciclaje': 'más de 90 días' });
+    if (await ayudaDe(page, 'Buscar en la papelera').count() > 0) {
+        await revisarAyudas(page, { 'Buscar en la papelera': 'mientras escribes' });
+    }
+    await contexto.close();
+});
+
 test.describe('en el celular', () => {
     test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
 

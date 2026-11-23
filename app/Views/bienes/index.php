@@ -141,6 +141,7 @@ $alcanceDescarga = array_filter([
     <input type="search" id="buscador" data-buscar="q" class="form-control form-control-sm"
            placeholder="Buscar por código, descripción, responsable, ubicación o valor…"
            value="<?= htmlspecialchars($busqueda, ENT_QUOTES) ?>">
+    <?= \App\Helpers\AyudaCampo::boton('buscar_bienes') ?>
     <?= ui('boton', ['texto' => $filtrosActivos > 0 ? "Filtros ({$filtrosActivos})" : 'Filtros', 'icono' => 'filtrar', 'tamano' => 'sm',
         'atributos' => ['id' => 'botonFiltrosBienes', 'data-alternar' => 'filtrosBienes', 'data-alternar-recordar' => 'bienes.filtros',
             'aria-controls' => 'filtrosBienes', 'aria-expanded' => 'false']]) ?>
@@ -150,7 +151,7 @@ $alcanceDescarga = array_filter([
 <div id="filtrosBienes" class="panel-filtros filtros-plegables plegable-siempre">
 <div class="filtros-rejilla filtros-n<?= $numFiltros ?>">
     <div class="filtro-item">
-        <label for="filtroCategoria" class="form-label small mb-1">Categoría</label>
+        <?= \App\Helpers\AyudaCampo::etiqueta('filtroCategoria', 'Categoría', 'filtro_categoria') ?>
         <select id="filtroCategoria" class="form-select form-select-sm selector-buscable">
             <option value="">Todas las categorías</option>
             <?php foreach ($categorias as $c): ?>
@@ -161,7 +162,7 @@ $alcanceDescarga = array_filter([
         </select>
     </div>
     <div class="filtro-item">
-        <label for="filtroEstado" class="form-label small mb-1">Estado</label>
+        <?= \App\Helpers\AyudaCampo::etiqueta('filtroEstado', 'Estado', 'filtro_estado') ?>
         <select id="filtroEstado" class="form-select form-select-sm">
             <option value="">Todos los estados</option>
             <?php foreach ($etiquetasEstado as $valorEstado => $etiqueta): ?>
@@ -172,7 +173,7 @@ $alcanceDescarga = array_filter([
     </div>
     <?php if (!empty($espacios)): ?>
         <div class="filtro-item">
-            <label for="filtroEspacio" class="form-label small mb-1">Espacio</label>
+            <?= \App\Helpers\AyudaCampo::etiqueta('filtroEspacio', 'Espacio', 'filtro_espacio') ?>
             <select id="filtroEspacio" class="form-select form-select-sm selector-buscable">
                 <option value="">Todos los espacios</option>
                 <?php foreach ($espacios as $e): ?>
@@ -185,7 +186,7 @@ $alcanceDescarga = array_filter([
     <?php endif; ?>
     <?php if (!empty($responsables)): ?>
         <div class="filtro-item">
-            <label for="filtroResponsable" class="form-label small mb-1">Responsable</label>
+            <?= \App\Helpers\AyudaCampo::etiqueta('filtroResponsable', 'Responsable', 'filtro_responsable') ?>
             <select id="filtroResponsable" class="form-select form-select-sm selector-buscable">
                 <option value="">Todos los responsables</option>
                 <?php foreach ($responsables as $r): ?>
@@ -198,7 +199,7 @@ $alcanceDescarga = array_filter([
     <?php endif; ?>
     <?php if (!empty($tipos)): ?>
         <div class="filtro-item">
-            <label for="filtroTipo" class="form-label small mb-1">Responsabilidad</label>
+            <?= \App\Helpers\AyudaCampo::etiqueta('filtroTipo', 'Responsabilidad', 'filtro_responsabilidad') ?>
             <select id="filtroTipo" class="form-select form-select-sm">
                 <option value="">Todas</option>
                 <?php foreach ($tipos as $valorTipo => $etiquetaTipo): ?>
