@@ -225,6 +225,16 @@ final class EspacioController
                 'queHacer' => 'Escribe el nombre (por ejemplo «Aula 101») y vuelve a guardar.'];
         }
 
+        // Lo que cabe en la base (espacios): un texto más largo se rechaza con su motivo.
+        if (mb_strlen($datos['codigo']) > 30) {
+            return ['campo' => 'codigo', 'porQue' => 'El número del espacio es más largo de lo que se puede guardar.', 'enCampo' => 'Máximo 30 caracteres.',
+                'queHacer' => 'Acórtalo a 30 caracteres o menos y vuelve a guardar.'];
+        }
+        if (mb_strlen($datos['nombre']) > 100) {
+            return ['campo' => 'nombre', 'porQue' => 'El nombre del espacio es más largo de lo que se puede guardar.', 'enCampo' => 'Máximo 100 caracteres.',
+                'queHacer' => 'Acórtalo a 100 caracteres o menos y vuelve a guardar.'];
+        }
+
         if (empty($datos['responsables'])) {
             return ['campo' => 'responsables[]', 'porQue' => 'El espacio no tiene responsable: cada espacio necesita al menos uno.',
                 'enCampo' => 'Elige al menos un responsable.', 'queHacer' => 'Elige en «Responsables» a la persona (o personas) que responde por los bienes del espacio.'];
