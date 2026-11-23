@@ -86,6 +86,14 @@ final class HallazgoController
             exit;
         }
 
+        if (mb_strlen($datos['descripcion']) > 300) {
+            Aviso::enviar(Aviso::error('No se reportó el hallazgo', 'La descripción es más larga de lo que se puede guardar.',
+                'Acórtala a 300 caracteres o menos y vuelve a enviar.', null, ['descripcion' => 'Máximo 300 caracteres.']));
+            Session::flashOld($datos);
+            header('Location: ' . Url::to('/hallazgos/crear'));
+            exit;
+        }
+
         if ($datos['descripcion'] === '') {
             Aviso::enviar(Aviso::error('No se reportó el hallazgo', 'Falta describir el bien encontrado.',
                 'Escribe qué es (por ejemplo «Silla plástica azul sin placa») y vuelve a enviar.', null, ['descripcion' => 'Describe el bien.']));

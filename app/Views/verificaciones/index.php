@@ -3,6 +3,7 @@
 use App\Core\Auth;
 use App\Core\Url;
 use App\Core\View;
+use App\Helpers\AyudaCampo;
 
 ?>
 <?php ob_start(); ?>
@@ -17,7 +18,7 @@ use App\Core\View;
             </a>
         <?php endif; ?>
     <?php endif; ?>
-<?= ui('encabezado_pagina', ['titulo' => 'Verificación física de bienes', 'icono' => 'verificacion', 'subtitulo' => 'Compara el inventario del sistema contra la existencia física de cada bien.', 'acciones' => (string) ob_get_clean()]) ?>
+<?= ui('encabezado_pagina', ['titulo' => 'Verificación física de bienes', 'icono' => 'verificacion', 'ayuda' => AyudaCampo::boton('verificaciones'), 'subtitulo' => 'Compara el inventario del sistema contra la existencia física de cada bien.', 'acciones' => (string) ob_get_clean()]) ?>
 
 <?php if (empty($jornadas)): ?>
     <p class="text-muted">Todavía no se ha iniciado ninguna jornada de verificación.</p>

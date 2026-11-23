@@ -193,6 +193,101 @@ final class AyudaCampo
                 . "Revisa que se lean las firmas y las placas antes de subirlo: es la prueba de que la Alcaldía recibió los bienes.\n\n"
                 . 'Al editar un registro, adjunta un archivo solo si quieres reemplazar el que ya tiene.',
         ],
+        'bajas' => [
+            'titulo' => 'Bajas de bienes',
+            'texto' => "Aquí se aprueban o rechazan los reportes de baja. Solo se dan de baja los bienes de la categoría **«Sin cartera»** (donaciones, compras propias); los que están en la cartera de la Alcaldía se reintegran.\n\n"
+                . "**1. Reportar:** desde la ficha del bien (su QR), «Reportar baja», con el estado, qué pasó y una foto.\n\n"
+                . "**2. Aprobar:** el rector o el secretario revisa el reporte. Al aprobarlo, el bien queda «Dado de baja», sin espacio ni responsable; su historial sigue en la ficha.\n\n"
+                . '**O rechazar:** con un motivo, que ve quien lo reportó. El bien sigue como estaba.',
+        ],
+        'reportar_baja' => [
+            'titulo' => 'Reportar baja',
+            'texto' => "Este formulario **no da de baja** el bien: envía un reporte que queda pendiente hasta que el rector o el secretario lo apruebe en «Bajas».\n\n"
+                . "Solo se reportan los bienes de la categoría «Sin cartera». Un bien de la cartera de la Alcaldía no se da de baja: se reintegra; si está dañado, se marca «En reparación».\n\n"
+                . 'Si llegaste desde una discrepancia de la verificación física, la descripción ya trae lo que se reportó y la discrepancia queda atendida al enviar.',
+        ],
+        'baja_estado' => [
+            'titulo' => 'Estado del bien',
+            'texto' => "En qué estado está el bien. Al escribir aparecen opciones: **Dañado**, **Perdido**, **Deteriorado por uso** u **Obsoleto**; puedes escribir otro si lo describe mejor.\n\n"
+                . 'Máximo 100 caracteres. Es lo primero que ve quien aprueba en la lista de «Bajas».',
+        ],
+        'baja_ubicacion' => [
+            'titulo' => 'Ubicación',
+            'texto' => "Dónde está el bien ahora. MIA pone el espacio al que está asignado; cámbialo si está en otro lugar (ej. Bodega) o déjalo vacío si se perdió.\n\n"
+                . 'Máximo 150 caracteres. Sirve para que quien aprueba pueda ir a ver el bien.',
+        ],
+        'baja_descripcion' => [
+            'titulo' => 'Descripción de la baja',
+            'texto' => "Qué pasó y por qué se pide la baja: cuándo y cómo se dañó o se perdió, y si ya se intentó repararlo. Ej.: La pata se partió en marzo; el arreglo cuesta más que una silla nueva.\n\n"
+                . 'Máximo 500 caracteres. Quien aprueba decide con este texto, así que sé claro y concreto.',
+        ],
+        'baja_foto' => [
+            'titulo' => 'Fotografía del estado actual',
+            'texto' => "Opcional, pero ayuda a aprobar el reporte: una foto donde se vea el daño o el estado del bien. JPG o PNG, máximo 2 MB.\n\n"
+                . 'En el celular puedes tomarla con la cámara. Aparece junto al reporte en la lista de «Bajas».',
+        ],
+        'verificaciones' => [
+            'titulo' => 'Verificación física',
+            'texto' => "Compara lo que dice MIA con lo que hay de verdad en la institución.\n\n"
+                . "**1. Iniciar:** el rector o el secretario crea una jornada. Solo puede haber una en progreso a la vez.\n\n"
+                . "**2. Recorrer:** cada persona escanea el QR de los bienes y pulsa «Confirmar: el bien está aquí» o «Reportar discrepancia». Un docente solo verifica los bienes de los espacios donde es responsable.\n\n"
+                . "**3. Hallazgos:** un bien que está en el espacio pero no tiene placa ni QR se reporta como «bien no registrado».\n\n"
+                . '**4. Cerrar:** quien administra revisa las discrepancias y los hallazgos y cierra la jornada. El resultado se puede exportar a Excel.',
+        ],
+        'jornada_nombre' => [
+            'titulo' => 'Nombre de la jornada',
+            'texto' => "Un nombre que identifique la jornada en la lista y en el Excel: el período o el motivo. Ej.: Verificación semestre 1 - 2026, Inventario de fin de año.\n\n"
+                . 'Máximo 150 caracteres.',
+        ],
+        'jornada_fecha_inicio' => [
+            'titulo' => 'Fecha de inicio',
+            'texto' => "El día en que empieza el recorrido; por defecto, hoy.\n\n"
+                . 'La jornada queda abierta desde que la inicias hasta que la cierras, y mientras tanto se pueden verificar bienes. Solo puede haber una jornada en progreso a la vez.',
+        ],
+        'jornada_observaciones_cierre' => [
+            'titulo' => 'Observaciones de cierre',
+            'texto' => "Opcional. Un resumen para el registro: qué quedó pendiente y por qué, o qué se decidió. Ej.: Faltó la sala de sistemas por mantenimiento; se verificará en la próxima jornada.\n\n"
+                . 'Máximo 500 caracteres. Al cerrar ya no se pueden verificar más bienes en esta jornada; los resultados quedan en esta página y en el Excel.',
+        ],
+        'discrepancia_motivo' => [
+            'titulo' => '¿Qué pasa con este bien?',
+            'texto' => "Elige lo que no coincide con lo que dice MIA:\n\n"
+                . "**No se encuentra:** no está donde debería y no lo encontraste en otro lugar.\n\n"
+                . "**Está en otro salón:** está en un espacio distinto al registrado; escribe en cuál.\n\n"
+                . "**Dañado:** está, pero dañado.\n\n"
+                . "**El responsable no es el correcto:** quien lo tiene no es quien figura en MIA.\n\n"
+                . '**Otro:** cualquier otra cosa; en este caso el detalle es obligatorio. Quien administra la verificación revisará la discrepancia.',
+        ],
+        'discrepancia_detalle' => [
+            'titulo' => 'Detalle de la discrepancia',
+            'texto' => "Lo que encontraste, en pocas palabras: dónde está o qué le pasa. Ej.: La silla está en el Aula 102.\n\n"
+                . 'Opcional, salvo con el motivo «Otro». Máximo 500 caracteres.',
+        ],
+        'verificar_foto' => [
+            'titulo' => 'Foto del bien',
+            'texto' => "Este bien no tiene foto en MIA: aprovecha para tomársela. Queda como la foto del bien en su ficha. JPG o PNG, máximo 2 MB.\n\n"
+                . 'Es opcional y solo se guarda al pulsar «Confirmar: el bien está aquí».',
+        ],
+        'hallazgos' => [
+            'titulo' => 'Reportar bien no registrado',
+            'texto' => "Un hallazgo es un bien que está físicamente en la institución pero no aparece en MIA: no tiene placa ni QR.\n\n"
+                . "Solo se reporta mientras hay una jornada de verificación en progreso. Antes, búscalo por foto para no duplicar uno que ya existe.\n\n"
+                . 'Quien administra la verificación lo revisa: si corresponde, lo registra en MIA; si no, lo descarta.',
+        ],
+        'hallazgo_espacio' => [
+            'titulo' => 'Espacio donde lo encontraste',
+            'texto' => 'El aula, oficina o bodega donde está el bien. Un docente solo ve los espacios de los que es responsable; el rector y el secretario ven todos los de la institución.',
+        ],
+        'hallazgo_descripcion' => [
+            'titulo' => 'Descripción del hallazgo',
+            'texto' => "Qué es el bien, para reconocerlo: tipo, color, material o marca. Ej.: Silla plástica azul sin placa, ventilador de techo.\n\n"
+                . 'Máximo 300 caracteres.',
+        ],
+        'hallazgo_foto' => [
+            'titulo' => 'Foto del hallazgo',
+            'texto' => "Opcional, pero ayuda a identificar el bien y a no registrarlo dos veces. JPG o PNG, máximo 2 MB.\n\n"
+                . 'En el celular puedes tomarla con la cámara.',
+        ],
         'formatos_plaqueteo' => [
             'titulo' => 'Formatos de plaqueteo',
             'texto' => "Aquí archivas el formato que se firma cuando la Alcaldía viene a poner las placas a los bienes. MIA no lo genera: es la copia firmada del plaqueteo.\n\n"

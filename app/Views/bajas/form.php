@@ -3,13 +3,14 @@
 use App\Core\Csrf;
 use App\Core\Url;
 use App\Core\View;
+use App\Helpers\AyudaCampo;
 
 $verificacionId ??= null;
 $descripcionSugerida ??= '';
 ?>
 <?php ob_start(); ?>
     <a href="<?= Url::to('/qr/' . $token) ?>" class="btn btn-sm btn-outline-secondary">Volver</a>
-<?= ui('encabezado_pagina', ['titulo' => 'Reportar baja', 'icono' => 'baja', 'acciones' => (string) ob_get_clean()]) ?>
+<?= ui('encabezado_pagina', ['titulo' => 'Reportar baja', 'icono' => 'baja', 'ayuda' => AyudaCampo::boton('reportar_baja'), 'acciones' => (string) ob_get_clean()]) ?>
 
 <div class="card mb-3 contenedor-md">
     <div class="card-body py-3 d-flex gap-3 align-items-center">
@@ -32,8 +33,6 @@ $descripcionSugerida ??= '';
     </div>
 <?php endif; ?>
 
-<p class="text-muted small mb-2">Los campos marcados con <span class="text-danger">*</span> son obligatorios.</p>
-
 <form method="post" action="<?= Url::to('/qr/' . $token . '/baja') ?>" enctype="multipart/form-data" class="row g-3 contenedor-md">
     <?= Csrf::field() ?>
     <?php if ($verificacionId !== null): ?>
@@ -41,8 +40,8 @@ $descripcionSugerida ??= '';
     <?php endif; ?>
 
     <div class="col-12">
-        <label for="campo-estado-reportado" class="form-label small requerido">Estado del bien</label>
-        <input id="campo-estado-reportado" type="text" name="estado_reportado" class="form-control<?= clase_invalido('estado_reportado') ?>" required list="sugerenciasEstado" placeholder="Ej. Dañado, Perdido, Obsoleto...">
+        <?= AyudaCampo::etiqueta('campo-estado-reportado', 'Estado del bien', 'baja_estado', true) ?>
+        <input id="campo-estado-reportado" type="text" name="estado_reportado" class="form-control<?= clase_invalido('estado_reportado') ?>" required maxlength="100" list="sugerenciasEstado" placeholder="Ej. Dañado, Perdido, Obsoleto...">
         <?= error_campo('estado_reportado') ?>
         <datalist id="sugerenciasEstado">
             <option value="Dañado">
@@ -53,14 +52,15 @@ $descripcionSugerida ??= '';
     </div>
 
     <div class="col-12">
-        <label for="campo-ubicacion" class="form-label small">Ubicación</label>
-        <input id="campo-ubicacion" type="text" name="ubicacion" class="form-control"
+        <?= AyudaCampo::etiqueta('campo-ubicacion', 'Ubicación', 'baja_ubicacion') ?>
+        <input id="campo-ubicacion" type="text" name="ubicacion" class="form-control<?= clase_invalido('ubicacion') ?>" maxlength="150"
                value="<?= htmlspecialchars($asignacion['espacio_nombre'] ?? '', ENT_QUOTES) ?>">
+        <?= error_campo('ubicacion') ?>
     </div>
 
     <div class="col-12">
-        <label for="campo-descripcion" class="form-label small requerido">Descripción de la baja</label>
-        <textarea id="campo-descripcion" name="descripcion" class="form-control<?= clase_invalido('descripcion') ?>" rows="3" required placeholder="Qué pasó y por qué se solicita la baja"><?= htmlspecialchars($descripcionSugerida, ENT_QUOTES) ?></textarea>
+        <?= AyudaCampo::etiqueta('campo-descripcion', 'Descripción de la baja', 'baja_descripcion', true) ?>
+        <textarea id="campo-descripcion" name="descripcion" class="form-control<?= clase_invalido('descripcion') ?>" rows="3" required maxlength="500" placeholder="Qué pasó y por qué se solicita la baja"><?= htmlspecialchars($descripcionSugerida, ENT_QUOTES) ?></textarea>
         <?= error_campo('descripcion') ?>
     </div>
 
@@ -68,6 +68,7 @@ $descripcionSugerida ??= '';
         <?php View::render('partials/campo_foto', [
             'nombreCampo' => 'foto',
             'etiqueta' => 'Fotografía del estado actual',
+            'ayuda' => 'baja_foto',
             'fotoActualUrl' => null,
         ]); ?>
     </div>

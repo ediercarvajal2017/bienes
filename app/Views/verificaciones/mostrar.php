@@ -61,8 +61,8 @@ $tabPorDefecto = !empty($hallazgos) ? 'hallazgos' : 'discrepancia';
         <div class="card-body">
             <?= Csrf::field() ?>
             <input type="hidden" name="confirmar_hallazgos" value="<?= count($hallazgos) > 0 ? '1' : '0' ?>">
-            <label for="campo-observaciones" class="form-label small">Observaciones de cierre (opcional)</label>
-            <textarea id="campo-observaciones" name="observaciones" class="form-control form-control-sm mb-2" rows="2"></textarea>
+            <?= \App\Helpers\AyudaCampo::etiqueta('campo-observaciones', 'Observaciones de cierre (opcional)', 'jornada_observaciones_cierre') ?>
+            <textarea id="campo-observaciones" name="observaciones" class="form-control form-control-sm mb-2" rows="2" maxlength="500"></textarea>
             <button type="submit" class="btn btn-outline-danger btn-sm">
                 <?= icono('guardar', 'me-1') ?>Cerrar jornada
             </button>

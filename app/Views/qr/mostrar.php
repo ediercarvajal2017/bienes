@@ -158,7 +158,7 @@ $qrImpreso = !empty($bien['qr_impreso_en']);
                     <?= \App\Core\Csrf::field() ?>
                     <input type="hidden" name="resultado" value="ok">
                     <?php if (empty($bien['foto_path'])): ?>
-                        <label for="fotoVerificar" class="form-label small text-muted mb-1">Este bien no tiene foto — puedes tomarle una (opcional)</label>
+                        <?= \App\Helpers\AyudaCampo::etiqueta('fotoVerificar', 'Este bien no tiene foto — puedes tomarle una (opcional)', 'verificar_foto') ?>
                         <input type="file" name="foto" id="fotoVerificar" accept="image/*" capture="environment" class="form-control form-control-sm mb-2">
                     <?php endif; ?>
                     <button type="submit" class="btn btn-outline-secondary btn-sm w-100 mb-2">
@@ -172,7 +172,7 @@ $qrImpreso = !empty($bien['qr_impreso_en']);
                 <form method="post" action="<?= Url::to('/qr/' . $token . '/verificar') ?>" id="formDiscrepancia" class="mt-2" hidden>
                     <?= \App\Core\Csrf::field() ?>
                     <input type="hidden" name="resultado" value="discrepancia">
-                    <label for="motivoDiscrepancia" class="form-label small text-muted mb-1">¿Qué pasa con este bien?</label>
+                    <?= \App\Helpers\AyudaCampo::etiqueta('motivoDiscrepancia', '¿Qué pasa con este bien?', 'discrepancia_motivo', true) ?>
                     <select name="motivo" id="motivoDiscrepancia" class="form-select form-select-sm mb-2" required>
                         <option value="">-- Selecciona --</option>
                         <option value="no_se_encuentra">No se encuentra</option>
@@ -181,7 +181,8 @@ $qrImpreso = !empty($bien['qr_impreso_en']);
                         <option value="responsable_incorrecto">El responsable no es el correcto</option>
                         <option value="otro">Otro</option>
                     </select>
-                    <textarea name="observaciones" id="observacionesDiscrepancia" class="form-control form-control-sm mb-2" rows="2"
+                    <?= \App\Helpers\AyudaCampo::etiqueta('observacionesDiscrepancia', 'Detalle', 'discrepancia_detalle') ?>
+                    <textarea name="observaciones" id="observacionesDiscrepancia" class="form-control form-control-sm mb-2" rows="2" maxlength="500"
                               placeholder="Detalle adicional (opcional)"></textarea>
                     <button type="submit" class="btn btn-primary btn-sm w-100">Enviar discrepancia</button>
                 </form>
@@ -219,6 +220,7 @@ $qrImpreso = !empty($bien['qr_impreso_en']);
 
 <script src="<?= Url::asset('/assets/js/tema.js') ?>"></script>
 <script src="<?= Url::asset('/assets/js/camara.js') ?>"></script>
+<script src="<?= Url::asset('/assets/js/ayuda-campo.js') ?>"></script>
 <script>
 (function () {
     var input = document.getElementById('fotoVerificar');

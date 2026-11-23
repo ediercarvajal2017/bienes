@@ -2,6 +2,7 @@
 
 use App\Core\Csrf;
 use App\Core\Url;
+use App\Helpers\AyudaCampo;
 
 ?>
 <?php ob_start(); ?>
@@ -13,17 +14,15 @@ use App\Core\Url;
     o reportar una discrepancia. Un docente solo puede verificar los bienes de los espacios donde es responsable.
 </p>
 
-<p class="text-muted small mb-2 contenedor-md">Los campos marcados con <span class="text-danger">*</span> son obligatorios.</p>
-
 <form method="post" action="<?= Url::to('/verificaciones') ?>" class="card contenedor-md">
     <div class="card-body">
         <?= Csrf::field() ?>
         <div class="mb-3">
-            <label for="campo-nombre" class="form-label small requerido">Nombre de la jornada</label>
-            <input id="campo-nombre" type="text" name="nombre" class="form-control<?= clase_invalido('nombre') ?>" placeholder="Ej. Verificación semestre 1 - 2026" required>
+            <?= AyudaCampo::etiqueta('campo-nombre', 'Nombre de la jornada', 'jornada_nombre', true) ?>
+            <input id="campo-nombre" type="text" name="nombre" class="form-control<?= clase_invalido('nombre') ?>" maxlength="150" placeholder="Ej. Verificación semestre 1 - 2026" required>
         </div>
         <div class="mb-3">
-            <label for="campo-fecha-inicio" class="form-label small requerido">Fecha de inicio</label>
+            <?= AyudaCampo::etiqueta('campo-fecha-inicio', 'Fecha de inicio', 'jornada_fecha_inicio', true) ?>
             <input id="campo-fecha-inicio" type="date" name="fecha_inicio" class="form-control<?= clase_invalido('fecha_inicio') ?>" value="<?= date('Y-m-d') ?>" required>
         </div>
         <button type="submit" class="btn btn-primary btn-sm">
