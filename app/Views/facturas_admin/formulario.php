@@ -4,6 +4,7 @@ use App\Core\Auth;
 use App\Core\Csrf;
 use App\Core\Url;
 use App\Core\View;
+use App\Helpers\AyudaCampo;
 use App\Helpers\Evidencia;
 
 /**
@@ -14,7 +15,7 @@ $editando = $registro !== null;
 $ventana = '/facturas';
 $v = static fn (string $campo): string => htmlspecialchars((string) ($valores[$campo] ?? ''), ENT_QUOTES);
 ?>
-<?= ui('encabezado_pagina', ['titulo' => 'Facturas', 'icono' => 'factura', 'subtitulo' => 'Registra y conserva las facturas de procesos administrativos.']) ?>
+<?= ui('encabezado_pagina', ['titulo' => 'Facturas', 'icono' => 'factura', 'ayuda' => AyudaCampo::boton('facturas'), 'subtitulo' => 'Registra y conserva las facturas de procesos administrativos.']) ?>
 
 <?php View::render('partials/evidencia_institucion', ['instituciones' => $instituciones, 'institucionId' => $institucionId, 'ventana' => $ventana]); ?>
 
@@ -24,7 +25,6 @@ $v = static fn (string $campo): string => htmlspecialchars((string) ($valores[$c
     <section class="card mb-4 contenedor-md" id="formularioEvidencia" aria-labelledby="tituloFormularioEvidencia">
         <div class="card-body">
             <h2 class="h6 mb-2" id="tituloFormularioEvidencia"><?= $editando ? 'Editar registro' : 'Registrar factura' ?></h2>
-            <p class="text-muted small mb-2">Los campos marcados con <span class="text-danger">*</span> son obligatorios.</p>
             <form method="post" action="<?= $editando ? Url::to($ventana . '/' . $registro['id'] . '/actualizar') : Url::to($ventana) ?>"
                   enctype="multipart/form-data" class="row g-3">
                 <?= Csrf::field() ?>
@@ -32,12 +32,12 @@ $v = static fn (string $campo): string => htmlspecialchars((string) ($valores[$c
                     <input type="hidden" name="institucion_id" value="<?= $institucionId ?>">
                 <?php endif; ?>
                 <div class="col-md-6">
-                    <label for="campo-fecha-factura" class="form-label small requerido">Fecha de la factura</label>
+                    <?= AyudaCampo::etiqueta('campo-fecha-factura', 'Fecha de la factura', 'factura_fecha', true) ?>
                     <input id="campo-fecha-factura" type="date" name="fecha_factura" class="form-control" required value="<?= $v('fecha_factura') ?>">
                 </div>
                 <div class="col-12">
-                    <label for="campo-descripcion" class="form-label small requerido">Descripción breve</label>
-                    <input id="campo-descripcion" type="text" name="descripcion" class="form-control" required placeholder="Ej. Compra de sillas para aula 101" value="<?= $v('descripcion') ?>">
+                    <?= AyudaCampo::etiqueta('campo-descripcion', 'Descripción breve', 'factura_descripcion', true) ?>
+                    <input id="campo-descripcion" type="text" name="descripcion" class="form-control" required maxlength="300" placeholder="Ej. Compra de sillas para aula 101" value="<?= $v('descripcion') ?>">
                 </div>
                 <?php if ($editando): ?>
                     <div class="col-md-6">
@@ -50,6 +50,7 @@ $v = static fn (string $campo): string => htmlspecialchars((string) ($valores[$c
                         <?php View::render('partials/campo_foto', [
                             'nombreCampo' => 'archivo',
                             'etiqueta' => 'Reemplazar archivo (opcional, PDF o foto)',
+                            'ayuda' => 'factura_archivo',
                             'fotoActualUrl' => null,
                             'accept' => '.pdf,image/jpeg,image/png',
                         ]); ?>
@@ -59,6 +60,7 @@ $v = static fn (string $campo): string => htmlspecialchars((string) ($valores[$c
                         <?php View::render('partials/campo_foto', [
                             'nombreCampo' => 'archivo',
                             'etiqueta' => 'Archivo adjunto (PDF o foto)',
+                            'ayuda' => 'factura_archivo',
                             'fotoActualUrl' => null,
                             'accept' => '.pdf,image/jpeg,image/png',
                             'required' => true,

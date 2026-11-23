@@ -159,8 +159,11 @@ final class FacturaAdministrativaController
             'fecha_factura' => trim((string) $request->input('fecha_factura')),
             'descripcion' => trim((string) $request->input('descripcion')),
         ];
-        $error = $datos['fecha_factura'] === '' || $datos['descripcion'] === ''
-            ? 'Indica la fecha de la factura y una descripción breve.' : null;
+        $error = match (true) {
+            $datos['fecha_factura'] === '' || $datos['descripcion'] === '' => 'Indica la fecha de la factura y una descripción breve.',
+            mb_strlen($datos['descripcion']) > 300 => 'La descripción es muy larga (máximo 300 caracteres).',
+            default => null,
+        };
 
         return [$error, $datos];
     }

@@ -169,6 +169,52 @@ final class AyudaCampo
                 . "Queda guardado como evidencia y se puede descargar desde la lista. Con «Verificar un lote», MIA lee la columna de la placa (y la de cantidad, si la tiene) para decir qué bienes reintegrados siguen en la cartera.\n\n"
                 . 'Al editar un registro, adjunta un archivo solo si quieres reemplazar el que ya tiene.',
         ],
+        'formatos_reintegro' => [
+            'titulo' => 'Formatos de reintegro',
+            'texto' => "Aquí archivas el formato de reintegro que la Alcaldía firmó al recibir los bienes. MIA no lo genera: es la copia firmada que te devolvieron.\n\n"
+                . "**1. Entregar:** llevas los bienes a la Alcaldía con el comprobante del lote (FO-ADMI-009, en Lotes de reintegro).\n\n"
+                . "**2. Recibir:** la Alcaldía firma el formato y te lo devuelve. Escanéalo en PDF.\n\n"
+                . "**3. Registrar:** llena este formulario con la fecha del reintegro, una descripción y el PDF.\n\n"
+                . 'Cada registro se puede descargar, editar o eliminar. Lo eliminado va a la Papelera, desde donde un superusuario puede restaurarlo.',
+        ],
+        'formato_reintegro_fecha' => [
+            'titulo' => 'Fecha del reintegro',
+            'texto' => "El día en que se entregaron los bienes a la Alcaldía, como figura en el formato firmado. No es el día en que lo registras en MIA.\n\n"
+                . 'Usa la misma fecha con la que marcaste el lote como reintegrado en Lotes de reintegro: así es fácil encontrar el formato de cada lote.',
+        ],
+        'formato_reintegro_descripcion' => [
+            'titulo' => 'Descripción del formato de reintegro',
+            'texto' => "Opcional. Lo que ayude a reconocer el formato después: qué se reintegró y de dónde. Ej.: Reintegro de equipos de la sede principal, lote #37.\n\n"
+                . 'Máximo 300 caracteres. Se ve en la lista de abajo, junto a la fecha.',
+        ],
+        'formato_reintegro_archivo' => [
+            'titulo' => 'Archivo del formato de reintegro',
+            'texto' => "El formato firmado por la Alcaldía, escaneado en PDF. Máximo 8 MB.\n\n"
+                . "Revisa que se lean las firmas y las placas antes de subirlo: es la prueba de que la Alcaldía recibió los bienes.\n\n"
+                . 'Al editar un registro, adjunta un archivo solo si quieres reemplazar el que ya tiene.',
+        ],
+        'facturas' => [
+            'titulo' => 'Facturas',
+            'texto' => "Aquí archivas las facturas de los procesos administrativos de la institución (compras, servicios) para tenerlas todas en un solo lugar.\n\n"
+                . "Registra la fecha, una descripción breve y el archivo (PDF o foto).\n\n"
+                . "La factura de un bien en particular se adjunta en la ficha de ese bien («Tiene factura de compra»), no aquí.\n\n"
+                . 'Cada registro se puede descargar, editar o eliminar. Lo eliminado va a la Papelera, desde donde un superusuario puede restaurarlo.',
+        ],
+        'factura_fecha' => [
+            'titulo' => 'Fecha de la factura',
+            'texto' => 'La fecha de expedición que aparece impresa en la factura, no el día en que la registras en MIA. Sirve para encontrarla por período en la lista.',
+        ],
+        'factura_descripcion' => [
+            'titulo' => 'Descripción breve',
+            'texto' => "Qué se compró o pagó y para qué, en pocas palabras. Ej.: Compra de sillas para el aula 101, proveedor Muebles ABC.\n\n"
+                . 'Máximo 300 caracteres. Es lo que verás en la lista para reconocer cada factura.',
+        ],
+        'factura_archivo' => [
+            'titulo' => 'Archivo de la factura',
+            'texto' => "La factura en PDF o una foto (JPG o PNG). Máximo 8 MB.\n\n"
+                . "En el celular puedes tomarle la foto con la cámara: que se vea completa, derecha y legible (el número, el NIT y los valores).\n\n"
+                . 'Al editar un registro, adjunta un archivo solo si quieres reemplazar el que ya tiene.',
+        ],
         'verificacion_cartera' => [
             'titulo' => 'Verificar un lote en la cartera',
             'texto' => "Cuando entregas un lote de reintegro, la Alcaldía debe descargar esos bienes de la cartera del rector. Con esta pantalla compruebas que sí lo hizo.\n\n"
