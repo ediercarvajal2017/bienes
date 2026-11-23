@@ -7,7 +7,7 @@ $viejo ??= [];
 ?>
 <?php ob_start(); ?>
     <a href="<?= Url::to('/qr/' . $token) ?>" class="btn btn-sm btn-outline-secondary">Volver</a>
-<?= ui('encabezado_pagina', ['titulo' => 'Solicitar reintegro', 'icono' => 'solicitud', 'acciones' => (string) ob_get_clean()]) ?>
+<?= ui('encabezado_pagina', ['titulo' => 'Solicitar reintegro', 'icono' => 'solicitud', 'ayuda' => \App\Helpers\AyudaCampo::boton('solicitar_reintegro'), 'acciones' => (string) ob_get_clean()]) ?>
 
 <div class="card mb-3 contenedor-md">
     <div class="card-body py-3 d-flex gap-3 align-items-center">
@@ -37,11 +37,10 @@ $viejo ??= [];
     <?= Csrf::field() ?>
 
     <div class="col-12">
-        <label class="form-label small requerido" for="motivoReintegro">¿Por qué debe reintegrarse este bien?</label>
+        <?= \App\Helpers\AyudaCampo::etiqueta('motivoReintegro', '¿Por qué debe reintegrarse este bien?', 'solicitud_motivo', true) ?>
         <textarea name="motivo" id="motivoReintegro" class="form-control<?= clase_invalido('motivo') ?>" rows="3" required minlength="10" maxlength="500"
                   placeholder="Ej. Ya no se usa en el aula, está obsoleto o sobra después de la reubicación."><?= htmlspecialchars((string) ($viejo['motivo'] ?? ''), ENT_QUOTES) ?></textarea>
         <?= error_campo('motivo') ?>
-        <div class="form-text">Mínimo 10 caracteres.</div>
     </div>
 
     <div class="col-12">

@@ -35,7 +35,7 @@ $e = static fn (?string $texto): string => htmlspecialchars((string) $texto, ENT
             <?php endif; ?>
         </a>
     
-<?= ui('encabezado_pagina', ['titulo' => 'Lotes de reintegro', 'icono' => 'reintegro', 'subtitulo' => 'Cada lote agrupa reintegros de una categoría para entregarlos a la Alcaldía con el comprobante FO-ADMI-009 (Excel). Puedes unificar varios lotes pendientes; cuando los entregues, márcalos como reintegrados.', 'acciones' => (string) ob_get_clean()]) ?>
+<?= ui('encabezado_pagina', ['titulo' => 'Lotes de reintegro', 'icono' => 'reintegro', 'ayuda' => \App\Helpers\AyudaCampo::boton('lotes'), 'subtitulo' => 'Cada lote agrupa reintegros de una categoría para entregarlos a la Alcaldía con el comprobante FO-ADMI-009 (Excel). Puedes unificar varios lotes pendientes; cuando los entregues, márcalos como reintegrados.', 'acciones' => (string) ob_get_clean()]) ?>
 </div>
 
 
@@ -62,7 +62,7 @@ $e = static fn (?string $texto): string => htmlspecialchars((string) $texto, ENT
 <form method="get" action="<?= Url::to('/reintegros/lotes') ?>" class="row g-2 align-items-end mb-3">
     <input type="hidden" name="estado" value="<?= $e($pestana) ?>">
     <div class="col-12 col-sm-4 col-md-3">
-        <label for="filtroCategoria" class="form-label small mb-1">Categoría</label>
+        <?= \App\Helpers\AyudaCampo::etiqueta('filtroCategoria', 'Categoría', 'lotes_categoria') ?>
         <select id="filtroCategoria" name="categoria" class="form-select form-select-sm">
             <option value="">Todas</option>
             <?php foreach ($categorias as $nombre): ?>
@@ -72,7 +72,7 @@ $e = static fn (?string $texto): string => htmlspecialchars((string) $texto, ENT
         </select>
     </div>
     <div class="col-6 col-sm-3 col-md-2">
-        <label for="filtroDesde" class="form-label small mb-1">Lote desde</label>
+        <?= \App\Helpers\AyudaCampo::etiqueta('filtroDesde', 'Lote desde', 'lotes_fechas') ?>
         <input id="filtroDesde" type="date" name="desde" class="form-control form-control-sm" value="<?= $e($filtros['desde']) ?>">
     </div>
     <div class="col-6 col-sm-3 col-md-2">
@@ -221,12 +221,12 @@ $e = static fn (?string $texto): string => htmlspecialchars((string) $texto, ENT
                     <p class="small text-muted mb-3">Los lotes marcados salen de "Pendientes" y quedan bloqueados: no se unifican ni se mezclan con reintegros nuevos. El Excel se sigue pudiendo descargar.</p>
                     <div class="row g-3">
                         <div class="col-sm-5">
-                            <label for="campoFechaEntrega" class="form-label small">Fecha de entrega</label>
+                            <?= \App\Helpers\AyudaCampo::etiqueta('campoFechaEntrega', 'Fecha de entrega', 'lote_fecha_entrega', true) ?>
                             <input id="campoFechaEntrega" type="date" name="fecha_entrega" class="form-control form-control-sm" required
                                    value="<?= FechaMovimiento::hoy() ?>" max="<?= FechaMovimiento::hoy() ?>">
                         </div>
                         <div class="col-sm-7">
-                            <label for="campoNota" class="form-label small">Nota (opcional)</label>
+                            <?= \App\Helpers\AyudaCampo::etiqueta('campoNota', 'Nota (opcional)', 'lote_nota') ?>
                             <input id="campoNota" type="text" name="nota" maxlength="500" class="form-control form-control-sm" placeholder="Ej. Recibido por la Unidad de Bienes Muebles">
                         </div>
                     </div>

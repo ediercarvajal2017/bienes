@@ -107,6 +107,9 @@ final class AsignacionController
         if (($errorFecha = FechaMovimiento::error($fecha)) !== null) {
             $error = Aviso::error($titulo, $errorFecha, 'Elige una fecha entre el 01/01/2000 y hoy y vuelve a pulsar «Asignar».',
                 null, ['fecha_asignacion' => 'Elige una fecha válida.']);
+        } elseif (mb_strlen((string) $observaciones) > 500) {
+            $error = Aviso::error($titulo, 'Las observaciones son más largas de lo que se puede guardar.',
+                'Acórtalas a 500 caracteres o menos y vuelve a pulsar «Asignar».', null, ['observaciones' => 'Máximo 500 caracteres.']);
         } elseif ($individual && $personaId <= 0) {
             $error = Aviso::error($titulo, 'Elegiste responsabilidad Individual pero no la persona.',
                 'Elige la persona responsable, o cambia a Grupal y elige el espacio.', null, ['persona_id' => 'Elige la persona.']);

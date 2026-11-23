@@ -15,7 +15,7 @@ $numeros = static function (array $ids): string {
 ?>
 <?php ob_start(); ?>
     <a href="<?= Url::to('/reintegros/lotes') ?>" class="btn btn-sm btn-outline-secondary">Volver</a>
-<?= ui('encabezado_pagina', ['titulo' => (string) ($separar ? 'Separar el lote #' . (int) $loteIds[0] . ' por categoría' : 'Unificar lotes'), 'icono' => 'reintegro', 'subtitulo' => 'Revisa el resultado antes de confirmar. Los bienes quedan en un lote nuevo por categoría, cada uno con su comprobante FO-ADMI-009 en Excel.', 'acciones' => (string) ob_get_clean()]) ?>
+<?= ui('encabezado_pagina', ['titulo' => (string) ($separar ? 'Separar el lote #' . (int) $loteIds[0] . ' por categoría' : 'Unificar lotes'), 'icono' => 'reintegro', 'ayuda' => \App\Helpers\AyudaCampo::boton('unificar_lotes'), 'subtitulo' => 'Revisa el resultado antes de confirmar. Los bienes quedan en un lote nuevo por categoría, cada uno con su comprobante FO-ADMI-009 en Excel.', 'acciones' => (string) ob_get_clean()]) ?>
 
 
 <div class="row g-3 contenedor-md">
@@ -66,13 +66,12 @@ $numeros = static function (array $ids): string {
         <h2 class="h6 mb-3">Datos de los lotes nuevos (opcional)</h2>
         <div class="row g-3">
             <div class="col-md-6">
-                <label for="campoDescripcion" class="form-label small">Descripción</label>
+                <?= \App\Helpers\AyudaCampo::etiqueta('campoDescripcion', 'Descripción', 'unificar_descripcion') ?>
                 <input id="campoDescripcion" type="text" name="descripcion" maxlength="200" class="form-control form-control-sm"
                        placeholder="<?= $e($descripcionSugerida) ?>" value="<?= $e($viejo['descripcion'] ?? '') ?>">
-                <div class="form-text">Si la dejas vacía: "<?= $e($descripcionSugerida) ?>".</div>
             </div>
             <div class="col-md-6">
-                <label for="campoObservaciones" class="form-label small">Observaciones</label>
+                <?= \App\Helpers\AyudaCampo::etiqueta('campoObservaciones', 'Observaciones', 'lote_observaciones') ?>
                 <input id="campoObservaciones" type="text" name="observaciones" maxlength="500" class="form-control form-control-sm"
                        value="<?= $e($viejo['observaciones'] ?? '') ?>">
             </div>

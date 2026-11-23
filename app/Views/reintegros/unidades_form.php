@@ -49,7 +49,7 @@ $volverLista = Url::to('/reintegros/unidades') . (Auth::esSuperusuario() ? '?ins
                 <tr>
                     <th>Ubicación</th>
                     <th class="text-end">Disponibles</th>
-                    <th class="celda-cantidad">Reintegrar</th>
+                    <th class="celda-cantidad"><span class="d-inline-flex align-items-center gap-1">Reintegrar <?= \App\Helpers\AyudaCampo::boton('reintegro_cantidad') ?></span></th>
                 </tr>
                 </thead>
                 <tbody>
@@ -85,19 +85,19 @@ $volverLista = Url::to('/reintegros/unidades') . (Auth::esSuperusuario() ? '?ins
                 <h2 class="h6 mb-3">Datos del reintegro</h2>
                 <div class="row g-3">
                     <div class="col-sm-4">
-                        <label for="campoFecha" class="form-label small">Fecha del reintegro</label>
+                        <?= \App\Helpers\AyudaCampo::etiqueta('campoFecha', 'Fecha del reintegro', 'reintegro_fecha', true) ?>
                         <input id="campoFecha" type="date" name="fecha" required max="<?= $e($hoy) ?>" class="form-control form-control-sm<?= clase_invalido('fecha') ?>"
                                value="<?= $e($viejo['fecha'] ?? $hoy) ?>">
                         <?= error_campo('fecha') ?>
                     </div>
                     <div class="col-sm-8">
-                        <label for="campoDestino" class="form-label small">Destino</label>
+                        <?= \App\Helpers\AyudaCampo::etiqueta('campoDestino', 'Destino', 'reintegro_destino', true) ?>
                         <input id="campoDestino" type="text" name="destino_texto" required maxlength="200" class="form-control form-control-sm<?= clase_invalido('destino_texto') ?>"
                                value="<?= $e($viejo['destino_texto'] ?? 'Bodega de reintegro') ?>">
                         <?= error_campo('destino_texto') ?>
                     </div>
                     <div class="col-12">
-                        <label for="campoObservaciones" class="form-label small">Observaciones (opcional)</label>
+                        <?= \App\Helpers\AyudaCampo::etiqueta('campoObservaciones', 'Observaciones (opcional)', 'reintegro_observaciones') ?>
                         <input id="campoObservaciones" type="text" name="observaciones" maxlength="500" class="form-control form-control-sm<?= clase_invalido('observaciones') ?>"
                                value="<?= $e($viejo['observaciones'] ?? '') ?>" placeholder="Ej. Sillas con el espaldar partido">
                         <?= error_campo('observaciones') ?>
@@ -107,7 +107,7 @@ $volverLista = Url::to('/reintegros/unidades') . (Auth::esSuperusuario() ? '?ins
                             <input class="form-check-input" type="checkbox" name="generar_lote" value="1" id="campoGenerarLote" <?= $generarLote ? 'checked' : '' ?>>
                             <label class="form-check-label small" for="campoGenerarLote">
                                 Generar ahora el lote de reintegro (comprobante FO-ADMI-009 con la placa y la cantidad)
-                            </label>
+                            </label><?= \App\Helpers\AyudaCampo::boton('reintegro_generar_lote') ?>
                         </div>
                     </div>
                 </div>

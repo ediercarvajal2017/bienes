@@ -288,6 +288,150 @@ final class AyudaCampo
             'texto' => "Opcional, pero ayuda a identificar el bien y a no registrarlo dos veces. JPG o PNG, máximo 2 MB.\n\n"
                 . 'En el celular puedes tomarla con la cámara.',
         ],
+        'asignaciones' => [
+            'titulo' => 'Asignar bienes',
+            'texto' => "Asigna o reasigna varios bienes a la vez a un espacio (Grupal) o a una persona (Individual).\n\n"
+                . "**1.** Elige la responsabilidad, la fecha y, si quieres, una observación.\n\n"
+                . "**2.** Marca los bienes en la lista; puedes filtrar y buscar.\n\n"
+                . "**3.** Pulsa «Asignar».\n\n"
+                . 'Si un bien ya estaba en otro espacio o con otra persona, queda un traslado en su historial. No se asignan los bienes reintegrados ni los dados de baja: un reintegrado vuelve a circular con «Reactivar», desde su ficha.',
+        ],
+        'asignacion_institucion' => [
+            'titulo' => 'Institución',
+            'texto' => 'Elige de qué institución son los bienes que vas a asignar: la lista, los espacios y las personas cambian según la institución.',
+        ],
+        'asignacion_fecha' => [
+            'titulo' => 'Fecha de asignación',
+            'texto' => 'El día en que los bienes quedaron en el espacio o con la persona; por defecto, hoy. No puede ser futura ni anterior al año 2000. Queda en el historial de cada bien.',
+        ],
+        'asignacion_observaciones' => [
+            'titulo' => 'Observaciones de la asignación',
+            'texto' => 'Opcional. Una nota que se guarda en todos los bienes marcados. Ej.: Dotación nueva para el aula 101. Máximo 500 caracteres.',
+        ],
+        'filtro_espacio' => [
+            'titulo' => 'Filtro por espacio',
+            'texto' => 'Muestra solo los bienes que están hoy en ese espacio. Sirve, por ejemplo, para pasar todo lo de un aula a otra.',
+        ],
+        'filtro_responsable' => [
+            'titulo' => 'Filtro por responsable',
+            'texto' => 'Muestra solo los bienes por los que responde esa persona: los suyos (Individual) y los de los espacios donde es responsable (Grupal).',
+        ],
+        'filtro_responsabilidad' => [
+            'titulo' => 'Filtro por responsabilidad',
+            'texto' => '**Grupal:** bienes en un espacio. **Individual:** bienes a cargo de una persona. **Sin asignar:** bienes que todavía no tienen espacio ni responsable.',
+        ],
+        'reintegros' => [
+            'titulo' => 'Reintegrar bienes',
+            'texto' => "Devuelve bienes a la Alcaldía: salen de su espacio y de su responsable y quedan «Reintegrados».\n\n"
+                . "**1.** Escribe el destino y la fecha.\n\n"
+                . "**2.** Marca los bienes; la selección se mantiene entre páginas y también puedes agregarlos escaneando su QR.\n\n"
+                . "**3.** Pulsa «Reintegro».\n\n"
+                . "Después, en «Lotes de reintegro», se agrupan por categoría para entregarlos con el comprobante FO-ADMI-009.\n\n"
+                . 'Los bienes «Sin cartera» no se reintegran: se dan de baja. Para una placa con muchas unidades iguales (ej. 178 sillas) es más rápido «Reintegrar por cantidad».',
+        ],
+        'reintegro_institucion' => [
+            'titulo' => 'Institución',
+            'texto' => 'Elige de qué institución son los bienes que vas a reintegrar.',
+        ],
+        'reintegro_destino' => [
+            'titulo' => 'Destino',
+            'texto' => "A dónde van los bienes. Ej.: Bodega de reintegro, Almacén de la Secretaría de Educación.\n\n"
+                . 'Queda en el historial de cada bien, en el «Historial de bienes reintegrados» y en el detalle del lote. Máximo 200 caracteres.',
+        ],
+        'reintegro_fecha' => [
+            'titulo' => 'Fecha del reintegro',
+            'texto' => 'El día en que los bienes salieron de la institución. No puede ser futura ni anterior al año 2000. Es la fecha que muestran el lote y su comprobante.',
+        ],
+        'reintegro_observaciones' => [
+            'titulo' => 'Observaciones del reintegro',
+            'texto' => 'Opcional. Lo que valga la pena dejar anotado, para todos los bienes del reintegro. Ej.: Equipos obsoletos, sin reparación posible. Máximo 500 caracteres.',
+        ],
+        'reintegro_unidades' => [
+            'titulo' => 'Reintegrar por cantidad',
+            'texto' => "Para las placas con varias unidades iguales registradas con «Alta masiva» (ej. la placa 200033042 con 178 sillas). En vez de marcar silla por silla, eliges cuántas reintegrar de cada ubicación.\n\n"
+                . 'MIA cambia esas unidades a «Reintegrado» y pone al día el renglón de la cartera de la placa: su cantidad y su valor.',
+        ],
+        'reintegro_cantidad' => [
+            'titulo' => 'Cantidad a reintegrar',
+            'texto' => 'Cuántas unidades reintegrar de cada ubicación, hasta las disponibles en ella. Deja 0 donde no vas a reintegrar nada. MIA toma primero los últimos consecutivos (ej. -178, -177…).',
+        ],
+        'reintegro_generar_lote' => [
+            'titulo' => 'Generar el lote ahora',
+            'texto' => 'Si lo marcas, MIA arma de una vez el lote de reintegro con estas unidades, listo para descargar el comprobante FO-ADMI-009. Si no, quedan como reintegros sin lote y luego los agrupas en «Generar lote».',
+        ],
+        'generar_lote' => [
+            'titulo' => 'Generar lote de reintegro',
+            'texto' => "Agrupa reintegros ya registrados que todavía no están en ningún lote. MIA crea un lote para cada categoría de los bienes marcados.\n\n"
+                . 'Con el lote descargas el comprobante FO-ADMI-009, lo entregas a la Alcaldía con los bienes y luego lo marcas como entregado en «Lotes de reintegro».',
+        ],
+        'lote_descripcion' => [
+            'titulo' => 'Descripción del lote',
+            'texto' => 'Opcional. Un nombre para reconocer el lote en la lista. Ej.: Entregas de la semana del 20 de julio. Si la dejas vacía, el lote se reconoce por su número y su categoría. Máximo 200 caracteres.',
+        ],
+        'lote_observaciones' => [
+            'titulo' => 'Observaciones del lote',
+            'texto' => 'Opcional. Notas sobre el lote, que se ven en su detalle. Máximo 500 caracteres.',
+        ],
+        'lotes' => [
+            'titulo' => 'Lotes de reintegro',
+            'texto' => "Cada lote agrupa reintegros de una categoría para entregarlos a la Alcaldía con su comprobante.\n\n"
+                . "**Pendientes:** todavía no se han entregado. Descarga el Excel (FO-ADMI-009), entrégalo con los bienes y márcalo como reintegrado.\n\n"
+                . "**Reintegrados:** ya entregados; quedan bloqueados.\n\n"
+                . "**Unificados:** sus bienes pasaron a lotes nuevos.\n\n"
+                . 'Para comprobar que la Alcaldía los descargó de la cartera, usa «Verificar un lote» en «Cartera (histórico)».',
+        ],
+        'lotes_categoria' => [
+            'titulo' => 'Filtro por categoría',
+            'texto' => 'Muestra solo los lotes con bienes de esa categoría. «Sin categoría» muestra los que tienen bienes sin categoría.',
+        ],
+        'lotes_fechas' => [
+            'titulo' => 'Filtro por fecha del lote',
+            'texto' => 'Muestra los lotes generados entre «Lote desde» y «Lote hasta». Puedes llenar solo una de las dos.',
+        ],
+        'lote_fecha_entrega' => [
+            'titulo' => 'Fecha de entrega',
+            'texto' => "El día en que entregaste el lote a la Alcaldía; no puede ser futura.\n\n"
+                . 'Es la fecha que usa «Verificar un lote» para saber si una cartera ya debía mostrar los bienes descargados.',
+        ],
+        'lote_nota' => [
+            'titulo' => 'Nota de la entrega',
+            'texto' => 'Opcional. Quién recibió o cualquier detalle de la entrega. Ej.: Recibido por la Unidad de Bienes Muebles. Máximo 500 caracteres.',
+        ],
+        'lote_motivo_reabrir' => [
+            'titulo' => 'Motivo para reabrir',
+            'texto' => 'Por qué se reabre el lote. Vuelve a «Pendiente» y se borran su fecha y su nota de entrega; el motivo queda en la auditoría. Ej.: Se marcó el lote equivocado. Máximo 500 caracteres.',
+        ],
+        'unificar_lotes' => [
+            'titulo' => 'Unificar o separar lotes',
+            'texto' => "**Unificar:** junta varios lotes pendientes y los vuelve a repartir en lotes nuevos, uno por categoría.\n\n"
+                . "**Separar:** divide un lote que mezcla categorías en un lote por categoría.\n\n"
+                . 'Los lotes de origen quedan como «Unificado», con enlaces a los nuevos. Revisa la vista previa antes de confirmar.',
+        ],
+        'unificar_descripcion' => [
+            'titulo' => 'Descripción de los lotes nuevos',
+            'texto' => 'Opcional. Si la dejas vacía, se usa la que aparece en gris dentro del campo. Máximo 200 caracteres.',
+        ],
+        'solicitar_reintegro' => [
+            'titulo' => 'Solicitar reintegro',
+            'texto' => "Pide que el bien se reintegre a la Alcaldía. La solicitud llega al rector o al secretario.\n\n"
+                . "Si la aprueban, el bien se reintegra y sale de su espacio. Si la rechazan, verás el motivo.\n\n"
+                . 'Puedes cancelarla mientras siga pendiente, en «Solicitudes de reintegro».',
+        ],
+        'solicitud_motivo' => [
+            'titulo' => '¿Por qué debe reintegrarse este bien?',
+            'texto' => 'Explica por qué el bien debe salir de la institución: ya no se usa, está obsoleto, dañado sin arreglo o sobra. Entre 10 y 500 caracteres. Quien aprueba decide con este texto.',
+        ],
+        'solicitudes_reintegro' => [
+            'titulo' => 'Solicitudes de reintegro',
+            'texto' => "Los pedidos de reintegro que hacen los docentes desde la ficha del bien.\n\n"
+                . "**Aprobar:** eliges la fecha y el destino; el bien se reintegra y sale de su espacio.\n\n"
+                . "**Rechazar:** escribes el motivo, que ve quien la pidió.\n\n"
+                . 'Quien la pidió puede cancelarla mientras siga pendiente.',
+        ],
+        'solicitudes_estado' => [
+            'titulo' => 'Estado de la solicitud',
+            'texto' => '**Pendiente:** esperando respuesta. **Aprobada:** el bien se reintegró. **Rechazada:** con el motivo. **Cancelada:** la retiró quien la pidió.',
+        ],
         'categorias' => [
             'titulo' => 'Categorías de bienes',
             'texto' => "Las categorías agrupan los bienes de la cartera: Muebles, Tecnología, Elementos deportivos… Cada institución tiene las suyas.\n\n"

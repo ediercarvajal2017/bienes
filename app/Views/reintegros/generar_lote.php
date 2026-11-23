@@ -9,7 +9,7 @@ $movimientosSeleccionados = $viejo['movimientos'] ?? [];
 ?>
 <?php ob_start(); ?>
     <a href="<?= Url::to('/reintegros/lotes') ?>" class="btn btn-sm btn-outline-secondary">Ver lotes</a>
-<?= ui('encabezado_pagina', ['titulo' => 'Generar lote de reintegro', 'icono' => 'reintegro', 'subtitulo' => 'Reintegros ya registrados que todavía no están agrupados en ningún lote. Selecciona los que quieras consolidar: se crea un lote por cada categoría (Muebles, Tecnología…), cada uno con su comprobante en Excel.', 'acciones' => (string) ob_get_clean()]) ?>
+<?= ui('encabezado_pagina', ['titulo' => 'Generar lote de reintegro', 'icono' => 'reintegro', 'ayuda' => \App\Helpers\AyudaCampo::boton('generar_lote'), 'subtitulo' => 'Reintegros ya registrados que todavía no están agrupados en ningún lote. Selecciona los que quieras consolidar: se crea un lote por cada categoría (Muebles, Tecnología…), cada uno con su comprobante en Excel.', 'acciones' => (string) ob_get_clean()]) ?>
 
 
 <?php if (empty($pendientes)): ?>
@@ -23,13 +23,13 @@ $movimientosSeleccionados = $viejo['movimientos'] ?? [];
                 <h2 class="h6 mb-3">Datos del lote (opcional)</h2>
                 <div class="row g-3">
                     <div class="col-md-6">
-                        <label for="campo-descripcion" class="form-label small">Descripción</label>
-                        <input id="campo-descripcion" type="text" name="descripcion" class="form-control form-control-sm" placeholder="Ej. Entregas de la semana del 20 de julio"
+                        <?= \App\Helpers\AyudaCampo::etiqueta('campo-descripcion', 'Descripción', 'lote_descripcion') ?>
+                        <input id="campo-descripcion" type="text" name="descripcion" class="form-control form-control-sm" maxlength="200" placeholder="Ej. Entregas de la semana del 20 de julio"
                                value="<?= htmlspecialchars($viejo['descripcion'] ?? '', ENT_QUOTES) ?>">
                     </div>
                     <div class="col-md-6">
-                        <label for="campo-observaciones" class="form-label small">Observaciones</label>
-                        <input id="campo-observaciones" type="text" name="observaciones" class="form-control form-control-sm" value="<?= htmlspecialchars($viejo['observaciones'] ?? '', ENT_QUOTES) ?>">
+                        <?= \App\Helpers\AyudaCampo::etiqueta('campo-observaciones', 'Observaciones', 'lote_observaciones') ?>
+                        <input id="campo-observaciones" type="text" name="observaciones" class="form-control form-control-sm" maxlength="500" value="<?= htmlspecialchars($viejo['observaciones'] ?? '', ENT_QUOTES) ?>">
                     </div>
                 </div>
             </div>

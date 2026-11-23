@@ -402,6 +402,103 @@ test('cargos y nueva institución (superusuario) explican cada campo', async ({ 
     await contexto.close();
 });
 
+test('asignaciones y reintegros explican cada campo como el formulario de bienes', async ({ page }) => {
+    test.skip(datos().remoto === true, 'Necesita la base de pruebas local');
+    const d = datos();
+    const inst = d.instituciones.A;
+    const s = `PWAY${Date.now()}`;
+    const categoria = (nombre) => `(SELECT id FROM categorias_bienes WHERE institucion_id = ${inst} AND nombre LIKE '${nombre}%' ORDER BY id LIMIT 1)`;
+    const bien = (codigo, cat, lote = 'NULL', estado = 'reintegrado') => `INSERT INTO bienes (institucion_id, codigo_identificacion, lote, descripcion, categoria_id, fecha_ingreso, valor, estado, qr_token, created_by)
+        VALUES (${inst}, '${codigo}', ${lote}, 'PW-TEST ayudas', ${categoria(cat)}, '2024-01-15', 1000, '${estado}', UUID(), ${d.usuarios.superusuario.id});`;
+    const movimiento = (loteReintegro) => `INSERT INTO movimientos (bien_id, tipo, fecha, responsable_id, destino_texto, lote_reintegro_id)
+        VALUES (LAST_INSERT_ID(), 'reintegro', '2024-02-20', ${d.usuarios.rector.id}, 'Bodega de reintegro', ${loteReintegro});`;
+    const lote = (estado) => `INSERT INTO lotes_reintegro (institucion_id, fecha, destino_texto, registrado_por, estado, reintegrado_fecha, reintegrado_por)
+        VALUES (${inst}, '2024-02-20', 'PW-TEST ayudas', ${d.usuarios.rector.id}, '${estado}', ${estado === 'reintegrado' ? "'2024-03-01'" : 'NULL'}, ${estado === 'reintegrado' ? d.usuarios.rector.id : 'NULL'});`;
+
+    // Datos de la prueba: un reintegro sin lote, dos lotes pendientes de la misma categoría, uno
+    // entregado y una placa con unidades. Se borran al final para no cambiar las demás pruebas.
+    bd(bien(`${s}S`, 'Muebles') + movimiento('NULL'));
+    const pendienteA = Number(bd(lote('pendiente') + ' SET @l = LAST_INSERT_ID(); ' + bien(`${s}A`, 'Muebles') + movimiento('@l') + ' SELECT @l;'));
+    const pendienteB = Number(bd(lote('pendiente') + ' SET @l = LAST_INSERT_ID(); ' + bien(`${s}B`, 'Muebles') + movimiento('@l') + ' SELECT @l;'));
+    const entregado = Number(bd(lote('reintegrado') + ' SET @l = LAST_INSERT_ID(); ' + bien(`${s}E`, 'Muebles') + movimiento('@l') + ' SELECT @l;'));
+    bd(bien(`${s}P-001`, 'Muebles', `'${s}P'`, 'activo') + bien(`${s}P-002`, 'Muebles', `'${s}P'`, 'activo'));
+    try {
+        await page.goto('asignaciones');
+        await revisarAyudas(page, {
+            'Asignar bienes': 'queda un traslado en su historial',
+            'Fecha de asignación': 'No puede ser futura ni anterior al año 2000',
+            'Observaciones de la asignación': 'Máximo 500 caracteres',
+            'Filtro por espacio': 'están hoy en ese espacio',
+            'Filtro por responsable': 'Individual',
+            'Filtro por responsabilidad': 'Sin asignar',
+        });
+        await expect(page.locator('#campo-observaciones')).toHaveAttribute('maxlength', '500');
+
+        await page.goto('reintegros');
+        await revisarAyudas(page, {
+            'Reintegrar bienes': 'Lotes de reintegro',
+            Destino: 'Máximo 200 caracteres',
+            'Fecha del reintegro': 'el lote y su comprobante',
+            'Observaciones del reintegro': 'Máximo 500 caracteres',
+        });
+        await expect(page.locator('#campo-destino-texto')).toHaveAttribute('maxlength', '200');
+
+        await page.goto('reintegros/unidades');
+        await revisarAyudas(page, { 'Reintegrar por cantidad': 'Alta masiva' });
+        await page.goto(`reintegros/unidades/${s}P`);
+        await revisarAyudas(page, {
+            'Cantidad a reintegrar': 'últimos consecutivos',
+            'Generar el lote ahora': 'FO-ADMI-009',
+        });
+
+        await page.goto('reintegros/lotes/generar');
+        await revisarAyudas(page, {
+            'Generar lote de reintegro': 'un lote para cada categoría',
+            'Descripción del lote': 'Máximo 200 caracteres',
+            'Observaciones del lote': 'Máximo 500 caracteres',
+        });
+
+        await page.goto('reintegros/lotes');
+        await revisarAyudas(page, {
+            'Lotes de reintegro': 'Verificar un lote',
+            'Filtro por categoría': 'Sin categoría',
+            'Filtro por fecha del lote': 'Lote hasta',
+        });
+
+        await page.goto(`reintegros/lotes/${pendienteA}`);
+        await revisarAyudas(page, {
+            'Fecha de entrega': 'Verificar un lote',
+            'Nota de la entrega': 'Máximo 500 caracteres',
+        });
+        await page.goto(`reintegros/lotes/${entregado}`);
+        await page.getByText('¿Se marcó por error? Reabrir el lote').click();
+        await revisarAyudas(page, { 'Motivo para reabrir': 'queda en la auditoría' });
+
+        await page.goto(`reintegros/lotes/unificar?lotes[]=${pendienteA}&lotes[]=${pendienteB}`);
+        await revisarAyudas(page, {
+            'Unificar o separar lotes': 'uno por categoría',
+            'Descripción de los lotes nuevos': 'en gris',
+        });
+
+        await page.goto('reintegros/solicitudes');
+        await revisarAyudas(page, {
+            'Solicitudes de reintegro': 'Rechazar',
+            'Estado de la solicitud': 'Cancelada',
+        });
+        await page.goto(`qr/${d.qr.para_solicitud}/solicitar-reintegro`);
+        if (await ayudaDe(page, 'Solicitar reintegro').count() > 0) {
+            await revisarAyudas(page, {
+                'Solicitar reintegro': 'llega al rector o al secretario',
+                '¿Por qué debe reintegrarse este bien?': 'Entre 10 y 500 caracteres',
+            });
+        }
+    } finally {
+        bd(`DELETE m FROM movimientos m JOIN bienes b ON b.id = m.bien_id WHERE b.codigo_identificacion LIKE '${s}%';
+            DELETE FROM bienes WHERE codigo_identificacion LIKE '${s}%';
+            DELETE FROM lotes_reintegro WHERE id IN (${pendienteA}, ${pendienteB}, ${entregado});`);
+    }
+});
+
 test.describe('en el celular', () => {
     test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
 

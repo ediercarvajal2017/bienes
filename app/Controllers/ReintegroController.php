@@ -145,6 +145,18 @@ final class ReintegroController
             exit;
         }
 
+        // Lo que cabe en la base (movimientos): un texto más largo se rechaza con su motivo.
+        if (mb_strlen($destino) > 200 || mb_strlen((string) $observaciones) > 500) {
+            $destinoLargo = mb_strlen($destino) > 200;
+            Aviso::enviar(Aviso::error('No se reintegró ningún bien',
+                ($destinoLargo ? 'El destino es más largo' : 'Las observaciones son más largas') . ' de lo que se puede guardar.',
+                'Acórtalo (el límite está debajo del campo) y vuelve a pulsar «Reintegro».', null,
+                $destinoLargo ? ['destino_texto' => 'Máximo 200 caracteres.'] : ['observaciones' => 'Máximo 500 caracteres.']));
+            Session::flashOld($viejo);
+            header('Location: ' . Url::to($volverA));
+            exit;
+        }
+
         $resultado = $this->reintegrarLote($bienIds, $fecha, $destino, $observaciones);
         $reintegrados = $resultado['reintegrados'] ?? 0;
         $omitidos = $resultado['omitidos'] ?? 0;
