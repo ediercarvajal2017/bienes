@@ -288,6 +288,108 @@ final class AyudaCampo
             'texto' => "Opcional, pero ayuda a identificar el bien y a no registrarlo dos veces. JPG o PNG, máximo 2 MB.\n\n"
                 . 'En el celular puedes tomarla con la cámara.',
         ],
+        'ficha_qr' => [
+            'titulo' => 'Ficha del bien',
+            'texto' => "Lo que abre el QR pegado en el bien: qué es, su estado, dónde está y quién responde por él.\n\n"
+                . "Según tu rol, desde aquí puedes gestionar el bien, reportar su baja (solo los «Sin cartera»), solicitar su reintegro, confirmar la etiqueta y, durante una verificación física, confirmar que el bien está o reportar una discrepancia.\n\n"
+                . 'Sin iniciar sesión solo se ven los datos del bien.',
+        ],
+        'etiqueta_qr' => [
+            'titulo' => 'Etiqueta QR',
+            'texto' => "**QR sin imprimir todavía:** aún no se ha generado su etiqueta; se imprime en «Generar QR masivo».\n\n"
+                . "**Etiqueta impresa, sin confirmar:** ya se imprimió, pero nadie ha confirmado que quedó pegada en este bien.\n\n"
+                . '**Etiqueta confirmada:** alguien escaneó la etiqueta pegada y confirmó que corresponde a este bien.',
+        ],
+        'confirmar_etiqueta' => [
+            'titulo' => 'Confirmar la etiqueta',
+            'texto' => "¿Acabas de pegar esta etiqueta? Si lo que ves aquí (descripción, código, ubicación) coincide con el bien que tienes enfrente, confírmalo.\n\n"
+                . 'Así queda registrado quién la confirmó y cuándo, y el bien cuenta como «con etiqueta QR confirmada» en el panel principal. Si no coincide, no confirmes: la etiqueta quedó en otro bien.',
+        ],
+        'verificacion_en_curso' => [
+            'titulo' => 'Verificación física en curso',
+            'texto' => "Hay una jornada de verificación abierta en tu institución.\n\n"
+                . "**Confirmar: el bien está aquí:** el bien existe y coincide con lo que dice MIA.\n\n"
+                . "**Reportar discrepancia:** algo no coincide (no está, está en otro salón, dañado…).\n\n"
+                . 'Si el bien ya se verificó, volver a verificarlo reemplaza el registro anterior.',
+        ],
+        'escanear' => [
+            'titulo' => 'Escanear código QR',
+            'texto' => "Apunta la cámara al QR pegado en el bien: al leerlo, MIA abre su ficha. La primera vez, el navegador te pide permiso para usar la cámara: acéptalo.\n\n"
+                . "Si tu teléfono tiene varias cámaras, usa «Cambiar cámara». Con poca luz, «Linterna» (no todos los teléfonos la permiten).\n\n"
+                . 'Solo se abren etiquetas de MIA: un QR de otro sistema o de un producto se ignora, por seguridad.',
+        ],
+        'escanear_codigo' => [
+            'titulo' => 'Escribir el código',
+            'texto' => 'Si no tienes cámara o el QR está dañado, escribe la placa o el código del bien, tal como está en la etiqueta (ej. 200033042 o PA-0001), y pulsa «Buscar».',
+        ],
+        'notas' => [
+            'titulo' => 'Mis notas',
+            'texto' => "Notas adhesivas para anotar pendientes. Son privadas: solo tú las ves.\n\n"
+                . "Cada nota se guarda sola un momento después de dejar de escribir. Puedes cambiarle el color para organizarlas, y borrarla con confirmación.\n\n"
+                . 'Hasta 100 notas de 2.000 caracteres cada una. Una nota nueva que dejes vacía se descarta al cerrar el panel.',
+        ],
+        'mi_cuenta' => [
+            'titulo' => 'Mi cuenta',
+            'texto' => "Tu cuenta en MIA: arriba ves tu nombre, tu correo y tu rol. Para corregirlos, pídeselo al administrador de MIA de tu institución.\n\n"
+                . 'Aquí cambias tu contraseña, activas la verificación en dos pasos y revisas cómo se tratan tus datos.',
+        ],
+        'dos_pasos' => [
+            'titulo' => 'Verificación en dos pasos',
+            'texto' => "Además de la contraseña, MIA te pide un código de 6 dígitos que genera una aplicación en tu teléfono (Google Authenticator, Microsoft Authenticator u otra). Es opcional y recomendada.\n\n"
+                . "**Códigos de recuperación:** sirven para entrar si pierdes el teléfono; cada uno se usa una sola vez. Al generar nuevos, los anteriores dejan de servir.\n\n"
+                . 'Si pierdes el teléfono y los códigos, el rector puede restablecerla desde «Usuarios».',
+        ],
+        'confirmar_contrasena' => [
+            'titulo' => 'Contraseña para confirmar',
+            'texto' => 'Tu contraseña de MIA. Se pide para confirmar que eres tú antes de un cambio de seguridad.',
+        ],
+        'codigo_dos_pasos' => [
+            'titulo' => 'Código actual',
+            'texto' => 'El código de 6 dígitos que muestra ahora la aplicación de tu teléfono, o uno de tus códigos de recuperación.',
+        ],
+        'dispositivos_confianza' => [
+            'titulo' => 'Dispositivos de confianza',
+            'texto' => "Los navegadores donde marcaste «No volver a pedirlo en este dispositivo» al entrar: allí no se pide el código durante 30 días.\n\n"
+                . 'Quita los que no reconozcas o los de equipos compartidos: la próxima vez que entren, MIA pedirá el código.',
+        ],
+        'contrasena_actual' => [
+            'titulo' => 'Contraseña actual',
+            'texto' => 'La contraseña con la que entras hoy a MIA. Se pide para confirmar que eres tú.',
+        ],
+        'contrasena_nueva' => [
+            'titulo' => 'Contraseña nueva',
+            'texto' => "Mínimo 10 caracteres, con letras y números. No puede contener tu nombre, tus apellidos, tu documento ni tu correo, ni ser una contraseña muy común.\n\n"
+                . 'Al cambiarla, se cierran tus demás sesiones abiertas; la de este navegador sigue.',
+        ],
+        'contrasena_confirmacion' => [
+            'titulo' => 'Confirmar contraseña nueva',
+            'texto' => 'Escribe otra vez la contraseña nueva, igual, para evitar un error de digitación.',
+        ],
+        'privacidad' => [
+            'titulo' => 'Tus datos y privacidad',
+            'texto' => 'Cuándo aceptaste la política de tratamiento de datos de MIA y el enlace para leerla. Para corregir tus datos (nombre, documento o correo), pídeselo al administrador de MIA de tu institución.',
+        ],
+        'panel_principal' => [
+            'titulo' => 'Panel principal',
+            'texto' => "Tu punto de partida en MIA: lo que requiere atención, las cifras del inventario y los accesos a lo que tu rol puede hacer.\n\n"
+                . 'Lo que ves depende de tu rol y de la sede activa. Cada tarjeta y cada aviso llevan a la pantalla donde se ve el detalle.',
+        ],
+        'requiere_atencion' => [
+            'titulo' => 'Requiere atención',
+            'texto' => 'Pendientes que alguien debe resolver: bajas por aprobar, solicitudes de reintegro por revisar, bienes sin asignar y hallazgos de la verificación física. Cada aviso lleva a la pantalla donde se resuelve.',
+        ],
+        'cifras_inventario' => [
+            'titulo' => 'Cifras del inventario',
+            'texto' => "**Bienes en circulación:** los activos y en reparación, lo que la institución tiene hoy. Los reintegrados y dados de baja se cuentan aparte.\n\n"
+                . "**Valor del inventario:** la suma del valor de los bienes en circulación.\n\n"
+                . "**Asignados:** cuántos de ellos tienen espacio o persona responsable.\n\n"
+                . "**Con etiqueta QR confirmada:** cuántos tienen la etiqueta pegada y confirmada.\n\n"
+                . '**Bajas pendientes:** reportes de baja por aprobar o rechazar.',
+        ],
+        'accesos_rapidos' => [
+            'titulo' => 'Accesos rápidos',
+            'texto' => 'Atajos a las pantallas que tu rol puede usar; son las mismas del menú.',
+        ],
         'carga_archivo' => [
             'titulo' => 'Archivo de la carga',
             'texto' => "La plantilla diligenciada y guardada como .xlsx (máximo 8 MB). Descárgala en el ícono (?) junto al título: trae las instrucciones y las listas para elegir.\n\n"

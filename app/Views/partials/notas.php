@@ -14,7 +14,7 @@ use App\Models\Nota;
        data-url="<?= Url::to('/notas') ?>" data-csrf="<?= htmlspecialchars(Csrf::token(), ENT_QUOTES) ?>"
        data-max-caracteres="<?= Nota::MAX_CARACTERES ?>" data-max-notas="<?= Nota::MAX_POR_USUARIO ?>">
     <div class="panel-notas-encabezado">
-        <h2 id="tituloNotas" class="h6 mb-0"><?= icono('nota', 'me-2') ?>Mis notas</h2>
+        <div class="d-flex align-items-center gap-1"><h2 id="tituloNotas" class="h6 mb-0"><?= icono('nota', 'me-2') ?>Mis notas</h2><?= \App\Helpers\AyudaCampo::boton('notas') ?></div>
         <button type="button" class="btn-close" data-cerrar-notas aria-label="Cerrar las notas"></button>
     </div>
     <div class="panel-notas-acciones">

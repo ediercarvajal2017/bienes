@@ -116,6 +116,9 @@ const ORDENABLES = {
 
 for (const [rol, rutas] of Object.entries(ORDENABLES)) {
     test(`${rol}: cada título ordenable ordena el listado en los dos sentidos sin error`, async ({ browser }) => {
+        // Recorre 12 pantallas y cada columna en los dos sentidos: con los datos de la corrida
+        // completa no cabe en los 30 s por defecto.
+        test.setTimeout(180_000);
         const pagina = await (await comoRol(browser, rol)).newPage();
         await pagina.setViewportSize({ width: 1280, height: 800 });
         let probados = 0;

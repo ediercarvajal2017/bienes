@@ -43,7 +43,7 @@ $qrImpreso = !empty($bien['qr_impreso_en']);
             <div class="foto-ficha-vacia mb-3"><?= icono('foto') ?><span class="visually-hidden">Sin foto</span></div>
         <?php endif; ?>
 
-        <h1 class="h5 mb-1"><?= htmlspecialchars($bien['descripcion'], ENT_QUOTES) ?></h1>
+        <div class="d-flex align-items-start gap-1 mb-1"><h1 class="h5 mb-0"><?= htmlspecialchars($bien['descripcion'], ENT_QUOTES) ?></h1><?= \App\Helpers\AyudaCampo::boton('ficha_qr') ?></div>
         <div class="mono text-muted mb-2"><?= htmlspecialchars($bien['codigo_identificacion'], ENT_QUOTES) ?></div>
 
         <?= ui('insignia_estado', ['tipo' => 'bien', 'estado' => (string) $bien['estado'], 'clases' => 'mb-3']) ?>
@@ -62,6 +62,7 @@ $qrImpreso = !empty($bien['qr_impreso_en']);
                     <?= icono('imprimir', 'me-1') ?>QR sin imprimir todavía
                 </span>
             <?php endif; ?>
+            <?= \App\Helpers\AyudaCampo::boton('etiqueta_qr') ?>
         <?php endif; ?>
 
         <dl class="row small mb-0">
@@ -125,10 +126,7 @@ $qrImpreso = !empty($bien['qr_impreso_en']);
                         <?= icono('guardar', 'me-1') ?>Confirmar: esta etiqueta corresponde a este bien
                     </button>
                 </form>
-                <p class="text-muted small mt-1 mb-0">
-                    ¿Acabas de pegar esta etiqueta? Si lo que ves aquí coincide con el bien que tienes
-                    enfrente, confírmalo — así queda registrado que quedó en el lugar correcto.
-                </p>
+                <p class="text-muted small mt-1 mb-0 d-flex align-items-center gap-1">¿Acabas de pegar esta etiqueta? <?= \App\Helpers\AyudaCampo::boton('confirmar_etiqueta') ?></p>
             <?php else: ?>
                 <p class="text-muted small mt-2 mb-0">
                     <?= icono('exito', 'text-success me-1') ?>
@@ -139,7 +137,7 @@ $qrImpreso = !empty($bien['qr_impreso_en']);
 
             <?php if (!empty($puedeVerificar)): ?>
                 <hr>
-                <div class="small fw-semibold mb-2"><?= icono('verificacion', 'me-1') ?>Verificación física en curso</div>
+                <div class="small fw-semibold mb-2 d-flex align-items-center gap-1"><?= icono('verificacion') ?>Verificación física en curso<?= \App\Helpers\AyudaCampo::boton('verificacion_en_curso') ?></div>
 
                 <?php if (!empty($verificacionActual)): ?>
                     <?php if ($verificacionActual['resultado'] === 'ok'): ?>

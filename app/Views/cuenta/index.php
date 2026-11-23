@@ -7,13 +7,13 @@ use App\Models\DispositivoConfiable;
 $fecha = static fn (?string $valor): string => $valor ? date('d/m/Y', strtotime($valor) ?: time()) : '—';
 ?>
 <?= ui('encabezado_pagina', ['titulo' => 'Mi cuenta', 'icono' => 'cuenta',
-    'subtitulo' => trim($usuario['nombres'] . ' ' . $usuario['apellidos']) . ' · ' . $usuario['email'] . ' · ' . ucfirst((string) $usuario['rol_nombre'])]) ?>
+    'subtitulo' => trim($usuario['nombres'] . ' ' . $usuario['apellidos']) . ' · ' . $usuario['email'] . ' · ' . ucfirst((string) $usuario['rol_nombre']), 'ayuda' => \App\Helpers\AyudaCampo::boton('mi_cuenta')]) ?>
 
 <div class="contenedor-cuenta">
     <section class="card mb-3" aria-labelledby="tituloDosPasos">
         <div class="card-body">
             <div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
-                <h2 class="h6 mb-2" id="tituloDosPasos"><?= icono('seguridad', 'me-1') ?>Verificación en dos pasos</h2>
+                <div class="d-flex align-items-center gap-1 mb-2"><h2 class="h6 mb-0" id="tituloDosPasos"><?= icono('seguridad', 'me-1') ?>Verificación en dos pasos</h2><?= \App\Helpers\AyudaCampo::boton('dos_pasos') ?></div>
                 <?php if ($dosFactoresActiva): ?>
                     <span class="badge badge-exito"><?= icono('exito', 'me-1') ?>Activa</span>
                 <?php else: ?>
@@ -35,7 +35,7 @@ $fecha = static fn (?string $valor): string => $valor ? date('d/m/Y', strtotime(
                     <form method="post" action="<?= Url::to('/2fa/codigos') ?>" class="row g-2 align-items-end mt-1">
                         <?= Csrf::field() ?>
                         <div class="col-sm-7">
-                            <label class="form-label small" for="passwordCodigos">Tu contraseña actual</label>
+                            <?= \App\Helpers\AyudaCampo::etiqueta('passwordCodigos', 'Tu contraseña actual', 'confirmar_contrasena', true) ?>
                             <input type="password" name="password_actual" id="passwordCodigos" class="form-control form-control-sm" required autocomplete="current-password">
                         </div>
                         <div class="col-sm-5">
@@ -50,11 +50,11 @@ $fecha = static fn (?string $valor): string => $valor ? date('d/m/Y', strtotime(
                           data-confirmar="¿Desactivar la verificación en dos pasos? Tu cuenta quedará protegida solo con la contraseña.">
                         <?= Csrf::field() ?>
                         <div class="col-sm-5">
-                            <label class="form-label small" for="passwordDesactivar">Contraseña actual</label>
+                            <?= \App\Helpers\AyudaCampo::etiqueta('passwordDesactivar', 'Contraseña actual', 'confirmar_contrasena', true) ?>
                             <input type="password" name="password_actual" id="passwordDesactivar" class="form-control form-control-sm" required autocomplete="current-password">
                         </div>
                         <div class="col-sm-4">
-                            <label class="form-label small" for="codigoDesactivar">Código actual</label>
+                            <?= \App\Helpers\AyudaCampo::etiqueta('codigoDesactivar', 'Código actual', 'codigo_dos_pasos', true) ?>
                             <input type="text" name="codigo" id="codigoDesactivar" class="form-control form-control-sm" required inputmode="numeric" autocomplete="one-time-code" maxlength="11">
                         </div>
                         <div class="col-sm-3">
@@ -78,7 +78,7 @@ $fecha = static fn (?string $valor): string => $valor ? date('d/m/Y', strtotime(
     <?php if ($dosFactoresActiva): ?>
         <section class="card mb-3" aria-labelledby="tituloDispositivos">
             <div class="card-body">
-                <h2 class="h6" id="tituloDispositivos"><?= icono('seguridad', 'me-1') ?>Dispositivos de confianza</h2>
+                <div class="d-flex align-items-center gap-1 mb-2"><h2 class="h6 mb-0" id="tituloDispositivos"><?= icono('seguridad', 'me-1') ?>Dispositivos de confianza</h2><?= \App\Helpers\AyudaCampo::boton('dispositivos_confianza') ?></div>
                 <p class="small text-muted">En estos navegadores no se pide el código durante 30 días. Quita los que no reconozcas.</p>
                 <?php if ($dispositivos === []): ?>
                     <p class="small text-muted mb-0">Ninguno.</p>
@@ -113,19 +113,18 @@ $fecha = static fn (?string $valor): string => $valor ? date('d/m/Y', strtotime(
                 <?= Csrf::field() ?>
                 <input type="text" name="username" value="<?= htmlspecialchars($usuario['email'], ENT_QUOTES) ?>" autocomplete="username" class="d-none" aria-hidden="true" tabindex="-1">
                 <div class="col-12">
-                    <label class="form-label small" for="passwordActual">Contraseña actual</label>
+                    <?= \App\Helpers\AyudaCampo::etiqueta('passwordActual', 'Contraseña actual', 'contrasena_actual', true) ?>
                     <input type="password" name="password_actual" id="passwordActual" class="form-control" required autocomplete="current-password">
                 </div>
                 <div class="col-md-6">
-                    <label class="form-label small" for="passwordNueva">Contraseña nueva</label>
-                    <input type="password" name="password_nueva" id="passwordNueva" class="form-control" required minlength="10" autocomplete="new-password" aria-describedby="ayudaPasswordNueva">
+                    <?= \App\Helpers\AyudaCampo::etiqueta('passwordNueva', 'Contraseña nueva', 'contrasena_nueva', true) ?>
+                    <input type="password" name="password_nueva" id="passwordNueva" class="form-control" required minlength="10" autocomplete="new-password">
                 </div>
                 <div class="col-md-6">
-                    <label class="form-label small" for="passwordConfirmacion">Confirmar contraseña nueva</label>
+                    <?= \App\Helpers\AyudaCampo::etiqueta('passwordConfirmacion', 'Confirmar contraseña nueva', 'contrasena_confirmacion', true) ?>
                     <input type="password" name="password_confirmacion" id="passwordConfirmacion" class="form-control" required minlength="10" autocomplete="new-password">
                 </div>
                 <div class="col-12">
-                    <div id="ayudaPasswordNueva" class="form-text mt-0 mb-2">Mínimo 10 caracteres, con letras y números. No uses tu nombre, documento ni correo.</div>
                     <button type="submit" class="btn btn-primary btn-sm">Cambiar contraseña</button>
                 </div>
             </form>
@@ -134,7 +133,7 @@ $fecha = static fn (?string $valor): string => $valor ? date('d/m/Y', strtotime(
 
     <section class="card mb-3" aria-labelledby="tituloPrivacidad">
         <div class="card-body">
-            <h2 class="h6 mb-2" id="tituloPrivacidad"><?= icono('seguridad', 'me-1') ?>Tus datos y privacidad</h2>
+            <div class="d-flex align-items-center gap-1 mb-2"><h2 class="h6 mb-0" id="tituloPrivacidad"><?= icono('seguridad', 'me-1') ?>Tus datos y privacidad</h2><?= \App\Helpers\AyudaCampo::boton('privacidad') ?></div>
             <p class="small text-muted mb-2">
                 <?php if (!empty($usuario['politica_aceptada_en'])): ?>
                     <?php $aceptadaEn = strtotime((string) $usuario['politica_aceptada_en']) ?: time(); ?>

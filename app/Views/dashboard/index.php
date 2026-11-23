@@ -44,10 +44,10 @@ $puedeVer = static function (array $item): bool {
     return false;
 };
 ?>
-<?= ui('encabezado_pagina', ['titulo' => 'Hola, ' . (Auth::nombreCompleto() ?? ''), 'icono' => 'panel', 'subtitulo' => 'Rol: ' . ucfirst(Auth::rol() ?? '')]) ?>
+<?= ui('encabezado_pagina', ['titulo' => 'Hola, ' . (Auth::nombreCompleto() ?? ''), 'icono' => 'panel', 'subtitulo' => 'Rol: ' . ucfirst(Auth::rol() ?? ''), 'ayuda' => \App\Helpers\AyudaCampo::boton('panel_principal')]) ?>
 
 <?php if (!empty($indicadores)): ?>
-    <h2 class="h6 text-muted mb-2">Requiere atención</h2>
+    <div class="d-flex align-items-center gap-1 mb-2"><h2 class="h6 text-muted mb-0">Requiere atención</h2><?= \App\Helpers\AyudaCampo::boton('requiere_atencion') ?></div>
     <div class="row g-3 mb-4">
         <?php foreach ($indicadores as $ind): ?>
             <div class="col-12 col-md-6 col-lg-4">
@@ -96,7 +96,7 @@ $puedeVer = static function (array $item): bool {
     $maxCategoria = max(1, ...array_column($cifras['categorias'], 'cantidad'));
     ?>
     <section class="panel-cifras mb-4" aria-labelledby="tituloCifras">
-        <h2 class="h6 text-muted mb-2" id="tituloCifras">Inventario · <?= htmlspecialchars($cifras['alcance'], ENT_QUOTES) ?></h2>
+        <div class="d-flex align-items-center gap-1 mb-2"><h2 class="h6 text-muted mb-0" id="tituloCifras">Inventario · <?= htmlspecialchars($cifras['alcance'], ENT_QUOTES) ?></h2><?= \App\Helpers\AyudaCampo::boton('cifras_inventario') ?></div>
         <div class="row row-cols-2 row-cols-md-3 row-cols-xl-5 g-2 g-md-3 mb-3">
             <?php foreach ($tarjetas as $t): ?>
                 <div class="col">
@@ -237,7 +237,7 @@ $puedeVer = static function (array $item): bool {
     </details>
 <?php endif; ?>
 
-<h2 class="h6 text-muted mb-2" id="tituloAccesos">Accesos rápidos</h2>
+<div class="d-flex align-items-center gap-1 mb-2"><h2 class="h6 text-muted mb-0" id="tituloAccesos">Accesos rápidos</h2><?= \App\Helpers\AyudaCampo::boton('accesos_rapidos') ?></div>
 <ul class="accesos-rapidos" aria-labelledby="tituloAccesos">
     <?php foreach ($accesos as $a): ?>
         <?php if (!$puedeVer($a)) { continue; } ?>

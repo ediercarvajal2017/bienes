@@ -3,7 +3,7 @@
 use App\Core\Url;
 
 ?>
-<?= ui('encabezado_pagina', ['titulo' => 'Escanear código QR', 'icono' => 'escanear', 'subtitulo' => 'Apunta la cámara del celular al código QR pegado sobre el bien.']) ?>
+<?= ui('encabezado_pagina', ['titulo' => 'Escanear código QR', 'icono' => 'escanear', 'ayuda' => \App\Helpers\AyudaCampo::boton('escanear'), 'subtitulo' => 'Apunta la cámara del celular al código QR pegado sobre el bien.']) ?>
 
 <div class="contenedor-escaner">
     <div id="lector-qr" class="rounded border overflow-hidden bg-dark"></div>
@@ -19,7 +19,7 @@ use App\Core\Url;
 </div>
 
 <div class="mt-4 contenedor-escaner">
-    <label for="campo-codigo" class="form-label small">¿No tienes cámara a mano? Escribe el código del bien</label>
+    <?= \App\Helpers\AyudaCampo::etiqueta('campo-codigo', '¿No tienes cámara a mano? Escribe el código del bien', 'escanear_codigo') ?>
     <form method="get" action="<?= Url::to('/escanear/buscar') ?>" class="d-flex gap-2">
         <input id="campo-codigo" type="text" name="codigo" class="form-control" placeholder="Código del bien" required autocomplete="off" autocapitalize="characters">
         <button type="submit" class="btn btn-outline-secondary text-nowrap">Buscar</button>

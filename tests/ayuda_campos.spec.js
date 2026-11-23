@@ -537,6 +537,62 @@ test('las cargas masivas explican el archivo, el resultado y las cargas anterior
     });
 });
 
+test('panel principal, escáner, ficha del QR, mis notas y mi cuenta explican cada parte', async ({ page }) => {
+    test.skip(datos().remoto === true, 'Necesita la base de pruebas local');
+    const d = datos();
+
+    await page.goto('dashboard');
+    await revisarAyudas(page, {
+        'Panel principal': 'depende de tu rol y de la sede activa',
+        'Cifras del inventario': 'los activos y en reparación',
+        'Accesos rápidos': 'las mismas del menú',
+    });
+    if (await ayudaDe(page, 'Requiere atención').count() > 0) {
+        await revisarAyudas(page, { 'Requiere atención': 'bajas por aprobar' });
+    }
+
+    await page.goto('escanear');
+    await revisarAyudas(page, {
+        'Escanear código QR': 'permiso para usar la cámara',
+        'Escribir el código': 'tal como está en la etiqueta',
+    });
+
+    // La verificación en curso solo aparece con una jornada abierta: se abre una un momento y se borra.
+    const activa = bd(`SELECT id FROM jornadas_verificacion WHERE institucion_id = ${d.instituciones.A} AND estado = 'en_progreso' LIMIT 1`);
+    const creada = activa === '' ? Number(bd(`INSERT INTO jornadas_verificacion (institucion_id, nombre, fecha_inicio, creada_por)
+        VALUES (${d.instituciones.A}, 'PW-TEST ayudas QR', CURDATE(), ${d.usuarios.rector.id}); SELECT LAST_INSERT_ID();`)) : null;
+    try {
+        await page.goto(`qr/${d.qr.A}`);
+        await revisarAyudas(page, {
+            'Ficha del bien': 'Lo que abre el QR pegado en el bien',
+            'Etiqueta QR': 'Etiqueta impresa, sin confirmar',
+            'Verificación física en curso': 'reemplaza el registro anterior',
+        });
+    } finally {
+        if (creada !== null) {
+            bd(`DELETE FROM jornadas_verificacion WHERE id = ${creada}`);
+        }
+    }
+
+    await page.goto('mi-cuenta');
+    await revisarAyudas(page, {
+        'Mi cuenta': 'pídeselo al administrador',
+        'Verificación en dos pasos': 'Códigos de recuperación',
+        'Contraseña actual': 'confirmar que eres tú',
+        'Contraseña nueva': 'Mínimo 10 caracteres, con letras y números',
+        'Confirmar contraseña nueva': 'error de digitación',
+        'Tus datos y privacidad': 'política de tratamiento de datos',
+    });
+    await expect(page.getByText('No uses tu nombre, documento ni correo')).toHaveCount(0);
+
+    // Mis notas: el (?) del panel.
+    await page.goto('dashboard');
+    await page.getByRole('button', { name: /^Mis notas/ }).click();
+    const boton = ayudaDe(page, 'Mis notas');
+    await boton.click();
+    await expect(await globoDe(page, boton)).toContainText('Son privadas: solo tú las ves');
+});
+
 test.describe('en el celular', () => {
     test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
 
