@@ -3,14 +3,15 @@
 use App\Core\Auth;
 use App\Core\Csrf;
 use App\Core\Url;
+use App\Helpers\AyudaCampo;
 use App\Models\Categoria;
 
 ?>
-<?= ui('encabezado_pagina', ['titulo' => 'Categorías de bienes', 'icono' => 'categoria', 'subtitulo' => 'Catálogo usado al registrar bienes (sillas, mesas, tableros, proyectores...) — propio de cada institución.']) ?>
+<?= ui('encabezado_pagina', ['titulo' => 'Categorías de bienes', 'icono' => 'categoria', 'ayuda' => AyudaCampo::boton('categorias'), 'subtitulo' => 'Catálogo usado al registrar bienes (sillas, mesas, tableros, proyectores...) — propio de cada institución.']) ?>
 
 <?php if (Auth::esSuperusuario()): ?>
     <div class="mb-3 contenedor-sm">
-        <label for="selectorInstitucion" class="form-label small">Institución</label>
+        <?= AyudaCampo::etiqueta('selectorInstitucion', 'Institución', 'categoria_institucion') ?>
         <select id="selectorInstitucion" class="form-select form-select-sm selector-buscable">
             <option value="">-- Selecciona una institución --</option>
             <?php foreach ($instituciones as $i): ?>
@@ -36,9 +37,9 @@ use App\Models\Categoria;
         <?php if (Auth::esSuperusuario()): ?>
             <input type="hidden" name="institucion_id" value="<?= $institucionId ?>">
         <?php endif; ?>
-        <label class="form-label small requerido" for="nombreCategoria">Nombre de la categoría</label>
+        <?= AyudaCampo::etiqueta('nombreCategoria', 'Nombre de la categoría', 'categoria_nombre', true) ?>
         <div class="d-flex gap-2">
-            <input type="text" id="nombreCategoria" name="nombre" class="form-control" placeholder="Ej. Sillas" required>
+            <input type="text" id="nombreCategoria" name="nombre" class="form-control" placeholder="Ej. Muebles" required maxlength="80">
             <button type="submit" class="btn btn-primary text-nowrap">Registrar</button>
         </div>
     </form>
@@ -71,7 +72,7 @@ use App\Models\Categoria;
                                 <?= Csrf::field() ?>
                                 <input type="text" name="nombre" class="form-control form-control-sm"
                                        aria-label="Nombre de la categoría <?= htmlspecialchars($c['nombre'], ENT_QUOTES) ?>"
-                                       value="<?= htmlspecialchars($c['nombre'], ENT_QUOTES) ?>" required>
+                                       value="<?= htmlspecialchars($c['nombre'], ENT_QUOTES) ?>" required maxlength="80">
                                 <button type="submit" class="btn btn-sm btn-outline-secondary text-nowrap">Guardar</button>
                             </form>
                         <?php endif; ?>

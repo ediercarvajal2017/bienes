@@ -36,6 +36,8 @@ final class CargoController
 
         if ($nombre === '') {
             Aviso::enviar(Aviso::error('No se creó el cargo', 'Falta el nombre del cargo.', 'Escribe el nombre (por ejemplo «Docente») y vuelve a intentarlo.'));
+        } elseif (mb_strlen($nombre) > 80) {
+            Aviso::enviar(Aviso::error('No se creó el cargo', 'El nombre es más largo de lo que se puede guardar.', 'Acórtalo a 80 caracteres o menos y vuelve a intentarlo.'));
         } elseif (Cargo::existeNombre($nombre)) {
             Aviso::enviar(Aviso::error('No se creó el cargo', "El cargo «{$nombre}» ya existe.",
                 'Búscalo en la lista; si está inactivo, actívalo en lugar de crearlo otra vez.'));
@@ -64,6 +66,8 @@ final class CargoController
             Aviso::enviar(\App\Helpers\Mensajes::yaNoExiste('No se guardó el cargo', 'El cargo', '/cargos', 'Ver los cargos'));
         } elseif ($nombre === '') {
             Aviso::enviar(Aviso::error('No se guardó el cargo', 'El nombre quedó vacío.', 'Escribe el nombre del cargo y vuelve a guardar.'));
+        } elseif (mb_strlen($nombre) > 80) {
+            Aviso::enviar(Aviso::error('No se guardó el cargo', 'El nombre es más largo de lo que se puede guardar.', 'Acórtalo a 80 caracteres o menos y vuelve a guardar.'));
         } elseif (Cargo::existeNombre($nombre, $id)) {
             Aviso::enviar(Aviso::error('No se guardó el cargo', "Ya existe otro cargo llamado «{$nombre}».",
                 'Usa un nombre distinto, o usa el cargo que ya existe.'));

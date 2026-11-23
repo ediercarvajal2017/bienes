@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { datos, bd } from './helpers/datos.js';
+import { datos, bd, comoRol } from './helpers/datos.js';
 
 /**
  * Ayuda emergente de los campos (App\Helpers\AyudaCampo y assets/js/ayuda-campo.js): el
@@ -329,6 +329,77 @@ test('un usuario o un espacio con un texto más largo de lo que cabe se rechaza 
     expect(respuesta.status()).toBe(302);
     await page.goto('espacios/crear');
     await expect(page.locator('.alert-danger')).toContainText('El número del espacio es más largo de lo que se puede guardar');
+});
+
+test('categorías, instituciones y reportes explican cada campo como el formulario de bienes', async ({ page }) => {
+    test.skip(datos().remoto === true, 'Necesita la base de pruebas local');
+    const d = datos();
+
+    await page.goto('categorias');
+    await revisarAyudas(page, {
+        'Categorías de bienes': 'MIA arma un lote por categoría',
+        'Nombre de la categoría': 'Máximo 80 caracteres',
+    });
+    await expect(page.locator('#nombreCategoria')).toHaveAttribute('maxlength', '80');
+
+    // El rector edita la suya (la lista de instituciones es del superusuario): el código DANE, el tipo de sede y la principal se ven, pero solo los cambia el superusuario.
+    await page.goto(`instituciones/${d.instituciones.A}/editar`);
+    await revisarAyudas(page, {
+        'Código DANE': 'normalmente 12 dígitos',
+        'Tipo de sede': 'Una institución que tiene secciones no puede volverse sección',
+        Nombre: 'Máximo 150 caracteres',
+        Dirección: 'Máximo 200 caracteres',
+        'Correo institucional': 'rectoria@colegio.edu.co',
+        'Logo institucional': 'máximo 2 MB',
+    });
+    await expect(page.locator('#campo-direccion')).toHaveAttribute('maxlength', '200');
+
+    await page.goto('reportes');
+    await revisarAyudas(page, {
+        Reportes: 'Solo para el rector',
+        'Cartera de bienes': 'Cartera por placa',
+        'Bienes asignados pendientes de devolver': 'fecha de asignación',
+        'Historial de bienes reintegrados': 'quién lo registró',
+        'Acta de bienes a cargo': 'Grupal:',
+        'Funcionario del acta': 'Escribe para buscarla',
+        'Actividad de los funcionarios': 'hora de Colombia',
+        Período: 'Rango de fechas',
+        'Funcionario de la actividad': 'Todos los funcionarios',
+        'Control del inventario': '30 días o más',
+        'Descargar toda la información': 'no contraseñas',
+    });
+    // El (?) va fuera del título: los títulos de cada reporte no cambian de nombre.
+    await expect(page.getByRole('heading', { name: 'Cartera de bienes', exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Acta de bienes a cargo', exact: true })).toBeVisible();
+});
+
+test('cargos y nueva institución (superusuario) explican cada campo', async ({ browser }) => {
+    test.skip(datos().remoto === true, 'Necesita la base de pruebas local');
+    const contexto = await comoRol(browser, 'superusuario');
+    const page = await contexto.newPage();
+
+    await page.goto('cargos');
+    await revisarAyudas(page, {
+        Cargos: 'solo el superusuario la administra',
+        'Nombre del cargo': 'Máximo 80 caracteres',
+    });
+    await expect(page.locator('#nombreCargo')).toHaveAttribute('maxlength', '80');
+
+    await page.goto('instituciones');
+    await revisarAyudas(page, { Instituciones: 'Solo el superusuario crea instituciones' });
+
+    await page.goto('instituciones/crear');
+    await page.locator('#tipoSede').selectOption('seccion');
+    await revisarAyudas(page, { 'Institución principal': 'principal activa' });
+
+    // Un nombre de cargo más largo de lo que cabe se rechaza con su motivo.
+    const token = await page.locator('input[name="_csrf"]').first().inputValue();
+    await page.goto('cargos');
+    const respuesta = await page.request.post('cargos', { form: { _csrf: token, nombre: 'C'.repeat(81) }, maxRedirects: 0 });
+    expect(respuesta.status()).toBe(302);
+    await page.goto('cargos');
+    await expect(page.locator('.alert-danger')).toContainText('El nombre es más largo de lo que se puede guardar');
+    await contexto.close();
 });
 
 test.describe('en el celular', () => {
