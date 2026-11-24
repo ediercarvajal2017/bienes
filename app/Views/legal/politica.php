@@ -24,9 +24,9 @@
         <button type="button" id="btnTema" class="theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
             <?= icono('tema') ?>
         </button>
-        <div class="d-flex align-items-center gap-3 mb-3">
+        <div class="d-flex align-items-center gap-3 mb-3 titulo-legal">
             <img src="<?= Url::asset('/assets/img/logo.webp') ?>" width="400" height="400" alt="MIA" class="auth-logo-mini">
-            <h1 class="h5 mb-0">Política de tratamiento de datos personales y términos de uso</h1>
+            <div class="d-flex align-items-center gap-1"><h1 class="h5 mb-0">Política de tratamiento de datos personales y términos de uso</h1><?= \App\Helpers\AyudaCampo::boton('politica_datos') ?></div>
         </div>
 
         <?php require __DIR__ . '/_texto.php'; ?>
@@ -42,5 +42,6 @@
 </div>
 
 <script src="<?= Url::asset('/assets/js/tema.js') ?>"></script>
+<script src="<?= Url::asset('/assets/js/ayuda-campo.js') ?>"></script>
 </body>
 </html>

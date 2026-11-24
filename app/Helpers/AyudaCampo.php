@@ -547,6 +547,25 @@ final class AyudaCampo
             'texto' => "MIA no te pedirá el código en este navegador durante 30 días; la contraseña sí.\n\n"
                 . 'No la marques en un computador compartido. Puedes quitar este dispositivo cuando quieras desde «Mi cuenta», en «Dispositivos de confianza».',
         ],
+        // Política de tratamiento de datos (legal/*): la página pública y la aceptación del primer ingreso.
+        'politica_datos' => [
+            'titulo' => 'Cómo leer esta política',
+            'texto' => "Explica qué datos tuyos guarda MIA, para qué se usan, quién responde por ellos y cómo pedir que los corrijan o los supriman, según la Ley 1581 de 2012.\n\n"
+                . "**Lo esencial:** la responsable es tu institución. Tus datos se usan para llevar el inventario y saber quién tiene a cargo cada bien; no se venden ni se usan para publicidad.\n\n"
+                . "**¿Quieres corregir o suprimir tus datos?** Pídeselo primero al rector o al administrador de MIA de tu institución (punto 5).\n\n"
+                . 'Cada usuario la acepta una vez, en su primer ingreso; si cambia de fondo, MIA la vuelve a pedir. En «Mi cuenta» ves cuándo la aceptaste.',
+        ],
+        'aceptar_politica' => [
+            'titulo' => 'Por qué se pide',
+            'texto' => "Para usar MIA debes leer y aceptar la política de tratamiento de datos personales y los términos de uso. Se pide una sola vez; si la política cambia de fondo, se vuelve a pedir.\n\n"
+                . "Lee el texto del recuadro, marca la casilla y pulsa «Aceptar y continuar»: MIA te lleva a la página que ibas a abrir.\n\n"
+                . 'Si no estás de acuerdo, «Salir sin aceptar» cierra la sesión: sin aceptarla no puedes usar MIA. Si tienes dudas, habla con el rector o el administrador de MIA de tu institución.',
+        ],
+        'acepto_politica' => [
+            'titulo' => 'Qué autorizas',
+            'texto' => "Que tu institución, a través de MIA, use tus datos (identificación, correo, cargo, los bienes a tu cargo y el registro de uso) para las finalidades del punto 3 del texto. Queda guardada la fecha y la versión que aceptaste.\n\n"
+                . 'Aceptar no te quita derechos: puedes consultar, corregir o pedir que se supriman tus datos cuando quieras (puntos 4 y 5).',
+        ],
         'privacidad' => [
             'titulo' => 'Tus datos y privacidad',
             'texto' => 'Cuándo aceptaste la política de tratamiento de datos de MIA y el enlace para leerla. Para corregir tus datos (nombre, documento o correo), pídeselo al administrador de MIA de tu institución.',

@@ -37,7 +37,6 @@ final class PoliticaController
         }
 
         View::render('legal/aceptar', [
-            'nombre' => (string) Auth::nombreCompleto(),
             'institucion' => Auth::esSuperusuario() ? null : Auth::institucionNombre(),
         ]);
     }
