@@ -13,6 +13,13 @@ test.beforeEach(() => test.skip(datos().remoto === true, 'Necesita la base de pr
  */
 const pasoActual = () => Math.floor(Date.now() / 30000);
 
+// Espera a que la salida termine: si se abre el ingreso antes, la sesión sigue viva y
+// /login lleva al panel (la prueba fallaba de vez en cuando con el servidor ocupado).
+async function salir(pagina) {
+    await pagina.locator('form[action$="/logout"] button').first().click({ force: true });
+    await expect(pagina).toHaveURL(/\/login$/);
+}
+
 async function ingresar(pagina, cuenta) {
     await pagina.goto('login');
     await pagina.fill('#email', cuenta.email);
@@ -53,7 +60,7 @@ test('verificación en dos pasos: opcional, segundo paso, anti-repetición, recu
 
     // Cerrar sesión y volver: ahora pide el código.
     await pagina.goto('mi-cuenta');
-    await pagina.locator('form[action$="/logout"] button').first().click({ force: true });
+    await salir(pagina);
     await ingresar(pagina, cuenta);
     await expect(pagina).toHaveURL(/2fa\/verificar/);
     expect((await contexto.request.get('dashboard', { maxRedirects: 0 })).headers().location).toMatch(/login$/);
@@ -72,12 +79,12 @@ test('verificación en dos pasos: opcional, segundo paso, anti-repetición, recu
     await expect(pagina).toHaveURL(/dashboard/);
 
     // Código de recuperación: entra una vez, no dos.
-    await pagina.locator('form[action$="/logout"] button').first().click({ force: true });
+    await salir(pagina);
     await ingresar(pagina, cuenta);
     await pagina.fill('#codigo', codigos[0].trim().toLowerCase());
     await pagina.getByRole('button', { name: 'Verificar' }).click();
     await expect(pagina).toHaveURL(/dashboard/);
-    await pagina.locator('form[action$="/logout"] button').first().click({ force: true });
+    await salir(pagina);
     await ingresar(pagina, cuenta);
     await pagina.fill('#codigo', codigos[0].trim());
     await pagina.getByRole('button', { name: 'Verificar' }).click();

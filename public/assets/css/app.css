@@ -372,8 +372,12 @@ select.selector-buscable.is-invalid + .ts-wrapper .ts-control {
   border-radius: 6px;
 }
 
+/* Que el título (y su ícono de ayuda) no quede debajo del botón de tema. */
+.auth-card-ancha .titulo-legal {
+  padding-right: 2.5rem;
+}
+
 .auth-card-ancha h1 {
-  padding-right: 2.5rem; /* que el título no quede debajo del botón de tema */
   text-wrap: balance;
 }
 

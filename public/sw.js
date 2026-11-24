@@ -7,7 +7,7 @@
 //
 // Al cambiar CACHE, activate borra las versiones anteriores (incluida 'sigebi-v1', que
 // sí guardaba el panel autenticado).
-const CACHE = 'sigebi-v15'; // v15: ícono de ayuda (?) sobre la barra superior
+const CACHE = 'sigebi-v16'; // v16: ícono de ayuda (?) junto al título de la política de datos
 const PRECARGA = ['./offline.html', './assets/css/tokens.css', './assets/css/app.css'];
 
 self.addEventListener('install', (event) => {

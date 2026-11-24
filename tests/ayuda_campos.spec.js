@@ -773,6 +773,39 @@ test('el ingreso, la recuperación de contraseña y de correo y el código de do
     }
 });
 
+test('la política de datos y su aceptación explican qué es y qué se autoriza', async ({ browser }) => {
+    test.skip(datos().remoto === true, 'Necesita la base de pruebas local');
+    const contexto = await sinSesion(browser);
+    const pagina = await contexto.newPage();
+
+    await pagina.goto('politica-de-datos');
+    await revisarAyudas(pagina, { 'Cómo leer esta política': 'la responsable es tu institución' });
+
+    // Cuenta desechable que aún no ha aceptado la política: al entrar se le pide.
+    const docente = datos().usuarios.docente;
+    const marca = Date.now();
+    const correo = `ayuda-politica-${marca}@prueba.test`;
+    bd(`INSERT INTO usuarios (documento, nombres, apellidos, cargo_id, email, password_hash, institucion_id, rol_id, activo)
+        SELECT 'AYP-${marca}', 'Pablo', 'Prueba', cargo_id, '${correo}', password_hash, institucion_id, rol_id, 1
+        FROM usuarios WHERE id = ${docente.id}`);
+    const id = Number(bd(`SELECT id FROM usuarios WHERE email = '${correo}'`));
+    try {
+        await pagina.goto('login');
+        await pagina.fill('#email', correo);
+        await pagina.fill('#password', docente.clave);
+        await pagina.getByRole('button', { name: 'Ingresar' }).click();
+        await expect(pagina).toHaveURL(/\/politica\/aceptar$/);
+        await revisarAyudas(pagina, {
+            'Por qué se pide': 'Salir sin aceptar',
+            'Qué autorizas': 'Queda guardada la fecha y la versión que aceptaste',
+        });
+        await expect(pagina.getByText('Solo se pide una vez')).toHaveCount(0);
+    } finally {
+        await contexto.close();
+        bd(`DELETE FROM auditoria WHERE usuario_id = ${id}; DELETE FROM usuarios WHERE id = ${id}`);
+    }
+});
+
 test.describe('en el celular', () => {
     test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
 

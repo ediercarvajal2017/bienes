@@ -4,7 +4,6 @@ use App\Core\Csrf;
 use App\Core\Url;
 
 $e = static fn (string $t): string => htmlspecialchars($t, ENT_QUOTES);
-$primerNombre = explode(' ', trim($nombre))[0] ?? '';
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -31,14 +30,10 @@ $primerNombre = explode(' ', trim($nombre))[0] ?? '';
         <button type="button" id="btnTema" class="theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
             <?= icono('tema') ?>
         </button>
-        <div class="d-flex align-items-center gap-3 mb-2">
+        <div class="d-flex align-items-center gap-3 mb-3 titulo-legal">
             <img src="<?= Url::asset('/assets/img/logo.webp') ?>" width="400" height="400" alt="MIA" class="auth-logo-mini">
-            <h1 class="h5 mb-0">Antes de continuar</h1>
+            <div class="d-flex align-items-center gap-1"><h1 class="h5 mb-0">Antes de continuar</h1><?= \App\Helpers\AyudaCampo::boton('aceptar_politica') ?></div>
         </div>
-        <p class="small mb-3">
-            Hola<?= $primerNombre !== '' ? ', ' . $e($primerNombre) : '' ?>. Para usar MIA debes leer y aceptar la
-            política de tratamiento de datos personales y los términos de uso. Solo se pide una vez.
-        </p>
 
         <?= ui('avisos', ['avisos' => \App\Core\Aviso::paraMostrar()]) ?>
 
@@ -53,7 +48,7 @@ $primerNombre = explode(' ', trim($nombre))[0] ?? '';
                 <label class="form-check-label small" for="acepto">
                     He leído y acepto la política de tratamiento de datos personales y los términos de uso de MIA, y
                     autorizo el tratamiento de mis datos para las finalidades descritas.
-                </label>
+                </label><?= \App\Helpers\AyudaCampo::boton('acepto_politica') ?>
             </div>
             <button type="submit" class="btn btn-primary w-100">Aceptar y continuar</button>
         </form>
@@ -66,5 +61,6 @@ $primerNombre = explode(' ', trim($nombre))[0] ?? '';
 
 <script src="<?= Url::asset('/assets/js/tema.js') ?>"></script>
 <script src="<?= Url::asset('/assets/js/cargando.js') ?>"></script>
+<script src="<?= Url::asset('/assets/js/ayuda-campo.js') ?>"></script>
 </body>
 </html>
