@@ -53,7 +53,7 @@ $pintarOpcion = static function (array $o) use ($opcionActiva, $contadores): voi
                 <form method="post" action="<?= Url::to('/sede-activa') ?>">
                     <?= Csrf::field() ?>
                     <input type="hidden" name="volver" value="<?= htmlspecialchars($rutaActual, ENT_QUOTES) ?>">
-                    <label for="sedeActivaSelectMovil" class="form-label small mb-1">Sede activa</label>
+                    <?= \App\Helpers\AyudaCampo::etiqueta('sedeActivaSelectMovil', 'Sede activa', 'sede_activa') ?>
                     <select id="sedeActivaSelectMovil" name="institucion_id" class="form-select form-select-sm" onchange="this.form.submit()">
                         <?php foreach ($familiaSedes as $sede): ?>
                             <option value="<?= (int) $sede['id'] ?>" <?= (int) $sede['id'] === Auth::sedeActivaId() ? 'selected' : '' ?>><?= htmlspecialchars($sede['nombre'], ENT_QUOTES) ?></option>
@@ -66,7 +66,7 @@ $pintarOpcion = static function (array $o) use ($opcionActiva, $contadores): voi
                       class="filtro-institucion-form<?= Auth::filtroInstitucionId() !== null ? ' filtro-institucion-form--activo' : '' ?>">
                     <?= Csrf::field() ?>
                     <input type="hidden" name="volver" value="<?= htmlspecialchars($rutaActual, ENT_QUOTES) ?>">
-                    <label for="filtroInstitucionSelectMovil" class="form-label small mb-1">Ver institución</label>
+                    <?= \App\Helpers\AyudaCampo::etiqueta('filtroInstitucionSelectMovil', 'Ver institución', 'filtro_institucion') ?>
                     <select id="filtroInstitucionSelectMovil" name="institucion_id" class="form-select form-select-sm filtro-institucion-select" onchange="this.form.submit()">
                         <option value="">Ver todas las instituciones</option>
                         <?php foreach ($institucionesFiltro as $i): ?>

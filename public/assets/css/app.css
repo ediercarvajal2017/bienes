@@ -116,6 +116,12 @@ img {
   font-size: 0.78rem;
 }
 
+/* El (?) de la sede activa y del filtro de institución, sobre la barra verde. */
+.navbar-sigebi .ayuda-campo { color: rgba(255, 255, 255, 0.8); margin-left: 0.15rem; }
+.navbar-sigebi .ayuda-campo:hover,
+.navbar-sigebi .ayuda-campo[aria-expanded="true"] { color: #fff; }
+.navbar-sigebi .ayuda-campo:focus-visible { outline-color: #fff; }
+
 @media (max-width: 1200px) {
   .sede-activa-select {
     max-width: 120px;

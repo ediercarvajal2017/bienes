@@ -150,6 +150,7 @@ foreach (['/manual', '/mi-cuenta'] as $rutaPie) {
                         <option value="<?= (int) $sede['id'] ?>" <?= (int) $sede['id'] === Auth::sedeActivaId() ? 'selected' : '' ?>><?= htmlspecialchars($sede['nombre'], ENT_QUOTES) ?></option>
                     <?php endforeach; ?>
                 </select>
+                <?= \App\Helpers\AyudaCampo::boton('sede_activa') ?>
             </form>
         <?php endif; ?>
         <?php if (Auth::esSuperusuario()): ?>
@@ -168,6 +169,7 @@ foreach (['/manual', '/mi-cuenta'] as $rutaPie) {
                         </option>
                     <?php endforeach; ?>
                 </select>
+                <?= \App\Helpers\AyudaCampo::boton('filtro_institucion') ?>
             </form>
         <?php endif; ?>
         <button type="button" id="btnTema" class="theme-toggle d-none d-sm-inline-flex" data-tema-toggle aria-label="Cambiar tema" title="Cambiar tema">

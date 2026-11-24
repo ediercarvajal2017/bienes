@@ -683,6 +683,28 @@ test('auditoría y papelera (superusuario) explican cada parte', async ({ browse
     await contexto.close();
 });
 
+test('la sede activa (rector) y el filtro de institución (superusuario) explican qué hacen', async ({ page, browser }) => {
+    test.skip(datos().remoto === true, 'Necesita la base de pruebas local');
+
+    // El rector de prueba tiene una sede principal y una sección: ve «Sede activa» en la barra.
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto('dashboard');
+    await revisarAyudas(page, { 'Sede activa': 'los bienes, espacios, listas y reportes que ves son los de esa sede' });
+
+    const contexto = await comoRol(browser, 'superusuario');
+    const superusuario = await contexto.newPage();
+    await superusuario.setViewportSize({ width: 1280, height: 800 });
+    await superusuario.goto('dashboard');
+    await revisarAyudas(superusuario, { 'Ver institución': 'Ver todas las instituciones' });
+
+    // En el celular están en el menú lateral, con su etiqueta y su (?).
+    await superusuario.setViewportSize({ width: 390, height: 844 });
+    await superusuario.goto('dashboard');
+    await superusuario.locator('#btnMenu').click();
+    await expect(ayudaDe(superusuario, 'Ver institución')).toBeVisible();
+    await contexto.close();
+});
+
 test.describe('en el celular', () => {
     test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
 
