@@ -27,24 +27,24 @@
         <div class="text-center mb-2">
             <img src="<?= Url::asset('/assets/img/logo.webp') ?>" width="400" height="400" alt="MIA" class="auth-logo">
         </div>
-        <div class="brand-sub text-center">Manejo de Inventario de Activos</div>
+        <div class="brand-sub d-flex justify-content-center align-items-center gap-1">Manejo de Inventario de Activos<?= \App\Helpers\AyudaCampo::boton('ingreso') ?></div>
 
         <?= ui('avisos', ['avisos' => \App\Core\Aviso::paraMostrar(), 'enfocar' => false]) ?>
 
         <form method="post" action="<?= Url::to('/login') ?>">
             <?= \App\Core\Csrf::field() ?>
             <div class="mb-3">
-                <label class="form-label small" for="email">Correo institucional</label>
-                <input type="email" name="email" id="email" class="form-control" required autocomplete="username"
+                <?= \App\Helpers\AyudaCampo::etiqueta('email', 'Correo institucional', 'ingreso_correo') ?>
+                <input type="email" name="email" id="email" class="form-control" required maxlength="150" autocomplete="username"
                        value="<?= htmlspecialchars($email ?? '', ENT_QUOTES) ?>" <?= empty($email) ? 'autofocus' : '' ?>>
             </div>
             <div class="mb-3">
-                <label class="form-label small" for="password">Contraseña</label>
+                <?= \App\Helpers\AyudaCampo::etiqueta('password', 'Contraseña', 'ingreso_contrasena') ?>
                 <input type="password" name="password" id="password" class="form-control" required autocomplete="current-password" <?= !empty($email) ? 'autofocus' : '' ?>>
             </div>
             <div class="form-check mb-3">
                 <input type="checkbox" name="recordar" value="1" id="recordar" class="form-check-input">
-                <label class="form-check-label small" for="recordar">Recordarme en este dispositivo</label>
+                <label class="form-check-label small" for="recordar">Recordarme en este dispositivo</label><?= \App\Helpers\AyudaCampo::boton('recordarme') ?>
             </div>
             <button type="submit" class="btn btn-primary w-100">Ingresar</button>
         </form>
@@ -63,5 +63,6 @@
 <script src="<?= Url::asset('/assets/js/cargando.js') ?>"></script>
 <script src="<?= Url::asset('/assets/js/alertas.js') ?>"></script>
 <script src="<?= Url::asset('/assets/js/mostrar-contrasena.js') ?>"></script>
+<script src="<?= Url::asset('/assets/js/ayuda-campo.js') ?>"></script>
 </body>
 </html>

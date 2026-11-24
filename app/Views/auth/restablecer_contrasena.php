@@ -25,7 +25,7 @@
             <?= icono('tema') ?>
         </button>
         <div class="text-center"><img src="<?= Url::asset('/assets/img/logo.webp') ?>" width="400" height="400" alt="MIA" class="auth-logo-72"></div>
-        <div class="brand-sub">Restablecer contraseña</div>
+        <div class="brand-sub d-flex justify-content-center align-items-center gap-1">Restablecer contraseña<?= \App\Helpers\AyudaCampo::boton('restablecer_contrasena') ?></div>
 
         <?= ui('avisos', ['avisos' => \App\Core\Aviso::paraMostrar(), 'enfocar' => false]) ?>
 
@@ -36,12 +36,11 @@
             <form method="post" action="<?= Url::to('/restablecer-contrasena/' . $token) ?>">
                 <?= \App\Core\Csrf::field() ?>
                 <div class="mb-3">
-                    <label class="form-label small" for="password">Nueva contraseña</label>
+                    <?= \App\Helpers\AyudaCampo::etiqueta('password', 'Nueva contraseña', 'restablecer_nueva') ?>
                     <input type="password" name="password" id="password" class="form-control" required minlength="10" autofocus autocomplete="new-password">
-                    <div class="form-text">Mínimo 10 caracteres, con letras y números. No use su nombre, documento ni correo.</div>
                 </div>
                 <div class="mb-3">
-                    <label class="form-label small" for="password_confirmacion">Confirmar contraseña</label>
+                    <?= \App\Helpers\AyudaCampo::etiqueta('password_confirmacion', 'Confirmar contraseña', 'contrasena_confirmacion') ?>
                     <input type="password" name="password_confirmacion" id="password_confirmacion" class="form-control" required minlength="10" autocomplete="new-password">
                 </div>
                 <button type="submit" class="btn btn-primary w-100">Guardar contraseña</button>
@@ -58,5 +57,6 @@
 <script src="<?= Url::asset('/assets/js/cargando.js') ?>"></script>
 <script src="<?= Url::asset('/assets/js/alertas.js') ?>"></script>
 <script src="<?= Url::asset('/assets/js/mostrar-contrasena.js') ?>"></script>
+<script src="<?= Url::asset('/assets/js/ayuda-campo.js') ?>"></script>
 </body>
 </html>

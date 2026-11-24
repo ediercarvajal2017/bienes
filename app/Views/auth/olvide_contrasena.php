@@ -27,17 +27,15 @@
         <div class="text-center mb-2">
             <img src="<?= Url::asset('/assets/img/logo.webp') ?>" width="400" height="400" alt="MIA" class="auth-logo">
         </div>
-        <div class="brand-sub text-center">Recuperar contraseña</div>
+        <div class="brand-sub d-flex justify-content-center align-items-center gap-1">Recuperar contraseña<?= \App\Helpers\AyudaCampo::boton('recuperar_contrasena') ?></div>
 
         <?= ui('avisos', ['avisos' => \App\Core\Aviso::paraMostrar(), 'enfocar' => false]) ?>
-
-        <p class="small text-muted">Escribe el correo con el que inicias sesión y te enviaremos un enlace para crear una nueva contraseña.</p>
 
         <form method="post" action="<?= Url::to('/olvide-contrasena') ?>">
             <?= \App\Core\Csrf::field() ?>
             <div class="mb-3">
-                <label for="campo-email" class="form-label small">Correo institucional</label>
-                <input id="campo-email" type="email" name="email" class="form-control" required autofocus>
+                <?= \App\Helpers\AyudaCampo::etiqueta('campo-email', 'Correo institucional', 'ingreso_correo') ?>
+                <input id="campo-email" type="email" name="email" class="form-control" required maxlength="150" autofocus autocomplete="username">
             </div>
             <button type="submit" class="btn btn-primary w-100">Enviar enlace</button>
         </form>
@@ -51,5 +49,6 @@
 <script src="<?= Url::asset('/assets/js/tema.js') ?>"></script>
 <script src="<?= Url::asset('/assets/js/cargando.js') ?>"></script>
 <script src="<?= Url::asset('/assets/js/alertas.js') ?>"></script>
+<script src="<?= Url::asset('/assets/js/ayuda-campo.js') ?>"></script>
 </body>
 </html>

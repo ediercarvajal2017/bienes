@@ -27,12 +27,7 @@
         <div class="text-center mb-2">
             <img src="<?= Url::asset('/assets/img/logo.webp') ?>" width="400" height="400" alt="MIA" class="auth-logo">
         </div>
-        <h1 class="h5 text-center mb-1"><?= icono('seguridad', 'me-1') ?>Verificación en dos pasos</h1>
-        <p class="text-muted small text-center mb-3">
-            <?= $appDisponible
-                ? 'Abre tu aplicación autenticadora y escribe el código de 6 dígitos de MIA.'
-                : 'Escribe uno de tus códigos de recuperación.' ?>
-        </p>
+        <div class="d-flex justify-content-center align-items-center gap-1 mb-3"><h1 class="h5 mb-0"><?= icono('seguridad', 'me-1') ?>Verificación en dos pasos</h1><?= \App\Helpers\AyudaCampo::boton('ingreso_dos_pasos') ?></div>
 
         <?php if (!$appDisponible): ?>
             <div class="alert alert-warning py-2 small">
@@ -50,16 +45,14 @@
         <form method="post" action="<?= Url::to('/2fa/verificar') ?>" id="formCodigo">
             <?= \App\Core\Csrf::field() ?>
             <div class="mb-3">
-                <label class="form-label small" for="codigo">Código de verificación</label>
+                <?= \App\Helpers\AyudaCampo::etiqueta('codigo', 'Código de verificación', 'codigo_verificacion') ?>
                 <input type="text" name="codigo" id="codigo" class="form-control form-control-lg text-center campo-codigo-2fa"
                        required autofocus autocomplete="one-time-code" inputmode="<?= $appDisponible ? 'numeric' : 'text' ?>"
-                       maxlength="11" placeholder="<?= $appDisponible ? '123456' : 'ABCDE-FGHJK' ?>"
-                       aria-describedby="ayudaCodigo">
-                <div id="ayudaCodigo" class="form-text">¿Perdiste el teléfono? Escribe un código de recuperación (formato ABCDE-FGHJK).</div>
+                       maxlength="11" placeholder="<?= $appDisponible ? '123456' : 'ABCDE-FGHJK' ?>">
             </div>
             <div class="form-check mb-3">
                 <input type="checkbox" name="confiar" value="1" id="confiar" class="form-check-input">
-                <label class="form-check-label small" for="confiar">No volver a pedirlo en este dispositivo durante 30 días</label>
+                <label class="form-check-label small" for="confiar">No volver a pedirlo en este dispositivo durante 30 días</label><?= \App\Helpers\AyudaCampo::boton('confiar_dispositivo') ?>
             </div>
             <button type="submit" class="btn btn-primary w-100">Verificar</button>
         </form>
@@ -72,6 +65,7 @@
 
 <script src="<?= Url::asset('/assets/js/tema.js') ?>"></script>
 <script src="<?= Url::asset('/assets/js/cargando.js') ?>"></script>
+<script src="<?= Url::asset('/assets/js/ayuda-campo.js') ?>"></script>
 <script>
 // Con 6 dígitos escritos (o pegados desde la aplicación), se envía solo.
 (function () {
