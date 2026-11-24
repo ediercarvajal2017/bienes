@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
-import { datos, bd, comoRol } from './helpers/datos.js';
+import { randomBytes } from 'node:crypto';
+import { datos, bd, comoRol, sinSesion } from './helpers/datos.js';
 
 /**
  * Ayuda emergente de los campos (App\Helpers\AyudaCampo y assets/js/ayuda-campo.js): el
@@ -124,7 +125,7 @@ test('la cartera recibida explica cada campo como el formulario de bienes', asyn
 });
 
 /** Cada (?) de la página abre su globo con el texto esperado y se cierra al salir. */
-async function revisarAyudas(page, ayudas) {
+async function revisarAyudas(page, ayudas, fuera = 'h1') {
     for (const [titulo, texto] of Object.entries(ayudas)) {
         const boton = ayudaDe(page, titulo);
         const globo = await globoDe(page, boton);
@@ -132,7 +133,7 @@ async function revisarAyudas(page, ayudas) {
         await expect(globo, titulo).toBeVisible();
         await expect(globo, titulo).toContainText(texto);
         await page.keyboard.press('Escape');
-        await page.locator('h1').hover();
+        await page.locator(fuera).hover();
         await expect(globo, titulo).toBeHidden();
     }
     await expect(page.getByText('Los campos marcados con')).toHaveCount(0);
@@ -703,6 +704,73 @@ test('la sede activa (rector) y el filtro de institución (superusuario) explica
     await superusuario.locator('#btnMenu').click();
     await expect(ayudaDe(superusuario, 'Ver institución')).toBeVisible();
     await contexto.close();
+});
+
+test('el ingreso, la recuperación de contraseña y de correo y el código de dos pasos explican cada campo', async ({ browser }) => {
+    test.skip(datos().remoto === true, 'Necesita la base de pruebas local');
+    const contexto = await sinSesion(browser);
+    const pagina = await contexto.newPage();
+    // Estas páginas no tienen <h1> (salvo la del código): el cursor sale hacia el logo.
+    const logo = 'img[alt="MIA"]';
+
+    await pagina.goto('login');
+    await revisarAyudas(pagina, {
+        'Entrar a MIA': 'La cuenta la crea el rector',
+        'Correo institucional': 'Máximo 150 caracteres',
+        Contraseña: 'Distingue mayúsculas de minúsculas',
+        'Recordarme en este dispositivo': 'hasta 30 días',
+    }, logo);
+    await expect(pagina.locator('#email')).toHaveAttribute('maxlength', '150');
+
+    await pagina.goto('olvide-contrasena');
+    await revisarAyudas(pagina, {
+        'Recuperar contraseña': 'El enlace dura 60 minutos y sirve una sola vez',
+        'Correo institucional': 'Máximo 150 caracteres',
+    }, logo);
+    await expect(pagina.getByText('Escribe el correo con el que inicias sesión')).toHaveCount(0);
+
+    await pagina.goto('olvide-correo');
+    await revisarAyudas(pagina, {
+        '¿Cuál es mi correo?': 'con parte de las letras ocultas',
+        Institución: 'Escribe parte del nombre',
+        'Número de documento': 'sin puntos ni espacios',
+    }, logo);
+    await expect(pagina.locator('#campo-documento')).toHaveAttribute('maxlength', '20');
+
+    // Cuenta desechable con la verificación en dos pasos activada y un enlace de restablecimiento vigente.
+    const docente = datos().usuarios.docente;
+    const marca = Date.now();
+    const correo = `ayuda-ingreso-${marca}@prueba.test`;
+    bd(`INSERT INTO usuarios (documento, nombres, apellidos, cargo_id, email, password_hash, institucion_id, rol_id, activo, totp_secreto, totp_activado_en)
+        SELECT 'AYI-${marca}', 'Ana', 'Ayuda', cargo_id, '${correo}', password_hash, institucion_id, rol_id, 1, 'PW-TEST', NOW()
+        FROM usuarios WHERE id = ${docente.id}`);
+    const id = Number(bd(`SELECT id FROM usuarios WHERE email = '${correo}'`));
+    try {
+        const token = randomBytes(32).toString('hex');
+        bd(`INSERT INTO password_resets (usuario_id, token_hash, expira_en) VALUES (${id}, SHA2('${token}', 256), '2099-01-01 00:00:00')`);
+        await pagina.goto(`restablecer-contrasena/${token}`);
+        await revisarAyudas(pagina, {
+            'Restablecer contraseña': 'se cierran las sesiones que tengas abiertas en otros equipos',
+            'Nueva contraseña': 'Mínimo 10 caracteres, con letras y números',
+            'Confirmar contraseña nueva': 'para evitar un error de digitación',
+        }, logo);
+        await expect(pagina.getByText('No use su nombre, documento ni correo')).toHaveCount(0);
+
+        await pagina.goto('login');
+        await pagina.fill('#email', correo);
+        await pagina.fill('#password', docente.clave);
+        await pagina.getByRole('button', { name: 'Ingresar' }).click();
+        await expect(pagina).toHaveURL(/\/2fa\/verificar$/);
+        await revisarAyudas(pagina, {
+            'Verificación en dos pasos': 'El código cambia cada 30 segundos',
+            'Código de verificación': 'códigos de recuperación (formato ABCDE-FGHJK)',
+            'No volver a pedirlo': 'durante 30 días',
+        });
+        await expect(pagina.getByText('¿Perdiste el teléfono? Escribe un código')).toHaveCount(0);
+    } finally {
+        await contexto.close();
+        bd(`DELETE FROM password_resets WHERE usuario_id = ${id}; DELETE FROM auditoria WHERE usuario_id = ${id}; DELETE FROM usuarios WHERE id = ${id}`);
+    }
 });
 
 test.describe('en el celular', () => {

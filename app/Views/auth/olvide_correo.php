@@ -27,7 +27,7 @@
         <div class="text-center mb-2">
             <img src="<?= Url::asset('/assets/img/logo.webp') ?>" width="400" height="400" alt="MIA" class="auth-logo">
         </div>
-        <div class="brand-sub text-center">¿Cuál es mi correo?</div>
+        <div class="brand-sub d-flex justify-content-center align-items-center gap-1">¿Cuál es mi correo?<?= \App\Helpers\AyudaCampo::boton('recuperar_correo') ?></div>
 
         <?php if (!empty($resultado)): ?>
             <div class="alert alert-success py-2 small">
@@ -36,12 +36,10 @@
         <?php endif; ?>
         <?= ui('avisos', ['avisos' => \App\Core\Aviso::paraMostrar(), 'enfocar' => false]) ?>
 
-        <p class="small text-muted">Indica tu número de documento y tu institución; te mostramos una versión parcialmente oculta del correo con el que inicias sesión.</p>
-
         <form method="post" action="<?= Url::to('/olvide-correo') ?>">
             <?= \App\Core\Csrf::field() ?>
             <div class="mb-3">
-                <label for="campo-institucion-id" class="form-label small">Institución</label>
+                <?= \App\Helpers\AyudaCampo::etiqueta('campo-institucion-id', 'Institución', 'recuperar_institucion') ?>
                 <select id="campo-institucion-id" name="institucion_id" class="form-select selector-buscable" required>
                     <option value="">-- Selecciona --</option>
                     <?php foreach ($instituciones as $i): ?>
@@ -50,8 +48,8 @@
                 </select>
             </div>
             <div class="mb-3">
-                <label for="campo-documento" class="form-label small">Número de documento</label>
-                <input id="campo-documento" type="text" name="documento" class="form-control" required autofocus>
+                <?= \App\Helpers\AyudaCampo::etiqueta('campo-documento', 'Número de documento', 'recuperar_documento') ?>
+                <input id="campo-documento" type="text" name="documento" class="form-control" required maxlength="20" autofocus>
             </div>
             <button type="submit" class="btn btn-primary w-100">Buscar mi correo</button>
         </form>
@@ -65,6 +63,7 @@
 <script src="<?= Url::asset('/assets/js/tema.js') ?>"></script>
 <script src="<?= Url::asset('/assets/js/cargando.js') ?>"></script>
 <script src="<?= Url::asset('/assets/js/alertas.js') ?>"></script>
+<script src="<?= Url::asset('/assets/js/ayuda-campo.js') ?>"></script>
 <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js" integrity="sha384-cnROoUgVILyibe3J0zhzWoJ9p2WmdnK7j/BOTSWqVDbC1pVw2d+i6Q/1ESKJKCYf" crossorigin="anonymous"></script>
 <script src="<?= Url::asset('/assets/js/selector-buscable.js') ?>"></script>
 </body>

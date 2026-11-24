@@ -483,6 +483,70 @@ final class AyudaCampo
             'titulo' => 'Confirmar contraseña nueva',
             'texto' => 'Escribe otra vez la contraseña nueva, igual, para evitar un error de digitación.',
         ],
+        // Ingreso a MIA (auth/*): iniciar sesión, recuperar la contraseña o el correo y el código de dos pasos.
+        'ingreso' => [
+            'titulo' => 'Entrar a MIA',
+            'texto' => "Escribe el correo y la contraseña de tu cuenta en MIA. La cuenta la crea el rector o el administrador de MIA de tu institución: si aún no la tienes, pídesela.\n\n"
+                . "**¿Olvidaste algo?** «¿Olvidaste tu contraseña?» te envía un enlace para crear una nueva; «¿Olvidaste tu correo?» te muestra con qué correo entras.\n\n"
+                . 'Después de 5 intentos fallidos, MIA no deja probar más con esa cuenta desde esta conexión durante 15 minutos.',
+        ],
+        'ingreso_correo' => [
+            'titulo' => 'Correo institucional',
+            'texto' => 'El correo con el que te registraron en MIA, normalmente el de la institución. Escríbelo completo, por ejemplo nombre.apellido@colegio.edu.co. Máximo 150 caracteres.',
+        ],
+        'ingreso_contrasena' => [
+            'titulo' => 'Contraseña',
+            'texto' => 'La contraseña de tu cuenta. Distingue mayúsculas de minúsculas: revisa que el bloqueo de mayúsculas esté apagado. Con el ícono del ojo ves lo que escribiste.',
+        ],
+        'recordarme' => [
+            'titulo' => 'Recordarme en este dispositivo',
+            'texto' => "Deja la sesión abierta en este navegador hasta 30 días, aunque pase un buen rato sin usar MIA. Sin marcarla, la sesión se cierra sola después de un tiempo sin uso.\n\n"
+                . 'No la marques en un computador compartido, como el de la sala de sistemas o la biblioteca.',
+        ],
+        'recuperar_contrasena' => [
+            'titulo' => 'Recuperar contraseña',
+            'texto' => "Escribe el correo con el que entras a MIA y te llegará un enlace para crear una contraseña nueva.\n\n"
+                . "El enlace dura 60 minutos y sirve una sola vez. Si no llega, revisa la carpeta de spam y confirma que sea el correo con el que entras.\n\n"
+                . '¿No recuerdas tu correo? Vuelve a la página de ingreso y usa «¿Olvidaste tu correo?».',
+        ],
+        'recuperar_correo' => [
+            'titulo' => '¿Cuál es mi correo?',
+            'texto' => "Elige tu institución y escribe tu número de documento: MIA te muestra el correo con el que entras, con parte de las letras ocultas para que otros no lo vean completo.\n\n"
+                . 'Si no aparece, pídele al rector o al administrador de MIA de tu institución que revise tu cuenta.',
+        ],
+        'recuperar_institucion' => [
+            'titulo' => 'Institución',
+            'texto' => 'El colegio donde trabajas. Escribe parte del nombre para encontrarlo en la lista.',
+        ],
+        'recuperar_documento' => [
+            'titulo' => 'Número de documento',
+            'texto' => 'Tu documento de identidad tal como lo registraron en MIA: solo los números, sin puntos ni espacios. Máximo 20 caracteres.',
+        ],
+        'restablecer_contrasena' => [
+            'titulo' => 'Restablecer contraseña',
+            'texto' => "Crea la contraseña nueva de tu cuenta y escríbela dos veces. Después de guardarla, entra desde la página de ingreso con tu correo y la contraseña nueva.\n\n"
+                . 'Este enlace dura 60 minutos y sirve una sola vez. Al guardar, se cierran las sesiones que tengas abiertas en otros equipos.',
+        ],
+        'restablecer_nueva' => [
+            'titulo' => 'Nueva contraseña',
+            'texto' => 'Mínimo 10 caracteres, con letras y números. No puede contener tu nombre, tus apellidos, tu documento ni tu correo, ni ser una contraseña muy común. Con el ícono del ojo ves lo que escribiste.',
+        ],
+        'ingreso_dos_pasos' => [
+            'titulo' => 'Verificación en dos pasos',
+            'texto' => "Tu cuenta tiene activada la verificación en dos pasos: además de la contraseña, MIA pide un código que genera una aplicación en tu teléfono (Google Authenticator, Microsoft Authenticator u otra).\n\n"
+                . "Abre la aplicación y escribe el código de 6 dígitos de MIA: al completar los 6 dígitos se envía solo. El código cambia cada 30 segundos.\n\n"
+                . 'Tienes 5 intentos; después debes ingresar de nuevo con tu contraseña.',
+        ],
+        'codigo_verificacion' => [
+            'titulo' => 'Código de verificación',
+            'texto' => "El código de 6 dígitos que muestra ahora la aplicación de tu teléfono.\n\n"
+                . '**¿Perdiste el teléfono?** Escribe uno de tus códigos de recuperación (formato ABCDE-FGHJK); cada uno sirve una sola vez. Si tampoco los tienes, pídele al rector que restablezca tu verificación en dos pasos desde «Usuarios».',
+        ],
+        'confiar_dispositivo' => [
+            'titulo' => 'No volver a pedirlo',
+            'texto' => "MIA no te pedirá el código en este navegador durante 30 días; la contraseña sí.\n\n"
+                . 'No la marques en un computador compartido. Puedes quitar este dispositivo cuando quieras desde «Mi cuenta», en «Dispositivos de confianza».',
+        ],
         'privacidad' => [
             'titulo' => 'Tus datos y privacidad',
             'texto' => 'Cuándo aceptaste la política de tratamiento de datos de MIA y el enlace para leerla. Para corregir tus datos (nombre, documento o correo), pídeselo al administrador de MIA de tu institución.',
