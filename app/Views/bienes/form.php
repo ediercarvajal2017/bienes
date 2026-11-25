@@ -359,8 +359,9 @@ $etiquetasEstado = ['activo' => 'Activo', 'reintegrado' => 'Reintegrado', 'en_re
                     <?php elseif (!empty($bien['foto_path'])): ?>
                         <span class="form-label small d-block">Fotografía</span>
                         <img src="<?= \App\Helpers\EnlaceArchivo::url($bien['foto_path']) ?>"
+                             data-lightbox-src="<?= \App\Helpers\EnlaceArchivo::url($bien['foto_path']) ?>"
                              alt="Foto de <?= $e($bien['descripcion']) ?>"
-                             class="mb-2 d-block miniatura-foto">
+                             class="mb-2 d-block miniatura-foto" title="Ver foto en grande">
                     <?php else: ?>
                         <span class="form-label small d-block">Fotografía</span>
                         <span class="nota-campo">Sin foto.</span>

@@ -12,9 +12,10 @@ $viejo ??= [];
 <div class="card mb-3 contenedor-md">
     <div class="card-body py-3 d-flex gap-3 align-items-center">
         <?php if (!empty($bien['foto_path'])): ?>
-            <img src="<?= \App\Helpers\EnlaceArchivo::url($bien['foto_path']) ?>"
+            <img src="<?= \App\Helpers\EnlaceArchivo::url($bien['foto_path'], 96) ?>"
+                 data-lightbox-src="<?= \App\Helpers\EnlaceArchivo::url($bien['foto_path']) ?>"
                  alt="Foto de <?= htmlspecialchars($bien['descripcion'], ENT_QUOTES) ?>"
-                 class="miniatura-52">
+                 class="miniatura-52" title="Ver foto en grande">
         <?php endif; ?>
         <div>
             <div class="fw-semibold"><?= htmlspecialchars($bien['descripcion'], ENT_QUOTES) ?></div>

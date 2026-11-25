@@ -53,8 +53,9 @@ use App\Models\Categoria;
                 <td>
                     <?php if (!empty($b['foto_path'])): ?>
                         <img src="<?= \App\Helpers\EnlaceArchivo::url($b['foto_path'], 96) ?>" loading="lazy"
+                             data-lightbox-src="<?= \App\Helpers\EnlaceArchivo::url($b['foto_path']) ?>"
                              alt="Foto del reporte de baja de <?= htmlspecialchars($b['bien_descripcion'], ENT_QUOTES) ?>"
-                             class="miniatura-36" loading="lazy">
+                             class="miniatura-36 miniatura-ampliable" title="Ver foto en grande">
                     <?php endif; ?>
                 </td>
                 <td data-label="Bien">

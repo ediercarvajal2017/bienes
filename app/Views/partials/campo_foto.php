@@ -39,8 +39,9 @@ $idCampoFoto = !empty($idCampo)
 
     <?php if (!empty($fotoActualUrl)): ?>
         <img src="<?= htmlspecialchars($fotoActualUrl, ENT_QUOTES) ?>"
+             data-lightbox-src="<?= htmlspecialchars($fotoActualUrl, ENT_QUOTES) ?>"
              alt="<?= htmlspecialchars($etiqueta ?? 'Foto actual', ENT_QUOTES) ?>"
-             class="mb-2 d-block miniatura-foto">
+             class="mb-2 d-block miniatura-foto" title="Ver foto en grande">
     <?php endif; ?>
 
     <div class="d-flex gap-2 flex-wrap align-items-center">
