@@ -13,10 +13,12 @@ test.beforeEach(() => test.skip(datos().remoto === true, 'Necesita la base de pr
  */
 const pasoActual = () => Math.floor(Date.now() / 30000);
 
-// Espera a que la salida termine: si se abre el ingreso antes, la sesión sigue viva y
-// /login lleva al panel (la prueba fallaba de vez en cuando con el servidor ocupado).
+// Sale como una persona: con la página ya cargada, pulsa el «Salir» visible y espera el
+// ingreso. Antes pulsaba a la fuerza (force) apenas cambiaba la dirección: con la página
+// aún dibujándose el clic caía en otro punto y, de vez en cuando, la sesión seguía abierta.
 async function salir(pagina) {
-    await pagina.locator('form[action$="/logout"] button').first().click({ force: true });
+    await pagina.waitForLoadState('load');
+    await pagina.getByRole('button', { name: 'Salir', exact: true }).first().click();
     await expect(pagina).toHaveURL(/\/login$/);
 }
 
