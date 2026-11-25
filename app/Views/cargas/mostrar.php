@@ -36,14 +36,14 @@ $clases = [
     <div class="alert alert-secondary py-2 small contenedor-sm">Esta carga ya fue aplicada.</div>
 <?php endif; ?>
 
-<?= ui('herramientas_tabla', ['suelta' => true]) ?>
+<?php \App\Core\View::render('partials/filtro_filas_carga', ['paginaFilas' => $paginaFilas, 'urlBase' => Url::to('/cargas-masivas/' . $carga['id'])]); ?>
 <div data-navegable class="table-responsive">
     <table class="table table-sm bg-white tabla-cards">
         <thead>
         <tr><th data-ordenar>Fila</th><th data-ordenar>Estado</th><th data-ordenar>Código</th><th data-ordenar>Descripción</th><th>Cambios</th></tr>
         </thead>
         <tbody>
-        <?php foreach ($filas as $f): ?>
+        <?php foreach ($paginaFilas['filas'] as $f): ?>
             <tr>
                 <td class="mono small" data-label="Fila"><?= (int) $f['fila'] ?></td>
                 <td data-label="Estado"><span class="badge <?= $clases[$f['tipo']] ?>"><?= $etiquetas[$f['tipo']] ?></span></td>
@@ -65,3 +65,5 @@ $clases = [
         </tbody>
     </table>
 </div>
+
+<?php \App\Core\View::render('partials/filtro_filas_carga', ['paginaFilas' => $paginaFilas, 'urlBase' => Url::to('/cargas-masivas/' . $carga['id']), 'abajo' => true]); ?>

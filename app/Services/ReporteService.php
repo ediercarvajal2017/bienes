@@ -19,7 +19,6 @@ use PhpOffice\PhpSpreadsheet\Style\Font;
 use PhpOffice\PhpSpreadsheet\Worksheet\Drawing;
 use PhpOffice\PhpSpreadsheet\Worksheet\PageSetup;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
-use PhpOffice\PhpSpreadsheet\Writer\Csv;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 /**
@@ -39,34 +38,10 @@ final class ReporteService
         $sheet = $spreadsheet->getActiveSheet();
         $sheet->setTitle('Cartera de bienes');
 
-        $sheet->fromArray(
-            ['Código', 'Descripción', 'Marca', 'Categoría', 'Ubicación', 'Responsable', 'Tipo de responsabilidad', 'Estado', 'Valor', 'Fecha de ingreso'],
-            null,
-            'A1'
-        );
-
-        $tipos = ['grupal' => 'Grupal', 'individual' => 'Individual'];
-        $fila = 2;
-        // porPagina = 0: sentinel de Bien::listar() para traer todas las filas sin
-        // paginar — un reporte exportado nunca debe quedar truncado a una página.
-        $bienes = $filtros === null
-            ? Bien::listar($institucionId, null, 1, 0)
-            : Bien::listar($institucionId, $filtros['q'], 1, 0, false, $filtros['categoria'], $filtros['estado'],
-                $filtros['espacio'], $filtros['responsable'], $filtros['tipo']);
-        foreach ($bienes as $b) {
-            $sheet->fromArray([
-                $b['codigo_identificacion'],
-                $b['descripcion'],
-                $b['marca'],
-                $b['categoria_nombre'],
-                $b['espacio_nombre'] ?? '',
-                $b['responsables_nombres'] ?? '',
-                $tipos[$b['tipo_responsabilidad'] ?? ''] ?? 'Sin asignar',
-                self::etiquetaEstado($b['estado']),
-                (float) $b['valor'],
-                $b['fecha_ingreso'],
-            ], null, "A{$fila}");
-            $fila++;
+        $sheet->fromArray(self::ENCABEZADOS_CARTERA, null, 'A1');
+        $bienes = self::filasCartera($institucionId, $filtros);
+        if ($bienes !== []) {
+            $sheet->fromArray($bienes, null, 'A2');
         }
 
         self::autoajustarColumnas($sheet, 'A', 'J');
@@ -88,6 +63,89 @@ final class ReporteService
         }
 
         return $spreadsheet;
+    }
+
+    private const ENCABEZADOS_CARTERA = ['Código', 'Descripción', 'Marca', 'Categoría', 'Ubicación', 'Responsable',
+        'Tipo de responsabilidad', 'Estado', 'Valor', 'Fecha de ingreso'];
+
+    /**
+     * Las filas de la cartera (una por bien), las mismas para el Excel y para el CSV.
+     *
+     * @param Filtros|null $filtros
+     *
+     * @return list<list<mixed>>
+     */
+    private static function filasCartera(?int $institucionId, ?array $filtros): array
+    {
+        $tipos = ['grupal' => 'Grupal', 'individual' => 'Individual'];
+        // porPagina = 0: sentinel de Bien::listar() para traer todas las filas sin
+        // paginar — un reporte exportado nunca debe quedar truncado a una página.
+        $bienes = $filtros === null
+            ? Bien::listar($institucionId, null, 1, 0)
+            : Bien::listar($institucionId, $filtros['q'], 1, 0, false, $filtros['categoria'], $filtros['estado'],
+                $filtros['espacio'], $filtros['responsable'], $filtros['tipo']);
+
+        return array_values(array_map(static fn (array $b): array => [
+            $b['codigo_identificacion'],
+            $b['descripcion'],
+            $b['marca'],
+            $b['categoria_nombre'],
+            $b['espacio_nombre'] ?? '',
+            $b['responsables_nombres'] ?? '',
+            $tipos[$b['tipo_responsabilidad'] ?? ''] ?? 'Sin asignar',
+            self::etiquetaEstado($b['estado']),
+            (float) $b['valor'],
+            $b['fecha_ingreso'],
+        ], $bienes));
+    }
+
+    /**
+     * La cartera en CSV, escrita fila por fila sin armar antes un libro de Excel: con la
+     * cartera completa (5 876 bienes) bajó de 4 s a menos de medio segundo. El archivo es el
+     * mismo que escribía PhpSpreadsheet (ver lineaCsv()).
+     *
+     * @param Filtros|null $filtros
+     */
+    public static function enviarCarteraCsv(?int $institucionId, ?array $filtros): void
+    {
+        $filas = self::filasCartera($institucionId, $filtros);
+        header('Content-Type: text/csv; charset=UTF-8');
+        header('Content-Disposition: attachment; filename="cartera_bienes.csv"');
+        header('Cache-Control: max-age=0');
+        $salida = fopen('php://output', 'w');
+        if ($salida === false) {
+            throw new \RuntimeException('No se pudo escribir el CSV.');
+        }
+        fwrite($salida, self::lineaCsv(self::ENCABEZADOS_CARTERA));
+        foreach ($filas as $fila) {
+            fwrite($salida, self::lineaCsv($fila));
+        }
+        fclose($salida);
+        exit;
+    }
+
+    /**
+     * Una línea de CSV igual a la del escritor de PhpSpreadsheet que se usaba antes: cada
+     * valor entre comillas, coma de separador y las celdas vacías como en el Excel (fromArray
+     * deja en blanco lo que es igual a null: vacío, null y el cero). Un texto que empieza con
+     * =, +, -, @, tabulador o retorno lleva un apóstrofo delante, para que Excel no lo tome
+     * como fórmula; un número negativo sigue siendo número.
+     *
+     * @param list<mixed> $valores
+     */
+    public static function lineaCsv(array $valores): string
+    {
+        $campos = [];
+        foreach ($valores as $valor) {
+            $texto = $valor == null ? '' : (is_scalar($valor) ? (string) $valor : '');
+            if (is_string($valor) && $texto !== '' && !is_numeric($texto)
+                && in_array($texto[0], ['=', '+', '-', '@', "\t", "\r"], true)) {
+                $texto = "'" . $texto;
+            }
+            $campos[] = '"' . str_replace('"', '""', $texto) . '"';
+        }
+
+        return implode(',', $campos) . PHP_EOL;
     }
 
     /**
@@ -697,18 +755,6 @@ final class ReporteService
         exit;
     }
 
-    public static function enviarCsv(Spreadsheet $spreadsheet, string $nombreArchivo): void
-    {
-        self::neutralizarFormulasCsv($spreadsheet);
-        header('Content-Type: text/csv; charset=UTF-8');
-        header('Content-Disposition: attachment; filename="' . $nombreArchivo . '.csv"');
-        header('Cache-Control: max-age=0');
-        $writer = new Csv($spreadsheet);
-        $writer->setDelimiter(',');
-        $writer->save('php://output');
-        exit;
-    }
-
     /**
      * Libro nuevo para un reporte: los textos que empiezan con "=" se guardan como texto,
      * no como fórmula (ver BinderSinFormulas).
@@ -721,34 +767,27 @@ final class ReporteService
         return $spreadsheet;
     }
 
-    /**
-     * En un CSV no hay tipos: Excel interpreta como fórmula cualquier texto que empiece con
-     * = + - @ tabulación o retorno de carro. Se antepone un apóstrofo a esos textos (el
-     * apóstrofo le indica a Excel que es texto). Solo se tocan celdas de TEXTO: un número
-     * negativo sigue siendo un número.
-     */
-    private static function neutralizarFormulasCsv(Spreadsheet $spreadsheet): void
-    {
-        foreach ($spreadsheet->getWorksheetIterator() as $hoja) {
-            foreach ($hoja->getRowIterator() as $fila) {
-                foreach ($fila->getCellIterator() as $celda) {
-                    $valor = $celda->getValue();
-                    if ($celda->getDataType() === DataType::TYPE_STRING
-                        && is_string($valor)
-                        && $valor !== ''
-                        && in_array($valor[0], ['=', '+', '-', '@', "\t", "\r"], true)
-                    ) {
-                        $celda->setValueExplicit("'" . $valor, DataType::TYPE_STRING);
-                    }
-                }
-            }
-        }
-    }
+    /** Filas que se miran para calcular el ancho de cada columna. */
+    private const FILAS_PARA_ANCHO = 300;
 
+    /**
+     * Ancho de cada columna según su texto más largo en las primeras filas (entre 8 y 60
+     * caracteres). Antes era setAutoSize(true): PhpSpreadsheet medía el texto de TODAS las
+     * celdas al guardar, y con la cartera completa (5 876 bienes) eso solo tardaba 4 s.
+     */
     private static function autoajustarColumnas(\PhpOffice\PhpSpreadsheet\Worksheet\Worksheet $sheet, string $desde, string $hasta): void
     {
-        foreach (range($desde, $hasta) as $columna) {
-            $sheet->getColumnDimension($columna)->setAutoSize(true);
+        $ultima = max(1, min($sheet->getHighestDataRow(), self::FILAS_PARA_ANCHO));
+        $muestra = $sheet->rangeToArray("{$desde}1:{$hasta}{$ultima}", null, false, false, false);
+        $columnas = range($desde, $hasta);
+        foreach ($columnas as $i => $columna) {
+            $largo = 0;
+            foreach ($muestra as $fila) {
+                $valor = $fila[$i] ?? null;
+                $texto = is_scalar($valor) || $valor instanceof \Stringable ? (string) $valor : '';
+                $largo = max($largo, mb_strlen($texto));
+            }
+            $sheet->getColumnDimension($columna)->setAutoSize(false)->setWidth(min(60, max(8, $largo + 2)));
         }
     }
 

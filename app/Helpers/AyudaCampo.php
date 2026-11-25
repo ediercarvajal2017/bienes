@@ -608,7 +608,8 @@ final class AyudaCampo
             'texto' => "Lo que haría cada fila del archivo. Hasta que confirmes, no se ha guardado nada.\n\n"
                 . "**Nuevo:** se creará. **Modificado:** ya existe y cambiará lo que se muestra (antes → después). **Sin cambios:** ya existe igual; no se toca.\n\n"
                 . "**Inválido:** tiene un error, explicado en la fila, y no se aplicará. Corrígelo en el Excel y vuelve a subirlo.\n\n"
-                . '«Confirmar importación» aplica los nuevos y los modificados, una sola vez. Nada se borra: lo que no está en el archivo queda igual.',
+                . "Los botones de arriba muestran solo las filas de un estado (por ejemplo, «Inválidas»), y la tabla va por páginas.\n\n"
+                . '«Confirmar importación» aplica los nuevos y los modificados de todo el archivo, una sola vez. Nada se borra: lo que no está en el archivo queda igual.',
         ],
         'carga_fotos' => [
             'titulo' => 'Carga masiva de fotos',

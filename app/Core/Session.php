@@ -40,7 +40,9 @@ final class Session
         ]);
 
         session_name('sigebi_session');
+        $inicio = hrtime(true);
         session_start();
+        TiemposServidor::sumar('sesion', $inicio);
     }
 
     /**

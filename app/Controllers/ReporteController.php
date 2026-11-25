@@ -133,7 +133,7 @@ final class ReporteController
 
     public function carteraCsv(): void
     {
-        ReporteService::enviarCsv(ReporteService::carteraBienes($this->institucionAExportar(), FiltrosBienes::desdeConsulta($_GET)), 'cartera_bienes');
+        ReporteService::enviarCarteraCsv($this->institucionAExportar(), FiltrosBienes::desdeConsulta($_GET));
     }
 
     public function reintegrosXlsx(): void

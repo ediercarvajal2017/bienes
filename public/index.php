@@ -2,10 +2,15 @@
 
 declare(strict_types=1);
 
+$inicioScript = hrtime(true);
+
 header_remove('X-Powered-By');
 
 require dirname(__DIR__) . '/vendor/autoload.php';
 require dirname(__DIR__) . '/app/Helpers/funciones_vista.php';
+
+// Encabezado Server-Timing (arranque, base, sesión y total), para medir la velocidad.
+\App\Core\TiemposServidor::iniciar($inicioScript);
 
 \App\Helpers\PoliticaContenido::enviar();
 
