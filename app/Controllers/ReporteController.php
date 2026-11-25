@@ -128,7 +128,7 @@ final class ReporteController
     /** Con los filtros de la lista de bienes en la dirección (botón "Descargar en Excel"). */
     public function carteraXlsx(): void
     {
-        ReporteService::enviarXlsx(ReporteService::carteraBienes($this->institucionAExportar(), FiltrosBienes::desdeConsulta($_GET)), 'cartera_bienes');
+        ReporteService::enviarCarteraXlsx($this->institucionAExportar(), FiltrosBienes::desdeConsulta($_GET));
     }
 
     public function carteraCsv(): void
@@ -138,12 +138,12 @@ final class ReporteController
 
     public function reintegrosXlsx(): void
     {
-        ReporteService::enviarXlsx(ReporteService::planillaReintegros($this->institucionAExportar()), 'planilla_reintegros');
+        ReporteService::enviarPlanillaReintegros($this->institucionAExportar());
     }
 
     public function reintegrosHistorialXlsx(): void
     {
-        ReporteService::enviarXlsx(ReporteService::historialReintegros($this->institucionAExportar()), 'historial_reintegros');
+        ReporteService::enviarHistorialReintegros($this->institucionAExportar());
     }
 
     /**

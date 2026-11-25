@@ -27,42 +27,38 @@ use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 final class ReporteService
 {
     /**
-     * Cartera de bienes. Con $filtros (los de la lista de bienes, ver FiltrosBienes) trae
-     * solo lo que coincide y agrega una hoja "Filtros" que dice cuáles se aplicaron.
+     * Cartera de bienes en Excel, escrita por partes (ExcelPorFlujo). Con $filtros (los de la
+     * lista de bienes, ver FiltrosBienes) trae solo lo que coincide y agrega una hoja
+     * "Filtros" que dice cuáles se aplicaron; sin filtros, la hoja "Cartera por placa".
      *
      * @param Filtros|null $filtros
      */
-    public static function carteraBienes(?int $institucionId, ?array $filtros = null): Spreadsheet
+    public static function enviarCarteraXlsx(?int $institucionId, ?array $filtros = null): void
     {
-        $spreadsheet = self::libroNuevo();
-        $sheet = $spreadsheet->getActiveSheet();
-        $sheet->setTitle('Cartera de bienes');
+        $libro = ExcelPorFlujo::descarga('cartera_bienes');
+        self::escribirCartera($libro, $institucionId, $filtros);
+        $libro->cerrar();
+        exit;
+    }
 
-        $sheet->fromArray(self::ENCABEZADOS_CARTERA, null, 'A1');
+    /**
+     * Las hojas de la cartera (las usan la descarga y las pruebas).
+     *
+     * @param Filtros|null $filtros
+     */
+    public static function escribirCartera(ExcelPorFlujo $libro, ?int $institucionId, ?array $filtros = null): void
+    {
         $bienes = self::filasCartera($institucionId, $filtros);
-        if ($bienes !== []) {
-            $sheet->fromArray($bienes, null, 'A2');
-        }
-
-        self::autoajustarColumnas($sheet, 'A', 'J');
+        $libro->hoja('Cartera de bienes', self::ENCABEZADOS_CARTERA, $bienes);
 
         $descripcion = $filtros !== null ? FiltrosBienes::descripcion($filtros) : [];
         if ($descripcion === []) {
             // Cartera completa: además, cuánto queda de cada placa (los códigos con varias
             // unidades en una sola fila, con su cantidad).
-            self::hojaCarteraPorPlaca($spreadsheet, $institucionId);
+            self::hojaCarteraPorPlaca($libro, $institucionId);
+        } else {
+            $libro->hoja('Filtros', ['Filtro', 'Valor'], [...$descripcion, ['Bienes', count($bienes)]]);
         }
-        if ($descripcion !== []) {
-            $hojaFiltros = $spreadsheet->createSheet();
-            $hojaFiltros->setTitle('Filtros');
-            $hojaFiltros->fromArray(['Filtro', 'Valor'], null, 'A1');
-            $hojaFiltros->fromArray($descripcion, null, 'A2');
-            $hojaFiltros->fromArray([['Bienes', count($bienes)]], null, 'A' . (count($descripcion) + 2));
-            self::autoajustarColumnas($hojaFiltros, 'A', 'B');
-            $spreadsheet->setActiveSheetIndex(0);
-        }
-
-        return $spreadsheet;
     }
 
     private const ENCABEZADOS_CARTERA = ['Código', 'Descripción', 'Marca', 'Categoría', 'Ubicación', 'Responsable',
@@ -153,42 +149,39 @@ final class ReporteService
      * 200033042 con 178 sillas, en una sola fila) con lo que queda en cartera, lo reintegrado
      * y lo dado de baja. Al reintegrar unidades, la cantidad en cartera de su placa baja.
      */
-    private static function hojaCarteraPorPlaca(Spreadsheet $spreadsheet, ?int $institucionId): void
+    private static function hojaCarteraPorPlaca(ExcelPorFlujo $libro, ?int $institucionId): void
     {
-        $hoja = $spreadsheet->createSheet();
-        $hoja->setTitle('Cartera por placa');
         $conInstitucion = $institucionId === null;
         $encabezados = ['Placa', 'Descripción', 'Marca', 'Categoría', 'Cantidad en cartera', 'Reintegradas', 'Dadas de baja', 'Valor unitario', 'Valor en cartera'];
-        $hoja->fromArray($conInstitucion ? ['Institución', ...$encabezados] : $encabezados, null, 'A1');
 
-        $fila = 2;
+        $filas = [];
         foreach (Bien::carteraPorPlaca($institucionId) as $p) {
-            $valores = [$p['placa'], $p['descripcion'], $p['marca'] ?? null, $p['categoria_nombre'] ?? null,
+            $valores = [(string) $p['placa'], $p['descripcion'], $p['marca'] ?? null, $p['categoria_nombre'] ?? null,
                 (int) $p['en_cartera'], (int) $p['reintegradas'], (int) $p['dadas_de_baja'], (float) $p['valor_unitario'], (float) $p['valor_en_cartera']];
-            // Comparación estricta: sin ella fromArray() deja en blanco los ceros (0 == null).
-            $hoja->fromArray($conInstitucion ? [$p['institucion_nombre'], ...$valores] : $valores, null, "A{$fila}", true);
-            // La placa siempre como texto (sin perder ceros ni volverse número).
-            $hoja->getCell([$conInstitucion ? 2 : 1, $fila])->setValueExplicit((string) $p['placa'], DataType::TYPE_STRING);
-            $fila++;
+            $filas[] = $conInstitucion ? [$p['institucion_nombre'], ...$valores] : $valores;
         }
 
-        self::autoajustarColumnas($hoja, 'A', $conInstitucion ? 'J' : 'I');
-        $hoja->freezePane('A2');
-        $spreadsheet->setActiveSheetIndex(0);
+        // Los ceros se ven (no quedan en blanco) y la placa siempre va como texto (sin perder
+        // ceros ni volverse número).
+        $libro->hoja('Cartera por placa', $conInstitucion ? ['Institución', ...$encabezados] : $encabezados, $filas,
+            false, [$conInstitucion ? 1 : 0], true);
     }
 
-    public static function planillaReintegros(?int $institucionId): Spreadsheet
+    /** Planilla de reintegros pendientes en Excel, escrita por partes (ExcelPorFlujo). */
+    public static function enviarPlanillaReintegros(?int $institucionId): void
     {
-        $spreadsheet = self::libroNuevo();
-        $sheet = $spreadsheet->getActiveSheet();
-        $sheet->setTitle('Reintegros pendientes');
+        $libro = ExcelPorFlujo::descarga('planilla_reintegros');
+        self::escribirPlanillaReintegros($libro, $institucionId);
+        $libro->cerrar();
+        exit;
+    }
 
-        $sheet->fromArray(['Código', 'Descripción', 'Categoría', 'Responsable', 'Ubicación', 'Fecha de asignación', 'Valor'], null, 'A1');
-
-        $fila = 2;
-        // Igual que en carteraBienes(): porPagina = 0 trae todas las filas sin paginar.
+    public static function escribirPlanillaReintegros(ExcelPorFlujo $libro, ?int $institucionId): void
+    {
+        $filas = [];
+        // Igual que en la cartera: porPagina = 0 trae todas las filas sin paginar.
         foreach (Bien::pendientesDeReintegro($institucionId, null, 1, 0) as $b) {
-            $sheet->fromArray([
+            $filas[] = [
                 $b['codigo_identificacion'],
                 $b['descripcion'],
                 $b['categoria_nombre'] ?? '',
@@ -196,30 +189,25 @@ final class ReporteService
                 $b['espacio_nombre'] ?? '',
                 $b['fecha_asignacion'],
                 (float) $b['valor'],
-            ], null, "A{$fila}");
-            $fila++;
+            ];
         }
-
-        self::autoajustarColumnas($sheet, 'A', 'G');
-
-        return $spreadsheet;
+        $libro->hoja('Reintegros pendientes', ['Código', 'Descripción', 'Categoría', 'Responsable', 'Ubicación', 'Fecha de asignación', 'Valor'], $filas);
     }
 
-    public static function historialReintegros(?int $institucionId): Spreadsheet
+    /** Historial de bienes reintegrados en Excel, escrito por partes (ExcelPorFlujo). */
+    public static function enviarHistorialReintegros(?int $institucionId): void
     {
-        $spreadsheet = self::libroNuevo();
-        $sheet = $spreadsheet->getActiveSheet();
-        $sheet->setTitle('Bienes reintegrados');
+        $libro = ExcelPorFlujo::descarga('historial_reintegros');
+        self::escribirHistorialReintegros($libro, $institucionId);
+        $libro->cerrar();
+        exit;
+    }
 
-        $sheet->fromArray(
-            ['Código', 'Descripción', 'Fecha de reintegro', 'Destino', 'Registrado por', 'Observaciones', 'Valor'],
-            null,
-            'A1'
-        );
-
-        $fila = 2;
+    public static function escribirHistorialReintegros(ExcelPorFlujo $libro, ?int $institucionId): void
+    {
+        $filas = [];
         foreach (Movimiento::historialReintegros($institucionId) as $m) {
-            $sheet->fromArray([
+            $filas[] = [
                 $m['codigo_identificacion'],
                 $m['descripcion'],
                 $m['fecha_reintegro'],
@@ -227,13 +215,9 @@ final class ReporteService
                 trim($m['responsable_nombres'] . ' ' . $m['responsable_apellidos']),
                 $m['observaciones'] ?? '',
                 (float) $m['valor'],
-            ], null, "A{$fila}");
-            $fila++;
+            ];
         }
-
-        self::autoajustarColumnas($sheet, 'A', 'G');
-
-        return $spreadsheet;
+        $libro->hoja('Bienes reintegrados', ['Código', 'Descripción', 'Fecha de reintegro', 'Destino', 'Registrado por', 'Observaciones', 'Valor'], $filas);
     }
 
     private const REINTEGRO_BODEGA_NOMBRE = 'BODEGA DE REINTEGRO';

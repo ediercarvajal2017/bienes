@@ -6,7 +6,13 @@ namespace Tests\Unit;
 
 use App\Core\TiemposServidor;
 use App\Helpers\FilasCarga;
+use App\Services\ExcelPorFlujo;
 use App\Services\ReporteService;
+use OpenSpout\Common\Entity\Cell\EmptyCell;
+use OpenSpout\Common\Entity\Cell\NumericCell;
+use OpenSpout\Common\Entity\Cell\StringCell;
+use PhpOffice\PhpSpreadsheet\Cell\DataType;
+use PhpOffice\PhpSpreadsheet\IOFactory;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -70,6 +76,54 @@ final class RendimientoTest extends TestCase
     {
         self::assertSame('"\'=HYPERLINK(1)","\'+57 300","\'@SUMA","-5","\'-abc"' . PHP_EOL,
             ReporteService::lineaCsv(['=HYPERLINK(1)', '+57 300', '@SUMA', '-5', '-abc']));
+    }
+
+    public function testElExcelPorFlujoDaACadaCeldaElTipoQueLeDabaPhpSpreadsheet(): void
+    {
+        // Un número escrito como texto se guarda como número; con ceros a la izquierda o más de
+        // 15 cifras, como texto; lo que empieza con «=» nunca es fórmula.
+        self::assertInstanceOf(NumericCell::class, ExcelPorFlujo::celda('200033042'));
+        self::assertSame(200033042, ExcelPorFlujo::celda('200033042')->getValue());
+        self::assertInstanceOf(StringCell::class, ExcelPorFlujo::celda('00123'));
+        self::assertInstanceOf(StringCell::class, ExcelPorFlujo::celda('1234567890123456'));
+        self::assertInstanceOf(StringCell::class, ExcelPorFlujo::celda('=HYPERLINK("http://x")'));
+        self::assertInstanceOf(StringCell::class, ExcelPorFlujo::celda('20006633101-045'));
+        // Como fromArray() sin comparación estricta: el cero queda en blanco; con ella, se ve.
+        self::assertInstanceOf(EmptyCell::class, ExcelPorFlujo::celda(0.0));
+        self::assertInstanceOf(NumericCell::class, ExcelPorFlujo::celda(0, false));
+        // Una columna de texto (la placa) no se vuelve número.
+        self::assertInstanceOf(StringCell::class, ExcelPorFlujo::celda('200033042', true, true));
+    }
+
+    public function testElExcelPorFlujoEscribeLasHojasComoAntes(): void
+    {
+        $ruta = tempnam(sys_get_temp_dir(), 'flujo') . '.xlsx';
+        try {
+            $libro = ExcelPorFlujo::archivo($ruta);
+            $libro->hoja('Cartera de bienes', ['Código', 'Descripción', 'Valor'], [['PA-1', '=SUMA(A1:A2)', 1500.0], ['200033042', 'Silla', 0.0]]);
+            $libro->hoja('Cartera por placa', ['Placa', 'Cantidad'], [['00012', 0], ['200033042', 7]], false, [0], true);
+            $libro->cerrar();
+
+            $leido = IOFactory::load($ruta);
+            self::assertSame(['Cartera de bienes', 'Cartera por placa'], $leido->getSheetNames());
+            self::assertSame('Cartera de bienes', $leido->getActiveSheet()->getTitle());
+
+            $cartera = $leido->getSheet(0);
+            self::assertSame('=SUMA(A1:A2)', $cartera->getCell('B2')->getValue());
+            self::assertSame(DataType::TYPE_STRING, $cartera->getCell('B2')->getDataType());
+            self::assertSame(DataType::TYPE_NUMERIC, $cartera->getCell('A3')->getDataType());
+            self::assertNull($cartera->getCell('C3')->getValue());
+            self::assertNull($cartera->getFreezePane());
+            self::assertEqualsWithDelta(14.0, $cartera->getColumnDimension('B')->getWidth(), 0.01);
+
+            $placas = $leido->getSheet(1);
+            self::assertSame('A2', $placas->getFreezePane());
+            self::assertSame('00012', $placas->getCell('A2')->getValue());
+            self::assertSame(DataType::TYPE_STRING, $placas->getCell('A3')->getDataType());
+            self::assertEquals(0, $placas->getCell('B2')->getValue());
+        } finally {
+            @unlink($ruta);
+        }
     }
 
     public function testElEncabezadoDeTiemposLlevaSoloDuracionesEnMilisegundos(): void
