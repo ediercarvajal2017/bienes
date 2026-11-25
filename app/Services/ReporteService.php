@@ -19,7 +19,6 @@ use PhpOffice\PhpSpreadsheet\Style\Font;
 use PhpOffice\PhpSpreadsheet\Worksheet\Drawing;
 use PhpOffice\PhpSpreadsheet\Worksheet\PageSetup;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
-use PhpOffice\PhpSpreadsheet\Writer\Csv;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 /**
@@ -28,66 +27,121 @@ use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 final class ReporteService
 {
     /**
-     * Cartera de bienes. Con $filtros (los de la lista de bienes, ver FiltrosBienes) trae
-     * solo lo que coincide y agrega una hoja "Filtros" que dice cuáles se aplicaron.
+     * Cartera de bienes en Excel, escrita por partes (ExcelPorFlujo). Con $filtros (los de la
+     * lista de bienes, ver FiltrosBienes) trae solo lo que coincide y agrega una hoja
+     * "Filtros" que dice cuáles se aplicaron; sin filtros, la hoja "Cartera por placa".
      *
      * @param Filtros|null $filtros
      */
-    public static function carteraBienes(?int $institucionId, ?array $filtros = null): Spreadsheet
+    public static function enviarCarteraXlsx(?int $institucionId, ?array $filtros = null): void
     {
-        $spreadsheet = self::libroNuevo();
-        $sheet = $spreadsheet->getActiveSheet();
-        $sheet->setTitle('Cartera de bienes');
+        $libro = ExcelPorFlujo::descarga('cartera_bienes');
+        self::escribirCartera($libro, $institucionId, $filtros);
+        $libro->cerrar();
+        exit;
+    }
 
-        $sheet->fromArray(
-            ['Código', 'Descripción', 'Marca', 'Categoría', 'Ubicación', 'Responsable', 'Tipo de responsabilidad', 'Estado', 'Valor', 'Fecha de ingreso'],
-            null,
-            'A1'
-        );
+    /**
+     * Las hojas de la cartera (las usan la descarga y las pruebas).
+     *
+     * @param Filtros|null $filtros
+     */
+    public static function escribirCartera(ExcelPorFlujo $libro, ?int $institucionId, ?array $filtros = null): void
+    {
+        $bienes = self::filasCartera($institucionId, $filtros);
+        $libro->hoja('Cartera de bienes', self::ENCABEZADOS_CARTERA, $bienes);
 
+        $descripcion = $filtros !== null ? FiltrosBienes::descripcion($filtros) : [];
+        if ($descripcion === []) {
+            // Cartera completa: además, cuánto queda de cada placa (los códigos con varias
+            // unidades en una sola fila, con su cantidad).
+            self::hojaCarteraPorPlaca($libro, $institucionId);
+        } else {
+            $libro->hoja('Filtros', ['Filtro', 'Valor'], [...$descripcion, ['Bienes', count($bienes)]]);
+        }
+    }
+
+    private const ENCABEZADOS_CARTERA = ['Código', 'Descripción', 'Marca', 'Categoría', 'Ubicación', 'Responsable',
+        'Tipo de responsabilidad', 'Estado', 'Valor', 'Fecha de ingreso'];
+
+    /**
+     * Las filas de la cartera (una por bien), las mismas para el Excel y para el CSV.
+     *
+     * @param Filtros|null $filtros
+     *
+     * @return list<list<mixed>>
+     */
+    private static function filasCartera(?int $institucionId, ?array $filtros): array
+    {
         $tipos = ['grupal' => 'Grupal', 'individual' => 'Individual'];
-        $fila = 2;
         // porPagina = 0: sentinel de Bien::listar() para traer todas las filas sin
         // paginar — un reporte exportado nunca debe quedar truncado a una página.
         $bienes = $filtros === null
             ? Bien::listar($institucionId, null, 1, 0)
             : Bien::listar($institucionId, $filtros['q'], 1, 0, false, $filtros['categoria'], $filtros['estado'],
                 $filtros['espacio'], $filtros['responsable'], $filtros['tipo']);
-        foreach ($bienes as $b) {
-            $sheet->fromArray([
-                $b['codigo_identificacion'],
-                $b['descripcion'],
-                $b['marca'],
-                $b['categoria_nombre'],
-                $b['espacio_nombre'] ?? '',
-                $b['responsables_nombres'] ?? '',
-                $tipos[$b['tipo_responsabilidad'] ?? ''] ?? 'Sin asignar',
-                self::etiquetaEstado($b['estado']),
-                (float) $b['valor'],
-                $b['fecha_ingreso'],
-            ], null, "A{$fila}");
-            $fila++;
+
+        return array_values(array_map(static fn (array $b): array => [
+            $b['codigo_identificacion'],
+            $b['descripcion'],
+            $b['marca'],
+            $b['categoria_nombre'],
+            $b['espacio_nombre'] ?? '',
+            $b['responsables_nombres'] ?? '',
+            $tipos[$b['tipo_responsabilidad'] ?? ''] ?? 'Sin asignar',
+            self::etiquetaEstado($b['estado']),
+            (float) $b['valor'],
+            $b['fecha_ingreso'],
+        ], $bienes));
+    }
+
+    /**
+     * La cartera en CSV, escrita fila por fila sin armar antes un libro de Excel: con la
+     * cartera completa (5 876 bienes) bajó de 4 s a menos de medio segundo. El archivo es el
+     * mismo que escribía PhpSpreadsheet (ver lineaCsv()).
+     *
+     * @param Filtros|null $filtros
+     */
+    public static function enviarCarteraCsv(?int $institucionId, ?array $filtros): void
+    {
+        $filas = self::filasCartera($institucionId, $filtros);
+        header('Content-Type: text/csv; charset=UTF-8');
+        header('Content-Disposition: attachment; filename="cartera_bienes.csv"');
+        header('Cache-Control: max-age=0');
+        $salida = fopen('php://output', 'w');
+        if ($salida === false) {
+            throw new \RuntimeException('No se pudo escribir el CSV.');
+        }
+        fwrite($salida, self::lineaCsv(self::ENCABEZADOS_CARTERA));
+        foreach ($filas as $fila) {
+            fwrite($salida, self::lineaCsv($fila));
+        }
+        fclose($salida);
+        exit;
+    }
+
+    /**
+     * Una línea de CSV igual a la del escritor de PhpSpreadsheet que se usaba antes: cada
+     * valor entre comillas, coma de separador y las celdas vacías como en el Excel (fromArray
+     * deja en blanco lo que es igual a null: vacío, null y el cero). Un texto que empieza con
+     * =, +, -, @, tabulador o retorno lleva un apóstrofo delante, para que Excel no lo tome
+     * como fórmula; un número negativo sigue siendo número.
+     *
+     * @param list<mixed> $valores
+     */
+    public static function lineaCsv(array $valores): string
+    {
+        $campos = [];
+        foreach ($valores as $valor) {
+            $texto = $valor == null ? '' : (is_scalar($valor) ? (string) $valor : '');
+            if (is_string($valor) && $texto !== '' && !is_numeric($texto)
+                && in_array($texto[0], ['=', '+', '-', '@', "\t", "\r"], true)) {
+                $texto = "'" . $texto;
+            }
+            $campos[] = '"' . str_replace('"', '""', $texto) . '"';
         }
 
-        self::autoajustarColumnas($sheet, 'A', 'J');
-
-        $descripcion = $filtros !== null ? FiltrosBienes::descripcion($filtros) : [];
-        if ($descripcion === []) {
-            // Cartera completa: además, cuánto queda de cada placa (los códigos con varias
-            // unidades en una sola fila, con su cantidad).
-            self::hojaCarteraPorPlaca($spreadsheet, $institucionId);
-        }
-        if ($descripcion !== []) {
-            $hojaFiltros = $spreadsheet->createSheet();
-            $hojaFiltros->setTitle('Filtros');
-            $hojaFiltros->fromArray(['Filtro', 'Valor'], null, 'A1');
-            $hojaFiltros->fromArray($descripcion, null, 'A2');
-            $hojaFiltros->fromArray([['Bienes', count($bienes)]], null, 'A' . (count($descripcion) + 2));
-            self::autoajustarColumnas($hojaFiltros, 'A', 'B');
-            $spreadsheet->setActiveSheetIndex(0);
-        }
-
-        return $spreadsheet;
+        return implode(',', $campos) . PHP_EOL;
     }
 
     /**
@@ -95,42 +149,39 @@ final class ReporteService
      * 200033042 con 178 sillas, en una sola fila) con lo que queda en cartera, lo reintegrado
      * y lo dado de baja. Al reintegrar unidades, la cantidad en cartera de su placa baja.
      */
-    private static function hojaCarteraPorPlaca(Spreadsheet $spreadsheet, ?int $institucionId): void
+    private static function hojaCarteraPorPlaca(ExcelPorFlujo $libro, ?int $institucionId): void
     {
-        $hoja = $spreadsheet->createSheet();
-        $hoja->setTitle('Cartera por placa');
         $conInstitucion = $institucionId === null;
         $encabezados = ['Placa', 'Descripción', 'Marca', 'Categoría', 'Cantidad en cartera', 'Reintegradas', 'Dadas de baja', 'Valor unitario', 'Valor en cartera'];
-        $hoja->fromArray($conInstitucion ? ['Institución', ...$encabezados] : $encabezados, null, 'A1');
 
-        $fila = 2;
+        $filas = [];
         foreach (Bien::carteraPorPlaca($institucionId) as $p) {
-            $valores = [$p['placa'], $p['descripcion'], $p['marca'] ?? null, $p['categoria_nombre'] ?? null,
+            $valores = [(string) $p['placa'], $p['descripcion'], $p['marca'] ?? null, $p['categoria_nombre'] ?? null,
                 (int) $p['en_cartera'], (int) $p['reintegradas'], (int) $p['dadas_de_baja'], (float) $p['valor_unitario'], (float) $p['valor_en_cartera']];
-            // Comparación estricta: sin ella fromArray() deja en blanco los ceros (0 == null).
-            $hoja->fromArray($conInstitucion ? [$p['institucion_nombre'], ...$valores] : $valores, null, "A{$fila}", true);
-            // La placa siempre como texto (sin perder ceros ni volverse número).
-            $hoja->getCell([$conInstitucion ? 2 : 1, $fila])->setValueExplicit((string) $p['placa'], DataType::TYPE_STRING);
-            $fila++;
+            $filas[] = $conInstitucion ? [$p['institucion_nombre'], ...$valores] : $valores;
         }
 
-        self::autoajustarColumnas($hoja, 'A', $conInstitucion ? 'J' : 'I');
-        $hoja->freezePane('A2');
-        $spreadsheet->setActiveSheetIndex(0);
+        // Los ceros se ven (no quedan en blanco) y la placa siempre va como texto (sin perder
+        // ceros ni volverse número).
+        $libro->hoja('Cartera por placa', $conInstitucion ? ['Institución', ...$encabezados] : $encabezados, $filas,
+            false, [$conInstitucion ? 1 : 0], true);
     }
 
-    public static function planillaReintegros(?int $institucionId): Spreadsheet
+    /** Planilla de reintegros pendientes en Excel, escrita por partes (ExcelPorFlujo). */
+    public static function enviarPlanillaReintegros(?int $institucionId): void
     {
-        $spreadsheet = self::libroNuevo();
-        $sheet = $spreadsheet->getActiveSheet();
-        $sheet->setTitle('Reintegros pendientes');
+        $libro = ExcelPorFlujo::descarga('planilla_reintegros');
+        self::escribirPlanillaReintegros($libro, $institucionId);
+        $libro->cerrar();
+        exit;
+    }
 
-        $sheet->fromArray(['Código', 'Descripción', 'Categoría', 'Responsable', 'Ubicación', 'Fecha de asignación', 'Valor'], null, 'A1');
-
-        $fila = 2;
-        // Igual que en carteraBienes(): porPagina = 0 trae todas las filas sin paginar.
+    public static function escribirPlanillaReintegros(ExcelPorFlujo $libro, ?int $institucionId): void
+    {
+        $filas = [];
+        // Igual que en la cartera: porPagina = 0 trae todas las filas sin paginar.
         foreach (Bien::pendientesDeReintegro($institucionId, null, 1, 0) as $b) {
-            $sheet->fromArray([
+            $filas[] = [
                 $b['codigo_identificacion'],
                 $b['descripcion'],
                 $b['categoria_nombre'] ?? '',
@@ -138,30 +189,25 @@ final class ReporteService
                 $b['espacio_nombre'] ?? '',
                 $b['fecha_asignacion'],
                 (float) $b['valor'],
-            ], null, "A{$fila}");
-            $fila++;
+            ];
         }
-
-        self::autoajustarColumnas($sheet, 'A', 'G');
-
-        return $spreadsheet;
+        $libro->hoja('Reintegros pendientes', ['Código', 'Descripción', 'Categoría', 'Responsable', 'Ubicación', 'Fecha de asignación', 'Valor'], $filas);
     }
 
-    public static function historialReintegros(?int $institucionId): Spreadsheet
+    /** Historial de bienes reintegrados en Excel, escrito por partes (ExcelPorFlujo). */
+    public static function enviarHistorialReintegros(?int $institucionId): void
     {
-        $spreadsheet = self::libroNuevo();
-        $sheet = $spreadsheet->getActiveSheet();
-        $sheet->setTitle('Bienes reintegrados');
+        $libro = ExcelPorFlujo::descarga('historial_reintegros');
+        self::escribirHistorialReintegros($libro, $institucionId);
+        $libro->cerrar();
+        exit;
+    }
 
-        $sheet->fromArray(
-            ['Código', 'Descripción', 'Fecha de reintegro', 'Destino', 'Registrado por', 'Observaciones', 'Valor'],
-            null,
-            'A1'
-        );
-
-        $fila = 2;
+    public static function escribirHistorialReintegros(ExcelPorFlujo $libro, ?int $institucionId): void
+    {
+        $filas = [];
         foreach (Movimiento::historialReintegros($institucionId) as $m) {
-            $sheet->fromArray([
+            $filas[] = [
                 $m['codigo_identificacion'],
                 $m['descripcion'],
                 $m['fecha_reintegro'],
@@ -169,13 +215,9 @@ final class ReporteService
                 trim($m['responsable_nombres'] . ' ' . $m['responsable_apellidos']),
                 $m['observaciones'] ?? '',
                 (float) $m['valor'],
-            ], null, "A{$fila}");
-            $fila++;
+            ];
         }
-
-        self::autoajustarColumnas($sheet, 'A', 'G');
-
-        return $spreadsheet;
+        $libro->hoja('Bienes reintegrados', ['Código', 'Descripción', 'Fecha de reintegro', 'Destino', 'Registrado por', 'Observaciones', 'Valor'], $filas);
     }
 
     private const REINTEGRO_BODEGA_NOMBRE = 'BODEGA DE REINTEGRO';
@@ -697,18 +739,6 @@ final class ReporteService
         exit;
     }
 
-    public static function enviarCsv(Spreadsheet $spreadsheet, string $nombreArchivo): void
-    {
-        self::neutralizarFormulasCsv($spreadsheet);
-        header('Content-Type: text/csv; charset=UTF-8');
-        header('Content-Disposition: attachment; filename="' . $nombreArchivo . '.csv"');
-        header('Cache-Control: max-age=0');
-        $writer = new Csv($spreadsheet);
-        $writer->setDelimiter(',');
-        $writer->save('php://output');
-        exit;
-    }
-
     /**
      * Libro nuevo para un reporte: los textos que empiezan con "=" se guardan como texto,
      * no como fórmula (ver BinderSinFormulas).
@@ -721,34 +751,27 @@ final class ReporteService
         return $spreadsheet;
     }
 
-    /**
-     * En un CSV no hay tipos: Excel interpreta como fórmula cualquier texto que empiece con
-     * = + - @ tabulación o retorno de carro. Se antepone un apóstrofo a esos textos (el
-     * apóstrofo le indica a Excel que es texto). Solo se tocan celdas de TEXTO: un número
-     * negativo sigue siendo un número.
-     */
-    private static function neutralizarFormulasCsv(Spreadsheet $spreadsheet): void
-    {
-        foreach ($spreadsheet->getWorksheetIterator() as $hoja) {
-            foreach ($hoja->getRowIterator() as $fila) {
-                foreach ($fila->getCellIterator() as $celda) {
-                    $valor = $celda->getValue();
-                    if ($celda->getDataType() === DataType::TYPE_STRING
-                        && is_string($valor)
-                        && $valor !== ''
-                        && in_array($valor[0], ['=', '+', '-', '@', "\t", "\r"], true)
-                    ) {
-                        $celda->setValueExplicit("'" . $valor, DataType::TYPE_STRING);
-                    }
-                }
-            }
-        }
-    }
+    /** Filas que se miran para calcular el ancho de cada columna. */
+    private const FILAS_PARA_ANCHO = 300;
 
+    /**
+     * Ancho de cada columna según su texto más largo en las primeras filas (entre 8 y 60
+     * caracteres). Antes era setAutoSize(true): PhpSpreadsheet medía el texto de TODAS las
+     * celdas al guardar, y con la cartera completa (5 876 bienes) eso solo tardaba 4 s.
+     */
     private static function autoajustarColumnas(\PhpOffice\PhpSpreadsheet\Worksheet\Worksheet $sheet, string $desde, string $hasta): void
     {
-        foreach (range($desde, $hasta) as $columna) {
-            $sheet->getColumnDimension($columna)->setAutoSize(true);
+        $ultima = max(1, min($sheet->getHighestDataRow(), self::FILAS_PARA_ANCHO));
+        $muestra = $sheet->rangeToArray("{$desde}1:{$hasta}{$ultima}", null, false, false, false);
+        $columnas = range($desde, $hasta);
+        foreach ($columnas as $i => $columna) {
+            $largo = 0;
+            foreach ($muestra as $fila) {
+                $valor = $fila[$i] ?? null;
+                $texto = is_scalar($valor) || $valor instanceof \Stringable ? (string) $valor : '';
+                $largo = max($largo, mb_strlen($texto));
+            }
+            $sheet->getColumnDimension($columna)->setAutoSize(false)->setWidth(min(60, max(8, $largo + 2)));
         }
     }
 

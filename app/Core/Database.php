@@ -13,6 +13,7 @@ final class Database
     public static function connection(): PDO
     {
         if (self::$instance === null) {
+            $inicio = hrtime(true);
             $config = require dirname(__DIR__, 2) . '/config/database.php';
 
             // En el hosting compartido la conexión puede rechazarse por un instante cuando
@@ -44,6 +45,7 @@ final class Database
                     usleep(150_000 * $intento);
                 }
             }
+            TiemposServidor::sumar('bd', $inicio);
         }
 
         return self::$instance;

@@ -28,6 +28,15 @@ for (const tema of ['light', 'dark']) {
         for (const ruta of [...RUTAS, 'ficha del bien']) {
             test(ruta, async ({ page }) => {
                 await page.goto(ruta === 'ficha del bien' ? `bienes/${datos().bienes.A.silla}/editar` : ruta);
+                // axe mide los colores tal como están: con un aviso o una transición a medio
+                // camino, un contraste correcto puede salir bajo (fallaba de vez en cuando en la
+                // suite completa). Se espera a las fuentes y a que terminen las animaciones finitas.
+                await page.evaluate(async () => {
+                    await document.fonts.ready;
+                    await Promise.all(document.getAnimations()
+                        .filter((a) => a.effect?.getComputedTiming().iterations !== Infinity)
+                        .map((a) => a.finished.catch(() => null)));
+                });
                 const { violations } = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze();
                 const graves = violations
                     .filter((v) => v.impact === 'serious' || v.impact === 'critical')

@@ -123,7 +123,8 @@ final class CargaMasivaController
         View::layout('partials/layout', 'cargas/mostrar', [
             'title' => 'Resultado de la carga',
             'carga' => $carga,
-            'filas' => json_decode($carga['resultado_diff_json'], true) ?? [],
+            // Por páginas y por estado (FilasCarga): una carga grande pesaba más de 1 MB.
+            'paginaFilas' => \App\Helpers\FilasCarga::pagina(json_decode($carga['resultado_diff_json'], true) ?? [], $_GET),
         ]);
     }
 
