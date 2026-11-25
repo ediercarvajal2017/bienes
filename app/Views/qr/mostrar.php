@@ -37,8 +37,9 @@ $qrImpreso = !empty($bien['qr_impreso_en']);
 
         <?php if (!empty($bien['foto_path'])): ?>
             <img src="<?= \App\Helpers\EnlaceArchivo::url($bien['foto_path']) ?>"
+                 data-lightbox-src="<?= \App\Helpers\EnlaceArchivo::url($bien['foto_path']) ?>"
                  alt="Foto de <?= htmlspecialchars($bien['descripcion'], ENT_QUOTES) ?>"
-                 class="d-block w-100 mb-3 foto-ficha">
+                 class="d-block w-100 mb-3 foto-ficha" title="Ver foto en grande">
         <?php else: ?>
             <div class="foto-ficha-vacia mb-3"><?= icono('foto') ?><span class="visually-hidden">Sin foto</span></div>
         <?php endif; ?>
@@ -219,6 +220,7 @@ $qrImpreso = !empty($bien['qr_impreso_en']);
 <script src="<?= Url::asset('/assets/js/tema.js') ?>"></script>
 <script src="<?= Url::asset('/assets/js/camara.js') ?>"></script>
 <script src="<?= Url::asset('/assets/js/ayuda-campo.js') ?>"></script>
+<script src="<?= Url::asset('/assets/js/lightbox.js') ?>"></script>
 <script>
 (function () {
     var input = document.getElementById('fotoVerificar');

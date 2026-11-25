@@ -7,7 +7,7 @@
 //
 // Al cambiar CACHE, activate borra las versiones anteriores (incluida 'sigebi-v1', que
 // sí guardaba el panel autenticado).
-const CACHE = 'sigebi-v16'; // v16: ícono de ayuda (?) junto al título de la política de datos
+const CACHE = 'sigebi-v17'; // v17: visor de fotos con estilos en app.css (funciona en iPhone antiguos)
 const PRECARGA = ['./offline.html', './assets/css/tokens.css', './assets/css/app.css'];
 
 self.addEventListener('install', (event) => {
