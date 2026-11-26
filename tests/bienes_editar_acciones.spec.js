@@ -74,6 +74,41 @@ test('solo guardar los datos no crea movimientos y se queda en la ficha', async 
     expect(bd(`SELECT COUNT(*) FROM movimientos WHERE bien_id = ${bienId}`)).toBe('0');
 });
 
+test('trasladar al mismo espacio guarda los datos sin registrar traslado', async ({ page }) => {
+    const sufijo = Date.now();
+    const { bienId, espA } = prepararBien(sufijo);
+
+    await page.goto(`bienes/${bienId}/editar`);
+    await page.locator('input[name="descripcion"]').fill(`PW mismo espacio ${sufijo}`);
+    await page.selectOption('#accionBien', 'trasladar');
+    await seleccionarTomSelect(page, 'accionEspacio', `PW Espacio A ${sufijo}`);
+    await page.getByRole('button', { name: 'Guardar y trasladar' }).click();
+
+    await expect(page).toHaveURL(new RegExp(`/bienes/${bienId}/editar$`));
+    // El espacio se nombra como en el resumen de la ficha: «código - nombre».
+    await expect(page.locator('.alert-success')).toContainText(`No se registró traslado: el bien ya estaba en PWA-${sufijo} - PW Espacio A ${sufijo}.`);
+    expect(bd(`SELECT descripcion FROM bienes WHERE id = ${bienId}`)).toBe(`PW MISMO ESPACIO ${sufijo}`);
+    expect(bd(`SELECT COUNT(*) FROM movimientos WHERE bien_id = ${bienId}`)).toBe('0');
+    expect(bd(`SELECT GROUP_CONCAT(espacio_id) FROM asignaciones WHERE bien_id = ${bienId} AND activa = 1`)).toBe(String(espA));
+});
+
+test('un bien Sin cartera pasa a la cartera con su placa cambiando categoría y código', async ({ page }) => {
+    const sufijo = Date.now();
+    const { bienId } = prepararBien(sufijo, { sinCartera: true });
+    const placa = `PW-PLACA-${sufijo}`;
+
+    await page.goto(`bienes/${bienId}/editar`);
+    await seleccionarTomSelect(page, 'categoriaBien', 'Muebles');
+    await page.locator('#codigoIdentificacion').fill(placa);
+    await page.getByRole('button', { name: 'Guardar cambios' }).click();
+
+    await expect(page).toHaveURL(new RegExp(`/bienes/${bienId}/editar$`));
+    await expect(page.locator('.alert-success')).toContainText(`Cambios del bien ${placa} guardados.`);
+    expect(bd(`SELECT CONCAT(b.codigo_identificacion, '|', c.nombre) FROM bienes b JOIN categorias_bienes c ON c.id = b.categoria_id WHERE b.id = ${bienId}`))
+        .toBe(`${placa}|Muebles`);
+    expect(bd(`SELECT COUNT(*) FROM movimientos WHERE bien_id = ${bienId}`)).toBe('0');
+});
+
 test('si la acción no se puede hacer, tampoco se guardan los datos', async ({ page }) => {
     const sufijo = Date.now();
     const { bienId } = prepararBien(sufijo);

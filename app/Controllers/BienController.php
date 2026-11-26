@@ -679,11 +679,7 @@ final class BienController
                 $verificacionId = Verificacion::idValidoParaBien($id, (string) $request->input('verificacion_id'));
 
                 return match ($accion) {
-                    'asignar', 'trasladar' => CicloVidaBien::asignarResponsabilidad(
-                        $actualizado,
-                        (int) $request->input('accion_espacio_id') ?: null,
-                        self::personaIndividualElegida($request),
-                        $fecha, $observaciones, $verificacionId),
+                    'asignar', 'trasladar' => self::asignarDesdeFicha($actualizado, $request, $asignacionActiva, $fecha, $observaciones, $verificacionId),
                     'trasladar_sede' => CicloVidaBien::trasladarSede(
                         $actualizado, (int) $request->input('accion_sede_id'), (int) $request->input('accion_espacio_sede_id'), $fecha, $observaciones),
                     'reintegrar' => CicloVidaBien::reintegrar(
@@ -741,6 +737,25 @@ final class BienController
         }
 
         return Url::to('/bienes' . ($consulta !== [] ? '?' . http_build_query($consulta) : ''));
+    }
+
+    /**
+     * Acción Asignar/Traslado de la ficha. Si el destino es donde el bien ya está (p. ej. se
+     * eligió «traslado» por error al cambiar solo el código o la categoría), los datos se
+     * guardan igual y no se registra movimiento: el aviso de éxito lo dice. La discrepancia
+     * de la verificación física, si la hay, queda abierta (el bien no se movió).
+     */
+    private static function asignarDesdeFicha(array $bien, Request $request, ?array $asignacionActiva, string $fecha, ?string $observaciones, ?int $verificacionId): string
+    {
+        $espacioId = (int) $request->input('accion_espacio_id') ?: null;
+        $personaId = self::personaIndividualElegida($request);
+        if (CicloVidaBien::esMismoDestino($asignacionActiva, $espacioId, $personaId)) {
+            return $personaId !== null
+                ? 'No se registró traslado: el bien ya estaba a cargo de ' . ($asignacionActiva['persona_nombre'] ?? 'esa persona') . '.'
+                : 'No se registró traslado: el bien ya estaba en ' . ($asignacionActiva['espacio_nombre'] ?? 'ese espacio') . '.';
+        }
+
+        return CicloVidaBien::asignarResponsabilidad($bien, $espacioId, $personaId, $fecha, $observaciones, $verificacionId);
     }
 
     /**

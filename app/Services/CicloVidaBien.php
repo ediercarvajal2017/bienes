@@ -157,6 +157,17 @@ final class CicloVidaBien
         }
     }
 
+    /**
+     * El destino elegido es donde el bien ya está: mismo espacio y misma persona (o ninguna,
+     * si es Grupal). Sin asignación activa nunca lo es (sería una asignación nueva).
+     */
+    public static function esMismoDestino(?array $anterior, ?int $espacioId, ?int $personaId): bool
+    {
+        return $anterior !== null
+            && (int) ($anterior['espacio_id'] ?? 0) === (int) $espacioId
+            && (int) ($anterior['usuario_responsable_id'] ?? 0) === (int) $personaId;
+    }
+
     public static function asignarResponsabilidad(array $bien, ?int $espacioId, ?int $personaId, string $fecha, ?string $observaciones, ?int $verificacionId = null): string
     {
         self::verificarLargo($observaciones, 500, 'El texto de la observación', 'accion_observaciones');
@@ -182,11 +193,9 @@ final class CicloVidaBien
         }
 
         $anterior = Asignacion::activaDe($id);
-        if ($anterior
-            && (int) ($anterior['espacio_id'] ?? 0) === (int) $espacioId
-            && (int) ($anterior['usuario_responsable_id'] ?? 0) === (int) $personaId) {
+        if (self::esMismoDestino($anterior, $espacioId, $personaId)) {
             throw new ErrorGuiado($personaId !== null ? 'El bien ya está a cargo de esa persona.' : 'El bien ya está en ese espacio.',
-                'Elige otro destino; si no quieres moverlo, deja la acción en «Ninguna».');
+                'Elige otro destino. Si el bien no se movió, no hace falta registrar el traslado.');
         }
 
         Database::transaccion(static function () use ($id, $institucionId, $espacioId, $personaId, $fecha, $observaciones, $anterior): void {
