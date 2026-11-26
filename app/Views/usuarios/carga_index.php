@@ -11,10 +11,6 @@ use App\Core\View;
 
 <div class="card mb-4 contenedor-md">
     <div class="card-body">
-        <p class="small text-muted mb-3">
-            Sube la plantilla diligenciada (<strong>.xlsx</strong>). La descargas en el ícono <?= icono('ayuda') ?> junto
-            al título: trae las instrucciones, las listas de Cargo y Rol, y la columna obligatoria en rojo claro.
-        </p>
         <?= \App\Helpers\AyudaCampo::etiqueta('archivoCarga', 'Archivo Excel (.xlsx)', 'carga_archivo', true) ?>
         <form method="post" action="<?= Url::to('/usuarios/carga-masiva/subir') ?>" enctype="multipart/form-data" class="d-flex gap-2">
             <?= Csrf::field() ?>

@@ -28,16 +28,6 @@ $listar = static function (array $items, int $limite = 40): string {
 
 <div class="card mb-4 contenedor-md">
     <div class="card-body">
-        <p class="small text-muted mb-2">
-            Sube un archivo <strong>.zip</strong> con las fotos de los bienes, cada una nombrada
-            exactamente igual al <strong>código del bien</strong> (por ejemplo <code>EQ-001.jpg</code>).
-            El sistema busca cada código en el sistema y asocia la foto automáticamente.
-        </p>
-        <p class="small text-muted mb-3">
-            No se reemplaza la foto de un bien que ya tiene una. Si el .zip es muy pesado,
-            divídelo en lotes más pequeños y sube varios — puedes repetir este paso las veces
-            que necesites, los bienes ya emparejados simplemente se omiten.
-        </p>
         <?= \App\Helpers\AyudaCampo::etiqueta('archivoFotos', 'Archivo .zip con las fotos', 'carga_fotos_archivo', true) ?>
         <form method="post" action="<?= Url::to('/bienes/carga-masiva-fotos') ?>" enctype="multipart/form-data" class="d-flex gap-2">
             <?= Csrf::field() ?>
@@ -49,7 +39,7 @@ $listar = static function (array $items, int $limite = 40): string {
 
 <?php if ($resultado !== null): ?>
     <div class="contenedor-sm mb-4">
-        <h2 class="titulo-seccion">Resultado de la carga</h2>
+        <div class="d-flex align-items-center gap-1 mb-3"><h2 class="titulo-seccion mb-0">Resultado de la carga</h2><?= \App\Helpers\AyudaCampo::boton('resultado_fotos') ?></div>
         <?= ui('tabla', ['leyenda' => 'Resultado de la carga de fotos', 'encabezadoFijo' => false, 'columnas' => [
             ['texto' => 'Resultado'], ['texto' => 'Fotos', 'alineacion' => 'derecha'],
         ]]) ?>
@@ -70,7 +60,6 @@ $listar = static function (array $items, int $limite = 40): string {
     <div class="mb-3">
         <h2 class="h6">Bienes sin foto encontrada en el .zip</h2>
         <p class="small mb-0"><?= $listar($resultado['sin_bien']) ?></p>
-        <p class="small text-muted mt-1">El nombre del archivo (sin extensión) no coincide con ningún código de bien registrado en esta institución.</p>
     </div>
 
     <div class="mb-3">
@@ -81,14 +70,12 @@ $listar = static function (array $items, int $limite = 40): string {
     <div class="mb-3">
         <h2 class="h6">Archivos con formato no válido</h2>
         <p class="small mb-0"><?= $listar($resultado['formato_invalido']) ?></p>
-        <p class="small text-muted mt-1">Solo se aceptan imágenes JPG o PNG.</p>
     </div>
 
     <?php if (!empty($resultado['demasiado_grandes'])): ?>
         <div class="mb-3">
             <h2 class="h6">Imágenes demasiado grandes (no se cargaron)</h2>
             <p class="small mb-0"><?= $listar($resultado['demasiado_grandes']) ?></p>
-            <p class="small text-muted mt-1">Cada imagen puede pesar como máximo <?= (int) round(\App\Helpers\Uploader::TAMANO_MAXIMO_IMAGEN / 1024 / 1024) ?> MB. Redúzcalas y vuelva a subirlas.</p>
         </div>
     <?php endif; ?>
 <?php endif; ?>
