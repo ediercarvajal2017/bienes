@@ -559,6 +559,48 @@ test('las cargas masivas explican el archivo, el resultado y las cargas anterior
     await expect(page.getByText('Solo se aceptan imágenes JPG o PNG.')).toHaveCount(0);
 });
 
+test('la bodega de impresión de QR y generar QR masivo explican cada parte', async ({ page }) => {
+    test.skip(datos().remoto === true, 'Necesita la base de pruebas local');
+    const d = datos();
+    const porImprimir = d.bienes.A.silla;
+    const porPegar = d.bienes.A.para_rechazo;
+    const columnas = 'qr_solicitado_en, qr_solicitado_por, qr_impreso_en';
+    const antes = Object.fromEntries([porImprimir, porPegar].map((id) => [id, bd(`SELECT CONCAT_WS('|', IFNULL(qr_solicitado_en, 'NULL'), IFNULL(qr_solicitado_por, 'NULL'), IFNULL(qr_impreso_en, 'NULL')) FROM bienes WHERE id = ${id}`)]));
+    try {
+        // Un bien pedido y sin imprimir, y otro ya impreso y por pegar.
+        bd(`UPDATE bienes SET qr_solicitado_en = NOW(), qr_solicitado_por = ${d.usuarios.rector.id}, qr_impreso_en = NULL WHERE id = ${porImprimir}`);
+        bd(`UPDATE bienes SET qr_solicitado_en = NOW() - INTERVAL 1 HOUR, qr_solicitado_por = ${d.usuarios.rector.id}, qr_impreso_en = NOW() WHERE id = ${porPegar}`);
+
+        await page.goto('bienes/qr-masivo/bodega?pestana=por_imprimir');
+        await revisarAyudas(page, {
+            'Bodega de impresión de QR': 'confirma la etiqueta en la ficha del bien',
+            'Formato de impresión': 'Etiqueta térmica 50x25 mm',
+            'Al imprimir': 'para no imprimirlos dos veces',
+        });
+        await expect(page.getByText('Al imprimir, estos bienes pasan')).toHaveCount(0);
+
+        await page.goto('bienes/qr-masivo/bodega?pestana=por_pegar');
+        await revisarAyudas(page, {
+            'Stickers pegados': 'salen de la bodega',
+            'Sticker dañado o perdido': 'solo si el sticker se dañó o se perdió',
+        });
+        await expect(page.getByText('marque los que ya quedaron pegados')).toHaveCount(0);
+    } finally {
+        for (const [id, valor] of Object.entries(antes)) {
+            const [solicitado, por, impreso] = valor.split('|').map((v) => (v === 'NULL' ? 'NULL' : `'${v}'`));
+            bd(`UPDATE bienes SET qr_solicitado_en = ${solicitado}, qr_solicitado_por = ${por}, qr_impreso_en = ${impreso} WHERE id = ${id}`);
+        }
+    }
+
+    await page.goto('bienes/qr-masivo');
+    await revisarAyudas(page, {
+        'Generar QR masivo': 'todos los que coinciden con la búsqueda',
+        'Buscar bienes': 'código, descripción o ubicación',
+        'Formato de impresión': 'Hoja para recortar',
+    });
+    await expect(page.getByLabel('Buscar bienes', { exact: true })).toHaveAttribute('type', 'search');
+});
+
 test('panel principal, escáner, ficha del QR, mis notas y mi cuenta explican cada parte', async ({ page }) => {
     test.skip(datos().remoto === true, 'Necesita la base de pruebas local');
     const d = datos();
