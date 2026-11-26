@@ -6,7 +6,8 @@ use App\Core\Url;
 use App\Core\View;
 
 ?>
-<?= ui('encabezado_pagina', ['titulo' => 'Generar QR masivo', 'icono' => 'qr',
+<?php $ayudaQrMasivo = \App\Helpers\AyudaCampo::boton('generar_qr_masivo') ?>
+<?= ui('encabezado_pagina', ['titulo' => 'Generar QR masivo', 'icono' => 'qr', 'ayuda' => $ayudaQrMasivo,
     'subtitulo' => 'Selecciona los bienes y genera una hoja lista para imprimir, con el código QR en negro y el código del bien debajo.',
     'acciones' => ui('boton', ['texto' => 'Volver', 'icono' => 'volver', 'tamano' => 'sm', 'url' => Url::to('/bienes')])
         . ui('menu_acciones', ['opciones' => \App\Helpers\AccionesBienes::opciones(), 'actual' => 'qr_masivo'])
@@ -16,7 +17,7 @@ use App\Core\View;
 
 <?php if (Auth::esSuperusuario()): ?>
     <div class="mb-3 contenedor-sm">
-        <label for="selectorInstitucion" class="form-label small">Institución</label>
+        <?= \App\Helpers\AyudaCampo::etiqueta('selectorInstitucion', 'Institución', 'qr_institucion') ?>
         <select id="selectorInstitucion" class="form-select form-select-sm selector-buscable">
             <option value="">-- Selecciona una institución --</option>
             <?php foreach ($instituciones as $i): ?>
@@ -37,6 +38,7 @@ use App\Core\View;
     <p class="text-muted">Selecciona una institución para continuar.</p>
 <?php else: ?>
     <div class="mb-3 contenedor-sm">
+        <?= \App\Helpers\AyudaCampo::etiqueta('buscador', 'Buscar bienes', 'buscar_qr') ?>
         <input type="search" id="buscador" data-buscar="q" class="form-control form-control-sm"
                placeholder="Buscar por código, descripción, ubicación..."
                value="<?= htmlspecialchars($busqueda, ENT_QUOTES) ?>">
@@ -95,7 +97,7 @@ use App\Core\View;
             ]); ?>
 
             <div class="mb-2 contenedor-sm">
-                <label for="campo-formato" class="form-label small mb-1">Formato de impresión</label>
+                <?= \App\Helpers\AyudaCampo::etiqueta('campo-formato', 'Formato de impresión', 'formato_qr') ?>
                 <select id="campo-formato" name="formato" class="form-select form-select-sm">
                     <option value="hoja">Hoja para recortar (varios QR por página, papel normal)</option>
                     <option value="etiqueta">Etiqueta térmica 50x25mm (una por etiqueta, rollo continuo)</option>

@@ -622,6 +622,48 @@ final class AyudaCampo
                 . "En Windows: selecciona las fotos, clic derecho › Enviar a › Carpeta comprimida.\n\n"
                 . 'Si el .zip es muy pesado, divídelo en varios y súbelos uno por uno.',
         ],
+        // Stickers QR: la Bodega de impresión y Generar QR masivo (bienes/qr_masivo*.php).
+        'bodega_qr' => [
+            'titulo' => 'Bodega de impresión de QR',
+            'texto' => "Aquí esperan los stickers QR que alguien pidió imprimir, marcando «Imprimir QR» en el formulario del bien.\n\n"
+                . "**1. Por imprimir:** marca los bienes, elige el formato e imprime. Esos bienes pasan a «Impresos, por pegar».\n\n"
+                . "**2. Impresos, por pegar:** pega cada sticker en su bien.\n\n"
+                . "**3. Confirma los pegados:** salen de la bodega. También salen solos si alguien escanea el sticker y confirma la etiqueta en la ficha del bien.\n\n"
+                . '«Buscar bienes para imprimir» lleva a Generar QR masivo, para imprimir otros bienes sin pasar por la bodega.',
+        ],
+        'generar_qr_masivo' => [
+            'titulo' => 'Generar QR masivo',
+            'texto' => "Imprime los stickers QR de muchos bienes a la vez: busca, marca los bienes y elige el formato.\n\n"
+                . "**«Generar QR (n)»** imprime los que marcaste en esta página. **El otro botón** imprime todos los que coinciden con la búsqueda, en todas las páginas.\n\n"
+                . "La hoja se abre en otra pestaña, lista para imprimir. Los stickers que alguien pidió desde el formulario del bien esperan en la Bodega de impresión.",
+        ],
+        'qr_institucion' => [
+            'titulo' => 'Institución',
+            'texto' => 'Como superusuario, elige la institución cuyos bienes quieres ver. La lista y la impresión son solo de esa institución.',
+        ],
+        'buscar_qr' => [
+            'titulo' => 'Buscar bienes',
+            'texto' => 'Filtra por código, descripción o ubicación. Después marca los bienes que quieres, o usa el botón que imprime todos los que coinciden.',
+        ],
+        'formato_qr' => [
+            'titulo' => 'Formato de impresión',
+            'texto' => "**Hoja para recortar:** varios QR por página, en papel normal; se recortan con tijera.\n\n"
+                . '**Etiqueta térmica 50x25 mm:** un QR por etiqueta, para impresora de rollo continuo, con el nombre de la institución.',
+        ],
+        'imprimir_bodega' => [
+            'titulo' => 'Al imprimir',
+            'texto' => "Imprime los QR de los bienes marcados; al entrar vienen todos marcados. La hoja se abre en otra pestaña.\n\n"
+                . 'Esta página se recarga y los impresos pasan a «Impresos, por pegar», para no imprimirlos dos veces.',
+        ],
+        'pegados_qr' => [
+            'titulo' => 'Stickers pegados',
+            'texto' => "Pega cada sticker en su bien. Luego marca los que ya quedaron pegados y confírmalos: salen de la bodega y queda registrado que el bien tiene su QR.\n\n"
+                . 'Los que no marques siguen aquí hasta que los confirmes.',
+        ],
+        'reimprimir_qr' => [
+            'titulo' => 'Sticker dañado o perdido',
+            'texto' => 'Vuelve a imprimir los QR marcados, en el formato elegido, solo si el sticker se dañó o se perdió. Los bienes siguen en «Impresos, por pegar» hasta que confirmes que quedaron pegados.',
+        ],
         'resultado_fotos' => [
             'titulo' => 'Resultado de la carga de fotos',
             'texto' => "Qué pasó con cada foto del .zip; abajo, la lista de cada caso.\n\n"

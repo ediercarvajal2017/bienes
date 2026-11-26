@@ -12,14 +12,15 @@ $urlPestana = static fn (string $p): string => Url::to('/bienes/qr-masivo/bodega
 $fecha = static fn (?string $f): string => $f ? date('d/m/Y H:i', strtotime($f)) : '—';
 
 ?>
-<?= ui('encabezado_pagina', ['titulo' => 'Bodega de impresión de QR', 'icono' => 'qr',
+<?php $ayudaBodega = \App\Helpers\AyudaCampo::boton('bodega_qr') ?>
+<?= ui('encabezado_pagina', ['titulo' => 'Bodega de impresión de QR', 'icono' => 'qr', 'ayuda' => $ayudaBodega,
     'subtitulo' => '1. Imprima los pendientes · 2. Pegue cada sticker en su bien · 3. Confirme los pegados.',
     'acciones' => ui('boton', ['texto' => 'Buscar bienes para imprimir', 'icono' => 'buscar', 'tamano' => 'sm', 'url' => Url::to('/bienes/qr-masivo')]),
 ]) ?>
 
 <?php if (Auth::esSuperusuario()): ?>
     <div class="mb-3 contenedor-sm">
-        <label for="selectorInstitucion" class="form-label small">Institución</label>
+        <?= \App\Helpers\AyudaCampo::etiqueta('selectorInstitucion', 'Institución', 'qr_institucion') ?>
         <select id="selectorInstitucion" class="form-select form-select-sm selector-buscable">
             <option value="">-- Selecciona una institución --</option>
             <?php foreach ($instituciones as $i): ?>
@@ -92,7 +93,7 @@ $fecha = static fn (?string $f): string => $f ? date('d/m/Y H:i', strtotime($f))
 
                 <div class="d-flex flex-wrap align-items-end gap-2">
                     <div class="contenedor-sm">
-                        <label for="campo-formato" class="form-label small mb-1">Formato de impresión</label>
+                        <?= \App\Helpers\AyudaCampo::etiqueta('campo-formato', 'Formato de impresión', 'formato_qr') ?>
                         <select id="campo-formato" name="formato" class="form-select form-select-sm">
                             <option value="hoja">Hoja para recortar (varios QR por página, papel normal)</option>
                             <option value="etiqueta">Etiqueta térmica 50x25mm (una por etiqueta, rollo continuo)</option>
@@ -100,16 +101,14 @@ $fecha = static fn (?string $f): string => $f ? date('d/m/Y H:i', strtotime($f))
                     </div>
                     <button type="submit" class="btn btn-primary boton-accion" id="botonGenerar">
                         <?= icono('imprimir', 'me-1') ?>Imprimir <span class="contador">0</span> QR
-                    </button>
+                    </button><?= \App\Helpers\AyudaCampo::boton('imprimir_bodega') ?>
                 </div>
-                <p class="form-text">Al imprimir, estos bienes pasan a la pestaña <strong>"Impresos, por pegar"</strong>.</p>
             </form>
         <?php endif; ?>
     <?php else: ?>
         <?php if ($porPegar === []): ?>
             <p class="text-muted">No hay stickers pendientes por pegar.</p>
         <?php else: ?>
-            <p class="small mb-2">Pegue cada sticker en su bien y marque los que ya quedaron pegados.</p>
             <form method="post" action="<?= Url::to('/bienes/qr-masivo/bodega/confirmar') ?>" id="formQrPegados" class="form-bodega-qr">
                 <?= Csrf::field() ?>
                 <input type="hidden" name="institucion_id" value="<?= $institucionId ?>">
@@ -140,7 +139,7 @@ $fecha = static fn (?string $f): string => $f ? date('d/m/Y H:i', strtotime($f))
                 <div class="d-flex flex-wrap align-items-center gap-2">
                     <button type="submit" class="btn btn-primary boton-accion" id="botonConfirmarPegados">
                         <?= icono('guardar', 'me-1') ?>Confirmar pegados (<span class="contador">0</span>)
-                    </button>
+                    </button><?= \App\Helpers\AyudaCampo::boton('pegados_qr') ?>
                     <span class="ms-auto d-inline-flex align-items-center gap-1 small text-muted">
                         <label for="formatoReimpresion" class="visually-hidden">Formato de reimpresión</label>
                         <select id="formatoReimpresion" name="formato" class="form-select form-select-sm w-auto">
@@ -150,7 +149,7 @@ $fecha = static fn (?string $f): string => $f ? date('d/m/Y H:i', strtotime($f))
                         <button type="button" class="btn btn-sm btn-outline-secondary boton-accion" id="botonReimprimir"
                                 title="Solo si el sticker se dañó o se perdió">
                             <?= icono('imprimir', 'me-1') ?>Reimprimir
-                        </button>
+                        </button><?= \App\Helpers\AyudaCampo::boton('reimprimir_qr') ?>
                     </span>
                 </div>
             </form>
