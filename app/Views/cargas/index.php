@@ -13,10 +13,6 @@ $urlBasePaginacion = Url::to('/cargas-masivas') . ($busqueda !== '' ? '?' . http
 
 <div class="card mb-4 contenedor-md">
     <div class="card-body">
-        <p class="small text-muted mb-3">
-            Sube la plantilla diligenciada (<strong>.xlsx</strong>). La descargas en el ícono <?= icono('ayuda') ?> junto
-            al título: trae las instrucciones, las listas de Ubicación y Categoría, y las columnas obligatorias en rojo claro.
-        </p>
         <?= \App\Helpers\AyudaCampo::etiqueta('archivoCarga', 'Archivo Excel (.xlsx)', 'carga_archivo', true) ?>
         <form method="post" action="<?= Url::to('/cargas-masivas') ?>" enctype="multipart/form-data" class="d-flex gap-2">
             <?= Csrf::field() ?>
@@ -24,16 +20,18 @@ $urlBasePaginacion = Url::to('/cargas-masivas') . ($busqueda !== '' ? '?' . http
             <button type="submit" class="btn btn-sm btn-primary text-nowrap">Analizar archivo</button>
         </form>
         <hr>
-        <p class="small text-muted mb-2">¿Ya subiste los bienes y quieres emparejar sus fotos por código?</p>
-        <a href="<?= Url::to('/bienes/carga-masiva-fotos') ?>" class="btn btn-sm btn-outline-secondary">
-            <?= icono('subir', 'me-1') ?>Carga masiva de fotos (.zip)
-        </a>
+        <div class="d-flex align-items-center gap-1">
+            <a href="<?= Url::to('/bienes/carga-masiva-fotos') ?>" class="btn btn-sm btn-outline-secondary">
+                <?= icono('subir', 'me-1') ?>Carga masiva de fotos (.zip)
+            </a><?= \App\Helpers\AyudaCampo::boton('carga_fotos') ?>
+        </div>
     </div>
 </div>
 
 <div class="d-flex align-items-center gap-1 mb-2"><h2 class="h6 mb-0">Cargas anteriores</h2><?= \App\Helpers\AyudaCampo::boton('cargas_anteriores') ?></div>
 
 <div class="mb-2 contenedor-sm">
+    <?= \App\Helpers\AyudaCampo::etiqueta('buscador', 'Buscar cargas', 'buscar_cargas') ?>
     <input type="search" id="buscador" data-buscar="q" class="form-control form-control-sm"
            placeholder="Buscar por quién la subió, fecha o estado..."
            value="<?= htmlspecialchars($busqueda, ENT_QUOTES) ?>">

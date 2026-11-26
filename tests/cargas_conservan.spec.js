@@ -34,7 +34,7 @@ const documentoDe = (id) => bd(`SELECT documento FROM usuarios WHERE id = ${id}`
 
 async function analizar(page, ruta, archivo) {
     await page.goto(ruta);
-    await expect(page.getByText('Sube la plantilla diligenciada')).toBeVisible();
+    await expect(page.getByLabel('Archivo Excel (.xlsx)', { exact: true })).toBeVisible();
     await page.setInputFiles('input[name="archivo"]', archivo);
     await page.getByRole('button', { name: 'Analizar archivo' }).click();
     await expect(page).toHaveURL(new RegExp(`${ruta}/\\d+`));

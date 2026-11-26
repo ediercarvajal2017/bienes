@@ -40,6 +40,7 @@ $abajo ??= false;
             'atributos' => ['aria-current' => $activa ? 'true' : null],
         ]) ?>
     <?php endforeach; ?>
+    <?= \App\Helpers\AyudaCampo::boton('filtro_filas_carga') ?>
 </nav>
 <?php endif; ?>
 

@@ -608,7 +608,6 @@ final class AyudaCampo
             'texto' => "Lo que haría cada fila del archivo. Hasta que confirmes, no se ha guardado nada.\n\n"
                 . "**Nuevo:** se creará. **Modificado:** ya existe y cambiará lo que se muestra (antes → después). **Sin cambios:** ya existe igual; no se toca.\n\n"
                 . "**Inválido:** tiene un error, explicado en la fila, y no se aplicará. Corrígelo en el Excel y vuelve a subirlo.\n\n"
-                . "Los botones de arriba muestran solo las filas de un estado (por ejemplo, «Inválidas»), y la tabla va por páginas.\n\n"
                 . '«Confirmar importación» aplica los nuevos y los modificados de todo el archivo, una sola vez. Nada se borra: lo que no está en el archivo queda igual.',
         ],
         'carga_fotos' => [
@@ -622,6 +621,24 @@ final class AyudaCampo
             'texto' => "Un .zip con las fotos en JPG o PNG, cada una de máximo 2 MB y nombrada con el código del bien (ej. PA-0001.jpg), hasta 3.000 archivos.\n\n"
                 . "En Windows: selecciona las fotos, clic derecho › Enviar a › Carpeta comprimida.\n\n"
                 . 'Si el .zip es muy pesado, divídelo en varios y súbelos uno por uno.',
+        ],
+        'resultado_fotos' => [
+            'titulo' => 'Resultado de la carga de fotos',
+            'texto' => "Qué pasó con cada foto del .zip; abajo, la lista de cada caso.\n\n"
+                . "**Fotos asociadas:** ya están en su bien.\n\n"
+                . "**Ya tenían foto:** no se reemplazó. Para cambiarla, edita el bien y sube la nueva.\n\n"
+                . "**Sin bien correspondiente:** el nombre del archivo, sin la extensión, no coincide con el código de ningún bien de tu institución. Revisa que se llame exactamente igual (ej. PA-0001.jpg).\n\n"
+                . "**Formato no válido:** solo se aceptan JPG o PNG. **Demasiado grandes:** cada imagen puede pesar como máximo 2 MB; redúcela y súbela otra vez.",
+        ],
+        'buscar_cargas' => [
+            'titulo' => 'Buscar cargas',
+            'texto' => 'Filtra la lista mientras escribes: por quién la subió, la fecha (ej. 2026-11) o el estado (pendiente o aplicada).',
+        ],
+        'filtro_filas_carga' => [
+            'titulo' => 'Mostrar filas',
+            'texto' => "Cada botón muestra solo las filas de un estado y dice cuántas hay; «Todas» vuelve a la lista completa. Empieza por «Inválidas» para corregir los errores en el Excel.\n\n"
+                . "La tabla va de a 50 filas: abajo cambias de página o eliges cuántas ver.\n\n"
+                . 'El filtro solo cambia lo que ves: «Confirmar importación» aplica el archivo completo.',
         ],
         'asignaciones' => [
             'titulo' => 'Asignar bienes',

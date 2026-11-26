@@ -515,7 +515,18 @@ test('las cargas masivas explican el archivo, el resultado y las cargas anterior
         });
         // El campo del archivo tiene su etiqueta visible.
         await expect(page.getByLabel('Archivo Excel (.xlsx)', { exact: true })).toHaveAttribute('type', 'file');
+        // La explicación de la plantilla pasó a la ayuda: no queda como texto suelto.
+        await expect(page.getByText('Sube la plantilla diligenciada')).toHaveCount(0);
     }
+
+    // En la de bienes: el buscador de cargas y el enlace a la carga de fotos, con su (?).
+    await page.goto('cargas-masivas');
+    await revisarAyudas(page, {
+        'Buscar cargas': 'por quién la subió',
+        'Carga masiva de fotos': 'se llama igual que el código del bien',
+    });
+    await expect(page.getByLabel('Buscar cargas', { exact: true })).toHaveAttribute('type', 'search');
+    await expect(page.getByText('¿Ya subiste los bienes')).toHaveCount(0);
 
     // Una carga analizada (sin confirmar) explica cada estado de fila; después se borra.
     await page.goto('cargas-masivas');
@@ -524,7 +535,10 @@ test('las cargas masivas explican el archivo, el resultado y las cargas anterior
     await expect(page).toHaveURL(/\/cargas-masivas\/\d+/);
     const carga = Number(page.url().match(/cargas-masivas\/(\d+)/)[1]);
     try {
-        await revisarAyudas(page, { 'Resultado de la carga': 'Nada se borra' });
+        await revisarAyudas(page, {
+            'Resultado de la carga': 'Nada se borra',
+            'Mostrar filas': 'aplica el archivo completo',
+        });
         await page.goto('cargas-masivas');
         await revisarAyudas(page, { 'Cargas anteriores': 'Una carga se aplica una sola vez' });
     } finally {
@@ -536,6 +550,13 @@ test('las cargas masivas explican el archivo, el resultado y las cargas anterior
         'Carga masiva de fotos': 'No reemplaza la foto de un bien que ya tiene una',
         'Archivo .zip con las fotos': 'hasta 3.000 archivos',
     });
+    await expect(page.getByText('Sube un archivo')).toHaveCount(0);
+
+    // El resultado de una carga de fotos explica cada caso (los textos sueltos pasaron a la ayuda).
+    await page.setInputFiles('input[name="archivo"]', 'tests/fixtures/fotos_bienes.zip');
+    await page.getByRole('button', { name: 'Subir .zip' }).click();
+    await revisarAyudas(page, { 'Resultado de la carga de fotos': 'no coincide con el código de ningún bien' });
+    await expect(page.getByText('Solo se aceptan imágenes JPG o PNG.')).toHaveCount(0);
 });
 
 test('panel principal, escáner, ficha del QR, mis notas y mi cuenta explican cada parte', async ({ page }) => {
