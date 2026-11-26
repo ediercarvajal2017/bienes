@@ -559,6 +559,26 @@ test('las cargas masivas explican el archivo, el resultado y las cargas anterior
     await expect(page.getByText('Solo se aceptan imágenes JPG o PNG.')).toHaveCount(0);
 });
 
+test('la ficha del bien explica el resumen, la foto y documentos y el historial', async ({ page }) => {
+    test.skip(datos().remoto === true, 'Necesita la base de pruebas local');
+    const d = datos();
+    const bien = d.bienes.A.silla;
+    // Un traslado de prueba, para que la ficha muestre su historial.
+    bd(`INSERT INTO movimientos (bien_id, tipo, fecha, responsable_id, observaciones) VALUES (${bien}, 'traslado', CURDATE(), ${d.usuarios.rector.id}, 'PW ayuda historial')`);
+    try {
+        await page.goto(`bienes/${bien}/editar`);
+        await revisarAyudas(page, {
+            'Resumen del bien': 'abrir la ficha que ve quien escanea el sticker',
+            'Foto y documentos': 'Bodega de impresión de QR',
+            'Historial de movimientos': 'No se puede editar ni borrar',
+        });
+        // El (?) del historial queda fuera del resumen desplegable: tocarlo no lo abre.
+        await expect(page.locator('details:has(summary:text("Ver historial de movimientos"))')).not.toHaveAttribute('open', '');
+    } finally {
+        bd(`DELETE FROM movimientos WHERE bien_id = ${bien} AND observaciones = 'PW ayuda historial'`);
+    }
+});
+
 test('la bodega de impresión de QR y generar QR masivo explican cada parte', async ({ page }) => {
     test.skip(datos().remoto === true, 'Necesita la base de pruebas local');
     const d = datos();

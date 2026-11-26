@@ -48,7 +48,7 @@ $etiquetasEstado = ['activo' => 'Activo', 'reintegrado' => 'Reintegrado', 'en_re
             <div class="flex-grow-1 min-ancho-0">
                 <div class="d-flex flex-wrap align-items-center gap-2">
                     <span class="mono fw-semibold"><?= $e($bien['codigo_identificacion']) ?></span>
-                    <span class="badge badge-estado-<?= $e($bien['estado']) ?>"><?= $etiquetasEstado[$bien['estado']] ?? $e($bien['estado']) ?></span>
+                    <span class="badge badge-estado-<?= $e($bien['estado']) ?>"><?= $etiquetasEstado[$bien['estado']] ?? $e($bien['estado']) ?></span><?= AyudaCampo::boton('resumen_bien') ?>
                 </div>
                 <div class="text-truncate"><?= $e($bien['descripcion']) ?></div>
                 <div class="small text-muted" id="ubicacionActual">
@@ -346,7 +346,7 @@ $etiquetasEstado = ['activo' => 'Activo', 'reintegrado' => 'Reintegrado', 'en_re
     ?>
     <div class="card mb-3">
         <div class="card-body">
-            <h2 class="titulo-seccion">Foto y documentos</h2>
+            <div class="d-flex align-items-center gap-1 mb-3"><h2 class="titulo-seccion mb-0">Foto y documentos</h2><?= AyudaCampo::boton('foto_y_documentos') ?></div>
             <div class="row g-3">
                 <div class="col-md-6">
                     <?php if ($puedeEditar): ?>
@@ -357,13 +357,13 @@ $etiquetasEstado = ['activo' => 'Activo', 'reintegrado' => 'Reintegrado', 'en_re
                             'fotoActualUrl' => $fotoActualUrl,
                         ]); ?>
                     <?php elseif (!empty($bien['foto_path'])): ?>
-                        <span class="form-label small d-block">Fotografía</span>
+                        <div class="etiqueta-ayuda"><span class="form-label small">Fotografía</span><?= AyudaCampo::boton('foto') ?></div>
                         <img src="<?= \App\Helpers\EnlaceArchivo::url($bien['foto_path']) ?>"
                              data-lightbox-src="<?= \App\Helpers\EnlaceArchivo::url($bien['foto_path']) ?>"
                              alt="Foto de <?= $e($bien['descripcion']) ?>"
                              class="mb-2 d-block miniatura-foto" title="Ver foto en grande">
                     <?php else: ?>
-                        <span class="form-label small d-block">Fotografía</span>
+                        <div class="etiqueta-ayuda"><span class="form-label small">Fotografía</span><?= AyudaCampo::boton('foto') ?></div>
                         <span class="nota-campo">Sin foto.</span>
                     <?php endif; ?>
                 </div>
@@ -678,7 +678,8 @@ document.addEventListener('DOMContentLoaded', function () {
 <?php endif; ?>
 
 <?php if ($esEdicion && !empty($historialMovimientos)): ?>
-    <details class="mt-4 contenedor-md">
+    <div class="d-flex align-items-start gap-1 mt-4 contenedor-md">
+    <details class="flex-grow-1 min-ancho-0">
         <summary class="small fw-semibold text-muted">Ver historial de movimientos (<?= count($historialMovimientos) ?>)</summary>
         <div class="mt-2">
         <div class="table-responsive">
@@ -703,5 +704,7 @@ document.addEventListener('DOMContentLoaded', function () {
         </div>
         </div>
     </details>
+    <?= AyudaCampo::boton('historial_bien') ?>
+    </div>
 <?php endif; ?>
 <script src="<?= Url::asset('/assets/js/descripcion-categoria.js') ?>"></script>

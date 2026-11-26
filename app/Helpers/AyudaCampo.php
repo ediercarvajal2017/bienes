@@ -622,6 +622,24 @@ final class AyudaCampo
                 . "En Windows: selecciona las fotos, clic derecho › Enviar a › Carpeta comprimida.\n\n"
                 . 'Si el .zip es muy pesado, divídelo en varios y súbelos uno por uno.',
         ],
+        // Ficha del bien (bienes/form.php al editar): el resumen de arriba, sus secciones y el historial.
+        'resumen_bien' => [
+            'titulo' => 'Resumen del bien',
+            'texto' => "El bien de un vistazo: su código, su estado y dónde está hoy.\n\n"
+                . "**Código QR:** tócalo para abrir la ficha que ve quien escanea el sticker. El botón de descarga guarda la imagen del QR para imprimirla aparte.\n\n"
+                . "**Dónde está:** Grupal (el espacio y sus responsables) o Individual (la persona a cargo y dónde lo guarda), con la fecha desde la que está así. Para cambiarlo usa «¿Qué deseas hacer con este bien?».",
+        ],
+        'foto_y_documentos' => [
+            'titulo' => 'Foto y documentos',
+            'texto' => "**Fotografía:** ayuda a reconocer el bien en la verificación física y en la búsqueda por foto.\n\n"
+                . "**Factura de compra:** el PDF de la factura, si el bien la tiene.\n\n"
+                . '**Imprimir QR:** manda el bien a la Bodega de impresión de QR para imprimir su sticker.',
+        ],
+        'historial_bien' => [
+            'titulo' => 'Historial de movimientos',
+            'texto' => "Los traslados, reintegros y reactivaciones del bien, del más reciente al más antiguo: la fecha, quién lo registró, a dónde fue y la observación que dejó.\n\n"
+                . 'No se puede editar ni borrar: es el respaldo de lo que pasó con el bien.',
+        ],
         // Stickers QR: la Bodega de impresión y Generar QR masivo (bienes/qr_masivo*.php).
         'bodega_qr' => [
             'titulo' => 'Bodega de impresión de QR',
