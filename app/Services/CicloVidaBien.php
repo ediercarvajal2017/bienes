@@ -16,6 +16,7 @@ use App\Models\Bien;
 use App\Models\Categoria;
 use App\Models\Espacio;
 use App\Models\Institucion;
+use App\Models\LoteReintegro;
 use App\Models\Movimiento;
 use App\Models\Usuario;
 use App\Models\Verificacion;
@@ -368,7 +369,10 @@ final class CicloVidaBien
         }
 
         $id = (int) $bien['id'];
-        Database::transaccion(static function () use ($id, $bien, $fecha, $motivo): void {
+        $lotes = Database::transaccion(static function () use ($id, $bien, $fecha, $motivo): array {
+            // Si su reintegro estaba en un lote sin entregar, el bien sale de ese lote (y del
+            // comprobante): ya no se va a entregar a la Alcaldía.
+            $lotes = LoteReintegro::retirarBienReactivado($id);
             Movimiento::crear([
                 'bien_id' => $id,
                 'tipo' => 'reactivacion',
@@ -381,11 +385,34 @@ final class CicloVidaBien
             ]);
             Bien::cambiarEstado($id, 'activo');
             Auditoria::registrar(Auth::id(), (int) $bien['institucion_id'], 'reactivar', 'bien', $id,
-                ['estado' => 'reintegrado'], ['estado' => 'activo', 'motivo' => $motivo, 'fecha' => $fecha]);
+                ['estado' => 'reintegrado'] + ($lotes['retirado_de'] !== [] ? ['lotes_reintegro' => $lotes['retirado_de']] : []),
+                ['estado' => 'activo', 'motivo' => $motivo, 'fecha' => $fecha]
+                    + ($lotes['retirado_de'] !== [] ? ['retirado_de_lotes' => $lotes['retirado_de'], 'lotes_eliminados' => $lotes['eliminados']] : []));
             RenglonDePlaca::sincronizarDe([$bien], 'Reactivación de la unidad ' . $bien['codigo_identificacion']);
+
+            return $lotes;
         });
 
-        return 'Bien reactivado. Ahora puedes asignarlo a un espacio o a una persona.';
+        return 'Bien reactivado. ' . self::textoLotesRetirados($lotes) . 'Ahora puedes asignarlo a un espacio o a una persona.';
+    }
+
+    /** @param array{retirado_de: list<int>, eliminados: list<int>} $lotes */
+    private static function textoLotesRetirados(array $lotes): string
+    {
+        if ($lotes['retirado_de'] === []) {
+            return '';
+        }
+        $numeros = static fn (array $ids): string => implode(', ', array_map(static fn (int $id): string => "#{$id}", $ids));
+        $retirado = count($lotes['retirado_de']) === 1
+            ? 'Salió del lote de reintegro ' . $numeros($lotes['retirado_de']) . ', que aún no se había entregado a la Alcaldía. '
+            : 'Salió de los lotes de reintegro ' . $numeros($lotes['retirado_de']) . ', que aún no se habían entregado a la Alcaldía. ';
+        $eliminados = match (count($lotes['eliminados'])) {
+            0 => '',
+            1 => 'El lote ' . $numeros($lotes['eliminados']) . ' quedó sin bienes y se eliminó. ',
+            default => 'Los lotes ' . $numeros($lotes['eliminados']) . ' quedaron sin bienes y se eliminaron. ',
+        };
+
+        return $retirado . $eliminados;
     }
 
     /**

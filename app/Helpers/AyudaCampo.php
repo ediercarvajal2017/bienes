@@ -311,7 +311,8 @@ final class AyudaCampo
         ],
         'reactivar_motivo' => [
             'titulo' => 'Motivo de la reactivación',
-            'texto' => 'Por qué el bien vuelve a la institución. Ej.: La Alcaldía devolvió el bien, se reintegró por error. Queda en el historial y en la auditoría. Solo el rector puede reactivar. Máximo 500 caracteres.',
+            'texto' => "Por qué el bien vuelve a la institución. Ej.: La Alcaldía devolvió el bien, se reintegró por error. Queda en el historial y en la auditoría. Solo el rector puede reactivar. Máximo 500 caracteres.\n\n"
+                . '**Lote de reintegro:** si el bien estaba en un lote que todavía no se ha entregado a la Alcaldía, sale de ese lote y de su comprobante (si el lote queda vacío, se elimina). Un lote ya entregado no cambia: su comprobante es lo que se entregó ese día.',
         ],
         'accion_fecha' => [
             'titulo' => 'Fecha de la acción',

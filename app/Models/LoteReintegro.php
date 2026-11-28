@@ -464,6 +464,67 @@ final class LoteReintegro
         ], $stmt->fetchAll()));
     }
 
+    /**
+     * Al reactivar un bien: sus reintegros que están en lotes todavía sin entregar a la
+     * Alcaldía (pendientes) salen de esos lotes, y el lote que queda sin bienes se elimina.
+     * Un lote entregado no cambia: su comprobante es lo que se entregó ese día. Va dentro de
+     * la transacción del llamador (bloquea los lotes que toca).
+     *
+     * @return array{retirado_de: list<int>, eliminados: list<int>} ids de los lotes
+     */
+    public static function retirarBienReactivado(int $bienId): array
+    {
+        $pdo = Database::connection();
+        $stmt = $pdo->prepare(
+            "SELECT m.id, m.lote_reintegro_id FROM movimientos m
+             JOIN lotes_reintegro l ON l.id = m.lote_reintegro_id
+             WHERE m.bien_id = ? AND m.tipo = 'reintegro' AND l.estado = 'pendiente'
+             ORDER BY m.id"
+        );
+        $stmt->execute([$bienId]);
+        $movimientos = $stmt->fetchAll();
+        if ($movimientos === []) {
+            return ['retirado_de' => [], 'eliminados' => []];
+        }
+
+        $loteIds = array_values(array_unique(array_map(static fn (array $m): int => (int) $m['lote_reintegro_id'], $movimientos)));
+        $lotes = [];
+        foreach (self::bloquear($loteIds) as $lote) {
+            $lotes[(int) $lote['id']] = $lote;
+        }
+
+        $retirado = [];
+        $quitar = $pdo->prepare("UPDATE movimientos SET lote_reintegro_id = NULL WHERE id = ? AND tipo = 'reintegro'");
+        foreach ($movimientos as $m) {
+            $loteId = (int) $m['lote_reintegro_id'];
+            if (($lotes[$loteId]['estado'] ?? null) !== 'pendiente') {
+                continue; // se entregó o unificó mientras tanto: no se toca
+            }
+            $quitar->execute([(int) $m['id']]);
+            $retirado[$loteId] = true;
+        }
+
+        $eliminados = [];
+        $contar = $pdo->prepare('SELECT COUNT(*) FROM movimientos WHERE lote_reintegro_id = ?');
+        $borrar = $pdo->prepare("DELETE FROM lotes_reintegro WHERE id = ? AND estado = 'pendiente'");
+        foreach (array_keys($retirado) as $loteId) {
+            $contar->execute([$loteId]);
+            if ((int) $contar->fetchColumn() > 0) {
+                continue;
+            }
+            $lote = $lotes[$loteId];
+            $origenes = array_map(static fn (array $o): int => (int) $o['id'], self::origenesDe($loteId));
+            $borrar->execute([$loteId]);
+            $eliminados[] = $loteId;
+            Auditoria::registrar(\App\Core\Auth::id(), (int) $lote['institucion_id'], 'eliminar_lote_vacio', 'lote_reintegro', $loteId,
+                ['fecha' => $lote['fecha'], 'destino' => $lote['destino_texto'], 'observaciones' => $lote['observaciones'], 'estado' => $lote['estado'],
+                    'nacio_de_lotes' => $origenes],
+                ['motivo' => "Quedó sin bienes al reactivar el bien #{$bienId}"]);
+        }
+
+        return ['retirado_de' => array_keys($retirado), 'eliminados' => $eliminados];
+    }
+
     public static function bienesDe(int $loteId): array
     {
         $stmt = Database::connection()->prepare(

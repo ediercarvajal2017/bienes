@@ -372,3 +372,81 @@ test('separar un lote mixto por categoría desde su detalle', async ({ browser }
     expect(bd(`SELECT COUNT(*) FROM lotes_reintegro WHERE id IN (${nuevos.join(',')}) AND destino_texto LIKE 'Separaci%n por categor%a del lote #${loteMixto}'`)).toBe('2');
     await rector.contexto.close();
 });
+
+/** Bienes del lote, en el orden en que se crearon. */
+const bienesDelLote = (lote) => bd(`SELECT bien_id FROM movimientos WHERE lote_reintegro_id = ${lote} ORDER BY id`).split('\n').filter(Boolean).map(Number);
+
+async function reactivarDesdeLaFicha(pagina, bienId) {
+    await pagina.goto(`bienes/${bienId}/editar`);
+    await pagina.selectOption('#accionBien', 'reactivar');
+    await pagina.locator('#accionMotivo').fill('La Alcaldía decidió que se queda');
+    await pagina.getByRole('button', { name: 'Guardar y reactivar' }).click();
+    await expect(pagina.locator('.alert-success')).toContainText('Bien reactivado.');
+}
+
+test('reactivar un bien de un lote sin entregar lo saca del lote; el lote vacío se elimina', async ({ browser }) => {
+    const d = datos();
+    const lote = crearLote(d.instituciones.A, ['Muebles', 'Muebles'], '2024-06-01');
+    const [primero, segundo] = bienesDelLote(lote);
+    const codigoPrimero = bd(`SELECT codigo_identificacion FROM bienes WHERE id = ${primero}`);
+    const rector = await sesionDe(browser, 'rector');
+    const { pagina } = rector;
+
+    await reactivarDesdeLaFicha(pagina, primero);
+    await expect(pagina.locator('.alert-success')).toContainText(`Salió del lote de reintegro #${lote}, que aún no se había entregado a la Alcaldía.`);
+    expect(bienesDelLote(lote), 'en el lote (y en su comprobante) queda solo el otro bien').toEqual([segundo]);
+    expect(bd(`SELECT estado FROM bienes WHERE id = ${primero}`)).toBe('activo');
+    expect(bd(`SELECT COUNT(*) FROM movimientos WHERE bien_id = ${primero} AND tipo = 'reintegro'`), 'el reintegro sigue en su historial').toBe('1');
+    await pagina.goto(`reintegros/lotes/${lote}`);
+    await expect(pagina.locator('main')).not.toContainText(codigoPrimero);
+
+    await reactivarDesdeLaFicha(pagina, segundo);
+    await expect(pagina.locator('.alert-success')).toContainText(`El lote #${lote} quedó sin bienes y se eliminó.`);
+    expect(bd(`SELECT COUNT(*) FROM lotes_reintegro WHERE id = ${lote}`)).toBe('0');
+    expect(bd(`SELECT COUNT(*) FROM auditoria WHERE accion = 'eliminar_lote_vacio' AND entidad = 'lote_reintegro' AND entidad_id = ${lote}`)).toBe('1');
+    await rector.contexto.close();
+});
+
+test('reactivar un bien de un lote ya entregado no cambia el lote', async ({ browser }) => {
+    const d = datos();
+    const lote = crearLote(d.instituciones.A, ['Muebles'], '2024-06-02');
+    bd(`UPDATE lotes_reintegro SET estado = 'reintegrado', reintegrado_fecha = '2024-06-10', reintegrado_por = ${d.usuarios.rector.id} WHERE id = ${lote}`);
+    const [bien] = bienesDelLote(lote);
+    const rector = await sesionDe(browser, 'rector');
+
+    await reactivarDesdeLaFicha(rector.pagina, bien);
+    await expect(rector.pagina.locator('.alert-success')).not.toContainText('Salió del lote');
+    expect(bienesDelLote(lote), 'el comprobante de lo entregado ese día no cambia').toEqual([bien]);
+    await rector.contexto.close();
+});
+
+test('la corrección 040 saca de los lotes sin entregar los bienes que ya se habían reactivado', async () => {
+    const d = datos();
+    const pendiente = crearLote(d.instituciones.A, ['Muebles', 'Muebles'], '2024-06-03');
+    const solo = crearLote(d.instituciones.A, ['Muebles'], '2024-06-04');
+    const entregado = crearLote(d.instituciones.A, ['Muebles'], '2024-06-05');
+    bd(`UPDATE lotes_reintegro SET estado = 'reintegrado', reintegrado_fecha = '2024-06-10', reintegrado_por = ${d.usuarios.rector.id} WHERE id = ${entregado}`);
+    const [reactivado, sinRegistro] = bienesDelLote(pendiente);
+    const [delSolo] = bienesDelLote(solo);
+    const [delEntregado] = bienesDelLote(entregado);
+    // Como quedaban antes de la v1.2.68: reactivados, pero su reintegro seguía en el lote.
+    for (const bien of [reactivado, delSolo, delEntregado]) {
+        bd(`INSERT INTO movimientos (bien_id, tipo, fecha, responsable_id, observaciones) VALUES (${bien}, 'reactivacion', '2024-06-20', ${d.usuarios.rector.id}, 'PW reactivado');
+            UPDATE bienes SET estado = 'activo' WHERE id = ${bien};`);
+    }
+    // Caso R12: activo sin reactivación registrada; no se toca (hay que confirmar si sigue en uso).
+    bd(`UPDATE bienes SET estado = 'activo' WHERE id = ${sinRegistro}`);
+
+    bd(fs.readFileSync(path.join(process.cwd(), 'database/migrations/040_sacar_reactivados_de_lotes_pendientes.sql'), 'utf8'));
+
+    expect(bienesDelLote(pendiente)).toEqual([sinRegistro]);
+    expect(bd(`SELECT COUNT(*) FROM lotes_reintegro WHERE id = ${solo}`), 'el lote que quedó vacío se elimina').toBe('0');
+    expect(bienesDelLote(entregado), 'el lote entregado no cambia').toEqual([delEntregado]);
+    expect(bd(`SELECT COUNT(*) FROM auditoria WHERE accion = 'correccion_datos' AND entidad = 'bien' AND entidad_id IN (${reactivado}, ${delSolo})`)).toBe('2');
+    expect(bd(`SELECT COUNT(*) FROM auditoria WHERE accion = 'correccion_datos' AND entidad = 'lote_reintegro' AND entidad_id = ${solo}`)).toBe('1');
+
+    // Repetirla no cambia nada más.
+    bd(fs.readFileSync(path.join(process.cwd(), 'database/migrations/040_sacar_reactivados_de_lotes_pendientes.sql'), 'utf8'));
+    expect(bienesDelLote(pendiente)).toEqual([sinRegistro]);
+    expect(bd(`SELECT COUNT(*) FROM auditoria WHERE accion = 'correccion_datos' AND entidad = 'bien' AND entidad_id IN (${reactivado}, ${delSolo})`)).toBe('2');
+});
